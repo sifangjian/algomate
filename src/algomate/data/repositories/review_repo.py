@@ -1,0 +1,128 @@
+"""
+复习记录仓库模块
+
+提供复习记录数据的数据库操作，包括记录的创建、状态更新等功能。
+"""
+
+from typing import List, Optional
+from datetime import datetime
+from ..models import ReviewRecord, Database
+
+
+class ReviewRecordRepository:
+    """复习记录数据仓库
+
+    负责复习记录数据的数据库操作。
+
+    Attributes:
+        db: 数据库实例
+    """
+
+    def __init__(self, db: Database):
+        """初始化复习记录仓库
+
+        Args:
+            db: 数据库实例
+        """
+        self.db = db
+
+    def create(self, note_id: int, review_date: datetime, **kwargs) -> ReviewRecord:
+        """创建复习记录
+
+        Args:
+            note_id: 关联笔记ID
+            review_date: 复习日期
+            **kwargs: 其他可选参数
+
+        Returns:
+            创建的复习记录对象
+        """
+        session = self.db.get_session()
+        try:
+            record = ReviewRecord(
+                note_id=note_id,
+                review_date=review_date,
+                **kwargs
+            )
+            session.add(record)
+            session.commit()
+            session.refresh(record)
+            return record
+        finally:
+            session.close()
+
+    def get_by_id(self, record_id: int) -> Optional[ReviewRecord]:
+        """根据ID获取复习记录
+
+        Args:
+            record_id: 记录ID
+
+        Returns:
+            复习记录对象，若不存在则返回 None
+        """
+        session = self.db.get_session()
+        try:
+            return session.query(ReviewRecord).filter(ReviewRecord.id == record_id).first()
+        finally:
+            session.close()
+
+    def get_by_note_id(self, note_id: int) -> List[ReviewRecord]:
+        """获取指定笔记的所有复习记录
+
+        Args:
+            note_id: 笔记ID
+
+        Returns:
+            复习记录列表
+        """
+        session = self.db.get_session()
+        try:
+            return (
+                session.query(ReviewRecord)
+                .filter(ReviewRecord.note_id == note_id)
+                .order_by(ReviewRecord.review_date.desc())
+                .all()
+            )
+        finally:
+            session.close()
+
+    def get_pending_reviews(self) -> List[ReviewRecord]:
+        """获取待完成的复习记录
+
+        Returns:
+            状态为 pending 的复习记录列表
+        """
+        session = self.db.get_session()
+        try:
+            return (
+                session.query(ReviewRecord)
+                .filter(ReviewRecord.status == "pending")
+                .order_by(ReviewRecord.review_date)
+                .all()
+            )
+        finally:
+            session.close()
+
+    def update_status(self, record_id: int, status: str, score: int = None) -> Optional[ReviewRecord]:
+        """更新复习记录状态
+
+        Args:
+            record_id: 记录ID
+            status: 新状态
+            score: 可选的分数
+
+        Returns:
+            更新后的复习记录对象
+        """
+        session = self.db.get_session()
+        try:
+            record = session.query(ReviewRecord).filter(ReviewRecord.id == record_id).first()
+            if record:
+                record.status = status
+                if score is not None:
+                    record.score = score
+                session.commit()
+                session.refresh(record)
+            return record
+        finally:
+            session.close()
