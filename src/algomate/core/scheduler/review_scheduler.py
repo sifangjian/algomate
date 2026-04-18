@@ -14,7 +14,7 @@ from apscheduler.triggers.cron import CronTrigger
 from ...data.models import Note
 from ...data.database import Database
 from ...data.repositories import NoteRepository, ReviewRecordRepository
-from ...config.settings import AppConfig
+from algomate.config.settings import AppConfig
 from ..memory.forgotten_curve import ForgottenCurve
 from .email_sender import EmailSender
 

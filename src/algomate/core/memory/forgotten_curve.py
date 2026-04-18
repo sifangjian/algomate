@@ -11,7 +11,7 @@
 
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-from ...config.settings import AppConfig
+from algomate.config.settings import AppConfig
 
 
 class ForgottenCurve:
