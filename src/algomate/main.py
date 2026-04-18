@@ -18,7 +18,7 @@ import logging
 import sys
 from pathlib import Path
 
-from .config.settings import AppConfig
+from algomate.config.settings import AppConfig
 from .data.database import Database
 from .core.agent.chat_client import ChatClient
 from .core.agent.note_analyzer import NoteAnalyzer

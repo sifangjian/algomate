@@ -14,13 +14,10 @@
 
 from datetime import datetime, date
 from typing import Optional, List
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, Date, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from sqlalchemy.pool import StaticPool
-from pathlib import Path
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Date, ForeignKey
+from sqlalchemy.orm import relationship, Mapped
 
-
-Base = declarative_base()
+from .database import Base
 
 
 class Note(Base):
@@ -61,8 +58,8 @@ class Note(Base):
     last_reviewed = Column(DateTime, nullable=True)
     next_review_date = Column(Date, nullable=True)
 
-    questions: List["Question"] = relationship("Question", back_populates="note")
-    review_records: List["ReviewRecord"] = relationship("ReviewRecord", back_populates="note")
+    questions: Mapped[List["Question"]] = relationship("Question", back_populates="note")
+    review_records: Mapped[List["ReviewRecord"]] = relationship("ReviewRecord", back_populates="note")
 
 
 class ReviewRecord(Base):
@@ -86,7 +83,7 @@ class ReviewRecord(Base):
     status = Column(String(20), default="pending")
     score = Column(Integer, nullable=True)
 
-    note: "Note" = relationship("Note", back_populates="review_records")
+    note: Mapped["Note"] = relationship("Note", back_populates="review_records")
 
 
 class Question(Base):
@@ -115,8 +112,8 @@ class Question(Base):
     explanation = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.now)
 
-    note: "Note" = relationship("Note", back_populates="questions")
-    answer_records: List["AnswerRecord"] = relationship("AnswerRecord", back_populates="question")
+    note: Mapped["Note"] = relationship("Note", back_populates="questions")
+    answer_records: Mapped[List["AnswerRecord"]] = relationship("AnswerRecord", back_populates="question")
 
 
 class AnswerRecord(Base):
@@ -142,7 +139,7 @@ class AnswerRecord(Base):
     feedback = Column(Text, default="")
     answered_at = Column(DateTime, default=datetime.now)
 
-    question: "Question" = relationship("Question", back_populates="answer_records")
+    question: Mapped["Question"] = relationship("Question", back_populates="answer_records")
 
 
 class LearningProgress(Base):
@@ -187,68 +184,4 @@ class UserSetting(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
-class Database:
-    """数据库管理类
 
-    实现单例模式的数据库连接管理器。
-
-    使用 SQLite 数据库，通过 SQLAlchemy ORM 进行操作。
-    使用 StaticPool 实现单例连接，确保线程安全。
-
-    Attributes:
-        _instance: 单例实例
-        engine: SQLAlchemy 引擎
-        SessionLocal: Session 工厂类
-
-    Example:
-        db = Database.get_instance()
-        session = db.get_session()
-        # 使用 session 进行数据库操作
-        session.close()
-    """
-    _instance: Optional["Database"] = None
-
-    def __init__(self, db_path: Path):
-        """初始化数据库连接
-
-        Args:
-            db_path: 数据库文件路径
-        """
-        self.engine = create_engine(
-            f"sqlite:///{db_path}",
-            connect_args={"check_same_thread": False},
-            poolclass=StaticPool,
-        )
-        Base.metadata.create_all(self.engine)
-        self.SessionLocal = sessionmaker(bind=self.engine)
-
-    @classmethod
-    def get_instance(cls, config: Optional[AppConfig] = None) -> "Database":
-        """获取数据库单例实例
-
-        Args:
-            config: 应用配置，用于获取数据库路径
-
-        Returns:
-            Database 单例实例
-        """
-        if cls._instance is None:
-            if config is None:
-                from ..config.settings import AppConfig
-                config = AppConfig.load()
-            cls._instance = cls(config.DB_PATH)
-        return cls._instance
-
-    def get_session(self):
-        """获取新的数据库会话
-
-        Returns:
-            SQLAlchemy Session 实例
-        """
-        return self.SessionLocal()
-
-    def close(self):
-        """关闭数据库连接并重置单例"""
-        if self._instance:
-            self._instance.engine.dispose()
-            Database._instance = None

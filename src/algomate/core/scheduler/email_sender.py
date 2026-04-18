@@ -11,7 +11,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Dict, Any
-from ...config.settings import AppConfig
+from algomate.config.settings import AppConfig
 import re
 
 
