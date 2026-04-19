@@ -6,7 +6,8 @@
 
 from typing import List, Optional
 from datetime import datetime
-from ..models import ReviewRecord, Database
+from ..models import ReviewRecord
+from ..database import Database
 
 
 class ReviewRecordRepository:

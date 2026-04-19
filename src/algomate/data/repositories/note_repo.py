@@ -7,7 +7,8 @@
 
 from typing import List, Optional
 from datetime import datetime, date
-from ..models import Note, Database
+from ..models import Note
+from ..database import Database
 
 
 class NoteRepository:

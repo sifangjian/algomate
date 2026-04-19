@@ -43,8 +43,7 @@ class AppConfig:
     """
     APP_NAME: str = "算法学习助手"
     VERSION: str = "0.1.0"
-    # config/settings.py -> 2个parent到项目根目录
-    DATA_DIR: Path = Path(__file__).resolve().parent.parent / "data"
+    DATA_DIR: Path = Path(__file__).resolve().parent.parent.parent.parent / "data"
     DB_PATH: Path = DATA_DIR / "algomate.db"
     LOG_PATH: Path = DATA_DIR.parent / "logs" / "algomate.log"
 

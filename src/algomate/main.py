@@ -140,6 +140,7 @@ def main():
         while True:
             import time
             time.sleep(1)
+            print("Algomate is running...")
     except KeyboardInterrupt:
         app.stop()
 

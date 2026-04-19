@@ -6,7 +6,8 @@
 
 from typing import List, Optional
 from datetime import date
-from ..models import LearningProgress, Database
+from ..models import LearningProgress
+from ..database import Database
 
 
 class ProgressRepository:

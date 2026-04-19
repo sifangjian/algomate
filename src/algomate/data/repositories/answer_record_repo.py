@@ -6,7 +6,8 @@
 
 from typing import List, Optional
 from datetime import datetime, timedelta
-from ..models import AnswerRecord, Database
+from ..models import AnswerRecord
+from ..database import Database
 
 
 class AnswerRecordRepository:

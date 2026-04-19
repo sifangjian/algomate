@@ -6,7 +6,8 @@
 
 from typing import List, Optional
 from datetime import datetime
-from ..models import Question, Database
+from ..models import Question
+from ..database import Database
 
 
 class QuestionRepository:
