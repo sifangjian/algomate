@@ -7,9 +7,9 @@
 - 解析 Markdown 结构
 """
 
-from typing import Dict, Any, List
+from typing import Any, List
 import re
-from .chat_client import ChatClient
+from .chat_client import ChatClient, NoteAnalysisResult
 from ...data.models import Note
 from ...data.database import Database
 import json
@@ -32,7 +32,7 @@ class NoteAnalyzer:
         """
         self.chat_client = chat_client
 
-    def analyze_note(self, note_content: str) -> Dict[str, Any]:
+    def analyze_note(self, note_content: str) -> NoteAnalysisResult:
         """分析笔记内容
 
         调用 AI 模型分析笔记，提取关键信息。
@@ -41,7 +41,7 @@ class NoteAnalyzer:
             note_content: 笔记内容
 
         Returns:
-            分析结果字典
+            包含分析结果的 NoteAnalysisResult 对象
         """
         return self.chat_client.analyze_note(note_content)
 
