@@ -127,6 +127,49 @@ class AlgomateApp:
         logger.info("Application stopped")
 
 
+def run_interactive_chat(chat_client: ChatClient):
+    """运行交互式对话循环
+
+    提供一个简单的命令行界面，让用户可以与 AI 进行对话。
+
+    Args:
+        chat_client: 聊天客户端实例
+    """
+    print("\n" + "="*50)
+    print("欢迎使用 Algomate 算法学习助手！")
+    print("输入您的问题，按回车发送。输入 'quit' 或 'exit' 退出。")
+    print("="*50 + "\n")
+
+    messages = []
+
+    while True:
+        try:
+            user_input = input("你: ").strip()
+
+            if not user_input:
+                continue
+
+            if user_input.lower() in ["quit", "exit", "退出"]:
+                print("\n感谢使用 Algomate，再见！")
+                break
+
+            messages.append({"role": "user", "content": user_input})
+
+            print("AI: ", end="", flush=True)
+            response = chat_client.chat(messages)
+            print(response)
+            print()
+
+            messages.append({"role": "assistant", "content": response})
+
+        except KeyboardInterrupt:
+            print("\n\n操作已取消，再见！")
+            break
+        except Exception as e:
+            print(f"\n发生错误: {e}")
+            logger.error(f"Chat error: {e}")
+
+
 def main():
     """应用入口函数
 
@@ -136,13 +179,20 @@ def main():
     app.start_review_scheduler()
     logger.info("Algomate started successfully")
 
-    try:
-        while True:
-            import time
-            time.sleep(1)
-            print("Algomate is running...")
-    except KeyboardInterrupt:
-        app.stop()
+    if app.chat_client:
+        run_interactive_chat(app.chat_client)
+    else:
+        print("AI 组件未初始化（可能未配置 API Key），仅运行调度器模式")
+        print("按 Ctrl+C 退出...")
+
+        try:
+            while True:
+                import time
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+
+    app.stop()
 
 
 if __name__ == "__main__":
