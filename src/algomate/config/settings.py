@@ -65,10 +65,28 @@ class AppConfig:
     def __post_init__(self):
         """初始化后置处理
 
-        确保数据目录和日志目录存在。
+        确保数据目录和日志目录存在，并从环境变量加载敏感配置。
         """
+        import os
+        from dotenv import load_dotenv
+
+        env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+        if env_path.exists():
+            load_dotenv(env_path)
+
         self.DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+        if not self.ZHIPU_API_KEY:
+            self.ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY", "")
+        if not self.SMTP_PASSWORD:
+            self.SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+        if not self.SMTP_USER:
+            self.SMTP_USER = os.getenv("SMTP_USER", "")
+        if not self.EMAIL_FROM:
+            self.EMAIL_FROM = os.getenv("EMAIL_FROM", "")
+        if not self.EMAIL_TO:
+            self.EMAIL_TO = os.getenv("EMAIL_TO", "")
 
     @classmethod
     def load(cls, config_path: Optional[Path] = None) -> "AppConfig":
@@ -81,6 +99,12 @@ class AppConfig:
             AppConfig 实例
         """
         import yaml
+        from dotenv import load_dotenv
+
+        env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+        if env_path.exists():
+            load_dotenv(env_path)
+
         if config_path is None:
             config_path = cls.DATA_DIR / "config.yaml"
 

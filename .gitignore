@@ -68,3 +68,4 @@ Thumbs.db
 *.db
 *.log
 .config.yaml
+.env
