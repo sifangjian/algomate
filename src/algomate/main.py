@@ -88,18 +88,18 @@ class AlgomateApp:
         self.forgotten_curve = None
         self.review_scheduler = None
 
-        if self.config.ZHIPU_API_KEY:
+        if self.config.LLM_API_KEY:
             self._init_ai_components()
 
     def _init_ai_components(self):
         """初始化 AI 组件
 
-        当配置了智谱 API Key 时，初始化相关 AI 组件。
+        当配置了大模型 API Key 时，初始化相关 AI 组件。
         """
         self.chat_client = ChatClient(
-            api_key=self.config.ZHIPU_API_KEY,
-            model=self.config.ZHIPU_MODEL,
-            base_url=self.config.ZHIPU_BASE_URL,
+            api_key=self.config.LLM_API_KEY,
+            model=self.config.LLM_MODEL,
+            base_url=self.config.LLM_BASE_URL,
         )
         self.note_analyzer = NoteAnalyzer(self.chat_client)
         self.question_generator = QuestionGenerator(self.chat_client)

@@ -28,8 +28,9 @@ class AppConfig:
         DATA_DIR: 数据存储根目录
         DB_PATH: SQLite 数据库文件路径
         LOG_PATH: 日志文件路径
-        ZHIPU_API_KEY: 智谱AI API密钥
-        ZHIPU_MODEL: 智谱模型名称
+        LLM_API_KEY: 大模型 API密钥
+        LLM_MODEL: 大模型名称
+        LLM_BASE_URL: 大模型 API 地址
         SMTP_HOST: SMTP 服务器地址
         SMTP_PORT: SMTP 服务器端口
         SMTP_USER: SMTP 用户名
@@ -47,9 +48,9 @@ class AppConfig:
     DB_PATH: Path = DATA_DIR / "algomate.db"
     LOG_PATH: Path = DATA_DIR.parent / "logs" / "algomate.log"
 
-    ZHIPU_API_KEY: str = ""
-    ZHIPU_MODEL: str = "glm-4"
-    ZHIPU_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4"
+    LLM_API_KEY: str = ""
+    LLM_MODEL: str = "glm-4"
+    LLM_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4"
 
     SMTP_HOST: str = "smtp.qq.com"
     SMTP_PORT: int = 465
@@ -78,8 +79,8 @@ class AppConfig:
         self.DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-        if not self.ZHIPU_API_KEY:
-            self.ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY", "")
+        if not self.LLM_API_KEY:
+            self.LLM_API_KEY = os.getenv("LLM_API_KEY", "")
         if not self.SMTP_PASSWORD:
             self.SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
         if not self.SMTP_USER:
