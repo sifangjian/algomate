@@ -31,11 +31,11 @@ from typing import (
 )
 from pydantic import BaseModel, Field
 
-from langchain.agents import create_agent, AgentMiddleware
-from langchain.agents.middleware import AgentMiddleware, ModelRequest
-from langchain.agents.middleware.types import ModelResponse
-from langchain.agents.structured_output import ToolStrategy
-from langchain.messages import (
+# from langchain.agents import create_agent, AgentMiddleware
+# from langchain.agents.middleware import AgentMiddleware, ModelRequest
+# from langchain.agents.middleware.types import ModelResponse
+# from langchain.agents.structured_output import ToolStrategy
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
@@ -649,12 +649,12 @@ class ChatClient:
         self,
         system_prompt: Optional[str] = None,
         tools: Optional[List] = None,
-        middleware: Optional[List[AgentMiddleware]] = None,
+        middleware: Optional[List[Any]] = None,
     ):
-        """使用 LangChain v1 create_agent 构建智能体
+        """使用 LangGraph 构建智能体（暂未启用）
 
-        这是 LangChain v1 中构建智能体的标准方式，比 langgraph.prebuilt.create_react_agent
-        更简单，同时通过 middleware 提供更高的自定义潜力。
+        NOTE: 此方法暂未启用，等待 LangChain v1 正式发布后完善。
+        目前交互式对话使用 chat() 方法即可。
 
         Args:
             system_prompt: 系统提示词
@@ -663,17 +663,9 @@ class ChatClient:
 
         Returns:
             Agent: 可直接调用的智能体
-
-        Example:
-            agent = client.build_agent(
-                system_prompt="你是一个有帮助的算法学习助手。",
-                tools=[search_tool, calculator_tool],
-                middleware=[SummarizationMiddleware()]
-            )
-            result = agent.invoke({
-                "messages": [{"role": "user", "content": "什么是动态规划？"}]
-            })
         """
+        from langgraph.prebuilt import create_react_agent
+
         if system_prompt is None:
             system_prompt = "你是一个有帮助的算法学习助手。"
 
@@ -685,11 +677,10 @@ class ChatClient:
             base_url=self.base_url,
         )
 
-        return create_agent(
+        return create_react_agent(
             model=llm,
             tools=tools or [],
-            system_prompt=system_prompt,
-            middleware=middleware or [],
+            state_modifier=system_prompt,
         )
 
     def build_chat_graph(self) -> StateGraph:
