@@ -76,15 +76,18 @@ class NoteAnalyzer:
         try:
             result = self.chat_client.analyze_note(note.content)
 
-            note.algorithm_type = result.get("algorithm_type", "其他")
-            note.difficulty = result.get("difficulty", "中等")
-            note.summary = result.get("summary", "")
+            note.algorithm_type = result.algorithm_type
+            note.difficulty = result.difficulty
+            note.summary = result.summary
 
-            tags = result.get("tags", [])
+            tags = result.tags
             if isinstance(tags, list):
                 note.tags = json.dumps(tags, ensure_ascii=False)
             else:
                 note.tags = json.dumps([tags], ensure_ascii=False) if tags else "[]"
+
+            if not note.summary and result.key_points:
+                note.summary = "; ".join(result.key_points[:3])
 
             session.commit()
             session.refresh(note)
