@@ -144,7 +144,8 @@ class ChatClient:
     def __init__(
         self,
         api_key: str,
-        model: str = "gpt-4",
+        model: str = "glm-4",
+        base_url: str = "https://open.bigmodel.cn/api/paas/v4",
         temperature: float = 0.7,
         timeout: int = 30,
     ):
@@ -153,14 +154,15 @@ class ChatClient:
         Args:
             api_key: API 密钥
             model: 模型名称，默认为 glm-4
+            base_url: API 基础 URL，默认为智谱 AI 的 URL
             temperature: 生成温度参数，控制随机性（0-1）
             timeout: 请求超时时间（秒）
         """
         self.api_key = api_key
         self.model = model
+        self.base_url = base_url
         self.temperature = temperature
         self.timeout = timeout
-        self.base_url = "https://open.bigmodel.cn/api/paas/v4"
 
         self._llm: Optional[ChatOpenAI] = None
         self._agent = None

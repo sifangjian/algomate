@@ -49,6 +49,7 @@ class AppConfig:
 
     ZHIPU_API_KEY: str = ""
     ZHIPU_MODEL: str = "glm-4"
+    ZHIPU_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4"
 
     SMTP_HOST: str = "smtp.qq.com"
     SMTP_PORT: int = 465

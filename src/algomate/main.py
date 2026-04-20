@@ -99,6 +99,7 @@ class AlgomateApp:
         self.chat_client = ChatClient(
             api_key=self.config.ZHIPU_API_KEY,
             model=self.config.ZHIPU_MODEL,
+            base_url=self.config.ZHIPU_BASE_URL,
         )
         self.note_analyzer = NoteAnalyzer(self.chat_client)
         self.question_generator = QuestionGenerator(self.chat_client)
