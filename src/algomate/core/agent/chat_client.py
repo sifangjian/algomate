@@ -1,7 +1,7 @@
 """
-智谱 GLM API 客户端模块
+通用 LLM API 客户端模块
 
-基于 LangChain v1 和 LangGraph 实现的 GLM-4 大模型交互接口，提供：
+基于 LangChain v1 和 LangGraph 实现的大模型交互接口，提供：
 - 通用对话功能（Chat）
 - 笔记分析功能（Note Analysis）
 - 题目生成功能（Question Generation）
@@ -78,7 +78,7 @@ class QuestionsResult(BaseModel):
     questions: List[Question] = Field(description="生成的题目列表")
 
 
-class GLMState(TypedDict):
+class LLMState(TypedDict):
     """LangGraph 状态定义
 
     用于在图节点之间传递状态信息。
@@ -98,7 +98,7 @@ class GLMState(TypedDict):
 
 
 class ChatClient:
-    """智谱 GLM API 客户端
+    """通用 LLM API 客户端
 
     基于 LangChain v1 create_agent 和 LangGraph 实现的客户端。
     支持通用对话和特定任务（笔记分析、题目生成、答案评估）。
@@ -144,14 +144,14 @@ class ChatClient:
     def __init__(
         self,
         api_key: str,
-        model: str = "glm-4",
+        model: str = "gpt-4",
         temperature: float = 0.7,
         timeout: int = 30,
     ):
-        """初始化 GLM 客户端
+        """初始化 LLM 客户端
 
         Args:
-            api_key: 智谱 API 密钥
+            api_key: API 密钥
             model: 模型名称，默认为 glm-4
             temperature: 生成温度参数，控制随机性（0-1）
             timeout: 请求超时时间（秒）
@@ -493,7 +493,7 @@ class ChatClient:
                 "error": f"JSON解析失败: {str(e)}"
             }
 
-    def _route_task(self, state: GLMState) -> Literal["chat_node", "analyze_note_node", "generate_questions_node", "evaluate_answer_node"]:
+    def _route_task(self, state: LLMState) -> Literal["chat_node", "analyze_note_node", "generate_questions_node", "evaluate_answer_node"]:
         """根据任务类型路由到不同的处理节点
 
         作为 LangGraph 的条件分支函数，根据 state 中的 task_type
@@ -516,7 +516,7 @@ class ChatClient:
 
         return task_routes.get(task_type, "chat_node")
 
-    def _create_chat_node(self, state: GLMState) -> GLMState:
+    def _create_chat_node(self, state: LLMState) -> LLMState:
         """对话节点的执行逻辑
 
         作为 LangGraph 的节点函数处理对话任务。
@@ -556,7 +556,7 @@ class ChatClient:
                 "error": str(e),
             }
 
-    def _create_analyze_note_node(self, state: GLMState) -> GLMState:
+    def _create_analyze_note_node(self, state: LLMState) -> LLMState:
         """笔记分析节点的执行逻辑
 
         Args:
@@ -581,7 +581,7 @@ class ChatClient:
                 "error": str(e),
             }
 
-    def _create_generate_questions_node(self, state: GLMState) -> GLMState:
+    def _create_generate_questions_node(self, state: LLMState) -> LLMState:
         """题目生成节点的执行逻辑
 
         Args:
@@ -612,7 +612,7 @@ class ChatClient:
                 "error": str(e),
             }
 
-    def _create_evaluate_answer_node(self, state: GLMState) -> GLMState:
+    def _create_evaluate_answer_node(self, state: LLMState) -> LLMState:
         """答案评估节点的执行逻辑
 
         Args:
@@ -704,7 +704,7 @@ class ChatClient:
         Returns:
             StateGraph: 编译后的状态图，可直接调用 invoke 方法
         """
-        graph = StateGraph(GLMState)
+        graph = StateGraph(LLMState)
 
         graph.add_node("chat_node", self._create_chat_node)
         graph.add_node("analyze_note_node", self._create_analyze_note_node)
@@ -734,7 +734,7 @@ class ChatClient:
         task_type: str,
         messages: Optional[List[BaseMessage]] = None,
         context: Optional[Dict[str, Any]] = None,
-    ) -> GLMState:
+    ) -> LLMState:
         """直接调用任务（使用预构建的图）
 
         提供一个简化的接口来执行各种任务，无需手动构建图。
@@ -745,7 +745,7 @@ class ChatClient:
             context: 任务上下文信息
 
         Returns:
-            GLMState: 执行后的最终状态
+            LLMState: 执行后的最终状态
         """
         if self._graph is None:
             self.build_chat_graph()
@@ -755,7 +755,7 @@ class ChatClient:
         if context is None:
             context = {}
 
-        initial_state: GLMState = {
+        initial_state: LLMState = {
             "messages": messages,
             "task_type": task_type,
             "context": context,
