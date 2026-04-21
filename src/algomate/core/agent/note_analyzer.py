@@ -7,7 +7,7 @@
 - 解析 Markdown 结构
 """
 
-from typing import Any, List
+from typing import Any, List, Dict
 import re
 from .chat_client import ChatClient, NoteAnalysisResult
 from ...data.models import Note

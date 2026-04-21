@@ -521,13 +521,7 @@ class ChatClient:
         messages = state.get("messages", [])
 
         try:
-            llm = ChatOpenAI(
-                api_key=self.api_key,
-                model=self.model,
-                temperature=self.temperature,
-                timeout=self.timeout,
-                base_url=self.base_url,
-            )
+            llm = self.llm
             response = llm.invoke(messages)
 
             if isinstance(response, AIMessage):
