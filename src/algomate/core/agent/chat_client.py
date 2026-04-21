@@ -204,13 +204,7 @@ class ChatClient:
         """
         temp = temperature if temperature is not None else self.temperature
 
-        llm = ChatOpenAI(
-            api_key=self.api_key,
-            model=self.model,
-            temperature=temp,
-            timeout=self.timeout,
-            base_url=self.base_url,
-        )
+        llm = self.llm.bind(temperature=temp)
 
         if output_schema:
             llm = llm.with_structured_output(output_schema)
@@ -238,14 +232,9 @@ class ChatClient:
         """
         messages_list = self._build_messages(messages)
 
-        temp = temperature if temperature is not None else self.temperature
-        llm = ChatOpenAI(
-            api_key=self.api_key,
-            model=self.model,
-            temperature=temp,
-            timeout=self.timeout,
-            base_url=self.base_url,
-        )
+        llm = self.llm
+        if temperature is not None:
+            llm = llm.bind(temperature=temperature)
 
         response = llm.invoke(messages_list)
 
