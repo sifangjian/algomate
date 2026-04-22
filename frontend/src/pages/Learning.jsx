@@ -327,7 +327,42 @@ function Learning() {
                                                         color: msg.role === 'user' ? 'white' : '#333',
                                                         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                                                     }}>
-                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                                        <ReactMarkdown
+                                                            remarkPlugins={[remarkGfm]}
+                                                            components={{
+                                                                table: ({ children }) => (
+                                                                    <table style={{ borderCollapse: 'collapse', width: '100%', margin: '10px 0' }}>
+                                                                        {children}
+                                                                    </table>
+                                                                ),
+                                                                th: ({ children }) => (
+                                                                    <th style={{ border: '1px solid #ddd', padding: '8px', background: '#f5f5f5', textAlign: 'left' }}>
+                                                                        {children}
+                                                                    </th>
+                                                                ),
+                                                                td: ({ children }) => (
+                                                                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>
+                                                                        {children}
+                                                                    </td>
+                                                                ),
+                                                                code: ({ node, inline, className, children, ...props }) => {
+                                                                    if (inline) {
+                                                                        return (
+                                                                            <code style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.9em' }}>
+                                                                                {children}
+                                                                            </code>
+                                                                        )
+                                                                    }
+                                                                    return (
+                                                                        <pre style={{ background: '#1e1e1e', color: '#d4d4d4', padding: '12px', borderRadius: '8px', overflow: 'auto', margin: '10px 0' }}>
+                                                                            <code {...props}>{children}</code>
+                                                                        </pre>
+                                                                    )
+                                                                }
+                                                            }}
+                                                        >
+                                                            {msg.content}
+                                                        </ReactMarkdown>
                                                     </div>
                                                 </div>
                                             </div>
