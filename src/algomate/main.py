@@ -170,6 +170,7 @@ class AlgomateApp:
                     host="0.0.0.0",
                     port=8000,
                     log_level="info",
+                    handle_signals=False,
                 )
             )
             self.api_server_thread = threading.Thread(
@@ -211,6 +212,8 @@ class AlgomateApp:
         if self.review_scheduler:
             self.review_scheduler.stop()
         self.db.close()
+        self.api_server = None
+        self.api_server_thread = None
         logger.info("Application stopped")
 
 
