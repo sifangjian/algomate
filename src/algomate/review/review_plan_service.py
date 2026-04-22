@@ -404,3 +404,105 @@ class ReviewPlanService:
             ]
         finally:
             session.close()
+
+    def is_new_user(self) -> Dict[str, Any]:
+        """检测是否为新手用户
+
+        判断用户是否还没有添加任何笔记或尚未开始复习，
+        以便提供新手引导。
+
+        Returns:
+            包含新手状态和推荐行动的字典
+        """
+        session = self.db.get_session()
+        try:
+            total_notes = session.query(Note).count()
+            total_reviews = session.query(ReviewRecord).count()
+
+            is_new = total_notes == 0
+            has_started = total_reviews > 0
+
+            if is_new:
+                return {
+                    "is_new_user": True,
+                    "total_notes": 0,
+                    "learning_days": 0,
+                    "current_step": "add_first_note",
+                    "message": "欢迎开始算法学习之旅！",
+                    "next_action": {
+                        "text": "添加第一个笔记",
+                        "description": "点击上方「笔记」按钮，添加您要学习的算法笔记",
+                        "action": "navigate_to_notes",
+                        "icon": "📝"
+                    },
+                    "suggestions": [
+                        {
+                            "title": "从基础开始",
+                            "content": "建议从排序算法、二分查找等基础内容开始学习"
+                        },
+                        {
+                            "title": "循序渐进",
+                            "content": "先理解原理，再做练习，最后复习巩固"
+                        },
+                        {
+                            "title": "记录重点",
+                            "content": "每学完一个知识点，记下核心思路和易错点"
+                        }
+                    ]
+                }
+            elif total_notes > 0 and not has_started:
+                return {
+                    "is_new_user": True,
+                    "total_notes": total_notes,
+                    "learning_days": 0,
+                    "current_step": "start_first_review",
+                    "message": "您已添加 {0} 个笔记，开始复习吧！".format(total_notes),
+                    "next_action": {
+                        "text": "开始首次复习",
+                        "description": "您的学习之旅即将开始，点击开始复习来激活遗忘曲线",
+                        "action": "start_review",
+                        "icon": "🚀"
+                    },
+                    "suggestions": [
+                        {
+                            "title": "首次复习很重要",
+                            "content": "根据艾宾浩斯遗忘曲线，首次复习应在学习后1天进行"
+                        },
+                        {
+                            "title": "保持连续性",
+                            "content": "每天坚持复习，学习效果会更好"
+                        }
+                    ]
+                }
+            else:
+                return {
+                    "is_new_user": False,
+                    "total_notes": total_notes,
+                    "learning_days": self._calculate_learning_days(),
+                    "current_step": None,
+                    "message": None,
+                    "next_action": None,
+                    "suggestions": []
+                }
+        finally:
+            session.close()
+
+    def _calculate_learning_days(self) -> int:
+        """计算学习天数
+
+        Returns:
+            从第一条复习记录到现在的天数
+        """
+        session = self.db.get_session()
+        try:
+            first_review = (
+                session.query(ReviewRecord)
+                .order_by(ReviewRecord.review_date)
+                .first()
+            )
+            if not first_review:
+                return 0
+            delta = datetime.now() - first_review.review_date
+            return max(1, delta.days)
+        finally:
+            session.close()

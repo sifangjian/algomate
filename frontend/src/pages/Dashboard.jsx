@@ -4,6 +4,7 @@ function Dashboard() {
   const [todayReviews, setTodayReviews] = useState([])
   const [weakPoints, setWeakPoints] = useState([])
   const [stats, setStats] = useState({ learning_days: 0 })
+  const [newUserStatus, setNewUserStatus] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -12,17 +13,20 @@ function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [reviewRes, weakRes, statsRes] = await Promise.all([
+      const [reviewRes, weakRes, statsRes, newUserRes] = await Promise.all([
         fetch('/api/dashboard/today-review'),
         fetch('/api/dashboard/weak-points'),
-        fetch('/api/dashboard/stats')
+        fetch('/api/dashboard/stats'),
+        fetch('/api/dashboard/new-user-status')
       ])
       const reviewData = await reviewRes.json()
       const weakData = await weakRes.json()
       const statsData = await statsRes.json()
+      const newUserData = await newUserRes.json()
       setTodayReviews(reviewData.reviews || [])
       setWeakPoints(weakData.weak_points || [])
       setStats(statsData || { learning_days: 0 })
+      setNewUserStatus(newUserData)
     } catch (error) {
       console.error('获取仪表盘数据失败:', error)
     } finally {
@@ -32,6 +36,10 @@ function Dashboard() {
 
   const handleStartReview = () => {
     window.location.href = '/practice'
+  }
+
+  const handleNavigateToNotes = () => {
+    window.location.href = '/notes'
   }
 
   const getDifficultyColor = (difficulty) => {
@@ -61,6 +69,42 @@ function Dashboard() {
       <div className="page-header">
         <h2>首页</h2>
       </div>
+
+      {newUserStatus && newUserStatus.is_new_user && (
+        <div className="card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
+            <div style={{ fontSize: '48px' }}>{newUserStatus.next_action?.icon || '👋'}</div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: '0 0 10px 0' }}>{newUserStatus.message}</h3>
+              <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '8px', padding: '15px', marginBottom: '15px' }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
+                  {newUserStatus.next_action?.text}
+                </div>
+                <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                  {newUserStatus.next_action?.description}
+                </div>
+              </div>
+              {newUserStatus.next_action?.action === 'navigate_to_notes' ? (
+                <button className="btn" onClick={handleNavigateToNotes} style={{ background: 'white', color: '#667eea', fontWeight: 'bold', padding: '10px 25px' }}>
+                  去添加笔记 →
+                </button>
+              ) : (
+                <button className="btn" onClick={handleStartReview} style={{ background: 'white', color: '#667eea', fontWeight: 'bold', padding: '10px 25px' }}>
+                  开始复习 →
+                </button>
+              )}
+            </div>
+          </div>
+          <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+            {newUserStatus.suggestions?.map((item, index) => (
+              <div key={index} style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{item.title}</div>
+                <div style={{ fontSize: '13px', opacity: 0.85 }}>{item.content}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid">
         <div className="card">

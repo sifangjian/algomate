@@ -354,6 +354,13 @@ async def get_dashboard_stats():
     return stats
 
 
+@dashboard_router.get("/new-user-status")
+async def get_new_user_status():
+    review_service = get_review_service()
+    status = review_service.is_new_user()
+    return status
+
+
 @settings_router.get("/")
 async def get_settings():
     from algomate.config.settings import AppConfig
