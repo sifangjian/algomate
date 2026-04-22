@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from datetime import date, datetime, timedelta
 
 router = APIRouter()
@@ -8,6 +8,11 @@ practice_router = APIRouter()
 progress_router = APIRouter()
 settings_router = APIRouter()
 dashboard_router = APIRouter()
+
+
+def get_review_service():
+    from algomate.review.review_plan_service import ReviewPlanService
+    return ReviewPlanService()
 
 
 @notes_router.get("/")
@@ -269,89 +274,84 @@ async def get_mastery():
 
 
 @dashboard_router.get("/today-review")
-async def get_today_review():
-    from algomate.data.database import Database
-    from algomate.data.repositories.review_repo import ReviewRecordRepository
-    from algomate.data.repositories.note_repo import NoteRepository
-
-    db = Database.get_instance()
-    review_repo = ReviewRecordRepository(db)
-    note_repo = NoteRepository(db)
-
-    today = date.today()
-    today_start = datetime.combine(today, datetime.min.time())
-    today_end = datetime.combine(today, datetime.max.time())
-
-    session = db.get_session()
-    try:
-        from algomate.data.models import ReviewRecord, Note
-        pending_reviews = (
-            session.query(ReviewRecord, Note)
-            .join(Note, ReviewRecord.note_id == Note.id)
-            .filter(ReviewRecord.status == "pending")
-            .filter(ReviewRecord.review_date >= today_start, ReviewRecord.review_date <= today_end)
-            .all()
-        )
-        review_list = []
-        for record, note in pending_reviews:
-            review_list.append({
-                "id": record.id,
-                "note_id": note.id,
-                "title": note.title,
-                "algorithm_type": note.algorithm_type,
-                "difficulty": note.difficulty,
-                "mastery_level": note.mastery_level,
-                "review_date": record.review_date.isoformat() if record.review_date else None,
-                "status": record.status
-            })
-        return {"reviews": review_list}
-    finally:
-        session.close()
+async def get_today_review(target_date: str = None):
+    review_service = get_review_service()
+    if target_date:
+        try:
+            target_date = datetime.strptime(target_date, "%Y-%m-%d").date()
+        except ValueError:
+            target_date = date.today()
+    else:
+        target_date = date.today()
+    review_plan = review_service.get_today_review_plan(target_date)
+    return {"reviews": review_plan, "date": target_date.isoformat()}
 
 
 @dashboard_router.get("/weak-points")
-async def get_weak_points():
-    from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
+async def get_weak_points_endpoint(threshold: int = 70, limit: int = 10):
+    review_service = get_review_service()
+    weak_points = review_service.get_weak_points(threshold)
+    return {"weak_points": weak_points[:limit], "total": len(weak_points)}
 
-    db = Database.get_instance()
-    note_repo = NoteRepository(db)
 
-    session = db.get_session()
-    try:
-        from algomate.data.models import Note
-        weak_notes = session.query(Note).filter(Note.mastery_level < 30).order_by(Note.mastery_level).limit(5).all()
-        weak_points = []
-        for note in weak_notes:
-            weak_points.append({
-                "id": note.id,
-                "title": note.title,
-                "algorithm_type": note.algorithm_type,
-                "mastery_level": note.mastery_level,
-                "review_count": note.review_count
-            })
-        return {"weak_points": weak_points}
-    finally:
-        session.close()
+@dashboard_router.post("/review/start/{note_id}")
+async def start_review(note_id: int):
+    review_service = get_review_service()
+    result = review_service.start_review(note_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+    return result
+
+
+@dashboard_router.post("/review/complete/{note_id}")
+async def complete_review(note_id: int, review_data: dict):
+    review_service = get_review_service()
+    score = review_data.get("score", 0)
+    is_correct = review_data.get("is_correct", False)
+    difficulty = review_data.get("difficulty", "中等")
+    result = review_service.complete_review(note_id, score, is_correct, difficulty)
+    if result is None:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+    return result
+
+
+@dashboard_router.post("/review/skip/{note_id}")
+async def skip_review(note_id: int, reason: str = ""):
+    review_service = get_review_service()
+    success = review_service.skip_review(note_id, reason)
+    if not success:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+    return {"message": "已跳过复习", "note_id": note_id}
+
+
+@dashboard_router.get("/review/statistics")
+async def get_review_statistics(target_date: str = None):
+    review_service = get_review_service()
+    if target_date:
+        try:
+            target_date = datetime.strptime(target_date, "%Y-%m-%d").date()
+        except ValueError:
+            target_date = date.today()
+    else:
+        target_date = date.today()
+    stats = review_service.get_review_statistics(target_date)
+    return stats
+
+
+@dashboard_router.get("/review/schedule/{note_id}")
+async def get_note_review_schedule(note_id: int):
+    review_service = get_review_service()
+    schedule = review_service.generate_review_plan_for_note(note_id)
+    if schedule is None:
+        raise HTTPException(status_code=404, detail="笔记不存在")
+    return {"schedule": schedule}
 
 
 @dashboard_router.get("/stats")
 async def get_dashboard_stats():
-    from algomate.data.database import Database
-    from algomate.data.repositories.progress_repo import ProgressRepository
-
-    db = Database.get_instance()
-    progress_repo = ProgressRepository(db)
-
-    session = db.get_session()
-    try:
-        from algomate.data.models import LearningProgress
-        learning_days = session.query(LearningProgress).count()
-        return {
-            "learning_days": learning_days
-        }
-    finally:
-        session.close()
+    review_service = get_review_service()
+    stats = review_service.get_review_statistics()
+    return stats
 
 
 @settings_router.get("/")
