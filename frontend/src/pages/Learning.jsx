@@ -88,6 +88,9 @@ function Learning() {
         setMessages(prev => [...prev, { role: 'user', content: userMessage }])
         setIsLoading(true)
 
+        const assistantMessage = { role: 'assistant', content: '' }
+        setMessages(prev => [...prev, assistantMessage])
+
         try {
             const res = await fetch('/api/learning/chat', {
                 method: 'POST',
@@ -98,15 +101,55 @@ function Learning() {
                     history: messages.map(m => ({ role: m.role, content: m.content }))
                 })
             })
-            const data = await res.json()
-            if (data.response) {
-                setMessages(prev => [...prev, { role: 'assistant', content: data.response }])
-            } else if (data.error) {
-                setMessages(prev => [...prev, { role: 'assistant', content: `错误: ${data.error}` }])
+
+            if (!res.ok) {
+                throw new Error(`HTTP error: ${res.status}`)
+            }
+
+            const reader = res.body.getReader()
+            const decoder = new TextDecoder()
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = decoder.decode(value)
+                const lines = chunk.split('\n')
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                        try {
+                            const data = JSON.parse(line.slice(6))
+                            if (data.content) {
+                                assistantMessage.content += data.content
+                                setMessages(prev => {
+                                    const newMessages = [...prev]
+                                    newMessages[newMessages.length - 1] = { ...assistantMessage }
+                                    return newMessages
+                                })
+                            }
+                            if (data.error) {
+                                assistantMessage.content = `错误: ${data.error}`
+                                setMessages(prev => {
+                                    const newMessages = [...prev]
+                                    newMessages[newMessages.length - 1] = { ...assistantMessage }
+                                    return newMessages
+                                })
+                            }
+                        } catch (e) {
+                            console.warn('Parse error:', e)
+                        }
+                    }
+                }
             }
         } catch (error) {
             console.error('发送消息失败:', error)
-            setMessages(prev => [...prev, { role: 'assistant', content: '抱歉，发送消息失败了。' }])
+            assistantMessage.content = '抱歉，发送消息失败了。'
+            setMessages(prev => {
+                const newMessages = [...prev]
+                newMessages[newMessages.length - 1] = { ...assistantMessage }
+                return newMessages
+            })
         } finally {
             setIsLoading(false)
         }

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from datetime import date, datetime, timedelta
+import json
 
 router = APIRouter()
 
@@ -451,13 +453,13 @@ async def get_learning_topics():
 
 @learning_router.post("/chat")
 async def learning_chat(message: dict):
-    """学习模式下的对话
+    """学习模式下的对话（流式）
 
     Args:
         message: 包含 topic（学习主题）和 question（用户问题）的字典
 
     Returns:
-        AI 回复内容
+        流式 AI 回复内容 (text/event-stream)
     """
     from algomate.core.agent.chat_client import ChatClient
 
@@ -476,17 +478,30 @@ async def learning_chat(message: dict):
 如果用户提问，要耐心解答，可以适当提问引导用户思考。
 保持对话生动有趣，避免过于学术化。"""
 
-    try:
+    def generate():
         from algomate.config.settings import AppConfig
         config = AppConfig.load()
         client = ChatClient(api_key=config.LLM_API_KEY)
-        response = client.chat(
-            messages=conversation_history + [{"role": "user", "content": question}],
-            system_prompt=system_prompt
-        )
-        return {"response": response, "topic": topic}
-    except Exception as e:
-        return {"error": str(e)}
+
+        try:
+            for chunk in client.stream_chat(
+                messages=conversation_history + [{"role": "user", "content": question}],
+                system_prompt=system_prompt
+            ):
+                yield chunk
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 @learning_router.post("/generate-quiz")

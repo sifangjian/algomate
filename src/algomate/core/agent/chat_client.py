@@ -298,6 +298,45 @@ class ChatClient:
             return response.content
         return str(response)
 
+    def stream_chat(
+        self,
+        messages: Union[List[Dict[str, str]], List[BaseMessage]],
+        temperature: Optional[float] = None,
+        system_prompt: Optional[str] = None,
+    ):
+        """发送流式对话请求
+
+        基于 LangChain 的流式对话接口，使用 SSE 格式yield每个token。
+
+        Args:
+            messages: 对话消息列表
+            temperature: 可选的温度参数，覆盖默认值
+            system_prompt: 可选的系统提示词，覆盖默认提示
+
+        Yields:
+            每个 token 作为一个事件流数据
+        """
+        final_system_prompt = system_prompt if system_prompt is not None else self.DEFAULT_SYSTEM_PROMPT
+        messages_list = self._build_messages(messages, system_prompt=final_system_prompt)
+
+        llm = self.llm
+        if temperature is not None:
+            llm = llm.bind(temperature=temperature)
+
+        try:
+            for chunk in llm.stream(messages_list):
+                if isinstance(chunk, str):
+                    content = chunk
+                elif hasattr(chunk, 'content'):
+                    content = chunk.content
+                else:
+                    content = str(chunk)
+
+                if content:
+                    yield f"data: {json.dumps({'content': content}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': f'Stream error: {str(e)}'}, ensure_ascii=False)}\n\n"
+
     def _build_messages(
         self,
         messages: Union[List[Dict[str, str]], List[BaseMessage]],
