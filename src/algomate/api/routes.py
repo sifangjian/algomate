@@ -8,6 +8,7 @@ practice_router = APIRouter()
 progress_router = APIRouter()
 settings_router = APIRouter()
 dashboard_router = APIRouter()
+learning_router = APIRouter()
 
 
 def get_review_service():
@@ -398,8 +399,233 @@ async def save_settings(settings: dict):
     return {"message": "设置保存成功"}
 
 
+@learning_router.get("/topics")
+async def get_learning_topics():
+    """获取可学习的主题列表
+
+    Returns:
+        包含算法类型分类的主题列表
+    """
+    topics = {
+        "categories": [
+            {
+                "id": "sorting",
+                "name": "排序算法",
+                "icon": "📊",
+                "topics": ["冒泡排序", "选择排序", "插入排序", "快速排序", "归并排序", "堆排序"]
+            },
+            {
+                "id": "searching",
+                "name": "查找算法",
+                "icon": "🔍",
+                "topics": ["二分查找", "顺序查找", "哈希查找"]
+            },
+            {
+                "id": "dynamic_programming",
+                "name": "动态规划",
+                "icon": "🎯",
+                "topics": ["基础DP", "背包问题", "最长公共子序列", "最短路径"]
+            },
+            {
+                "id": "graph",
+                "name": "图论",
+                "icon": "🕸️",
+                "topics": ["BFS", "DFS", "最短路径", "最小生成树"]
+            },
+            {
+                "id": "tree",
+                "name": "树结构",
+                "icon": "🌲",
+                "topics": ["二叉树遍历", "二叉搜索树", "平衡树", "线段树"]
+            },
+            {
+                "id": "recursion",
+                "name": "递归与回溯",
+                "icon": "🔄",
+                "topics": ["阶乘与斐波那契", "全排列", "组合", "N皇后"]
+            }
+        ]
+    }
+    return topics
+
+
+@learning_router.post("/chat")
+async def learning_chat(message: dict):
+    """学习模式下的对话
+
+    Args:
+        message: 包含 topic（学习主题）和 question（用户问题）的字典
+
+    Returns:
+        AI 回复内容
+    """
+    from algomate.core.agent.chat_client import ChatClient
+
+    topic = message.get("topic", "")
+    question = message.get("question", "")
+    conversation_history = message.get("history", [])
+
+    if not question:
+        return {"error": "问题不能为空"}
+
+    system_prompt = f"""你是一个专业的算法学习导师，擅长用简洁清晰的方式讲解算法知识。
+
+当前学习主题：{topic}
+
+请用易于理解的方式解释，并穿插适当的例子和图示说明。
+如果用户提问，要耐心解答，可以适当提问引导用户思考。
+保持对话生动有趣，避免过于学术化。"""
+
+    try:
+        client = ChatClient()
+        response = client.chat(
+            messages=conversation_history + [{"role": "user", "content": question}],
+            system_prompt=system_prompt
+        )
+        return {"response": response, "topic": topic}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@learning_router.post("/generate-quiz")
+async def generate_quiz(request: dict):
+    """为当前学习主题生成小测验
+
+    Args:
+        request: 包含 topic（学习主题）的字典
+
+    Returns:
+        生成的测验题目
+    """
+    from algomate.core.agent.question_generator import QuestionGenerator
+
+    topic = request.get("topic", "")
+
+    if not topic:
+        return {"error": "主题不能为空"}
+
+    try:
+        generator = QuestionGenerator()
+        prompt = f"""针对"{topic}"这个算法主题，生成3道高质量的练习题，包括1道选择题、1道简答题和1道代码题。
+
+要求：
+- 选择题必须有4个选项（A、B、C、D），只有一个正确答案
+- 简答题考查对概念和原理的理解
+- 代码题需要编写代码实现
+
+请返回JSON格式，包含一个questions数组：
+{{
+    "questions": [
+        {{
+            "question_type": "选择题",
+            "content": "题目内容（包含选项A、B、C、D）",
+            "answer": "正确答案",
+            "explanation": "解析"
+        }},
+        {{
+            "question_type": "简答题",
+            "content": "题目内容",
+            "answer": "参考答案要点",
+            "explanation": "解析"
+        }},
+        {{
+            "question_type": "代码题",
+            "content": "题目描述",
+            "answer": "参考代码",
+            "explanation": "解题思路"
+        }}
+    ]
+}}"""
+        messages = [{"role": "user", "content": prompt}]
+        result = generator.chat_client.chat(messages)
+
+        import json
+        import re
+        json_match = re.search(r'\[[\s\S]*\]|\{[\s\S]*\}', result)
+        if json_match:
+            parsed = json.loads(json_match.group())
+            if isinstance(parsed, dict) and "questions" in parsed:
+                return {"questions": parsed["questions"], "topic": topic}
+            elif isinstance(parsed, list):
+                return {"questions": parsed, "topic": topic}
+        return {"questions": [], "topic": topic}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@learning_router.post("/save-note")
+async def save_learning_note(note_data: dict):
+    """保存学习笔记
+
+    Args:
+        note_data: 包含 title, content, algorithm_type, difficulty 的字典
+
+    Returns:
+        创建的笔记信息
+    """
+    from algomate.data.database import Database
+    from algomate.data.repositories.note_repo import NoteRepository
+
+    db = Database.get_instance()
+    note_repo = NoteRepository(db)
+
+    try:
+        new_note = note_repo.create(
+            title=note_data.get("title", ""),
+            content=note_data.get("content", ""),
+            algorithm_type=note_data.get("algorithm_type", "其他"),
+            difficulty=note_data.get("difficulty", "中等"),
+            summary=note_data.get("summary", ""),
+            tags=note_data.get("tags", "[]")
+        )
+        return {"id": new_note.id, "message": "笔记保存成功"}
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+
+@learning_router.get("/explain-concept")
+async def explain_concept(topic: str, concept: str):
+    """获取概念解释
+
+    Args:
+        topic: 学习主题
+        concept: 概念名称
+
+    Returns:
+        概念的详细解释
+    """
+    from algomate.core.agent.chat_client import ChatClient
+
+    if not concept:
+        return {"error": "概念名称不能为空"}
+
+    system_prompt = f"""你是一个专业的算法学习导师，擅长解释算法概念。
+
+当前主题：{topic}
+需要解释的概念：{concept}
+
+请用简洁清晰的方式解释这个概念，包括：
+1. 什么是这个概念
+2. 它的核心思想是什么
+3. 常见的应用场景
+4. 一个简单的代码示例（如果是代码相关的概念）
+
+请使用 Markdown 格式返回，便于前端渲染。"""
+
+    try:
+        client = ChatClient()
+        response = client.chat(
+            messages=[{"role": "user", "content": f"请解释 {concept} 这个概念"}],
+            system_prompt=system_prompt
+        )
+        return {"explanation": response, "concept": concept, "topic": topic}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 router.include_router(notes_router, prefix="/notes")
 router.include_router(practice_router, prefix="/practice")
 router.include_router(progress_router, prefix="/progress")
 router.include_router(settings_router, prefix="/settings")
 router.include_router(dashboard_router, prefix="/dashboard")
+router.include_router(learning_router, prefix="/learning")
