@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from datetime import date, datetime, timedelta
 
 router = APIRouter()
 
@@ -6,6 +7,7 @@ notes_router = APIRouter()
 practice_router = APIRouter()
 progress_router = APIRouter()
 settings_router = APIRouter()
+dashboard_router = APIRouter()
 
 
 @notes_router.get("/")
@@ -58,6 +60,92 @@ async def get_mastery():
     return {"mastery": {}}
 
 
+@dashboard_router.get("/today-review")
+async def get_today_review():
+    from algomate.data.database import Database
+    from algomate.data.repositories.review_repo import ReviewRecordRepository
+    from algomate.data.repositories.note_repo import NoteRepository
+
+    db = Database.get_instance()
+    review_repo = ReviewRecordRepository(db)
+    note_repo = NoteRepository(db)
+
+    today = date.today()
+    today_start = datetime.combine(today, datetime.min.time())
+    today_end = datetime.combine(today, datetime.max.time())
+
+    session = db.get_session()
+    try:
+        from algomate.data.models import ReviewRecord, Note
+        pending_reviews = (
+            session.query(ReviewRecord, Note)
+            .join(Note, ReviewRecord.note_id == Note.id)
+            .filter(ReviewRecord.status == "pending")
+            .filter(ReviewRecord.review_date >= today_start, ReviewRecord.review_date <= today_end)
+            .all()
+        )
+        review_list = []
+        for record, note in pending_reviews:
+            review_list.append({
+                "id": record.id,
+                "note_id": note.id,
+                "title": note.title,
+                "algorithm_type": note.algorithm_type,
+                "difficulty": note.difficulty,
+                "mastery_level": note.mastery_level,
+                "review_date": record.review_date.isoformat() if record.review_date else None,
+                "status": record.status
+            })
+        return {"reviews": review_list}
+    finally:
+        session.close()
+
+
+@dashboard_router.get("/weak-points")
+async def get_weak_points():
+    from algomate.data.database import Database
+    from algomate.data.repositories.note_repo import NoteRepository
+
+    db = Database.get_instance()
+    note_repo = NoteRepository(db)
+
+    session = db.get_session()
+    try:
+        from algomate.data.models import Note
+        weak_notes = session.query(Note).filter(Note.mastery_level < 30).order_by(Note.mastery_level).limit(5).all()
+        weak_points = []
+        for note in weak_notes:
+            weak_points.append({
+                "id": note.id,
+                "title": note.title,
+                "algorithm_type": note.algorithm_type,
+                "mastery_level": note.mastery_level,
+                "review_count": note.review_count
+            })
+        return {"weak_points": weak_points}
+    finally:
+        session.close()
+
+
+@dashboard_router.get("/stats")
+async def get_dashboard_stats():
+    from algomate.data.database import Database
+    from algomate.data.repositories.progress_repo import ProgressRepository
+
+    db = Database.get_instance()
+    progress_repo = ProgressRepository(db)
+
+    session = db.get_session()
+    try:
+        from algomate.data.models import LearningProgress
+        learning_days = session.query(LearningProgress).count()
+        return {
+            "learning_days": learning_days
+        }
+    finally:
+        session.close()
+
+
 @settings_router.get("/")
 async def get_settings():
     return {
@@ -78,3 +166,4 @@ router.include_router(notes_router, prefix="/notes")
 router.include_router(practice_router, prefix="/practice")
 router.include_router(progress_router, prefix="/progress")
 router.include_router(settings_router, prefix="/settings")
+router.include_router(dashboard_router, prefix="/dashboard")
