@@ -356,17 +356,38 @@ async def get_dashboard_stats():
 
 @settings_router.get("/")
 async def get_settings():
+    from algomate.config.settings import AppConfig
+    config = AppConfig.load()
     return {
-        "api_key": "",
-        "email_host": "",
-        "email_port": 587,
-        "review_time": "09:00",
-        "forgetting_curve_param": 30
+        "api_key": config.LLM_API_KEY,
+        "email_host": config.SMTP_HOST,
+        "email_port": config.SMTP_PORT,
+        "email_username": config.SMTP_USER,
+        "review_time": config.REVIEW_TIME,
+        "forgetting_curve_param": config.REVIEW_INTERVALS[-1] if config.REVIEW_INTERVALS else 30
     }
 
 
 @settings_router.post("/")
 async def save_settings(settings: dict):
+    from algomate.config.settings import AppConfig
+    config = AppConfig.load()
+    if "api_key" in settings:
+        config.LLM_API_KEY = settings["api_key"]
+    if "email_host" in settings:
+        config.SMTP_HOST = settings["email_host"]
+    if "email_port" in settings:
+        config.SMTP_PORT = settings["email_port"]
+    if "email_username" in settings:
+        config.SMTP_USER = settings["email_username"]
+    if "email_password" in settings and settings["email_password"]:
+        config.SMTP_PASSWORD = settings["email_password"]
+    if "review_time" in settings:
+        config.REVIEW_TIME = settings["review_time"]
+    if "forgetting_curve_param" in settings:
+        param = settings["forgetting_curve_param"]
+        config.REVIEW_INTERVALS = [1, 3, 7, 14, 30, param]
+    config.save()
     return {"message": "设置保存成功"}
 
 
