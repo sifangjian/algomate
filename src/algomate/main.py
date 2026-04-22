@@ -101,6 +101,9 @@ class AlgomateApp:
             model=self.config.LLM_MODEL,
             base_url=self.config.LLM_BASE_URL,
         )
+        print("="*50)
+        print(self.chat_client.get_graph_diagram())
+        print("="*50)
         self.note_analyzer = NoteAnalyzer(self.chat_client)
         self.question_generator = QuestionGenerator(self.chat_client)
         self.weak_point_analyzer = WeakPointAnalyzer(self.db)
@@ -129,9 +132,10 @@ class AlgomateApp:
 
 
 def run_interactive_chat(chat_client: ChatClient):
-    """运行交互式对话循环
+    """运行交互式对话
 
-    提供一个简单的命令行界面，让用户可以与 AI 进行对话。
+    提供命令行界面，让用户与 AI 进行多轮对话。
+    图内部维护完整的状态和消息历史。
 
     Args:
         chat_client: 聊天客户端实例
@@ -141,7 +145,7 @@ def run_interactive_chat(chat_client: ChatClient):
     print("输入您的问题，按回车发送。输入 'quit' 或 'exit' 退出。")
     print("="*50 + "\n")
 
-    messages = []
+    state = None
 
     while True:
         try:
@@ -154,14 +158,25 @@ def run_interactive_chat(chat_client: ChatClient):
                 print("\n感谢使用 Algomate，再见！")
                 break
 
-            messages.append({"role": "user", "content": user_input})
+            from langchain_core.messages import HumanMessage
 
-            print("AI: ", end="", flush=True)
-            response = chat_client.chat(messages)
-            print(response)
-            print()
+            if state is None:
+                state = chat_client.invoke_task(
+                    messages=[HumanMessage(content=user_input)]
+                )
+            else:
+                state["messages"].append(HumanMessage(content=user_input))
+                state["should_continue"] = True
+                state = chat_client.invoke_task(state=state)
 
-            messages.append({"role": "assistant", "content": response})
+            response = state.get("result", "")
+            if hasattr(response, 'content'):
+                response = response.content
+            print(f"AI: {response}\n")
+
+            if not state.get("should_continue", True):
+                print("\n对话已结束，再见！")
+                break
 
         except KeyboardInterrupt:
             print("\n\n操作已取消，再见！")

@@ -175,3 +175,67 @@ class NoteRepository:
             )
         finally:
             session.close()
+
+    def search_by_keyword(self, keyword: str, limit: int = 10) -> List[Note]:
+        """搜索笔记
+
+        根据关键词搜索笔记，支持算法类型、标题、内容搜索。
+
+        Args:
+            keyword: 搜索关键词
+            limit: 返回结果数量限制
+
+        Returns:
+            匹配的笔记列表
+        """
+        session = self.db.get_session()
+        try:
+            pattern = f"%{keyword}%"
+            return (
+                session.query(Note)
+                .filter(
+                    Note.algorithm_type.like(pattern) |
+                    Note.title.like(pattern) |
+                    Note.content.like(pattern) |
+                    Note.tags.like(pattern)
+                )
+                .order_by(Note.updated_at.desc())
+                .limit(limit)
+                .all()
+            )
+        finally:
+            session.close()
+
+    def get_notes_due_for_review(
+        self,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        days_ahead: Optional[int] = None,
+    ) -> List[Note]:
+        """获取待复习的笔记
+
+        Args:
+            start_date: 开始日期（可选）
+            end_date: 截止日期（可选）
+            days_ahead: 未来天数（可选，与 end_date 互斥）
+
+        Returns:
+            符合复习条件的笔记列表
+        """
+        session = self.db.get_session()
+        try:
+            query = session.query(Note)
+
+            if days_ahead is not None:
+                from datetime import timedelta
+                end = date.today() + timedelta(days=days_ahead)
+                query = query.filter(Note.next_review_date <= end)
+            elif end_date is not None:
+                query = query.filter(Note.next_review_date <= end_date)
+
+            if start_date is not None:
+                query = query.filter(Note.next_review_date >= start_date)
+
+            return query.order_by(Note.next_review_date).all()
+        finally:
+            session.close()
