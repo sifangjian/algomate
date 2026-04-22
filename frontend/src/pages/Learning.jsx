@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 function Learning() {
     const [topics, setTopics] = useState([])
@@ -210,14 +212,6 @@ function Learning() {
         }
     }
 
-    const renderMarkdown = (text) => {
-        return text
-            .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-            .replace(/`([^`]+)`/g, '<code>$1</code>')
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n/g, '<br/>')
-    }
-
     return (
         <div>
             <div className="page-header">
@@ -333,7 +327,7 @@ function Learning() {
                                                         color: msg.role === 'user' ? 'white' : '#333',
                                                         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                                                     }}>
-                                                        <div dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                                                     </div>
                                                 </div>
                                             </div>
