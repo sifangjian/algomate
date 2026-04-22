@@ -51,14 +51,9 @@ def start_backend():
     proc = subprocess.Popen(
         [sys.executable, "-m", "algomate.main", "--api-only"],
         cwd=backend_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-        encoding="utf-8",
-        errors="replace",
-        shell=True,
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
+        stdout=None,
+        stderr=None,
+        shell=False,
     )
     processes.append(proc)
 

@@ -170,7 +170,6 @@ class AlgomateApp:
                     host="0.0.0.0",
                     port=8000,
                     log_level="info",
-                    handle_signals=False,
                 )
             )
             self.api_server_thread = threading.Thread(
