@@ -6,16 +6,21 @@ Algomate 主程序模块
 - AI 组件的初始化
 - 复习调度器的启动和管理
 - 日志系统配置
+- FastAPI 服务器管理（后端 API）
+- 前后端统一启动
 
 Usage:
     from src.algomate.main import AlgomateApp
 
     app = AlgomateApp()
-    app.start_review_scheduler()
+    app.start()  # 启动全部服务（后端 API + 复习调度器）
+    # 或
+    app.start_api_only()  # 仅启动后端 API
 """
 
 import logging
 import sys
+import threading
 from pathlib import Path
 
 from algomate.config.settings import AppConfig
@@ -87,9 +92,13 @@ class AlgomateApp:
         self.weak_point_analyzer = None
         self.forgotten_curve = None
         self.review_scheduler = None
+        self.api_server = None
+        self.api_server_thread = None
 
         if self.config.LLM_API_KEY:
             self._init_ai_components()
+
+        self._init_api_server()
 
     def _init_ai_components(self):
         """初始化 AI 组件
@@ -120,11 +129,78 @@ class AlgomateApp:
             self.review_scheduler.start()
             logger.info("Review scheduler started")
 
+    def _init_api_server(self):
+        """初始化 FastAPI 服务器
+
+        创建 FastAPI 应用实例，并注册所有路由。
+        """
+        from fastapi import FastAPI
+        from fastapi.middleware.cors import CORSMiddleware
+
+        self.api_app = FastAPI(
+            title="算法学习助手 API",
+            version="1.0.0",
+        )
+
+        self.api_app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+        from .api import routes
+        self.api_app.include_router(routes.router, prefix="/api")
+        logger.info("FastAPI server initialized")
+
+    def start_api_server(self):
+        """启动 FastAPI 服务器（在独立线程中）"""
+        if self.api_server is None:
+            import uvicorn
+            self.api_server = uvicorn.Server(
+                uvicorn.Config(
+                    self.api_app,
+                    host="0.0.0.0",
+                    port=8000,
+                    log_level="info",
+                )
+            )
+            self.api_server_thread = threading.Thread(
+                target=self.api_server.run,
+                daemon=True
+            )
+            self.api_server_thread.start()
+            logger.info("FastAPI server started on http://0.0.0.0:8000")
+
+    def start_api_only(self):
+        """仅启动后端 API 服务（不启动复习调度器）"""
+        self.start_api_server()
+        logger.info("API server running. Press Ctrl+C to stop.")
+        try:
+            while self.api_server_thread.is_alive():
+                import time
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("API server stopped by user")
+            self.stop()
+
+    def start(self):
+        """启动全部服务
+
+        启动后端 API 服务器和复习调度器。
+        """
+        self.start_api_server()
+        self.start_review_scheduler()
+        logger.info("All services started successfully")
+
     def stop(self):
         """停止应用
 
-        关闭调度器和数据库连接。
+        关闭 API 服务器、调度器和数据库连接。
         """
+        if self.api_server:
+            self.api_server.should_exit = True
         if self.review_scheduler:
             self.review_scheduler.stop()
         self.db.close()
@@ -189,26 +265,41 @@ def run_interactive_chat(chat_client: ChatClient):
 def main():
     """应用入口函数
 
-    创建应用实例，启动调度器，并保持运行直到收到中断信号。
+    创建应用实例，启动全部服务（API 服务器 + 复习调度器 + 交互式对话）。
     """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Algomate 算法学习助手")
+    parser.add_argument(
+        "--api-only",
+        action="store_true",
+        help="仅启动后端 API 服务（不启动交互式对话）"
+    )
+    args = parser.parse_args()
+
     app = AlgomateApp()
-    app.start_review_scheduler()
-    logger.info("Algomate started successfully")
 
-    if app.chat_client:
-        run_interactive_chat(app.chat_client)
+    if args.api_only:
+        print("启动 API 服务模式...")
+        app.start_api_only()
     else:
-        print("AI 组件未初始化（可能未配置 API Key），仅运行调度器模式")
-        print("按 Ctrl+C 退出...")
+        app.start()
+        logger.info("Algomate started successfully")
 
-        try:
-            while True:
-                import time
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
+        if app.chat_client:
+            run_interactive_chat(app.chat_client)
+        else:
+            print("AI 组件未初始化（可能未配置 API Key），仅运行调度器模式")
+            print("按 Ctrl+C 退出...")
 
-    app.stop()
+            try:
+                while True:
+                    import time
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                pass
+
+        app.stop()
 
 
 if __name__ == "__main__":
