@@ -205,7 +205,7 @@ async def analyze_note(note_id: int):
         if not note:
             return {"error": "笔记不存在"}, 404
 
-        chat_client = ChatClient()
+        chat_client = ChatClient(api_key=config.LLM_API_KEY)
         analyzer = NoteAnalyzer(chat_client)
 
         result = analyzer.analyze_note(note.content)
@@ -477,7 +477,9 @@ async def learning_chat(message: dict):
 保持对话生动有趣，避免过于学术化。"""
 
     try:
-        client = ChatClient()
+        from algomate.config.settings import AppConfig
+        config = AppConfig.load()
+        client = ChatClient(api_key=config.LLM_API_KEY)
         response = client.chat(
             messages=conversation_history + [{"role": "user", "content": question}],
             system_prompt=system_prompt
@@ -613,7 +615,9 @@ async def explain_concept(topic: str, concept: str):
 请使用 Markdown 格式返回，便于前端渲染。"""
 
     try:
-        client = ChatClient()
+        from algomate.config.settings import AppConfig
+        config = AppConfig.load()
+        client = ChatClient(api_key=config.LLM_API_KEY)
         response = client.chat(
             messages=[{"role": "user", "content": f"请解释 {concept} 这个概念"}],
             system_prompt=system_prompt

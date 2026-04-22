@@ -54,6 +54,12 @@ def setup_logging(config: AppConfig):
     log_file = config.LOG_PATH
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+    logging.getLogger().addHandler(console_handler)
+
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setFormatter(
         logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -168,7 +174,6 @@ class AlgomateApp:
             )
             self.api_server_thread = threading.Thread(
                 target=self.api_server.run,
-                daemon=True
             )
             self.api_server_thread.start()
             logger.info("FastAPI server started on http://0.0.0.0:8000")
@@ -184,6 +189,8 @@ class AlgomateApp:
         except KeyboardInterrupt:
             logger.info("API server stopped by user")
             self.stop()
+            self.api_server_thread.join(timeout=5)
+            logger.info("API server thread joined")
 
     def start(self):
         """启动全部服务
