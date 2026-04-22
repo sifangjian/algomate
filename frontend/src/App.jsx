@@ -5,6 +5,7 @@ import Notes from './pages/Notes'
 import Practice from './pages/Practice'
 import Progress from './pages/Progress'
 import Settings from './pages/Settings'
+import Learning from './pages/Learning'
 
 function App() {
   return (
@@ -18,6 +19,9 @@ function App() {
             <ul className="nav-list">
               <li className="nav-item">
                 <NavLink to="/">首页</NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink to="/learning">学习</NavLink>
               </li>
               <li className="nav-item">
                 <NavLink to="/notes">笔记</NavLink>
@@ -37,6 +41,7 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/learning" element={<Learning />} />
             <Route path="/notes" element={<Notes />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/progress" element={<Progress />} />
