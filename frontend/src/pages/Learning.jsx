@@ -329,7 +329,7 @@ function Learning() {
 
                             {!showQuiz ? (
                                 <>
-                                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', marginBottom: '15px', padding: '10px', background: '#f5f5f5', borderRadius: '8px' }}>
+                                    <div style={{ height: '450px', overflowY: 'auto', marginBottom: '15px', padding: '10px', background: '#f5f5f5', borderRadius: '8px' }}>
                                         {messages.length === 0 && !isLoading && (
                                             <div style={{ textAlign: 'center', color: '#666', padding: '40px 0' }}>
                                                 <div style={{ fontSize: '48px', marginBottom: '10px' }}>🤔</div>
