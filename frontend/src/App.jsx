@@ -49,9 +49,6 @@ function App() {
           </Routes>
         </main>
       </div>
-      <div className="status-bar">
-        就绪
-      </div>
     </Router>
   )
 }

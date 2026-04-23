@@ -213,12 +213,12 @@ function Learning() {
     }
 
     return (
-        <div>
-            <div className="page-header">
+        <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
+            <div className="page-header" style={{ flexShrink: 0 }}>
                 <h2>学习中心</h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', height: 'calc(100vh - 180px)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     <div className="card" style={{ flexShrink: 0 }}>
                         <div className="card-title">选择学习主题</div>
@@ -260,7 +260,7 @@ function Learning() {
                     </div>
 
                     {selectedTopic && (
-                        <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                 <div className="card-title" style={{ margin: 0 }}>
                                     📚 {selectedTopic} - AI 讲解与问答
@@ -283,7 +283,7 @@ function Learning() {
 
                             {!showQuiz ? (
                                 <>
-                                    <div style={{ flex: 1, overflowY: 'auto', marginBottom: '15px', padding: '10px', background: '#f5f5f5', borderRadius: '8px' }}>
+                                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', marginBottom: '15px', padding: '10px', background: '#f5f5f5', borderRadius: '8px' }}>
                                         {messages.length === 0 && !isLoading && (
                                             <div style={{ textAlign: 'center', color: '#666', padding: '40px 0' }}>
                                                 <div style={{ fontSize: '48px', marginBottom: '10px' }}>🤔</div>
@@ -325,112 +325,116 @@ function Learning() {
                                                         borderRadius: '10px',
                                                         background: msg.role === 'user' ? '#818cf8' : 'white',
                                                         color: msg.role === 'user' ? '#ffffff' : '#333',
-                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                                        overflowWrap: 'break-word',
+                                                        wordBreak: 'break-word'
                                                     }}>
-                                                        <ReactMarkdown
-                                                            remarkPlugins={[remarkGfm]}
-                                                            components={{
-                                                                h1: ({ children }) => (
-                                                                    <h1 style={{ fontSize: '1.35rem', fontWeight: '600', marginBottom: '12px', marginTop: '16px', color: 'inherit', borderBottom: '2px solid #667eea', paddingBottom: '6px' }}>
-                                                                        {children}
-                                                                    </h1>
-                                                                ),
-                                                                h2: ({ children }) => (
-                                                                    <h2 style={{ fontSize: '1.15rem', fontWeight: '600', marginBottom: '10px', marginTop: '14px', color: 'inherit', borderBottom: '1px solid #e8e8e8', paddingBottom: '4px' }}>
-                                                                        {children}
-                                                                    </h2>
-                                                                ),
-                                                                h3: ({ children }) => (
-                                                                    <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '8px', marginTop: '12px', color: 'inherit' }}>
-                                                                        {children}
-                                                                    </h3>
-                                                                ),
-                                                                h4: ({ children }) => (
-                                                                    <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px', marginTop: '10px', color: 'inherit' }}>
-                                                                        {children}
-                                                                    </h4>
-                                                                ),
-                                                                p: ({ children }) => (
-                                                                    <p style={{ marginBottom: '10px', lineHeight: '1.7', color: 'inherit' }}>
-                                                                        {children}
-                                                                    </p>
-                                                                ),
-                                                                ul: ({ children }) => (
-                                                                    <ul style={{ marginBottom: '10px', paddingLeft: '20px', color: 'inherit' }}>
-                                                                        {children}
-                                                                    </ul>
-                                                                ),
-                                                                ol: ({ children }) => (
-                                                                    <ol style={{ marginBottom: '10px', paddingLeft: '20px', color: 'inherit' }}>
-                                                                        {children}
-                                                                    </ol>
-                                                                ),
-                                                                li: ({ children }) => (
-                                                                    <li style={{ marginBottom: '4px', lineHeight: '1.6', color: 'inherit' }}>
-                                                                        {children}
-                                                                    </li>
-                                                                ),
-                                                                blockquote: ({ children }) => (
-                                                                    <blockquote style={{ borderLeft: '3px solid #667eea', margin: '12px 0', padding: '10px 16px', background: '#f8f9fa', borderRadius: '0 4px 4px 0', color: '#555' }}>
-                                                                        {children}
-                                                                    </blockquote>
-                                                                ),
-                                                                table: ({ children }) => (
-                                                                    <table style={{ borderCollapse: 'collapse', width: '100%', margin: '12px 0', fontSize: '0.9rem' }}>
-                                                                        {children}
-                                                                    </table>
-                                                                ),
-                                                                thead: ({ children }) => (
-                                                                    <thead style={{ background: '#f5f5f7' }}>
-                                                                        {children}
-                                                                    </thead>
-                                                                ),
-                                                                th: ({ children }) => (
-                                                                    <th style={{ border: '1px solid #e0e0e0', padding: '10px 14px', textAlign: 'left', fontWeight: '600', color: '#333' }}>
-                                                                        {children}
-                                                                    </th>
-                                                                ),
-                                                                td: ({ children }) => (
-                                                                    <td style={{ border: '1px solid #e8e8e8', padding: '10px 14px', color: '#444' }}>
-                                                                        {children}
-                                                                    </td>
-                                                                ),
-                                                                tr: ({ children }) => (
-                                                                    <tr style={{ background: '#fff' }}>
-                                                                        {children}
-                                                                    </tr>
-                                                                ),
-                                                                code: ({ node, inline, className, children, ...props }) => {
-                                                                    if (inline) {
+                                                        <div style={{ maxWidth: '100%', overflowX: 'auto' }}>
+                                                            <ReactMarkdown
+                                                                remarkPlugins={[remarkGfm]}
+                                                                components={{
+                                                                    h1: ({ children }) => (
+                                                                        <h1 style={{ fontSize: '1.35rem', fontWeight: '600', marginBottom: '12px', marginTop: '16px', color: 'inherit', borderBottom: '2px solid #667eea', paddingBottom: '6px' }}>
+                                                                            {children}
+                                                                        </h1>
+                                                                    ),
+                                                                    h2: ({ children }) => (
+                                                                        <h2 style={{ fontSize: '1.15rem', fontWeight: '600', marginBottom: '10px', marginTop: '14px', color: 'inherit', borderBottom: '1px solid #e8e8e8', paddingBottom: '4px' }}>
+                                                                            {children}
+                                                                        </h2>
+                                                                    ),
+                                                                    h3: ({ children }) => (
+                                                                        <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '8px', marginTop: '12px', color: 'inherit' }}>
+                                                                            {children}
+                                                                        </h3>
+                                                                    ),
+                                                                    h4: ({ children }) => (
+                                                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px', marginTop: '10px', color: 'inherit' }}>
+                                                                            {children}
+                                                                        </h4>
+                                                                    ),
+                                                                    p: ({ children }) => (
+                                                                        <p style={{ marginBottom: '10px', lineHeight: '1.7', color: 'inherit' }}>
+                                                                            {children}
+                                                                        </p>
+                                                                    ),
+                                                                    ul: ({ children }) => (
+                                                                        <ul style={{ marginBottom: '10px', paddingLeft: '20px', color: 'inherit' }}>
+                                                                            {children}
+                                                                        </ul>
+                                                                    ),
+                                                                    ol: ({ children }) => (
+                                                                        <ol style={{ marginBottom: '10px', paddingLeft: '20px', color: 'inherit' }}>
+                                                                            {children}
+                                                                        </ol>
+                                                                    ),
+                                                                    li: ({ children }) => (
+                                                                        <li style={{ marginBottom: '4px', lineHeight: '1.6', color: 'inherit' }}>
+                                                                            {children}
+                                                                        </li>
+                                                                    ),
+                                                                    blockquote: ({ children }) => (
+                                                                        <blockquote style={{ borderLeft: '3px solid #667eea', margin: '12px 0', padding: '10px 16px', background: '#f8f9fa', borderRadius: '0 4px 4px 0', color: '#555' }}>
+                                                                            {children}
+                                                                        </blockquote>
+                                                                    ),
+                                                                    table: ({ children }) => (
+                                                                        <table style={{ borderCollapse: 'collapse', width: '100%', margin: '12px 0', fontSize: '0.9rem' }}>
+                                                                            {children}
+                                                                        </table>
+                                                                    ),
+                                                                    thead: ({ children }) => (
+                                                                        <thead style={{ background: '#f5f5f7' }}>
+                                                                            {children}
+                                                                        </thead>
+                                                                    ),
+                                                                    th: ({ children }) => (
+                                                                        <th style={{ border: '1px solid #e0e0e0', padding: '10px 14px', textAlign: 'left', fontWeight: '600', color: '#333' }}>
+                                                                            {children}
+                                                                        </th>
+                                                                    ),
+                                                                    td: ({ children }) => (
+                                                                        <td style={{ border: '1px solid #e8e8e8', padding: '10px 14px', color: '#444' }}>
+                                                                            {children}
+                                                                        </td>
+                                                                    ),
+                                                                    tr: ({ children }) => (
+                                                                        <tr style={{ background: '#fff' }}>
+                                                                            {children}
+                                                                        </tr>
+                                                                    ),
+                                                                    code: ({ node, inline, className, children, ...props }) => {
+                                                                        if (inline) {
+                                                                            return (
+                                                                                <code style={{ background: '#f0f0f5', padding: '2px 6px', borderRadius: '3px', fontSize: '0.85em', color: '#667eea', fontFamily: "'Fira Code', monospace" }}>
+                                                                                    {children}
+                                                                                </code>
+                                                                            )
+                                                                        }
                                                                         return (
-                                                                            <code style={{ background: '#f0f0f5', padding: '2px 6px', borderRadius: '3px', fontSize: '0.85em', color: '#667eea', fontFamily: "'Fira Code', monospace" }}>
-                                                                                {children}
-                                                                            </code>
+                                                                            <pre style={{ background: '#1e1e2e', color: '#e0e0e0', padding: '14px', borderRadius: '6px', overflow: 'auto', margin: '12px 0', fontSize: '0.85rem' }}>
+                                                                                <code style={{ fontFamily: "'Fira Code', 'Consolas', monospace" }} {...props}>{children}</code>
+                                                                            </pre>
                                                                         )
-                                                                    }
-                                                                    return (
-                                                                        <pre style={{ background: '#1e1e2e', color: '#e0e0e0', padding: '14px', borderRadius: '6px', overflow: 'auto', margin: '12px 0', fontSize: '0.85rem' }}>
-                                                                            <code style={{ fontFamily: "'Fira Code', 'Consolas', monospace" }} {...props}>{children}</code>
-                                                                        </pre>
+                                                                    },
+                                                                    a: ({ children, href }) => (
+                                                                        <a href={href} style={{ color: '#667eea', textDecoration: 'none', borderBottom: '1px dashed #667eea' }} target="_blank" rel="noopener noreferrer">
+                                                                            {children}
+                                                                        </a>
+                                                                    ),
+                                                                    hr: () => (
+                                                                        <hr style={{ border: 'none', height: '1px', background: '#e0e0e0', margin: '16px 0' }} />
+                                                                    ),
+                                                                    strong: ({ children }) => (
+                                                                        <strong style={{ fontWeight: '600' }}>
+                                                                            {children}
+                                                                        </strong>
                                                                     )
-                                                                },
-                                                                a: ({ children, href }) => (
-                                                                    <a href={href} style={{ color: '#667eea', textDecoration: 'none', borderBottom: '1px dashed #667eea' }} target="_blank" rel="noopener noreferrer">
-                                                                        {children}
-                                                                    </a>
-                                                                ),
-                                                                hr: () => (
-                                                                    <hr style={{ border: 'none', height: '1px', background: '#e0e0e0', margin: '16px 0' }} />
-                                                                ),
-                                                                strong: ({ children }) => (
-                                                                    <strong style={{ fontWeight: '600' }}>
-                                                                        {children}
-                                                                    </strong>
-                                                                )
-                                                            }}
-                                                        >
-                                                            {msg.content}
-                                                        </ReactMarkdown>
+                                                                }}
+                                                            >
+                                                                {msg.content}
+                                                            </ReactMarkdown>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -529,7 +533,7 @@ function Learning() {
                     )}
                 </div>
 
-                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     <div className="card-title">📝 笔记区</div>
                     <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '5px' }}>
                         在这里记录学习心得、重点内容和代码片段
