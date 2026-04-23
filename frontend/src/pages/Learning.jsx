@@ -14,6 +14,7 @@ function Learning() {
     const [noteContent, setNoteContent] = useState('')
     const [noteTitle, setNoteTitle] = useState('')
     const [savingNote, setSavingNote] = useState(false)
+    const [noteSaveSuccess, setNoteSaveSuccess] = useState(false)
     const [topicCollapsed, setTopicCollapsed] = useState(false)
     const messagesEndRef = useRef(null)
 
@@ -200,9 +201,8 @@ function Learning() {
             })
             const data = await res.json()
             if (data.id) {
-                alert('笔记保存成功！')
-                setNoteTitle('')
-                setNoteContent('')
+                setNoteSaveSuccess(true)
+                setTimeout(() => setNoteSaveSuccess(false), 2000)
             } else {
                 alert(data.error || '保存失败')
             }
@@ -628,7 +628,7 @@ function Learning() {
                         style={{
                             marginTop: '10px',
                             padding: '12px',
-                            background: savingNote ? '#ccc' : '#4caf50',
+                            background: noteSaveSuccess ? '#2196f3' : (savingNote ? '#ccc' : '#4caf50'),
                             color: 'white',
                             border: 'none',
                             borderRadius: '5px',
@@ -636,7 +636,7 @@ function Learning() {
                             cursor: savingNote ? 'not-allowed' : 'pointer'
                         }}
                     >
-                        {savingNote ? '保存中...' : '💾 保存笔记'}
+                        {noteSaveSuccess ? '✓ 笔记已保存' : (savingNote ? '保存中...' : '💾 保存笔记')}
                     </button>
 
                     {selectedTopic && (
