@@ -14,6 +14,7 @@ function Learning() {
     const [noteContent, setNoteContent] = useState('')
     const [noteTitle, setNoteTitle] = useState('')
     const [savingNote, setSavingNote] = useState(false)
+    const [topicCollapsed, setTopicCollapsed] = useState(false)
     const messagesEndRef = useRef(null)
 
     useEffect(() => {
@@ -57,6 +58,7 @@ function Learning() {
         setShowQuiz(false)
         setNoteContent('')
         setNoteTitle('')
+        setTopicCollapsed(true)
     }
 
     const handleConceptClick = async (concept) => {
@@ -221,41 +223,85 @@ function Learning() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     <div className="card" style={{ flexShrink: 0 }}>
-                        <div className="card-title">选择学习主题</div>
-                        {topics.length === 0 ? (
-                            <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
-                                <p>加载中...</p>
-                                <p style={{ fontSize: '0.85rem' }}>请检查控制台是否有错误信息</p>
+                        {topicCollapsed ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>📚</span>
+                                    <span style={{ fontWeight: 'bold', color: '#667eea' }}>{selectedTopic}</span>
+                                    <span style={{ fontSize: '0.85rem', color: '#888' }}>已选择</span>
+                                </div>
+                                <button
+                                    onClick={() => setTopicCollapsed(false)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        fontSize: '0.85rem',
+                                        background: '#667eea',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '5px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    ☰ 展开主题列表
+                                </button>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
-                                {topics.map(category => (
-                                    <div key={category.id} style={{ width: '100%', marginBottom: '10px' }}>
-                                        <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#667eea' }}>
-                                            {category.icon} {category.name}
-                                        </div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                            {category.topics.map(topic => (
-                                                <button
-                                                    key={topic}
-                                                    onClick={() => handleTopicSelect(category.name, topic)}
-                                                    style={{
-                                                        padding: '4px 10px',
-                                                        fontSize: '0.85rem',
-                                                        border: selectedTopic === topic ? '2px solid #667eea' : '1px solid #ddd',
-                                                        borderRadius: '15px',
-                                                        background: selectedTopic === topic ? '#667eea' : 'white',
-                                                        color: selectedTopic === topic ? 'white' : '#333',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                >
-                                                    {topic}
-                                                </button>
-                                            ))}
-                                        </div>
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div className="card-title">选择学习主题</div>
+                                    {selectedTopic && (
+                                        <button
+                                            onClick={() => setTopicCollapsed(true)}
+                                            style={{
+                                                padding: '4px 10px',
+                                                fontSize: '0.8rem',
+                                                background: '#f0f0f0',
+                                                color: '#666',
+                                                border: '1px solid #ddd',
+                                                borderRadius: '5px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            折叠 ↑
+                                        </button>
+                                    )}
+                                </div>
+                                {topics.length === 0 ? (
+                                    <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                                        <p>加载中...</p>
+                                        <p style={{ fontSize: '0.85rem' }}>请检查控制台是否有错误信息</p>
                                     </div>
-                                ))}
-                            </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                                        {topics.map(category => (
+                                            <div key={category.id} style={{ width: '100%', marginBottom: '10px' }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '5px', color: '#667eea' }}>
+                                                    {category.icon} {category.name}
+                                                </div>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                                    {category.topics.map(topic => (
+                                                        <button
+                                                            key={topic}
+                                                            onClick={() => handleTopicSelect(category.name, topic)}
+                                                            style={{
+                                                                padding: '4px 10px',
+                                                                fontSize: '0.85rem',
+                                                                border: selectedTopic === topic ? '2px solid #667eea' : '1px solid #ddd',
+                                                                borderRadius: '15px',
+                                                                background: selectedTopic === topic ? '#667eea' : 'white',
+                                                                color: selectedTopic === topic ? 'white' : '#333',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        >
+                                                            {topic}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
 
