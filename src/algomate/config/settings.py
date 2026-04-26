@@ -73,11 +73,14 @@ class AppConfig:
         确保数据目录和日志目录存在，并从环境变量加载敏感配置。
         """
         import os
-        from dotenv import load_dotenv
-
-        env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
-        if env_path.exists():
-            load_dotenv(env_path)
+        
+        try:
+            from dotenv import load_dotenv
+            env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+            if env_path.exists():
+                load_dotenv(env_path)
+        except ImportError:
+            pass
 
         self.DATA_DIR.mkdir(parents=True, exist_ok=True)
         self.LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -125,20 +128,25 @@ class AppConfig:
         Returns:
             AppConfig 实例
         """
-        import yaml
-        from dotenv import load_dotenv
-
-        env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
-        if env_path.exists():
-            load_dotenv(env_path)
+        try:
+            from dotenv import load_dotenv
+            env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+            if env_path.exists():
+                load_dotenv(env_path)
+        except ImportError:
+            pass
 
         if config_path is None:
             config_path = cls.DATA_DIR / "config.yaml"
 
         if config_path.exists():
-            with open(config_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            return cls(**data)
+            try:
+                import yaml
+                with open(config_path, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+                return cls(**data)
+            except ImportError:
+                pass
         return cls()
 
     def save(self, config_path: Optional[Path] = None):
