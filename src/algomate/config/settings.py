@@ -21,6 +21,7 @@ class AppConfig:
 
     使用 dataclass 方便配置的管理和默认值设置。
     配置支持从 YAML 文件加载和保存。
+    使用单例模式，通过 get() 方法获取全局唯一实例。
 
     Attributes:
         APP_NAME: 应用名称
@@ -42,6 +43,8 @@ class AppConfig:
         REVIEW_ENABLED: 是否启用复习提醒
         REVIEW_INTERVALS: 复习间隔天数列表（基于艾宾浩斯遗忘曲线）
     """
+    _instance: Optional["AppConfig"] = None
+    
     APP_NAME: str = "算法学习助手"
     VERSION: str = "0.1.0"
     DATA_DIR: Path = Path(__file__).resolve().parent.parent.parent.parent / "data"
@@ -89,6 +92,28 @@ class AppConfig:
             self.EMAIL_FROM = os.getenv("EMAIL_FROM", "")
         if not self.EMAIL_TO:
             self.EMAIL_TO = os.getenv("EMAIL_TO", "")
+
+    @classmethod
+    def get(cls, config_path: Optional[Path] = None) -> "AppConfig":
+        """获取配置单例实例
+
+        如果实例不存在，则创建并初始化；否则返回已存在的实例。
+        这是获取配置的推荐方式。
+
+        Args:
+            config_path: 配置文件路径，默认为 ~/.algomate/config.yaml
+
+        Returns:
+            AppConfig 单例实例
+
+        Example:
+            >>> config = AppConfig.get()
+            >>> print(config.APP_NAME)
+            算法学习助手
+        """
+        if cls._instance is None:
+            cls._instance = cls.load(config_path)
+        return cls._instance
 
     @classmethod
     def load(cls, config_path: Optional[Path] = None) -> "AppConfig":
