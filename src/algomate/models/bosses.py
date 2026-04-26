@@ -43,6 +43,7 @@ class Boss(Base):
         drop_rate: 掉宝率 0.0-1.0
     """
     __tablename__ = "bosses"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(200), nullable=False)
@@ -53,8 +54,8 @@ class Boss(Base):
     source = Column(String(50), nullable=False)
     drop_rate = Column(Float, default=0.5, nullable=False)
     
-    question: Optional["Question"] = relationship("Question", back_populates="bosses")
-    answer_records: List["AnswerRecord"] = relationship("AnswerRecord", back_populates="boss")
+    question = relationship("Question", back_populates="bosses")
+    answer_records = relationship("AnswerRecord", back_populates="boss")
 
 
 class BossCreate(BaseModel):

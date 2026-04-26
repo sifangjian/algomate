@@ -29,6 +29,7 @@ class NPC(Base):
         topics: 可教话题列表（JSON数组）
     """
     __tablename__ = "npcs"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
@@ -39,8 +40,8 @@ class NPC(Base):
     greeting = Column(Text, nullable=True)
     topics = Column(Text, default="[]", nullable=False)
     
-    notes: List["Note"] = relationship("Note", back_populates="npc")
-    dialogue_records: List["DialogueRecord"] = relationship("DialogueRecord", back_populates="npc")
+    notes = relationship("Note", back_populates="npc")
+    dialogue_records = relationship("DialogueRecord", back_populates="npc")
 
 
 class NPCCreate(BaseModel):

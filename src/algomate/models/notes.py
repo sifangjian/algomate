@@ -28,6 +28,7 @@ class Note(Base):
         updated_at: 更新时间
     """
     __tablename__ = "notes"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(200), nullable=False)
@@ -36,9 +37,10 @@ class Note(Base):
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
     
-    npc: Optional["NPC"] = relationship("NPC", back_populates="notes")
-    cards: List["Card"] = relationship("Card", back_populates="note")
-    questions: List["Question"] = relationship("Question", back_populates="note")
+    npc = relationship("NPC", back_populates="notes")
+    cards = relationship("Card", back_populates="note")
+    questions = relationship("Question", back_populates="note")
+    review_records = relationship("ReviewRecord", back_populates="note")
 
 
 class NoteCreate(BaseModel):

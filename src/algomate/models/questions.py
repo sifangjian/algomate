@@ -47,6 +47,7 @@ class Question(Base):
         created_at: 创建时间
     """
     __tablename__ = "questions"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
@@ -59,9 +60,9 @@ class Question(Base):
     difficulty = Column(String(20), default="medium", nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     
-    note: Optional["Note"] = relationship("Note", back_populates="questions")
-    card: Optional["Card"] = relationship("Card", back_populates="questions")
-    bosses: List["Boss"] = relationship("Boss", back_populates="question")
+    note = relationship("Note", back_populates="questions")
+    card = relationship("Card", back_populates="questions")
+    bosses = relationship("Boss", back_populates="question")
 
 
 class QuestionCreate(BaseModel):

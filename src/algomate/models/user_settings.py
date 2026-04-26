@@ -26,6 +26,7 @@ class UserSetting(Base):
         updated_at: 更新时间
     """
     __tablename__ = "user_settings"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     key = Column(String(100), unique=True, nullable=False, index=True)

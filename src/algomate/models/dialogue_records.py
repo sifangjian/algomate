@@ -27,6 +27,7 @@ class DialogueRecord(Base):
         created_at: 创建时间
     """
     __tablename__ = "dialogue_records"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     npc_id = Column(Integer, ForeignKey("npcs.id"), nullable=False)
@@ -34,7 +35,7 @@ class DialogueRecord(Base):
     generated_cards = Column(Text, default="[]", nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     
-    npc: Optional["NPC"] = relationship("NPC", back_populates="dialogue_records")
+    npc = relationship("NPC", back_populates="dialogue_records")
 
 
 class DialogueMessage(BaseModel):

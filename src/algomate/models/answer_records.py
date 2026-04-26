@@ -29,6 +29,7 @@ class AnswerRecord(Base):
         answered_at: 答题时间
     """
     __tablename__ = "answer_records"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     boss_id = Column(Integer, ForeignKey("bosses.id"), nullable=True)
@@ -38,8 +39,8 @@ class AnswerRecord(Base):
     feedback = Column(Text, default="", nullable=False)
     answered_at = Column(DateTime, default=datetime.now, nullable=False)
     
-    boss: Optional["Boss"] = relationship("Boss", back_populates="answer_records")
-    card: Optional["Card"] = relationship("Card", back_populates="answer_records")
+    boss = relationship("Boss", back_populates="answer_records")
+    card = relationship("Card", back_populates="answer_records")
 
 
 class AnswerRecordCreate(BaseModel):

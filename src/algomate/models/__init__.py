@@ -12,6 +12,8 @@ from algomate.models.bosses import Boss, BossCreate, BossUpdate, BossResponse, D
 from algomate.models.questions import Question, QuestionCreate, QuestionUpdate, QuestionResponse, QuestionType, QuestionDifficulty
 from algomate.models.answer_records import AnswerRecord, AnswerRecordCreate, AnswerRecordResponse, AnswerStats
 from algomate.models.dialogue_records import DialogueRecord, DialogueRecordCreate, DialogueRecordResponse, DialogueMessage
+from algomate.models.review_records import ReviewRecord, ReviewRecordCreate, ReviewRecordResponse
+from algomate.models.learning_progress import LearningProgress, LearningProgressCreate, LearningProgressResponse
 
 from algomate.models.user_settings import router as user_settings_router
 from algomate.models.notes import router as notes_router
@@ -21,6 +23,8 @@ from algomate.models.bosses import router as bosses_router
 from algomate.models.questions import router as questions_router
 from algomate.models.answer_records import router as answers_router
 from algomate.models.dialogue_records import router as dialogues_router
+from algomate.models.review_records import router as review_records_router
+from algomate.models.learning_progress import router as learning_progress_router
 
 __all__ = [
     "UserSetting",
@@ -61,6 +65,12 @@ __all__ = [
     "DialogueRecordCreate",
     "DialogueRecordResponse",
     "DialogueMessage",
+    "ReviewRecord",
+    "ReviewRecordCreate",
+    "ReviewRecordResponse",
+    "LearningProgress",
+    "LearningProgressCreate",
+    "LearningProgressResponse",
     "user_settings_router",
     "notes_router",
     "cards_router",
@@ -69,4 +79,6 @@ __all__ = [
     "questions_router",
     "answers_router",
     "dialogues_router",
+    "review_records_router",
+    "learning_progress_router",
 ]

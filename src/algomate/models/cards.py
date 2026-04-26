@@ -43,6 +43,7 @@ class Card(Base):
         is_sealed: 是否封印（耐久度=0时为True）
     """
     __tablename__ = "cards"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(200), nullable=False)
@@ -53,9 +54,9 @@ class Card(Base):
     last_reviewed = Column(DateTime, nullable=True)
     is_sealed = Column(Boolean, default=False, nullable=False)
     
-    note: Optional["Note"] = relationship("Note", back_populates="cards")
-    questions: List["Question"] = relationship("Question", back_populates="card")
-    answer_records: List["AnswerRecord"] = relationship("AnswerRecord", back_populates="card")
+    note = relationship("Note", back_populates="cards")
+    questions = relationship("Question", back_populates="card")
+    answer_records = relationship("AnswerRecord", back_populates="card")
 
 
 class CardCreate(BaseModel):
