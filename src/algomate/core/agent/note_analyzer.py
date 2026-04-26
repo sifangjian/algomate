@@ -10,7 +10,7 @@
 from typing import Any, List, Dict
 import re
 from .chat_client import ChatClient, NoteAnalysisResult
-from ...data.models import Note
+from algomate.models import Note
 from ...data.database import Database
 import json
 

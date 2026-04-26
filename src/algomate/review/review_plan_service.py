@@ -13,7 +13,7 @@ from datetime import datetime, date, timedelta
 from ..data.database import Database
 from ..data.repositories.note_repo import NoteRepository
 from ..data.repositories.review_repo import ReviewRecordRepository
-from ..data.models import Note, ReviewRecord
+from algomate.models import Note, ReviewRecord
 from ..core.memory.forgotten_curve import ForgottenCurve
 
 

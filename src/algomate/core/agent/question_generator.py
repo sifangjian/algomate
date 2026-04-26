@@ -11,7 +11,7 @@ import re
 from typing import List, Dict, Any, Optional
 import random
 from .chat_client import ChatClient
-from ...data.models import Question
+from algomate.models import Question
 from ...data.database import Database
 import json
 

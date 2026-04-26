@@ -9,7 +9,7 @@
 
 from typing import Dict, List, Any
 from collections import defaultdict
-from ...data.models import AnswerRecord, Note
+from algomate.models import AnswerRecord, Note
 from ...data.database import Database
 from ...data.repositories import AnswerRecordRepository, NoteRepository
 

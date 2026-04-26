@@ -32,7 +32,7 @@ async def get_notes(
 
     session = db.get_session()
     try:
-        from algomate.data.models import Note
+        from algomate.models import Note
         query = session.query(Note)
 
         if algorithm_type:
@@ -109,7 +109,7 @@ async def get_note(note_id: int):
 
     session = db.get_session()
     try:
-        from algomate.data.models import Note
+        from algomate.models import Note
         note = session.query(Note).filter(Note.id == note_id).first()
         if not note:
             return {"error": "笔记不存在"}, 404
@@ -148,7 +148,7 @@ async def update_note(note_id: int, note_data: dict):
 
     session = db.get_session()
     try:
-        from algomate.data.models import Note
+        from algomate.models import Note
         note = session.query(Note).filter(Note.id == note_id).first()
         if not note:
             return {"error": "笔记不存在"}, 404
@@ -202,7 +202,7 @@ async def analyze_note(note_id: int):
 
     session = db.get_session()
     try:
-        from algomate.data.models import Note
+        from algomate.models import Note
         note = session.query(Note).filter(Note.id == note_id).first()
         if not note:
             return {"error": "笔记不存在"}, 404

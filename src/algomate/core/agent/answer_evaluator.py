@@ -11,7 +11,7 @@
 from typing import Dict, Any, Optional
 from datetime import datetime
 from .chat_client import ChatClient, AnswerEvaluationResult
-from ...data.models import Question, AnswerRecord
+from algomate.models import Question, AnswerRecord
 from ...data.database import Database
 
 
