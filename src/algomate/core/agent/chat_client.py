@@ -30,7 +30,6 @@ from typing import (
     Union,
 )
 from pydantic import BaseModel, Field
-from IPython.display import Image, display
 
 # from langchain.agents import create_agent, AgentMiddleware
 # from langchain.agents.middleware import AgentMiddleware, ModelRequest
@@ -48,6 +47,12 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END, START
+
+try:
+    from IPython.display import Image, display
+    IPYTHON_AVAILABLE = True
+except ImportError:
+    IPYTHON_AVAILABLE = False
 
 
 class NoteAnalysisResult(BaseModel):
@@ -416,21 +421,57 @@ class ChatClient:
             system_prompt=system_prompt
         )
 
-        llm = self._get_llm_with_structured_output(NoteAnalysisResult)
-        response = llm.invoke(messages)
+        try:
+            llm = self._get_llm_with_structured_output(NoteAnalysisResult)
+            response = llm.invoke(messages)
 
-        if isinstance(response, NoteAnalysisResult):
-            return response
-        elif isinstance(response, dict):
-            return NoteAnalysisResult(**response)
-        else:
-            return NoteAnalysisResult(
-                algorithm_type="未知",
-                key_points=[],
-                difficulty="中等",
-                tags=[],
-                summary=str(response)
-            )
+            if isinstance(response, NoteAnalysisResult):
+                return response
+            elif isinstance(response, dict):
+                return NoteAnalysisResult(**response)
+            else:
+                return NoteAnalysisResult(
+                    algorithm_type="未知",
+                    key_points=[],
+                    difficulty="中等",
+                    tags=[],
+                    summary=str(response)
+                )
+        except Exception as e:
+            try:
+                llm = self.llm
+                raw_response = llm.invoke(messages)
+                
+                if hasattr(raw_response, 'content'):
+                    response_text = raw_response.content
+                else:
+                    response_text = str(raw_response)
+                
+                response_text = re.sub(r'```json\s*', '', response_text)
+                response_text = re.sub(r'```\s*$', '', response_text)
+                response_text = response_text.strip()
+                
+                json_match = re.search(r'\{[\s\S]*\}', response_text)
+                if json_match:
+                    json_str = json_match.group()
+                    parsed = json.loads(json_str)
+                    return NoteAnalysisResult(**parsed)
+                
+                return NoteAnalysisResult(
+                    algorithm_type="未知",
+                    key_points=[],
+                    difficulty="中等",
+                    tags=[],
+                    summary=response_text[:100]
+                )
+            except Exception:
+                return NoteAnalysisResult(
+                    algorithm_type="未知",
+                    key_points=[],
+                    difficulty="中等",
+                    tags=[],
+                    summary="分析失败"
+                )
 
     def generate_questions(
         self,
@@ -467,32 +508,62 @@ class ChatClient:
 
 题目类型要求：{types_str}
 
-请为每道题包含以下JSON字段：
-[
-    {{
-        "question_type": "题目类型",
-        "content": "题目内容",
-        "answer": "参考答案",
-        "explanation": "解析"
-    }}
-]"""
+请严格按照以下JSON格式返回（必须包含 questions 字段）：
+{{
+    "questions": [
+        {{
+            "question_type": "题目类型",
+            "content": "题目内容",
+            "answer": "参考答案",
+            "explanation": "解析"
+        }}
+    ]
+}}"""
 
         messages = self._build_messages(
             [{"role": "user", "content": user_prompt}],
             system_prompt=system_prompt
         )
 
-        llm = self._get_llm_with_structured_output(QuestionsResult)
-        response = llm.invoke(messages)
+        try:
+            llm = self._get_llm_with_structured_output(QuestionsResult)
+            response = llm.invoke(messages)
 
-        if isinstance(response, QuestionsResult):
-            return response.questions
-        elif isinstance(response, dict) and "questions" in response:
-            return [Question(**q) for q in response["questions"]]
-        elif isinstance(response, list):
-            return [Question(**q) if isinstance(q, dict) else q for q in response]
-        else:
-            return []
+            if isinstance(response, QuestionsResult):
+                return response.questions
+            elif isinstance(response, dict) and "questions" in response:
+                return [Question(**q) for q in response["questions"]]
+            elif isinstance(response, list):
+                return [Question(**q) if isinstance(q, dict) else q for q in response]
+            else:
+                return []
+        except Exception as e:
+            import json
+            import re
+            
+            try:
+                llm = self.llm
+                raw_response = llm.invoke(messages)
+                
+                if hasattr(raw_response, 'content'):
+                    response_text = raw_response.content
+                else:
+                    response_text = str(raw_response)
+                
+                json_match = re.search(r'\[[\s\S]*\]', response_text)
+                if json_match:
+                    questions_data = json.loads(json_match.group())
+                    return [Question(**q) for q in questions_data if isinstance(q, dict)]
+                
+                json_match = re.search(r'\{[\s\S]*\}', response_text)
+                if json_match:
+                    obj_data = json.loads(json_match.group())
+                    if "questions" in obj_data:
+                        return [Question(**q) for q in obj_data["questions"] if isinstance(q, dict)]
+                
+                return []
+            except Exception:
+                return []
 
     def evaluate_answer(
         self,
@@ -535,19 +606,51 @@ class ChatClient:
             system_prompt=system_prompt
         )
 
-        llm = self._get_llm_with_structured_output(AnswerEvaluationResult)
-        response = llm.invoke(messages)
+        try:
+            llm = self._get_llm_with_structured_output(AnswerEvaluationResult)
+            response = llm.invoke(messages)
 
-        if isinstance(response, AnswerEvaluationResult):
-            return response
-        elif isinstance(response, dict):
-            return AnswerEvaluationResult(**response)
-        else:
-            return AnswerEvaluationResult(
-                is_correct=False,
-                feedback=str(response),
-                improvement="无法解析评估结果"
-            )
+            if isinstance(response, AnswerEvaluationResult):
+                return response
+            elif isinstance(response, dict):
+                return AnswerEvaluationResult(**response)
+            else:
+                return AnswerEvaluationResult(
+                    is_correct=False,
+                    feedback=str(response),
+                    improvement="无法解析评估结果"
+                )
+        except Exception as e:
+            try:
+                llm = self.llm
+                raw_response = llm.invoke(messages)
+                
+                if hasattr(raw_response, 'content'):
+                    response_text = raw_response.content
+                else:
+                    response_text = str(raw_response)
+                
+                response_text = re.sub(r'```json\s*', '', response_text)
+                response_text = re.sub(r'```\s*$', '', response_text)
+                response_text = response_text.strip()
+                
+                json_match = re.search(r'\{[\s\S]*\}', response_text)
+                if json_match:
+                    json_str = json_match.group()
+                    parsed = json.loads(json_str)
+                    return AnswerEvaluationResult(**parsed)
+                
+                return AnswerEvaluationResult(
+                    is_correct=False,
+                    feedback=response_text,
+                    improvement="无法解析评估结果"
+                )
+            except Exception:
+                return AnswerEvaluationResult(
+                    is_correct=False,
+                    feedback="评估失败",
+                    improvement="请稍后重试"
+                )
 
     def _parse_json_response(
         self,
@@ -1092,7 +1195,10 @@ class ChatClient:
 
         try:
             image = self._graph.get_graph().draw_mermaid_png()
-            display(Image(image))
-            return "图已构建, 请在jupyter notebook查看"
+            if IPYTHON_AVAILABLE:
+                display(Image(image))
+                return "图已构建, 请在jupyter notebook查看"
+            else:
+                return "图已构建, 但IPython不可用，无法在当前环境显示"
         except Exception:
             return "图已构建, 可视化失败"

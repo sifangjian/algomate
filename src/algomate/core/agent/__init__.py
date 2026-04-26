@@ -9,6 +9,7 @@ Agent 模块
 - ToolAugmentedChatClient: 支持 Tool 模式的 ChatClient
 - NoteAnalyzer: 笔记分析器
 - QuestionGenerator: 题目生成器
+- AnswerEvaluator: 答案评估器
 - WeakPointAnalyzer: 薄弱点分析器
 """
 
@@ -25,6 +26,7 @@ from .base_agent import (
     AlgoMateAgent,
     ToolAugmentedChatClient,
 )
+from .answer_evaluator import AnswerEvaluator
 
 __all__ = [
     "ChatClient",
@@ -36,4 +38,5 @@ __all__ = [
     "AgentState",
     "AlgoMateAgent",
     "ToolAugmentedChatClient",
+    "AnswerEvaluator",
 ]
