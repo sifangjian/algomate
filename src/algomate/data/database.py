@@ -10,6 +10,19 @@ if TYPE_CHECKING:
 
 Base = declarative_base()
 
+_models_imported = False
+
+
+def _ensure_models_imported():
+    """确保模型只被导入一次"""
+    global _models_imported
+    if not _models_imported:
+        from algomate.models import (
+            Note, Card, NPC, Boss, Question, AnswerRecord,
+            DialogueRecord, ReviewRecord, LearningProgress, UserSetting
+        )
+        _models_imported = True
+
 
 def init_db(config: Optional["AppConfig"] = None) -> "Database":
     """初始化数据库
@@ -60,7 +73,7 @@ class Database:
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
         )
-        from . import models
+        _ensure_models_imported()
         Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
 
