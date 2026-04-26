@@ -1,150 +1,357 @@
 """
 复习调度器模块
 
-提供定时复习提醒功能，包括：
-- 定时任务的启动和停止
-- 每日复习邮件的发送
-- 复习计划的管理
+管理每日复习任务生成和调度，包括：
+- 生成每日复习任务列表
+- 获取未来复习计划
+- 执行每日复习任务
+
+复习任务生成规则：
+    1. 优先濒危卡牌（耐久度 < 30）
+    2. 然后到期的遗忘曲线复习卡牌
+    3. 结合长期遗忘曲线和Boss挑战
+    4. 根据游戏难度设置每日任务数量
 """
 
-from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-from ...data.models import Note
-from ...data.database import Database
-from ...data.repositories import NoteRepository, ReviewRecordRepository
+from datetime import datetime, timedelta, date
+from typing import List, Dict, Any, Optional
+from dataclasses import dataclass
+from enum import Enum
+
+from algomate.data.database import Database
+from algomate.models.cards import Card
+from algomate.core.memory.forgotten_curve import ForgottenCurveEngine
+from algomate.core.game.durability import DurabilityManager, DurabilityAction
+from algomate.core.game.difficulty import DifficultyManager, DifficultyLevel
 from algomate.config.settings import AppConfig
-from ..memory.forgotten_curve import ForgottenCurve
-from .email_sender import EmailSender
+
+
+class TaskType(str, Enum):
+    """任务类型枚举"""
+    CRITICAL_REVIEW = "critical_review"
+    FORGETTING_CURVE_REVIEW = "forgetting_curve_review"
+    BOSS_CHALLENGE = "boss_challenge"
+
+
+@dataclass
+class ReviewTask:
+    """复习任务数据结构"""
+    task_id: str
+    task_type: TaskType
+    card_id: int
+    card_name: str
+    card_domain: str
+    card_durability: int
+    priority: str
+    reason: str
+    due_date: Optional[date] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            "task_id": self.task_id,
+            "task_type": self.task_type.value,
+            "card_id": self.card_id,
+            "card_name": self.card_name,
+            "card_domain": self.card_domain,
+            "card_durability": self.card_durability,
+            "priority": self.priority,
+            "reason": self.reason,
+            "due_date": self.due_date.isoformat() if self.due_date else None
+        }
 
 
 class ReviewScheduler:
     """复习调度器
-
-    管理定时复习任务，包括每日邮件提醒的调度和执行。
-
-    使用 APScheduler 实现后台定时任务，支持：
-    - 每日定时发送复习提醒邮件
-    - 自动创建复习记录
-    - 查询即将到来的复习计划
-
+    
+    管理每日复习任务的生成和调度。
+    
     Attributes:
-        config: 应用配置
         db: 数据库实例
-        note_repo: 笔记仓库
-        review_repo: 复习记录仓库
-        email_sender: 邮件发送器
-        forgotten_curve: 遗忘曲线算法
-        scheduler: APScheduler 实例
+        forgotten_curve_engine: 遗忘曲线引擎
+        durability_manager: 耐久度管理器
+        difficulty_manager: 难度管理器
+        config: 应用配置
     """
-
-    def __init__(self, config: AppConfig, db: Database):
-        """初始化调度器
-
+    
+    def __init__(
+        self,
+        db: Optional[Database] = None,
+        config: Optional[AppConfig] = None
+    ):
+        """初始化复习调度器
+        
         Args:
-            config: 应用配置
-            db: 数据库实例
+            db: 数据库实例，默认使用单例
+            config: 应用配置，默认自动加载
         """
-        self.config = config
-        self.db = db
-        self.note_repo = NoteRepository(db)
-        self.review_repo = ReviewRecordRepository(db)
-        self.email_sender = EmailSender(config)
-        self.forgotten_curve = ForgottenCurve()
-        self.scheduler = BackgroundScheduler()
-
-    def start(self):
-        """启动调度器
-
-        如果配置启用了复习提醒，则启动定时任务。
-        """
-        if self.config.REVIEW_ENABLED:
-            hour, minute = map(int, self.config.REVIEW_TIME.split(":"))
-            self.scheduler.add_job(
-                self.send_daily_review_email,
-                CronTrigger(hour=hour, minute=minute),
-                id="daily_review_email",
-                replace_existing=True,
-            )
-            self.scheduler.start()
-
-    def stop(self):
-        """停止调度器"""
-        self.scheduler.shutdown()
-
-    def send_daily_review_email(self):
-        """发送每日复习邮件
-
-        获取今日待复习的笔记，生成邮件内容并发送。
-        """
-        today = datetime.now().date()
-        notes_due = self.note_repo.get_notes_due_for_review(today)
-
-        if not notes_due:
-            return
-
-        email_content = self._build_email_content(notes_due)
-        self.email_sender.send(email_content)
-
-        for note in notes_due:
-            self._create_review_record(note, today)
-
-    def _build_email_content(self, notes: List[Note]) -> Dict[str, str]:
-        """构建邮件内容
-
+        self.db = db or Database.get_instance()
+        self.config = config or AppConfig.load()
+        self.forgotten_curve_engine = ForgottenCurveEngine()
+        self.durability_manager = DurabilityManager()
+        self.difficulty_manager = DifficultyManager()
+    
+    def generate_daily_tasks(
+        self,
+        user_id: Optional[int] = None
+    ) -> List[ReviewTask]:
+        """生成每日复习任务
+        
         Args:
-            notes: 待复习的笔记列表
-
+            user_id: 用户ID（可选，当前系统为单用户）
+        
         Returns:
-            包含主题和正文的字典
+            复习任务列表
+        
+        Example:
+            >>> scheduler = ReviewScheduler()
+            >>> tasks = scheduler.generate_daily_tasks()
+            >>> print(len(tasks))
+            5
+            >>> print(tasks[0].task_type)
+            "critical_review"
         """
-        subject = "📚 算法学习助手 - 今日复习提醒"
-
-        overview = f"今日复习目标：{len(notes)}个知识点\n"
-        overview += f"预计用时：{len(notes) * 8}分钟\n\n"
-
-        details = ""
-        for i, note in enumerate(notes, 1):
-            details += f"{'━' * 40}\n"
-            details += f"📖 知识点 {i}：{note.title}\n"
-            details += f"{'━' * 40}\n"
-            details += f"{note.content}\n\n"
-
-        body = f"亲爱的学习者，您好！\n\n{overview}\n{details}"
-        body += "\n坚持复习，打卡学习！"
-
-        return {"subject": subject, "body": body}
-
-    def _create_review_record(self, note: Note, review_date: datetime):
-        """创建复习记录
-
-        Args:
-            note: 笔记对象
-            review_date: 复习日期
-        """
-        self.review_repo.create(
-            note_id=note.id,
-            review_date=review_date,
-            status="pending",
-        )
-
-    def get_upcoming_reviews(self, days: int = 7) -> List[Dict[str, Any]]:
-        """获取即将到来的复习计划
-
+        session = self.db.get_session()
+        try:
+            all_cards = session.query(Card).filter(Card.is_sealed == False).all()
+            
+            tasks = []
+            task_counter = 1
+            
+            critical_cards = [
+                card for card in all_cards
+                if self.durability_manager.is_critical(card.durability)
+            ]
+            
+            for card in critical_cards:
+                tasks.append(ReviewTask(
+                    task_id=f"review_{task_counter}",
+                    task_type=TaskType.CRITICAL_REVIEW,
+                    card_id=card.id,
+                    card_name=card.name,
+                    card_domain=card.domain,
+                    card_durability=card.durability,
+                    priority="critical",
+                    reason="濒危卡牌",
+                    due_date=date.today()
+                ))
+                task_counter += 1
+            
+            due_cards = self.forgotten_curve_engine.get_daily_review_tasks(all_cards)
+            
+            for card in due_cards:
+                if card not in critical_cards:
+                    review_status = self.forgotten_curve_engine.get_review_status(
+                        card.created_at,
+                        card.last_reviewed,
+                        getattr(card, 'review_level', 0)
+                    )
+                    
+                    tasks.append(ReviewTask(
+                        task_id=f"review_{task_counter}",
+                        task_type=TaskType.FORGETTING_CURVE_REVIEW,
+                        card_id=card.id,
+                        card_name=card.name,
+                        card_domain=card.domain,
+                        card_durability=card.durability,
+                        priority="high" if review_status.is_due else "medium",
+                        reason="遗忘曲线复习",
+                        due_date=review_status.next_review_date
+                    ))
+                    task_counter += 1
+            
+            daily_task_count = self.difficulty_manager.get_daily_task_count()
+            
+            if len(tasks) < daily_task_count:
+                remaining_slots = daily_task_count - len(tasks)
+                
+                non_critical_cards = [
+                    card for card in all_cards
+                    if card not in critical_cards and card not in due_cards
+                ]
+                
+                non_critical_cards.sort(key=lambda c: c.durability)
+                
+                for card in non_critical_cards[:remaining_slots]:
+                    tasks.append(ReviewTask(
+                        task_id=f"review_{task_counter}",
+                        task_type=TaskType.BOSS_CHALLENGE,
+                        card_id=card.id,
+                        card_name=card.name,
+                        card_domain=card.domain,
+                        card_durability=card.durability,
+                        priority="low",
+                        reason="Boss挑战",
+                        due_date=date.today()
+                    ))
+                    task_counter += 1
+            
+            tasks.sort(key=lambda t: (
+                0 if t.priority == "critical" else (1 if t.priority == "high" else 2),
+                t.card_durability
+            ))
+            
+            return tasks[:daily_task_count]
+        finally:
+            session.close()
+    
+    def get_upcoming_reviews(
+        self,
+        days: int = 7
+    ) -> List[Dict[str, Any]]:
+        """获取未来N天需要复习的卡牌
+        
         Args:
             days: 查询的天数范围
-
+        
         Returns:
             复习计划列表
+        
+        Example:
+            >>> scheduler = ReviewScheduler()
+            >>> reviews = scheduler.get_upcoming_reviews(7)
+            >>> print(len(reviews))
+            10
         """
-        end_date = datetime.now().date() + timedelta(days=days)
-        notes = self.note_repo.get_notes_due_for_review(end_date)
-
-        schedule = []
-        for note in notes:
-            schedule.append({
-                "note": note,
-                "review_date": note.next_review_date,
-            })
-        return schedule
+        session = self.db.get_session()
+        try:
+            end_date = datetime.now().date() + timedelta(days=days)
+            
+            all_cards = session.query(Card).filter(Card.is_sealed == False).all()
+            
+            upcoming_reviews = []
+            
+            for card in all_cards:
+                review_status = self.forgotten_curve_engine.get_review_status(
+                    card.created_at,
+                    card.last_reviewed,
+                    getattr(card, 'review_level', 0)
+                )
+                
+                if review_status.next_review_date <= end_date:
+                    upcoming_reviews.append({
+                        "card_id": card.id,
+                        "card_name": card.name,
+                        "card_domain": card.domain,
+                        "card_durability": card.durability,
+                        "review_date": review_status.next_review_date.isoformat(),
+                        "review_level": review_status.review_level,
+                        "is_due": review_status.is_due
+                    })
+            
+            upcoming_reviews.sort(key=lambda r: r["review_date"])
+            
+            return upcoming_reviews
+        finally:
+            session.close()
+    
+    async def execute_daily_review(self) -> int:
+        """执行每日复习任务（定时调用）
+        
+        Returns:
+            执行的任务数量
+        
+        Example:
+            >>> scheduler = ReviewScheduler()
+            >>> count = await scheduler.execute_daily_review()
+            >>> print(f"执行了 {count} 个复习任务")
+        """
+        tasks = self.generate_daily_tasks()
+        
+        session = self.db.get_session()
+        try:
+            for task in tasks:
+                card = session.query(Card).filter(Card.id == task.card_id).first()
+                if card:
+                    new_durability, is_critical, is_sealed = self.durability_manager.update_durability(
+                        current_durability=card.durability,
+                        action=DurabilityAction.DAILY_DECAY,
+                        difficulty=self.difficulty_manager.current_difficulty.value
+                    )
+                    
+                    card.durability = new_durability
+                    card.is_sealed = is_sealed
+                    card.last_reviewed = datetime.now()
+            
+            session.commit()
+            
+            return len(tasks)
+        finally:
+            session.close()
+    
+    def get_review_statistics(self) -> Dict[str, Any]:
+        """获取复习统计数据
+        
+        Returns:
+            统计数据字典
+        """
+        session = self.db.get_session()
+        try:
+            all_cards = session.query(Card).all()
+            
+            total_cards = len(all_cards)
+            sealed_cards = len([c for c in all_cards if c.is_sealed])
+            critical_cards = len([
+                c for c in all_cards
+                if not c.is_sealed and self.durability_manager.is_critical(c.durability)
+            ])
+            
+            due_cards = self.forgotten_curve_engine.get_daily_review_tasks([
+                c for c in all_cards if not c.is_sealed
+            ])
+            
+            return {
+                "total_cards": total_cards,
+                "sealed_cards": sealed_cards,
+                "critical_cards": critical_cards,
+                "due_cards": len(due_cards),
+                "active_cards": total_cards - sealed_cards,
+                "health_rate": (total_cards - sealed_cards - critical_cards) / total_cards if total_cards > 0 else 0
+            }
+        finally:
+            session.close()
+    
+    def get_domain_review_stats(self) -> List[Dict[str, Any]]:
+        """获取各领域的复习统计
+        
+        Returns:
+            各领域统计数据列表
+        """
+        session = self.db.get_session()
+        try:
+            all_cards = session.query(Card).filter(Card.is_sealed == False).all()
+            
+            domain_stats = {}
+            
+            for card in all_cards:
+                if card.domain not in domain_stats:
+                    domain_stats[card.domain] = {
+                        "domain": card.domain,
+                        "total_count": 0,
+                        "critical_count": 0,
+                        "due_count": 0,
+                        "avg_durability": 0
+                    }
+                
+                domain_stats[card.domain]["total_count"] += 1
+                
+                if self.durability_manager.is_critical(card.durability):
+                    domain_stats[card.domain]["critical_count"] += 1
+                
+                review_status = self.forgotten_curve_engine.get_review_status(
+                    card.created_at,
+                    card.last_reviewed,
+                    getattr(card, 'review_level', 0)
+                )
+                
+                if review_status.is_due:
+                    domain_stats[card.domain]["due_count"] += 1
+            
+            for domain, stats in domain_stats.items():
+                domain_cards = [c for c in all_cards if c.domain == domain]
+                if domain_cards:
+                    stats["avg_durability"] = sum(c.durability for c in domain_cards) / len(domain_cards)
+            
+            return list(domain_stats.values())
+        finally:
+            session.close()
