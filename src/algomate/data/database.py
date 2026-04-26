@@ -11,6 +11,28 @@ if TYPE_CHECKING:
 Base = declarative_base()
 
 
+def init_db(config: Optional["AppConfig"] = None) -> "Database":
+    """初始化数据库
+
+    创建数据库连接并初始化所有表结构。
+    这是初始化数据库的推荐方式。
+
+    Args:
+        config: 应用配置，默认从配置文件加载
+
+    Returns:
+        Database 实例
+
+    Example:
+        >>> from algomate.config.settings import AppConfig
+        >>> from algomate.data.database import init_db
+        >>> config = AppConfig.get()
+        >>> db = init_db(config)
+        >>> session = db.get_session()
+    """
+    return Database.get_instance(config)
+
+
 class Database:
     """数据库管理类
 
