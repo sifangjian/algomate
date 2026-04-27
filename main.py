@@ -48,12 +48,19 @@ def start_backend():
 
     backend_dir = os.path.join(os.path.dirname(__file__), "src")
 
+    startupinfo = None
+    if sys.platform == "win32":
+        CREATE_NO_WINDOW = 0x08000000
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
+
     proc = subprocess.Popen(
         [sys.executable, "-m", "algomate.main", "--api-only"],
         cwd=backend_dir,
         stdout=None,
         stderr=None,
-        shell=False,
+        startupinfo=startupinfo,
     )
     processes.append(proc)
 
@@ -73,34 +80,29 @@ def start_frontend():
         print("正在安装前端依赖...")
         subprocess.run(["npm", "install"], cwd=frontend_dir, check=True, shell=True)
 
+    startupinfo = None
+    creationflags = 0
     if sys.platform == "win32":
         CREATE_NO_WINDOW = 0x08000000
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         startupinfo.wShowWindow = subprocess.SW_HIDE
+        creationflags = CREATE_NO_WINDOW
         proc = subprocess.Popen(
             "npm run dev",
             cwd=frontend_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            encoding="utf-8",
-            errors="replace",
+            stdout=None,
+            stderr=None,
             shell=True,
             startupinfo=startupinfo,
-            creationflags=CREATE_NO_WINDOW,
+            creationflags=creationflags,
         )
     else:
         proc = subprocess.Popen(
             ["npm", "run", "dev"],
             cwd=frontend_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            encoding="utf-8",
-            errors="replace",
+            stdout=None,
+            stderr=None,
         )
     processes.append(proc)
 
