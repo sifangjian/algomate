@@ -107,6 +107,23 @@ REALM_INFO = {
 }
 
 
+class NoteSummary(BaseModel):
+    """卡片中显示的笔记摘要信息"""
+    id: int
+    title: str
+    content: str
+    summary: Optional[str] = None
+    algorithm_type: Optional[str] = None
+    difficulty: Optional[str] = None
+    mastery_level: int = 0
+    tags: str = "[]"
+    is_favorite: int = 0
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class CardResponse(BaseModel):
     """返回给前端的卡牌数据模型（兼容前端格式）"""
     id: int
@@ -126,6 +143,7 @@ class CardResponse(BaseModel):
     relatedAlgorithms: List[str] = []
     difficulty: int = 3
     note_id: Optional[int] = None
+    note: Optional[NoteSummary] = None
     is_sealed: bool = False
     
     class Config:
@@ -145,7 +163,8 @@ def _compute_status(durability: int, max_durability: int, is_sealed: bool) -> st
 
 
 def _card_to_response(card: Card, review_count: int = 0, note_count: int = 0,
-                      key_points: List[str] = None, related_algorithms: List[str] = None) -> CardResponse:
+                      key_points: List[str] = None, related_algorithms: List[str] = None,
+                      note: "NoteSummary" = None) -> CardResponse:
     """将 Card 模型转换为 CardResponse 格式"""
     realm_info = REALM_INFO.get(card.domain, {"id": card.domain, "icon": "🗝️"})
     realm_id = realm_info["id"]
@@ -170,6 +189,7 @@ def _card_to_response(card: Card, review_count: int = 0, note_count: int = 0,
         relatedAlgorithms=related_algorithms or [],
         difficulty=card.difficulty,
         note_id=card.note_id,
+        note=note,
         is_sealed=card.is_sealed,
     )
 
@@ -206,17 +226,31 @@ async def get_cards(domain: Optional[str] = Query(None, description="按领域�
             note_count = 1 if card.note_id else 0
             key_points = []
             related_algorithms = []
+            note_summary = None
             if card.note_id:
                 from algomate.models.notes import Note
                 note = session.query(Note).filter(Note.id == card.note_id).first()
-                if note and note.tags:
-                    import json
-                    try:
-                        tags = json.loads(note.tags)
-                        key_points = tags[:5]
-                    except:
-                        pass
-            result.append(_card_to_response(card, review_count, note_count, key_points, related_algorithms))
+                if note:
+                    note_summary = NoteSummary(
+                        id=note.id,
+                        title=note.title,
+                        content=note.content,
+                        summary=note.summary,
+                        algorithm_type=note.algorithm_type,
+                        difficulty=note.difficulty,
+                        mastery_level=note.mastery_level,
+                        tags=note.tags,
+                        is_favorite=note.is_favorite,
+                        created_at=note.created_at
+                    )
+                    if note.tags:
+                        import json
+                        try:
+                            tags = json.loads(note.tags)
+                            key_points = tags[:5]
+                        except:
+                            pass
+            result.append(_card_to_response(card, review_count, note_count, key_points, related_algorithms, note_summary))
         return result
     finally:
         session.close()
@@ -235,7 +269,24 @@ async def get_critical_cards():
         result = []
         for card in cards:
             review_count = session.query(AnswerRecord).filter(AnswerRecord.card_id == card.id).count()
-            result.append(_card_to_response(card, review_count))
+            note_summary = None
+            if card.note_id:
+                from algomate.models.notes import Note
+                note = session.query(Note).filter(Note.id == card.note_id).first()
+                if note:
+                    note_summary = NoteSummary(
+                        id=note.id,
+                        title=note.title,
+                        content=note.content,
+                        summary=note.summary,
+                        algorithm_type=note.algorithm_type,
+                        difficulty=note.difficulty,
+                        mastery_level=note.mastery_level,
+                        tags=note.tags,
+                        is_favorite=note.is_favorite,
+                        created_at=note.created_at
+                    )
+            result.append(_card_to_response(card, review_count, 0 if not card.note_id else 1, [], [], note_summary))
         return result
     finally:
         session.close()
@@ -291,15 +342,32 @@ async def get_card(card_id: int):
         if card.note_id:
             from algomate.models.notes import Note
             note = session.query(Note).filter(Note.id == card.note_id).first()
-            if note and note.tags:
-                import json
-                try:
-                    tags = json.loads(note.tags)
-                    key_points = tags[:5]
-                except:
-                    pass
+            if note:
+                note_summary = NoteSummary(
+                    id=note.id,
+                    title=note.title,
+                    content=note.content,
+                    summary=note.summary,
+                    algorithm_type=note.algorithm_type,
+                    difficulty=note.difficulty,
+                    mastery_level=note.mastery_level,
+                    tags=note.tags,
+                    is_favorite=note.is_favorite,
+                    created_at=note.created_at
+                )
+                if note.tags:
+                    import json
+                    try:
+                        tags = json.loads(note.tags)
+                        key_points = tags[:5]
+                    except:
+                        pass
+            else:
+                note_summary = None
+        else:
+            note_summary = None
         
-        return _card_to_response(card, review_count, note_count, key_points, related_algorithms)
+        return _card_to_response(card, review_count, note_count, key_points, related_algorithms, note_summary)
     finally:
         session.close()
 
