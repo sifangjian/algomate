@@ -5,245 +5,16 @@ import json
 
 router = APIRouter()
 
-notes_router = APIRouter()
 practice_router = APIRouter()
 progress_router = APIRouter()
-settings_router = APIRouter()
 dashboard_router = APIRouter()
+settings_router = APIRouter()
 learning_router = APIRouter()
 
 
 def get_review_service():
     from algomate.review.review_plan_service import ReviewPlanService
     return ReviewPlanService()
-
-
-@notes_router.get("/")
-async def get_notes(
-    algorithm_type: str = None,
-    difficulty: str = None,
-    keyword: str = None
-):
-    from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
-
-    db = Database.get_instance()
-    note_repo = NoteRepository(db)
-
-    session = db.get_session()
-    try:
-        from algomate.models import Note
-        query = session.query(Note)
-
-        if algorithm_type:
-            query = query.filter(Note.algorithm_type == algorithm_type)
-        if difficulty:
-            query = query.filter(Note.difficulty == difficulty)
-        if keyword:
-            pattern = f"%{keyword}%"
-            query = query.filter(
-                Note.algorithm_type.like(pattern) |
-                Note.title.like(pattern) |
-                Note.content.like(pattern)
-            )
-
-        notes = query.order_by(Note.updated_at.desc()).all()
-        note_list = []
-        for note in notes:
-            import json
-            tags = []
-            try:
-                tags = json.loads(note.tags) if note.tags else []
-            except:
-                tags = []
-
-            note_list.append({
-                "id": note.id,
-                "title": note.title,
-                "content": note.content,
-                "summary": note.summary or "",
-                "algorithm_type": note.algorithm_type,
-                "tags": tags,
-                "difficulty": note.difficulty,
-                "mastery_level": note.mastery_level,
-                "review_count": note.review_count,
-                "created_at": note.created_at.isoformat() if note.created_at else None,
-                "updated_at": note.updated_at.isoformat() if note.updated_at else None,
-                "last_reviewed": note.last_reviewed.isoformat() if note.last_reviewed else None,
-                "next_review_date": note.next_review_date.isoformat() if note.next_review_date else None
-            })
-        return {"notes": note_list}
-    finally:
-        session.close()
-
-
-@notes_router.post("/")
-async def create_note(note: dict):
-    from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
-
-    db = Database.get_instance()
-    note_repo = NoteRepository(db)
-
-    try:
-        new_note = note_repo.create(
-            title=note.get("title", ""),
-            content=note.get("content", ""),
-            algorithm_type=note.get("algorithm_type", "其他"),
-            difficulty=note.get("difficulty", "中等"),
-            summary=note.get("summary", ""),
-            tags=note.get("tags", "[]")
-        )
-        return {"id": new_note.id, "message": "笔记创建成功"}
-    except Exception as e:
-        return {"error": str(e)}, 500
-
-
-@notes_router.get("/{note_id}")
-async def get_note(note_id: int):
-    from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
-
-    db = Database.get_instance()
-    note_repo = NoteRepository(db)
-
-    session = db.get_session()
-    try:
-        from algomate.models import Note
-        note = session.query(Note).filter(Note.id == note_id).first()
-        if not note:
-            return {"error": "笔记不存在"}, 404
-
-        import json
-        tags = []
-        try:
-            tags = json.loads(note.tags) if note.tags else []
-        except:
-            tags = []
-
-        return {
-            "id": note.id,
-            "title": note.title,
-            "content": note.content,
-            "summary": note.summary or "",
-            "algorithm_type": note.algorithm_type,
-            "tags": tags,
-            "difficulty": note.difficulty,
-            "mastery_level": note.mastery_level,
-            "review_count": note.review_count,
-            "created_at": note.created_at.isoformat() if note.created_at else None,
-            "updated_at": note.updated_at.isoformat() if note.updated_at else None
-        }
-    finally:
-        session.close()
-
-
-@notes_router.put("/{note_id}")
-async def update_note(note_id: int, note_data: dict):
-    from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
-
-    db = Database.get_instance()
-    note_repo = NoteRepository(db)
-
-    session = db.get_session()
-    try:
-        from algomate.models import Note
-        note = session.query(Note).filter(Note.id == note_id).first()
-        if not note:
-            return {"error": "笔记不存在"}, 404
-
-        if "title" in note_data:
-            note.title = note_data["title"]
-        if "content" in note_data:
-            note.content = note_data["content"]
-        if "algorithm_type" in note_data:
-            note.algorithm_type = note_data["algorithm_type"]
-        if "difficulty" in note_data:
-            note.difficulty = note_data["difficulty"]
-        if "summary" in note_data:
-            note.summary = note_data["summary"]
-        if "tags" in note_data:
-            import json
-            note.tags = json.dumps(note_data["tags"]) if isinstance(note_data["tags"], list) else note_data["tags"]
-
-        from datetime import datetime
-        note.updated_at = datetime.now()
-
-        session.commit()
-        return {"message": "笔记更新成功", "id": note_id}
-    finally:
-        session.close()
-
-
-@notes_router.delete("/{note_id}")
-async def delete_note(note_id: int):
-    from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
-
-    db = Database.get_instance()
-    note_repo = NoteRepository(db)
-
-    success = note_repo.delete(note_id)
-    if success:
-        return {"message": "笔记删除成功"}
-    return {"error": "笔记不存在"}, 404
-
-
-@notes_router.post("/{note_id}/analyze")
-async def analyze_note(note_id: int):
-    from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
-    from algomate.core.agent.note_analyzer import NoteAnalyzer
-    from algomate.core.agent.chat_client import ChatClient
-
-    db = Database.get_instance()
-    note_repo = NoteRepository(db)
-
-    session = db.get_session()
-    try:
-        from algomate.models import Note
-        note = session.query(Note).filter(Note.id == note_id).first()
-        if not note:
-            return {"error": "笔记不存在"}, 404
-
-        chat_client = ChatClient(api_key=config.LLM_API_KEY)
-        analyzer = NoteAnalyzer(chat_client)
-
-        result = analyzer.analyze_note(note.content)
-
-        note.algorithm_type = result.algorithm_type
-        note.difficulty = result.difficulty
-        note.summary = result.summary
-
-        import json
-        if isinstance(result.tags, list):
-            note.tags = json.dumps(result.tags, ensure_ascii=False)
-        else:
-            note.tags = json.dumps([result.tags], ensure_ascii=False) if result.tags else "[]"
-
-        if not note.summary and result.key_points:
-            note.summary = "; ".join(result.key_points[:3])
-
-        from datetime import datetime
-        note.updated_at = datetime.now()
-
-        session.commit()
-
-        return {
-            "message": "AI分析完成",
-            "analysis": {
-                "algorithm_type": result.algorithm_type,
-                "difficulty": result.difficulty,
-                "summary": result.summary,
-                "tags": result.tags,
-                "key_points": result.key_points
-            }
-        }
-    except Exception as e:
-        return {"error": f"AI分析失败: {str(e)}"}, 500
-    finally:
-        session.close()
 
 
 @practice_router.get("/questions")
@@ -556,7 +327,6 @@ async def generate_quiz(request: dict):
         messages = [{"role": "user", "content": prompt}]
         result = generator.chat_client.chat(messages)
 
-        import json
         import re
         json_match = re.search(r'\[[\s\S]*\]|\{[\s\S]*\}', result)
         if json_match:
@@ -642,9 +412,285 @@ async def explain_concept(topic: str, concept: str):
         return {"error": str(e)}
 
 
-router.include_router(notes_router, prefix="/notes")
+boss_router = APIRouter()
+
+
+@boss_router.get("/boss/{boss_id}")
+async def get_boss(boss_id: int):
+    """获取Boss信息"""
+    from algomate.data.database import Database
+    from algomate.models.bosses import Boss
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        boss = session.query(Boss).filter(Boss.id == boss_id).first()
+        if not boss:
+            raise HTTPException(status_code=404, detail=f"Boss {boss_id} 不存在")
+
+        import json
+        return {
+            "id": boss.id,
+            "name": boss.name,
+            "difficulty": boss.difficulty,
+            "weakness_domains": json.loads(boss.weakness_domains) if boss.weakness_domains else [],
+            "description": boss.description,
+            "source": boss.source,
+            "drop_rate": boss.drop_rate,
+            "question_id": boss.question_id
+        }
+    finally:
+        session.close()
+
+
+@boss_router.post("/boss/generate")
+async def generate_boss(request: dict):
+    """为卡牌生成Boss"""
+    from algomate.core.flow.boss_battle import BossBattleFlow
+
+    card_id = request.get("card_id")
+    difficulty = request.get("difficulty")
+
+    if not card_id:
+        raise HTTPException(status_code=400, detail="card_id 不能为空")
+
+    try:
+        flow = BossBattleFlow()
+        result = await flow.generate_boss_for_card(card_id, difficulty)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@boss_router.post("/battle/start")
+async def start_battle(request: dict):
+    """开始战斗"""
+    from algomate.core.flow.boss_battle import BossBattleFlow
+
+    boss_id = request.get("boss_id")
+    card_ids = request.get("card_ids", [])
+
+    if not boss_id:
+        raise HTTPException(status_code=400, detail="boss_id 不能为空")
+    if not card_ids:
+        raise HTTPException(status_code=400, detail="card_ids 不能为空")
+
+    try:
+        flow = BossBattleFlow()
+        result = await flow.start_battle(boss_id, card_ids)
+        return result.to_dict()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@boss_router.post("/battle/{battle_id}/submit")
+async def submit_battle_answer(battle_id: int, request: dict):
+    """提交战斗答案"""
+    from algomate.core.flow.boss_battle import BossBattleFlow
+
+    code = request.get("code", "")
+
+    try:
+        flow = BossBattleFlow()
+        result = await flow.submit_answer(battle_id, code)
+        return {
+            "is_victory": result.is_victory,
+            "durability_change": result.durability_change,
+            "new_card_dropped": result.new_card_dropped,
+            "dropped_card": result.dropped_card,
+            "feedback": result.feedback,
+            "improvement": result.improvement
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@boss_router.get("/battle/{battle_id}/result")
+async def get_battle_result(battle_id: int):
+    """获取战斗结果"""
+    from algomate.core.flow.boss_battle import BossBattleFlow
+
+    flow = BossBattleFlow()
+    battle_session = flow.active_battles.get(battle_id)
+
+    if not battle_session:
+        raise HTTPException(status_code=404, detail=f"战斗 {battle_id} 不存在")
+
+    return battle_session.to_dict()
+
+
+tasks_router = APIRouter()
+
+
+@tasks_router.get("/tasks/daily")
+async def get_daily_tasks():
+    """获取今日复习任务"""
+    from algomate.core.scheduler.review_scheduler import ReviewScheduler
+
+    try:
+        scheduler = ReviewScheduler()
+        tasks = scheduler.generate_daily_tasks()
+        return {"tasks": [task.to_dict() for task in tasks]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@tasks_router.get("/tasks/upcoming")
+async def get_upcoming_tasks(days: int = 7):
+    """获取未来N天复习计划"""
+    from algomate.core.scheduler.review_scheduler import ReviewScheduler
+
+    try:
+        scheduler = ReviewScheduler()
+        reviews = scheduler.get_upcoming_reviews(days)
+        return {"upcoming": reviews, "days": days}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@tasks_router.post("/tasks/execute")
+async def execute_daily_tasks():
+    """执行每日复习任务"""
+    from algomate.core.scheduler.review_scheduler import ReviewScheduler
+
+    try:
+        scheduler = ReviewScheduler()
+        count = await scheduler.execute_daily_review()
+        return {"executed": count, "message": f"执行了 {count} 个复习任务"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+dialogue_router = APIRouter()
+
+
+@dialogue_router.post("/dialogue/start")
+async def start_dialogue(request: dict):
+    """开始新对话"""
+    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
+
+    npc_id = request.get("npc_id")
+    topic = request.get("topic")
+
+    if not npc_id:
+        raise HTTPException(status_code=400, detail="npc_id 不能为空")
+
+    try:
+        flow = NPCDialogueFlow()
+        result = await flow.start_dialogue(npc_id, topic)
+        return result.to_dict()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@dialogue_router.post("/dialogue/{dialogue_id}/continue")
+async def continue_dialogue(dialogue_id: int, request: dict):
+    """继续对话"""
+    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
+
+    message = request.get("message", "")
+
+    if not message:
+        raise HTTPException(status_code=400, detail="message 不能为空")
+
+    try:
+        flow = NPCDialogueFlow()
+        result = await flow.continue_dialogue(dialogue_id, message)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@dialogue_router.post("/dialogue/{dialogue_id}/end")
+async def end_dialogue(dialogue_id: int, request: dict):
+    """结束对话并提交笔记"""
+    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
+
+    notes = request.get("notes", "")
+
+    try:
+        flow = NPCDialogueFlow()
+        result = await flow.end_dialogue(dialogue_id, notes)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@dialogue_router.get("/dialogue/{dialogue_id}/history")
+async def get_dialogue_history(dialogue_id: int):
+    """获取对话历史"""
+    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
+
+    try:
+        flow = NPCDialogueFlow()
+        result = flow.get_dialogue_history(dialogue_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+user_router = APIRouter()
+
+
+@user_router.get("/user")
+async def get_user():
+    """获取当前用户信息（单用户系统，返回默认用户）"""
+    return {
+        "id": 1,
+        "username": "default_user",
+        "email": "user@example.com",
+        "level": 1,
+        "experience": 0
+    }
+
+
+@user_router.get("/user/stats")
+async def get_user_stats():
+    """获取用户统计数据"""
+    from algomate.core.scheduler.review_scheduler import ReviewScheduler
+    from algomate.data.database import Database
+    from algomate.models.cards import Card
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        total_cards = session.query(Card).count()
+        sealed_cards = session.query(Card).filter(Card.is_sealed == True).count()
+        critical_cards = session.query(Card).filter(Card.durability < 30).count()
+
+        scheduler = ReviewScheduler()
+        stats = scheduler.get_review_statistics()
+
+        return {
+            "total_cards": total_cards,
+            "sealed_cards": sealed_cards,
+            "critical_cards": critical_cards,
+            "review_stats": stats
+        }
+    finally:
+        session.close()
+
+
 router.include_router(practice_router, prefix="/practice")
 router.include_router(progress_router, prefix="/progress")
 router.include_router(settings_router, prefix="/settings")
 router.include_router(dashboard_router, prefix="/dashboard")
 router.include_router(learning_router, prefix="/learning")
+router.include_router(boss_router)
+router.include_router(tasks_router)
+router.include_router(dialogue_router)
+router.include_router(user_router)
