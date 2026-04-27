@@ -8,7 +8,7 @@ export const cardService = {
     if (params?.sort) searchParams.set('sort', params.sort)
     if (params?.order) searchParams.set('order', params.order)
     const query = searchParams.toString()
-    return api.get(`/cards${query ? `?${query}` : ''}`)
+    return api.get(`/cards/${query ? `?${query}` : ''}`)
   },
 
   getById: (id) => api.get(`/cards/${id}`),
