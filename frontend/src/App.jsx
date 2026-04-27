@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Header from './components/layout/Header'
-import BottomNav from './components/layout/BottomNav'
+import SideNav from './components/layout/SideNav'
 import ToastContainer from './components/ui/Toast/ToastContainer'
 import LoadingScreen from './components/ui/Loading/LoadingScreen'
 
@@ -15,7 +14,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app-wrapper">
-        <Header />
+        <SideNav />
         <main className="main-content">
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
@@ -27,7 +26,6 @@ function App() {
             </Routes>
           </Suspense>
         </main>
-        <BottomNav />
         <ToastContainer />
       </div>
     </BrowserRouter>
