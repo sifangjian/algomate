@@ -9,99 +9,6 @@ import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './CardWorkshop.module.css'
 
-const MOCK_CARDS = [
-  {
-    id: 'card_001',
-    name: '二分查找',
-    algorithmCategory: 'Search',
-    realmId: 'novice_forest',
-    realmName: '新手森林',
-    realmIcon: '🌲',
-    durability: 65,
-    maxDurability: 100,
-    status: 'normal',
-    createdAt: '2026-04-10T08:00:00Z',
-    lastReviewed: '2026-04-20T15:30:00Z',
-    reviewCount: 5,
-    noteCount: 3,
-    keyPoints: ['数组必须有序', '维护lo和hi指针', '每次缩小一半范围'],
-    relatedAlgorithms: ['Binary Search', 'Lower Bound'],
-    difficulty: 2,
-  },
-  {
-    id: 'card_002',
-    name: '快速排序',
-    algorithmCategory: 'Sorting',
-    realmId: 'novice_forest',
-    realmName: '新手森林',
-    realmIcon: '🌲',
-    durability: 42,
-    maxDurability: 100,
-    status: 'warning',
-    createdAt: '2026-04-12T10:00:00Z',
-    lastReviewed: '2026-04-18T09:00:00Z',
-    reviewCount: 3,
-    noteCount: 2,
-    keyPoints: ['选择pivot元素', '分区操作', '递归排序子数组'],
-    relatedAlgorithms: ['QuickSort', 'MergeSort'],
-    difficulty: 3,
-  },
-  {
-    id: 'card_003',
-    name: '动态规划-背包问题',
-    algorithmCategory: 'Dynamic Programming',
-    realmId: 'crystal_cave',
-    realmName: '水晶洞穴',
-    realmIcon: '💎',
-    durability: 18,
-    maxDurability: 100,
-    status: 'danger',
-    createdAt: '2026-03-20T14:00:00Z',
-    lastReviewed: '2026-04-05T11:00:00Z',
-    reviewCount: 8,
-    noteCount: 5,
-    keyPoints: ['定义状态转移方程', '边界条件处理', '空间优化技巧'],
-    relatedAlgorithms: ['DP', '0/1 Knapsack'],
-    difficulty: 4,
-  },
-  {
-    id: 'card_004',
-    name: '深度优先搜索',
-    algorithmCategory: 'Graph',
-    realmId: 'mist_swamp',
-    realmName: '迷雾沼泽',
-    realmIcon: '🌫️',
-    durability: 88,
-    maxDurability: 100,
-    status: 'normal',
-    createdAt: '2026-04-22T08:00:00Z',
-    lastReviewed: '2026-04-26T16:00:00Z',
-    reviewCount: 2,
-    noteCount: 1,
-    keyPoints: ['使用栈或递归', '标记已访问节点', '回溯恢复状态'],
-    relatedAlgorithms: ['DFS', 'Backtracking'],
-    difficulty: 2,
-  },
-  {
-    id: 'card_005',
-    name: 'BFS最短路径',
-    algorithmCategory: 'Graph',
-    realmId: 'mist_swamp',
-    realmName: '迷雾沼泽',
-    realmIcon: '🌫️',
-    durability: 55,
-    maxDurability: 100,
-    status: 'normal',
-    createdAt: '2026-04-15T12:00:00Z',
-    lastReviewed: '2026-04-23T14:00:00Z',
-    reviewCount: 4,
-    noteCount: 2,
-    keyPoints: ['队列存储待访问节点', '层次遍历', '无权图最短路径'],
-    relatedAlgorithms: ['BFS', 'Shortest Path'],
-    difficulty: 2,
-  },
-]
-
 export default function CardWorkshop() {
   const navigate = useNavigate()
   const { cards, setCards, selectedCard, setSelectedCard, removeCard } = useCardStore()
@@ -120,7 +27,7 @@ export default function CardWorkshop() {
   }, [setCards])
 
   const filteredCards = useMemo(() => {
-    let result = cards.length > 0 ? cards : MOCK_CARDS
+    let result = cards
 
     if (searchKeyword.trim()) {
       const kw = searchKeyword.toLowerCase()
@@ -153,12 +60,12 @@ export default function CardWorkshop() {
   }, [cards, searchKeyword, selectedRealm, sortBy])
 
   const dangerCount = useMemo(
-    () => (cards.length > 0 ? cards : MOCK_CARDS).filter((c) => c.durability < 30).length,
+    () => cards.filter((c) => c.durability < 30).length,
     [cards]
   )
 
   const realms = useMemo(() => {
-    const all = (cards.length > 0 ? cards : MOCK_CARDS)
+    const all = cards
     const unique = [...new Set(all.map((c) => c.realmId))]
     return unique.map((id) => {
       const card = all.find((c) => c.realmId === id)
@@ -379,6 +286,33 @@ export default function CardWorkshop() {
                   {selectedCard.keyPoints.map((kp, i) => (
                     <span key={i} className={styles.tag}>{kp}</span>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {selectedCard.note && (
+              <div className={styles.noteSection}>
+                <div className={styles.noteHeader}>
+                  <span className={styles.detailLabel}>📝 关联笔记</span>
+                  {selectedCard.note.is_favorite === 1 && <span className={styles.favoriteIcon}>⭐</span>}
+                </div>
+                <div className={styles.noteCard}>
+                  <h4 className={styles.noteTitle}>{selectedCard.note.title}</h4>
+                  {selectedCard.note.summary && (
+                    <p className={styles.noteSummary}>{selectedCard.note.summary}</p>
+                  )}
+                  <div className={styles.noteContent}>
+                    {selectedCard.note.content}
+                  </div>
+                  {selectedCard.note.algorithm_type && (
+                    <div className={styles.noteMeta}>
+                      <span className={styles.noteTag}>{selectedCard.note.algorithm_type}</span>
+                      {selectedCard.note.difficulty && (
+                        <span className={styles.noteTag}>{selectedCard.note.difficulty}</span>
+                      )}
+                      <span className={styles.noteTag}>掌握度: {selectedCard.note.mastery_level}%</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
