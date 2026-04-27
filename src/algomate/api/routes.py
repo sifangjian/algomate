@@ -10,6 +10,8 @@ progress_router = APIRouter()
 dashboard_router = APIRouter()
 settings_router = APIRouter()
 learning_router = APIRouter()
+realm_router = APIRouter()
+npc_router = APIRouter()
 
 
 def get_review_service():
@@ -170,6 +172,58 @@ async def save_settings(settings: dict):
         config.REVIEW_INTERVALS = [1, 3, 7, 14, 30, param]
     config.save()
     return {"message": "设置保存成功"}
+
+
+@settings_router.post("/test-api")
+async def test_api_key(apiKey: dict):
+    """测试API密钥是否有效"""
+    from algomate.config.settings import AppConfig
+    api_key = apiKey.get("apiKey", "")
+    if not api_key:
+        return {"success": False, "message": "API密钥不能为空"}
+
+    try:
+        import os
+        os.environ["OPENAI_API_KEY"] = api_key
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(model="gpt-3.5-turbo", max_tokens=10)
+        response = llm.invoke("Hello")
+        return {"success": True, "message": "API密钥有效"}
+    except Exception as e:
+        return {"success": False, "message": f"API密钥无效: {str(e)}"}
+
+
+@settings_router.post("/test-email")
+async def test_email_config(emailConfig: dict):
+    """测试邮件配置是否正确"""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    host = emailConfig.get("host")
+    port = emailConfig.get("port", 587)
+    username = emailConfig.get("username")
+    password = emailConfig.get("password")
+    to_email = emailConfig.get("to_email")
+
+    if not all([host, port, username, password, to_email]):
+        return {"success": False, "message": "邮件配置不完整"}
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = username
+        msg['To'] = to_email
+        msg['Subject'] = "Algomate 邮件测试"
+        msg.attach(MIMEText("这是一封来自Algomate的测试邮件", 'plain'))
+
+        server = smtplib.SMTP(host, int(port))
+        server.starttls()
+        server.login(username, password)
+        server.sendmail(username, [to_email], msg.as_string())
+        server.quit()
+        return {"success": True, "message": "邮件发送成功"}
+    except Exception as e:
+        return {"success": False, "message": f"邮件发送失败: {str(e)}"}
 
 
 @learning_router.get("/topics")
@@ -443,6 +497,29 @@ async def get_boss(boss_id: int):
         session.close()
 
 
+@boss_router.post("/boss/{boss_id}/submit")
+async def submit_boss_answer(boss_id: int, request: dict):
+    """提交Boss战斗答案（前端直接调用格式）"""
+    from algomate.core.flow.boss_battle import BossBattleFlow
+
+    code = request.get("code")
+    card_id = request.get("cardId")
+
+    if not code:
+        raise HTTPException(status_code=400, detail="code 不能为空")
+    if not card_id:
+        raise HTTPException(status_code=400, detail="cardId 不能为空")
+
+    try:
+        flow = BossBattleFlow()
+        result = await flow.submit_answer(boss_id, card_id, code)
+        return result.to_dict()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @boss_router.post("/boss/generate")
 async def generate_boss(request: dict):
     """为卡牌生成Boss"""
@@ -528,14 +605,163 @@ async def get_battle_result(battle_id: int):
 tasks_router = APIRouter()
 
 
-@tasks_router.get("/tasks/daily")
-async def get_daily_tasks():
-    """获取今日复习任务"""
+@realm_router.get("")
+async def get_realms():
+    """获取所有秘境列表"""
+    from algomate.core.game.realm_unlock import Realm, RealmUnlockManager
+    from algomate.data.database import Database
+    from algomate.models.cards import Card
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        cards = session.query(Card).filter(Card.is_sealed == False).all()
+        manager = RealmUnlockManager()
+        unlocked_realms = manager.get_unlocked_realms(cards)
+
+        realms_data = []
+        for realm in Realm:
+            progress = manager.get_realm_progress(realm, cards)
+            realms_data.append({
+                "id": realm.value,
+                "name": realm.value,
+                "unlocked": realm.value in unlocked_realms,
+                "required_cards": progress.required,
+                "current_cards": progress.current,
+                "progress_percentage": progress.progress_percentage
+            })
+        return realms_data
+    finally:
+        session.close()
+
+
+@realm_router.get("/{realm_id}")
+async def get_realm_by_id(realm_id: str):
+    """根据ID获取秘境详情"""
+    from algomate.core.game.realm_unlock import Realm, RealmUnlockManager
+    from algomate.data.database import Database
+    from algomate.models.cards import Card
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        cards = session.query(Card).filter(Card.is_sealed == False).all()
+        manager = RealmUnlockManager()
+
+        realm = Realm(realm_id)
+        progress = manager.get_realm_progress(realm, cards)
+        unlocked_realms = manager.get_unlocked_realms(cards)
+
+        return {
+            "id": realm.value,
+            "name": realm.value,
+            "unlocked": realm.value in unlocked_realms,
+            "required_cards": progress.required,
+            "current_cards": progress.current,
+            "progress_percentage": progress.progress_percentage
+        }
+    except ValueError:
+        raise HTTPException(status_code=404, detail=f"秘境 {realm_id} 不存在")
+    finally:
+        session.close()
+
+
+@realm_router.post("/{realm_id}/check-unlock")
+async def check_realm_unlock(realm_id: str):
+    """检查秘境是否解锁"""
+    from algomate.core.game.realm_unlock import Realm, RealmUnlockManager
+    from algomate.data.database import Database
+    from algomate.models.cards import Card
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        cards = session.query(Card).filter(Card.is_sealed == False).all()
+        manager = RealmUnlockManager()
+
+        realm = Realm(realm_id)
+        unlocked = manager.check_realm_unlock(realm, cards)
+        progress = manager.get_realm_progress(realm, cards)
+
+        return {
+            "realm": realm.value,
+            "unlocked": unlocked,
+            "required_cards": progress.required,
+            "current_cards": progress.current
+        }
+    except ValueError:
+        raise HTTPException(status_code=404, detail=f"秘境 {realm_id} 不存在")
+    finally:
+        session.close()
+
+
+@npc_router.get("/{npc_id}")
+async def get_npc_by_id(npc_id: int):
+    """根据ID获取NPC详情"""
+    from algomate.data.database import Database
+    from algomate.models.npcs import NPC
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        npc = session.query(NPC).filter(NPC.id == npc_id).first()
+        if not npc:
+            raise HTTPException(status_code=404, detail=f"NPC {npc_id} 不存在")
+
+        import json
+        return {
+            "id": npc.id,
+            "name": npc.name,
+            "domain": npc.domain,
+            "location": npc.location,
+            "avatar": npc.avatar,
+            "greeting": npc.greeting,
+            "topics": json.loads(npc.topics) if npc.topics else []
+        }
+    finally:
+        session.close()
+
+
+@npc_router.post("/{npc_id}/chat")
+async def npc_chat(npc_id: int, request: dict):
+    """与NPC聊天"""
+    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
+
+    message = request.get("message")
+    session_id = request.get("sessionId")
+
+    if not message:
+        raise HTTPException(status_code=400, detail="message 不能为空")
+
+    try:
+        flow = NPCDialogueFlow()
+        result = await flow.chat(npc_id, message, session_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@tasks_router.get("/tasks")
+async def get_tasks(date: str = None):
+    """获取复习任务
+
+    Args:
+        date: 日期字符串，支持 'today' 或 'YYYY-MM-DD' 格式
+    """
     from algomate.core.scheduler.review_scheduler import ReviewScheduler
 
     try:
         scheduler = ReviewScheduler()
-        tasks = scheduler.generate_daily_tasks()
+        if date == "today" or date is None:
+            tasks = scheduler.generate_daily_tasks()
+        else:
+            try:
+                target_date = datetime.strptime(date, "%Y-%m-%d").date()
+                tasks = scheduler.generate_daily_tasks(target_date)
+            except ValueError:
+                tasks = scheduler.generate_daily_tasks()
         return {"tasks": [task.to_dict() for task in tasks]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -690,6 +916,8 @@ router.include_router(progress_router, prefix="/progress")
 router.include_router(settings_router, prefix="/settings")
 router.include_router(dashboard_router, prefix="/dashboard")
 router.include_router(learning_router, prefix="/learning")
+router.include_router(realm_router, prefix="/realms")
+router.include_router(npc_router, prefix="/npc")
 router.include_router(boss_router)
 router.include_router(tasks_router)
 router.include_router(dialogue_router)
