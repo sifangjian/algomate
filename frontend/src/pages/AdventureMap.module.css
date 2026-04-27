@@ -1,0 +1,265 @@
+.container {
+  padding-top: 8px;
+}
+
+.hero {
+  position: relative;
+  text-align: center;
+  padding: 32px 16px 24px;
+  margin-bottom: 28px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(245, 158, 11, 0.05) 50%, transparent 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+}
+
+.heroTitle {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  animation: fadeIn 500ms ease forwards;
+}
+
+.heroDesc {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.heroDecor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.star {
+  position: absolute;
+  color: var(--color-accent);
+  opacity: 0.15;
+  font-size: 1.5rem;
+  animation: float 3s ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+.star:nth-child(1) { top: 15%; left: 10%; }
+.star:nth-child(2) { top: 60%; right: 15%; }
+.star:nth-child(3) { bottom: 20%; left: 30%; }
+
+.sectionTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.realmSection {
+  margin-bottom: 32px;
+}
+
+.realmGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.realmCard {
+  animation: slideUp 400ms ease forwards;
+  opacity: 0;
+}
+
+.realmCard.unlocked {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.realmCard.partial {
+  opacity: 0.75;
+}
+
+.realmCard.locked {
+  opacity: 0.55;
+  filter: grayscale(40%);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.realmIcon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.cardHeaderInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.realmName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.realmOrder {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  background: var(--color-bg-primary);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.lockIcon {
+  font-size: 1.2rem;
+  opacity: 0.6;
+}
+
+.realmDesc {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.progressSection {
+  margin-bottom: 12px;
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-bottom: 5px;
+}
+
+.progressBar {
+  height: 6px;
+  background: var(--color-bg-primary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 3px;
+  transition: width var(--transition-slow);
+}
+
+.npcTag,
+.bossTag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  padding: 6px 10px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.npcTag:last-child,
+.bossTag:last-child {
+  margin-bottom: 0;
+}
+
+.difficulty {
+  color: var(--color-accent);
+  margin-left: auto;
+  letter-spacing: 1px;
+}
+
+.unlockHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--color-warning);
+  padding: 8px 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px dashed rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+}
+
+.statsSection {
+  margin-top: 32px;
+}
+
+.statCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.statCard {
+  display: flex !important;
+  align-items: center;
+  gap: 14px;
+  padding: 18px !important;
+}
+
+.statIcon {
+  font-size: 2rem;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+.statLabel {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 24px 12px 18px;
+  }
+
+  .heroTitle {
+    font-size: 1.5rem;
+  }
+
+  .realmGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statCards {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .statValue {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroTitle {
+    font-size: 1.3rem;
+  }
+
+  .statCards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
