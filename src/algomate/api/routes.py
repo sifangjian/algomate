@@ -619,16 +619,75 @@ async def get_realms():
         manager = RealmUnlockManager()
         unlocked_realms = manager.get_unlocked_realms(cards)
 
+        realm_config = {
+            "新手森林": {
+                "icon": "🌲",
+                "description": "算法之旅的起点，学习基础数据结构与查找算法",
+                "bossInfo": None,
+            },
+            "迷雾沼泽": {
+                "icon": "🌫️",
+                "description": "深入递归与回溯的领域，挑战迷雾史莱姆王",
+                "bossInfo": {"id": "boss_slime_king", "name": "迷雾史莱姆王", "difficulty": 2},
+            },
+            "智慧圣殿": {
+                "icon": "💡",
+                "description": "动态规划的璀璨世界，用智慧照亮黑暗",
+                "bossInfo": None,
+            },
+            "贪婪之塔": {
+                "icon": "🏰",
+                "description": "图论与高级算法的终极试炼场",
+                "bossInfo": {"id": "boss_greed_dragon", "name": "贪婪巨龙", "difficulty": 3},
+            },
+            "命运迷宫": {
+                "icon": "🌀",
+                "description": "高级数据结构的圣域，触及算法的极限",
+                "bossInfo": None,
+            },
+            "分裂山脉": {
+                "icon": "⛰️",
+                "description": "算法之巅的终极挑战",
+                "bossInfo": {"id": "boss_mountain_giant", "name": "分裂山巨", "difficulty": 4},
+            },
+            "数学殿堂": {
+                "icon": "📐",
+                "description": "数学证明与复杂度的精妙世界",
+                "bossInfo": None,
+            },
+            "试炼之地": {
+                "icon": "⚔️",
+                "description": "所有秘境的终极试炼",
+                "bossInfo": {"id": "boss_trial_lord", "name": "试炼之主", "difficulty": 5},
+            },
+        }
+
         realms_data = []
         for realm in Realm:
             progress = manager.get_realm_progress(realm, cards)
+            is_unlocked = realm.value in unlocked_realms
+            is_partial = not is_unlocked and progress.current > 0
+
+            if is_unlocked:
+                status = "unlocked"
+            elif is_partial:
+                status = "partial"
+            else:
+                status = "locked"
+
+            config = realm_config.get(realm.value, {})
+            realm_order = list(Realm).index(realm) + 1
+
             realms_data.append({
                 "id": realm.value,
                 "name": realm.value,
-                "unlocked": realm.value in unlocked_realms,
-                "required_cards": progress.required,
-                "current_cards": progress.current,
-                "progress_percentage": progress.progress_percentage
+                "icon": config.get("icon", "🗝️"),
+                "description": config.get("description", ""),
+                "status": status,
+                "order": realm_order,
+                "progress": int(progress.progress_percentage),
+                "npcInfo": {"id": f"npc_{realm.value}", "name": f"{realm.value}导师", "avatar": "🧙‍♀️"},
+                "bossInfo": config.get("bossInfo"),
             })
         return realms_data
     finally:
