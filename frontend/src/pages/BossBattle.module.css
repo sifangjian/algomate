@@ -1,0 +1,368 @@
+.container {
+  padding-top: 4px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.backBtn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--color-text-secondary);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast);
+}
+
+.backBtn:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.bossHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bossIcon {
+  font-size: 2.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.bossName {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--color-danger);
+}
+
+.difficultyLabel {
+  font-size: 0.8rem;
+  color: var(--color-accent);
+  letter-spacing: 1px;
+}
+
+.quote {
+  text-align: center;
+  font-style: italic;
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+  padding: 10px;
+  border-left: 3px solid var(--color-accent);
+  background: rgba(245, 158, 11, 0.05);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.9rem;
+}
+
+.battleLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 1024px) {
+  .battleLayout {
+    grid-template-columns: 45% 55%;
+  }
+}
+
+.problemCard {
+  height: fit-content !important;
+}
+
+.problemTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 10px;
+}
+
+.problemMeta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.problemDesc {
+  white-space: pre-wrap;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-primary);
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin-bottom: 14px;
+}
+
+.examplesSection h4,
+.constraints strong,
+.hints strong {
+  font-size: 0.88rem;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.exampleBlock {
+  background: var(--color-bg-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.exampleBlock code {
+  color: var(--color-primary-light);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8rem;
+}
+
+.explain {
+  margin-top: 6px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.constraints ul,
+.hints ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.constraints li,
+.hints li {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  padding: 3px 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.constraints li::before,
+.hints li::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: var(--color-primary-light);
+}
+
+.hints {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.06);
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(245, 158, 11, 0.2);
+}
+
+.sectionLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+.cardSelectArea {
+  margin-bottom: 16px;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.cardBtn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.cardBtn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.cardBtn.selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.cardBtn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(40%);
+}
+
+.cardIcon {
+  font-size: 1.6rem;
+}
+
+.cardName {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.cardDurability {
+  width: 48px;
+  height: 4px;
+  background: var(--color-bg-primary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.durFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width var(--transition-normal);
+}
+
+.durText {
+  font-size: 0.62rem;
+  color: var(--color-text-muted);
+}
+
+.checkMark {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  color: var(--color-accent);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.codeArea {
+  margin-bottom: 16px;
+}
+
+.codeEditor {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: var(--font-mono), 'Cascadia Code', monospace;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 280px;
+  outline: none;
+  tab-size: 4;
+}
+
+.codeEditor:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.codeEditor::placeholder {
+  color: #484f58;
+}
+
+.resultCard {
+  margin-top: 16px;
+  animation: scaleIn 300ms ease forwards;
+}
+
+.resultCard.success {
+  border-color: var(--color-success);
+  background: linear-gradient(135deg, var(--color-bg-card), rgba(16, 185, 129, 0.05));
+}
+
+.resultCard.fail {
+  border-color: var(--color-danger);
+  background: linear-gradient(135deg, var(--color-bg-card), rgba(239, 68, 68, 0.05));
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.resultIcon {
+  font-size: 1.5rem;
+}
+
+.resultTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.resultCard.success .resultTitle {
+  color: var(--color-success);
+}
+
+.resultCard.fail .resultTitle {
+  color: var(--color-danger);
+}
+
+.resultRewards {
+  display: flex;
+  gap: 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  margin-bottom: 12px;
+}
+
+.positive {
+  color: var(--color-success);
+}
+
+.negative {
+  color: var(--color-danger);
+}
+
+.resultError p {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.resultActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .cardGrid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .codeEditor {
+    font-size: 0.78rem;
+    min-height: 220px;
+  }
+
+  .bossIcon {
+    font-size: 2rem;
+  }
+}
