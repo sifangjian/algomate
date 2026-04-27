@@ -16,27 +16,45 @@ from algomate.data.database import Base
 
 class Note(Base):
     """笔记模型
-    
+
     存储用户的算法学习笔记，包含笔记内容、关联的NPC等信息。
-    
+
     Attributes:
         id: 笔记唯一标识
         title: 笔记标题
         content: 笔记内容（Markdown格式）
         npc_id: 关联NPC ID（外键）
+        summary: 摘要/概述
+        algorithm_type: 算法类型
+        difficulty: 难度等级
+        mastery_level: 掌握程度 (0-100)
+        review_count: 复习次数
+        last_reviewed: 最近复习时间
+        next_review_date: 下次复习日期
+        tags: 标签（JSON数组）
+        is_favorite: 是否收藏
         created_at: 创建时间
         updated_at: 更新时间
     """
     __tablename__ = "notes"
     __table_args__ = {'extend_existing': True}
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
     npc_id = Column(Integer, ForeignKey("npcs.id"), nullable=True)
+    summary = Column(Text, nullable=True)
+    algorithm_type = Column(String(100), nullable=True)
+    difficulty = Column(String(50), nullable=True)
+    mastery_level = Column(Integer, default=0, nullable=False)
+    review_count = Column(Integer, default=0, nullable=False)
+    last_reviewed = Column(DateTime, nullable=True)
+    next_review_date = Column(DateTime, nullable=True)
+    tags = Column(Text, default="[]", nullable=False)
+    is_favorite = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
-    
+
     npc = relationship("NPC", back_populates="notes")
     cards = relationship("Card", back_populates="note")
     questions = relationship("Question", back_populates="note")
@@ -48,7 +66,11 @@ class NoteCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="笔记标题")
     content: str = Field(..., min_length=1, description="笔记内容（Markdown格式）")
     npc_id: Optional[int] = Field(None, description="关联NPC ID")
-    
+    summary: Optional[str] = Field(None, description="摘要/概述")
+    algorithm_type: Optional[str] = Field(None, description="算法类型")
+    difficulty: Optional[str] = Field(None, description="难度等级")
+    tags: Optional[str] = Field("[]", description="标签（JSON数组）")
+
     class Config:
         from_attributes = True
 
@@ -58,7 +80,16 @@ class NoteUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200, description="笔记标题")
     content: Optional[str] = Field(None, min_length=1, description="笔记内容（Markdown格式）")
     npc_id: Optional[int] = Field(None, description="关联NPC ID")
-    
+    summary: Optional[str] = Field(None, description="摘要/概述")
+    algorithm_type: Optional[str] = Field(None, description="算法类型")
+    difficulty: Optional[str] = Field(None, description="难度等级")
+    mastery_level: Optional[int] = Field(None, ge=0, le=100, description="掌握程度")
+    review_count: Optional[int] = Field(None, ge=0, description="复习次数")
+    last_reviewed: Optional[datetime] = Field(None, description="最近复习时间")
+    next_review_date: Optional[datetime] = Field(None, description="下次复习日期")
+    tags: Optional[str] = Field(None, description="标签（JSON数组）")
+    is_favorite: Optional[int] = Field(None, description="是否收藏")
+
     class Config:
         from_attributes = True
 
@@ -69,9 +100,18 @@ class NoteResponse(BaseModel):
     title: str
     content: str
     npc_id: Optional[int]
+    summary: Optional[str]
+    algorithm_type: Optional[str]
+    difficulty: Optional[str]
+    mastery_level: int
+    review_count: int
+    last_reviewed: Optional[datetime]
+    next_review_date: Optional[datetime]
+    tags: str
+    is_favorite: int
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
