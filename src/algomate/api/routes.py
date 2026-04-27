@@ -14,6 +14,115 @@ realm_router = APIRouter()
 npc_router = APIRouter()
 
 
+def _ensure_npc_exists(session, realm_name: str, npc_data: dict) -> int:
+    """确保 NPC 存在于数据库中，返回 NPC ID"""
+    from algomate.models.npcs import NPC
+
+    existing = session.query(NPC).filter(NPC.location == realm_name).first()
+    if existing:
+        return existing.id
+
+    new_npc = NPC(
+        name=npc_data["name"],
+        domain=npc_data["domain"],
+        location=realm_name,
+        avatar=npc_data.get("avatar", "🧙‍♀️"),
+        system_prompt=npc_data.get("system_prompt", f"你是{npc_data['name']}，{npc_data.get('description', '')}"),
+        greeting=npc_data.get("greeting", f"欢迎来到{realm_name}！我是{npc_data['name']}。"),
+        topics=json.dumps(npc_data.get("topics", []), ensure_ascii=False)
+    )
+    session.add(new_npc)
+    session.commit()
+    session.refresh(new_npc)
+    return new_npc.id
+
+
+def _init_default_npcs():
+    """初始化默认 NPC 数据"""
+    from algomate.data.database import Database
+    from algomate.models.npcs import NPC
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        existing_count = session.query(NPC).count()
+        if existing_count > 0:
+            return
+
+        default_npcs = {
+            "新手森林": {
+                "name": "引导者艾琳",
+                "domain": "基础数据结构",
+                "avatar": "🧙‍♀️",
+                "description": "基础数据结构的导师",
+                "greeting": "欢迎来到新手森林！我是这里的守护者艾琳。算法的世界充满奥秘，你想从哪里开始探索？",
+                "topics": ["数组", "链表", "栈", "队列", "哈希表", "二分查找", "线性查找"]
+            },
+            "迷雾沼泽": {
+                "name": "沼泽向导卡尔",
+                "domain": "递归与回溯",
+                "avatar": "🐸",
+                "description": "递归与回溯的导师",
+                "greeting": "欢迎来到迷雾沼泽！我是卡尔，这里的迷雾很浓，但我熟悉每一条路。",
+                "topics": ["递归", "回溯", "树遍历", "DFS", "BFS"]
+            },
+            "智慧圣殿": {
+                "name": "智者雅典娜",
+                "domain": "动态规划",
+                "avatar": "🦉",
+                "description": "动态规划的导师",
+                "greeting": "欢迎来到智慧圣殿！我是雅典娜，动态规划是算法的精髓，让我为你指引方向。",
+                "topics": ["动态规划", "贪心算法", "分治策略"]
+            },
+            "贪婪之塔": {
+                "name": "守塔人戈尔",
+                "domain": "图论与高级算法",
+                "avatar": "🏰",
+                "description": "图论与高级算法的导师",
+                "greeting": "欢迎来到贪婪之塔！我是戈尔，这座塔充满了挑战，你准备好了吗？",
+                "topics": ["图论", "最短路径", "最小生成树", "网络流"]
+            },
+            "命运迷宫": {
+                "name": "迷宫守护者墨丘利",
+                "domain": "高级数据结构",
+                "avatar": "🌀",
+                "description": "高级数据结构的导师",
+                "greeting": "欢迎来到命运迷宫！我是墨丘利，这里的每一条路都通向未知。",
+                "topics": ["堆", "Trie", "并查集", "线段树", "树状数组"]
+            },
+            "分裂山脉": {
+                "name": "山巨人顿",
+                "domain": "算法巅峰",
+                "avatar": "⛰️",
+                "description": "算法巅峰的导师",
+                "greeting": "欢迎来到分裂山脉！我是顿，这里的挑战极其艰难。",
+                "topics": ["高级算法", "复杂算法分析", "算法优化"]
+            },
+            "数学殿堂": {
+                "name": "数学家欧几里得",
+                "domain": "数学与复杂度",
+                "avatar": "📐",
+                "description": "数学与复杂度的导师",
+                "greeting": "欢迎来到数学殿堂！我是欧几里得，数学是算法的基础。",
+                "topics": ["数学证明", "时间复杂度", "空间复杂度", "组合数学"]
+            },
+            "试炼之地": {
+                "name": "试炼之主",
+                "domain": "终极试炼",
+                "avatar": "⚔️",
+                "description": "终极试炼的导师",
+                "greeting": "欢迎来到试炼之地！这是所有秘境的终极试炼！",
+                "topics": ["综合复习", "算法面试", "竞赛题目"]
+            },
+        }
+
+        for realm_name, npc_data in default_npcs.items():
+            _ensure_npc_exists(session, realm_name, npc_data)
+
+    finally:
+        session.close()
+
+
 def get_review_service():
     from algomate.review.review_plan_service import ReviewPlanService
     return ReviewPlanService()
@@ -611,6 +720,9 @@ async def get_realms():
     from algomate.core.game.realm_unlock import Realm, RealmUnlockManager
     from algomate.data.database import Database
     from algomate.models.cards import Card
+    from algomate.models.npcs import NPC
+
+    _init_default_npcs()
 
     db = Database.get_instance()
     session = db.get_session()
@@ -678,6 +790,11 @@ async def get_realms():
             config = realm_config.get(realm.value, {})
             realm_order = list(Realm).index(realm) + 1
 
+            npc = session.query(NPC).filter(NPC.location == realm.value).first()
+            npc_id = npc.id if npc else None
+            npc_name = npc.name if npc else f"{realm.value}导师"
+            npc_avatar = npc.avatar if npc else "🧙‍♀️"
+
             realms_data.append({
                 "id": realm.value,
                 "name": realm.value,
@@ -686,7 +803,7 @@ async def get_realms():
                 "status": status,
                 "order": realm_order,
                 "progress": int(progress.progress_percentage),
-                "npcInfo": {"id": f"npc_{realm.value}", "name": f"{realm.value}导师", "avatar": "🧙‍♀️"},
+                "npcInfo": {"id": npc_id, "name": npc_name, "avatar": npc_avatar},
                 "bossInfo": config.get("bossInfo"),
             })
         return realms_data
@@ -794,8 +911,12 @@ async def npc_chat(npc_id: int, request: dict):
 
     try:
         flow = NPCDialogueFlow()
-        result = await flow.chat(npc_id, message, session_id)
-        return result
+        if session_id is None:
+            result = await flow.start_dialogue(npc_id, None)
+            return result.to_dict()
+        else:
+            result = await flow.continue_dialogue(int(session_id), message)
+            return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

@@ -69,7 +69,11 @@ export default function AdventureMap() {
                 showToast('还需努力解锁此区域', 'info')
                 return
             }
-            navigate(`/npc/${realm.id}`)
+            if (!realm.npcInfo?.id) {
+                showToast('NPC 尚未解锁', 'warning')
+                return
+            }
+            navigate(`/npc/${realm.npcInfo.id}`)
         },
         [navigate]
     )
