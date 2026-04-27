@@ -29,7 +29,7 @@ from .core.agent.chat_client import ChatClient
 from .core.agent.note_analyzer import NoteAnalyzer
 from .core.agent.question_generator import QuestionGenerator
 from .core.agent.weak_point_analyzer import WeakPointAnalyzer
-from .core.memory.forgotten_curve import ForgottenCurve
+from .core.memory.forgotten_curve import ForgottenCurveEngine
 from .core.scheduler.review_scheduler import ReviewScheduler
 from .core.scheduler.email_sender import EmailSender
 
@@ -122,7 +122,7 @@ class AlgomateApp:
         self.note_analyzer = NoteAnalyzer(self.chat_client)
         self.question_generator = QuestionGenerator(self.chat_client)
         self.weak_point_analyzer = WeakPointAnalyzer(self.db)
-        self.forgotten_curve = ForgottenCurve()
+        self.forgotten_curve = ForgottenCurveEngine()
         logger.info("AI components initialized")
 
     def start_review_scheduler(self):
