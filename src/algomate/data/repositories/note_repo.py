@@ -7,7 +7,7 @@
 
 from typing import List, Optional
 from datetime import datetime, date
-from ..models import Note
+from algomate.models import Note
 from ..database import Database
 
 

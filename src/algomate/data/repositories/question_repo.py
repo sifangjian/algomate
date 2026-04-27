@@ -6,7 +6,7 @@
 
 from typing import List, Optional
 from datetime import datetime
-from ..models import Question
+from algomate.models import Question
 from ..database import Database
 
 

@@ -6,7 +6,7 @@
 
 from typing import List, Optional
 from datetime import datetime
-from ..models import ReviewRecord
+from algomate.models import ReviewRecord
 from ..database import Database
 
 
