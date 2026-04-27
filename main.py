@@ -73,18 +73,35 @@ def start_frontend():
         print("正在安装前端依赖...")
         subprocess.run(["npm", "install"], cwd=frontend_dir, check=True, shell=True)
 
-    proc = subprocess.Popen(
-        ["npm", "run", "dev"],
-        cwd=frontend_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-        encoding="utf-8",
-        errors="replace",
-        shell=True,
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
-    )
+    if sys.platform == "win32":
+        CREATE_NO_WINDOW = 0x08000000
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = subprocess.SW_HIDE
+        proc = subprocess.Popen(
+            "npm run dev",
+            cwd=frontend_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            encoding="utf-8",
+            errors="replace",
+            shell=True,
+            startupinfo=startupinfo,
+            creationflags=CREATE_NO_WINDOW,
+        )
+    else:
+        proc = subprocess.Popen(
+            ["npm", "run", "dev"],
+            cwd=frontend_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            encoding="utf-8",
+            errors="replace",
+        )
     processes.append(proc)
 
 
