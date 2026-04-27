@@ -805,6 +805,11 @@ async def get_realms():
                 "progress": int(progress.progress_percentage),
                 "npcInfo": {"id": npc_id, "name": npc_name, "avatar": npc_avatar},
                 "bossInfo": config.get("bossInfo"),
+                "unlockCondition": {
+                    "description": f"需要 {progress.required} 张卡牌才能解锁，当前 {progress.current} 张" if status == "partial" else "完成前置秘境解锁" if status == "locked" else "",
+                    "required": progress.required,
+                    "current": progress.current,
+                } if status != "unlocked" else None,
             })
         return realms_data
     finally:
@@ -877,6 +882,17 @@ async def get_npc_by_id(npc_id: int):
     from algomate.data.database import Database
     from algomate.models.npcs import NPC
 
+    REALM_NAME_TO_ID = {
+        "新手森林": "novice_forest",
+        "迷雾沼泽": "mist_swamp",
+        "智慧圣殿": "wisdom_temple",
+        "贪婪之塔": "greed_tower",
+        "命运迷宫": "fate_maze",
+        "分裂山脉": "split_mountain",
+        "数学殿堂": "math_hall",
+        "试炼之地": "trial_land",
+    }
+
     db = Database.get_instance()
     session = db.get_session()
     try:
@@ -885,14 +901,18 @@ async def get_npc_by_id(npc_id: int):
             raise HTTPException(status_code=404, detail=f"NPC {npc_id} 不存在")
 
         import json
+        realm_id = REALM_NAME_TO_ID.get(npc.location, npc.location)
+        topics = json.loads(npc.topics) if npc.topics else []
         return {
             "id": npc.id,
             "name": npc.name,
             "domain": npc.domain,
+            "realmId": realm_id,
             "location": npc.location,
             "avatar": npc.avatar,
             "greeting": npc.greeting,
-            "topics": json.loads(npc.topics) if npc.topics else []
+            "expertise": topics,
+            "topics": topics,
         }
     finally:
         session.close()
