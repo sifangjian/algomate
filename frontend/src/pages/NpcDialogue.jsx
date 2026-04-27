@@ -40,15 +40,25 @@ export default function NpcDialogue() {
     useEffect(() => {
         if (!realmId) return
         npcService.getByRealmId(realmId).then((data) => {
-            if (data) setNpc(data)
-        }).catch(() => { })
-        setMessages([{
-            id: 'greeting',
-            role: 'npc',
-            content: MOCK_NPC.greeting,
-            timestamp: new Date().toISOString(),
-            displayed: true,
-        }])
+            if (data) {
+                setNpc(data)
+                setMessages([{
+                    id: 'greeting',
+                    role: 'npc',
+                    content: data.greeting || MOCK_NPC.greeting,
+                    timestamp: new Date().toISOString(),
+                    displayed: true,
+                }])
+            }
+        }).catch(() => {
+            setMessages([{
+                id: 'greeting',
+                role: 'npc',
+                content: MOCK_NPC.greeting,
+                timestamp: new Date().toISOString(),
+                displayed: true,
+            }])
+        })
     }, [realmId])
 
     useEffect(() => {
@@ -77,13 +87,13 @@ export default function NpcDialogue() {
 
         try {
             const response = await npcService.chat(npc.id, msgText, sessionId)
-            const newSessionId = response?.sessionId || sessionId
+            const newSessionId = response?.dialogue_id || sessionId
 
             if (newSessionId && newSessionId !== sessionId) {
                 setSessionId(newSessionId)
             }
 
-            const replyContent = response?.reply?.content || response?.reply || '让我想想...'
+            const replyContent = response?.npc_response || '让我想想...'
 
             const npcMsg = {
                 id: `npc_${Date.now()}`,

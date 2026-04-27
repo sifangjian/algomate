@@ -913,7 +913,14 @@ async def npc_chat(npc_id: int, request: dict):
         flow = NPCDialogueFlow()
         if session_id is None:
             result = await flow.start_dialogue(npc_id, None)
-            return result.to_dict()
+            session_dict = result.to_dict()
+            greeting = session_dict["messages"][0]["content"] if session_dict.get("messages") else ""
+            return {
+                "dialogue_id": session_dict.get("dialogue_id"),
+                "npc_response": greeting,
+                "state": session_dict.get("state"),
+                "message_count": len(session_dict.get("messages", []))
+            }
         else:
             result = await flow.continue_dialogue(int(session_id), message)
             return result

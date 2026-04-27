@@ -164,10 +164,31 @@ class NPCDialogueFlow:
                     timestamp=datetime.now()
                 )
             )
-            
+
+            dialogue_content = json.dumps([
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat()
+                }
+                for msg in dialogue_session.messages
+            ], ensure_ascii=False)
+
+            dialogue_record = DialogueRecord(
+                npc_id=npc_id,
+                dialogue_content=dialogue_content,
+                generated_cards="[]",
+                created_at=datetime.now()
+            )
+            session.add(dialogue_record)
+            session.commit()
+            session.refresh(dialogue_record)
+
+            dialogue_session.dialogue_id = dialogue_record.id
             temp_id = id(dialogue_session)
             self.active_sessions[temp_id] = dialogue_session
-            
+            self.active_sessions[dialogue_record.id] = dialogue_session
+
             return dialogue_session
         finally:
             session.close()
