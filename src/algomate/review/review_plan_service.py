@@ -14,7 +14,7 @@ from ..data.database import Database
 from ..data.repositories.note_repo import NoteRepository
 from ..data.repositories.review_repo import ReviewRecordRepository
 from algomate.models import Note, ReviewRecord
-from ..core.memory.forgotten_curve import ForgottenCurve
+from ..core.memory.forgotten_curve import ForgottenCurveEngine
 
 
 class ReviewPlanService:
@@ -42,7 +42,7 @@ class ReviewPlanService:
         self.db = db or Database.get_instance()
         self.note_repo = NoteRepository(self.db)
         self.review_repo = ReviewRecordRepository(self.db)
-        self.forgotten_curve = ForgottenCurve()
+        self.forgotten_curve = ForgottenCurveEngine()
 
     def get_today_review_plan(self, target_date: date = None) -> List[Dict[str, Any]]:
         """获取今日复习计划

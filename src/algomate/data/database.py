@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional, Union, TYPE_CHECKING
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import StaticPool
@@ -22,6 +22,44 @@ def _ensure_models_imported():
             DialogueRecord, ReviewRecord, LearningProgress, UserSetting
         )
         _models_imported = True
+
+
+def _auto_migrate(db_path: Union[str, Path]):
+    """自动迁移数据库表结构，添加缺失的列"""
+    engine = create_engine(
+        f"sqlite:///{db_path}",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    inspector = inspect(engine)
+
+    for table_name in Base.metadata.tables:
+        columns = inspector.get_columns(table_name)
+        existing_columns = {col['name'] for col in columns}
+
+        table = Base.metadata.tables[table_name]
+        for column in table.columns:
+            if column.name not in existing_columns:
+                try:
+                    col_type = column.type.compile(engine.dialect)
+                    default_value = column.default.arg if column.default else 'NULL'
+                    nullable = 'NOT NULL' if not column.nullable else 'NULL'
+
+                    alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable}"
+                    if default_value != 'NULL' and default_value is not None:
+                        if isinstance(default_value, str):
+                            alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable} DEFAULT '{default_value}'"
+                        else:
+                            alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable} DEFAULT {default_value}"
+
+                    with engine.connect() as conn:
+                        conn.execute(text(alter_stmt))
+                        conn.commit()
+                    print(f"  [MIGRATION] Added column {column.name} to table {table_name}")
+                except Exception as e:
+                    print(f"  [MIGRATION] Could not add column {column.name}: {e}")
+
+    engine.dispose()
 
 
 def init_db(config: Optional["AppConfig"] = None) -> "Database":
@@ -68,12 +106,13 @@ class Database:
     def __init__(self, db_path: Union[str, Path]):
         db_path = Path(db_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
+        _ensure_models_imported()
+        _auto_migrate(db_path)
         self.engine = create_engine(
             f"sqlite:///{db_path}",
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
         )
-        _ensure_models_imported()
         Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
 
