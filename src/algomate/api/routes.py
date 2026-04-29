@@ -922,6 +922,7 @@ async def get_npc_by_id(npc_id: int):
 async def npc_chat(npc_id: int, request: dict):
     """与NPC聊天"""
     from algomate.core.flow.npc_dialogue import NPCDialogueFlow
+    import httpx
 
     message = request.get("message")
     session_id = request.get("sessionId")
@@ -941,7 +942,24 @@ async def npc_chat(npc_id: int, request: dict):
             return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="AI服务响应超时，请稍后重试")
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
+        raise HTTPException(status_code=502, detail=f"AI服务暂时不可用: {str(e)}")
+    except ConnectionError:
+        raise HTTPException(status_code=503, detail="AI服务连接失败，请检查网络或稍后重试")
     except Exception as e:
+        error_msg = str(e).lower()
+        if "timeout" in error_msg or "timed out" in error_msg:
+            raise HTTPException(status_code=504, detail="AI服务响应超时，请稍后重试")
+        if "connection" in error_msg or "network" in error_msg:
+            raise HTTPException(status_code=503, detail="AI服务连接失败，请稍后重试")
+        if "rate limit" in error_msg or "429" in error_msg:
+            raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
+        if "api key" in error_msg or "unauthorized" in error_msg or "401" in error_msg:
+            raise HTTPException(status_code=500, detail="AI服务认证失败，请检查API配置")
         raise HTTPException(status_code=500, detail=str(e))
 
 

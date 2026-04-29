@@ -1,4 +1,4 @@
-import api from './api'
+import api, { apiWithRetry } from './api'
 
 const REALM_TO_NPC_ID = {
     'novice_forest': 1,
@@ -42,5 +42,5 @@ export const npcService = {
     },
 
     chat: (npcId, message, sessionId) =>
-        api.post(`/npc/${npcId}/chat`, { message, sessionId }),
+        apiWithRetry(() => api.post(`/npc/${npcId}/chat`, { message, sessionId })),
 }

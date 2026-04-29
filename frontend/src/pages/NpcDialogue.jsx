@@ -348,6 +348,7 @@ function TypingIndicator() {
                 <span className={styles.typingDot} style={{ animationDelay: '0ms' }} />
                 <span className={styles.typingDot} style={{ animationDelay: '200ms' }} />
                 <span className={styles.typingDot} style={{ animationDelay: '400ms' }} />
+                <span className={styles.typingText}>AI正在思考中...</span>
             </GameCard>
         </div>
     )

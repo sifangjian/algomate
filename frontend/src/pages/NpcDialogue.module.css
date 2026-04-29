@@ -156,6 +156,18 @@
   animation: typingBounce 1.2s ease-in-out infinite;
 }
 
+.typingText {
+  margin-left: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
 @keyframes typingBounce {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
   40% { transform: translateY(-6px); opacity: 1; }
