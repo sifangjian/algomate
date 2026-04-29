@@ -61,6 +61,7 @@ class TestNPCDialogueFlow:
     @pytest.fixture
     def dialogue_flow(self, mock_db, mock_chat_client):
         """创建对话流程实例"""
+        NPCDialogueFlow.reset_instance()
         return NPCDialogueFlow(
             db=mock_db,
             chat_client=mock_chat_client

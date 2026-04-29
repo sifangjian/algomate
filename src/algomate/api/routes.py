@@ -930,7 +930,7 @@ async def npc_chat(npc_id: int, request: dict):
         raise HTTPException(status_code=400, detail="message 不能为空")
 
     try:
-        flow = NPCDialogueFlow()
+        flow = NPCDialogueFlow.get_instance()
         if session_id is None:
             session_result = await flow.start_dialogue(npc_id, None)
             new_session_id = session_result.dialogue_id

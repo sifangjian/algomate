@@ -84,13 +84,18 @@ class NPCDialogueFlow:
     
     管理与NPC的完整对话流程，从开始到结束，包括卡牌生成。
     
+    使用单例模式，确保整个应用共享同一个实例，避免频繁创建实例导致的
+    active_sessions 缓存丢失问题。
+    
     Attributes:
         db: 数据库实例
         chat_client: AI对话客户端
         note_analyzer: 笔记分析器
         config: 应用配置
         active_sessions: 活跃的对话会话缓存
+        _instance: 单例实例
     """
+    _instance: Optional["NPCDialogueFlow"] = None
     
     def __init__(
         self,
@@ -113,6 +118,35 @@ class NPCDialogueFlow:
         )
         self.note_analyzer = NoteAnalyzer(self.chat_client)
         self.active_sessions: Dict[int, DialogueSession] = {}
+    
+    @classmethod
+    def get_instance(
+        cls,
+        db: Optional[Database] = None,
+        chat_client: Optional[ChatClient] = None,
+        config: Optional[AppConfig] = None
+    ) -> "NPCDialogueFlow":
+        """获取单例实例
+        
+        Args:
+            db: 数据库实例
+            chat_client: AI对话客户端
+            config: 应用配置
+        
+        Returns:
+            NPCDialogueFlow 单例实例
+        """
+        if cls._instance is None:
+            cls._instance = cls(db, chat_client, config)
+        return cls._instance
+    
+    @classmethod
+    def reset_instance(cls):
+        """重置单例实例
+        
+        主要用于测试场景，确保每个测试都有独立的实例。
+        """
+        cls._instance = None
     
     async def start_dialogue(
         self,
@@ -279,6 +313,22 @@ class NPCDialogueFlow:
                     timestamp=datetime.now()
                 )
             )
+            
+            dialogue_content = json.dumps([
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat()
+                }
+                for msg in dialogue_session.messages
+            ], ensure_ascii=False)
+            
+            db_record = session.query(DialogueRecord).filter(
+                DialogueRecord.id == dialogue_id
+            ).first()
+            if db_record:
+                db_record.dialogue_content = dialogue_content
+                session.commit()
             
             return {
                 "dialogue_id": dialogue_id,
