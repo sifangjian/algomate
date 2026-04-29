@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCardStore } from '../stores/cardStore'
 import { cardService } from '../services/cardService'
@@ -19,6 +19,9 @@ export default function CardWorkshop() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [cardToDelete, setCardToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const lastClickTimeRef = useRef(0)
+  const DEBOUNCE_DELAY = 300
 
   useEffect(() => {
     cardService.getAll().then((data) => {
@@ -73,6 +76,28 @@ export default function CardWorkshop() {
     })
   }, [cards])
 
+  const handleRealmChange = useCallback((realmId) => {
+    const now = Date.now()
+    if (now - lastClickTimeRef.current < DEBOUNCE_DELAY) {
+      return
+    }
+    lastClickTimeRef.current = now
+    setSelectedRealm(realmId)
+  }, [])
+
+  const handleSortChange = useCallback((e) => {
+    const now = Date.now()
+    if (now - lastClickTimeRef.current < DEBOUNCE_DELAY) {
+      return
+    }
+    lastClickTimeRef.current = now
+    setSortBy(e.target.value)
+  }, [])
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchKeyword(e.target.value)
+  }, [])
+
   const handleCardClick = useCallback(
     (card) => setSelectedCard(card),
     [setSelectedCard]
@@ -114,7 +139,14 @@ export default function CardWorkshop() {
           <h1 className={styles.pageTitle}>🎴 卡牌工坊</h1>
           <p className={styles.pageSubtitle}>管理你的算法知识卡牌</p>
         </div>
-        <Button variant="accent" size="sm" icon="➕">
+        <Button
+          variant="accent"
+          size="sm"
+          icon="➕"
+          onClick={() => {
+            showToast('🚧 卡牌创建功能开发中，敬请期待！', 'info')
+          }}
+        >
           创建新卡牌
         </Button>
       </div>
@@ -132,14 +164,14 @@ export default function CardWorkshop() {
         <Input
           placeholder="搜索卡牌..."
           value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
+          onChange={handleSearchChange}
           icon="🔍"
           className={styles.searchInput}
         />
         <div className={styles.realmTabs}>
           <button
             className={`${styles.realmTab} ${selectedRealm === 'all' ? styles.activeTab : ''}`}
-            onClick={() => setSelectedRealm('all')}
+            onClick={() => handleRealmChange('all')}
           >
             全部
           </button>
@@ -147,7 +179,7 @@ export default function CardWorkshop() {
             <button
               key={r.id}
               className={`${styles.realmTab} ${selectedRealm === r.id ? styles.activeTab : ''}`}
-              onClick={() => setSelectedRealm(r.id)}
+              onClick={() => handleRealmChange(r.id)}
             >
               {r.icon} {r.name}
             </button>
@@ -156,7 +188,7 @@ export default function CardWorkshop() {
         <select
           className={styles.sortSelect}
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
+          onChange={handleSortChange}
           aria-label="排序方式"
         >
           <option value="name">按名称</option>
