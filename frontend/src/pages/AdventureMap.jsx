@@ -62,11 +62,12 @@ export default function AdventureMap() {
     const handleRealmClick = useCallback(
         (realm) => {
             if (realm.status === 'locked') {
-                showToast(`🔒 ${realm.unlockCondition?.description || '暂未解锁'}`, 'warning')
+                const unlockDesc = realm.unlockCondition?.description || '暂未解锁'
+                showToast(`🔒 ${realm.name} - ${unlockDesc}`, 'warning')
                 return
             }
             if (realm.status === 'partial') {
-                showToast('还需努力解锁此区域', 'info')
+                showToast(`⚠️ ${realm.name} - 还需努力解锁此区域`, 'info')
                 return
             }
             if (!realm.npcInfo?.id) {
