@@ -36,7 +36,6 @@ export default function BottomNav() {
             className={({ isActive }) =>
               `${styles.navItem} ${isActive ? styles.active : ''}`
             }
-            aria-current={({ isActive }) => (isActive ? 'page' : undefined)}
           >
             <span className={styles.navIcon}>{item.icon}</span>
             <span className={styles.navLabel}>{item.label}</span>
