@@ -7,7 +7,8 @@ Agent 模块
 - ChatClient: 通用 LLM API 客户端
 - AlgoMateAgent: 基于 Tool-augmented 的智能体
 - ToolAugmentedChatClient: 支持 Tool 模式的 ChatClient
-- NoteAnalyzer: 笔记分析器
+- ContentAnalyzer: 内容分析器
+- NoteAnalyzer: 笔记分析器（已废弃，请使用 ContentAnalyzer）
 - QuestionGenerator: 题目生成器
 - AnswerEvaluator: 答案评估器
 - WeakPointAnalyzer: 薄弱点分析器
@@ -15,6 +16,7 @@ Agent 模块
 
 from .chat_client import (
     ChatClient,
+    ContentAnalysisResult,
     NoteAnalysisResult,
     Question,
     QuestionsResult,
@@ -27,9 +29,11 @@ from .base_agent import (
     ToolAugmentedChatClient,
 )
 from .answer_evaluator import AnswerEvaluator
+from .content_analyzer import ContentAnalyzer
 
 __all__ = [
     "ChatClient",
+    "ContentAnalysisResult",
     "NoteAnalysisResult",
     "Question",
     "QuestionsResult",
@@ -39,4 +43,5 @@ __all__ = [
     "AlgoMateAgent",
     "ToolAugmentedChatClient",
     "AnswerEvaluator",
+    "ContentAnalyzer",
 ]

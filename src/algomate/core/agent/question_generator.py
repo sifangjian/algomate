@@ -323,12 +323,12 @@ class QuestionGenerator:
         return result
 
     def create_questions_from_result(
-        self, note_id: int, result: List[Dict[str, Any]], db: Database
+        self, card_id: int, result: List[Dict[str, Any]], db: Database
     ) -> List[Question]:
         """将生成结果保存到数据库
 
         Args:
-            note_id: 关联的笔记 ID
+            card_id: 关联的卡牌 ID
             result: 生成的题目列表
             db: 数据库实例
 
@@ -340,7 +340,7 @@ class QuestionGenerator:
         try:
             for item in result:
                 question = Question(
-                    note_id=note_id,
+                    card_id=card_id,
                     question_type=item.get("question_type", "简答题"),
                     content=item.get("content", ""),
                     answer=item.get("answer", ""),

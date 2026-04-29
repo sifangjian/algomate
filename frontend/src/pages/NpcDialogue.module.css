@@ -1,13 +1,23 @@
 .container {
   padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 40px);
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
   margin-bottom: 18px;
+  gap: 12px;
   flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .backBtn {
@@ -52,11 +62,13 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (min-width: 769px) {
   .layout {
-    grid-template-columns: 60% 40%;
+    grid-template-columns: 65% 35%;
   }
 }
 
@@ -75,6 +87,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   max-height: 50vh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -82,7 +95,7 @@
 
 @media (min-width: 769px) {
   .messagesList {
-    max-height: 55vh;
+    max-height: none;
   }
 }
 
@@ -208,20 +221,24 @@
 
 .inputArea {
   display: flex;
-  gap: 10px;
-  align-items: flex-end;
+  gap: 8px;
+  align-items: stretch;
+  padding: 8px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--color-bg-elevated);
   color: var(--color-text-primary);
   font-size: 0.88rem;
-  resize: vertical;
-  min-height: 44px;
+  resize: none;
+  min-height: 40px;
   font-family: inherit;
   outline: none;
   transition: border-color var(--transition-fast);
@@ -236,9 +253,7 @@
   color: var(--color-text-muted);
 }
 
-.endBtn {
-  margin-top: 6px;
-}
+
 
 .noteSection {
   display: flex;
@@ -248,9 +263,7 @@
   background: var(--color-bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  height: fit-content;
-  position: sticky;
-  top: 70px;
+  min-height: 0;
 }
 
 .noteTitle {
@@ -274,6 +287,7 @@
   font-size: 0.85rem;
   resize: vertical;
   min-height: 150px;
+  flex: 1;
   outline: none;
   font-family: inherit;
   transition: border-color var(--transition-fast);
@@ -288,6 +302,44 @@
   color: var(--color-text-muted);
 }
 
+.npcMsgContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 80%;
+}
+
+.suggestionsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  padding-left: 4px;
+}
+
+.suggestionBtn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 16px;
+  color: #10b981;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.suggestionBtn:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+.suggestionBtn:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 768px) {
   .messagesList {
     max-height: 45vh;
@@ -296,4 +348,69 @@
   .noteSection {
     position: static;
   }
+}
+
+.earnedCardSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--radius-md);
+    margin-top: 4px;
+    animation: slideUp 300ms ease forwards;
+}
+
+.earnedCardTitle {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #10b981;
+    margin: 0;
+}
+
+.earnedCardInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.earnedCardName {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.earnedCardTag {
+    display: inline-block;
+    padding: 3px 8px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    font-size: 0.72rem;
+    color: var(--color-primary-light);
+    width: fit-content;
+}
+
+.earnedCardContent {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.earnedCardPoints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.earnedCardPoint {
+    padding: 2px 8px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 10px;
+    font-size: 0.7rem;
+    color: #10b981;
 }

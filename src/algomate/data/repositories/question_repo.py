@@ -27,11 +27,11 @@ class QuestionRepository:
         """
         self.db = db
 
-    def create(self, note_id: int, question_type: str, content: str, **kwargs) -> Question:
+    def create(self, card_id: int, question_type: str, content: str, **kwargs) -> Question:
         """创建新题目
 
         Args:
-            note_id: 关联笔记ID
+            card_id: 关联卡牌ID
             question_type: 题目类型
             content: 题目内容
             **kwargs: 其他可选参数
@@ -42,7 +42,7 @@ class QuestionRepository:
         session = self.db.get_session()
         try:
             question = Question(
-                note_id=note_id,
+                card_id=card_id,
                 question_type=question_type,
                 content=content,
                 **kwargs
@@ -69,18 +69,18 @@ class QuestionRepository:
         finally:
             session.close()
 
-    def get_by_note_id(self, note_id: int) -> List[Question]:
-        """获取指定笔记的所有题目
+    def get_by_card_id(self, card_id: int) -> List[Question]:
+        """获取指定卡牌的所有题目
 
         Args:
-            note_id: 笔记ID
+            card_id: 卡牌ID
 
         Returns:
             题目列表
         """
         session = self.db.get_session()
         try:
-            return session.query(Question).filter(Question.note_id == note_id).all()
+            return session.query(Question).filter(Question.card_id == card_id).all()
         finally:
             session.close()
 

@@ -1,3 +1,7 @@
+/**
+ * @deprecated 笔记服务已废弃。知识内容已迁移到卡牌(Card)模型。
+ * 请使用 cardService 替代。
+ */
 import api from './api'
 
 export const noteService = {

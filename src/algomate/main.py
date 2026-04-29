@@ -26,7 +26,7 @@ from pathlib import Path
 from algomate.config.settings import AppConfig
 from .data.database import Database
 from .core.agent.chat_client import ChatClient
-from .core.agent.note_analyzer import NoteAnalyzer
+from .core.agent.content_analyzer import ContentAnalyzer
 from .core.agent.question_generator import QuestionGenerator
 from .core.agent.weak_point_analyzer import WeakPointAnalyzer
 from .core.memory.forgotten_curve import ForgottenCurveEngine
@@ -76,7 +76,7 @@ class AlgomateApp:
         config: 应用配置
         db: 数据库实例
         chat_client: AI 对话客户端
-        note_analyzer: 笔记分析器
+        content_analyzer: 内容分析器
         question_generator: 题目生成器
         weak_point_analyzer: 薄弱点分析器
         forgotten_curve: 遗忘曲线算法
@@ -93,7 +93,7 @@ class AlgomateApp:
         setup_logging(self.config)
         self.db = Database.get_instance(self.config)
         self.chat_client = None
-        self.note_analyzer = None
+        self.content_analyzer = None
         self.question_generator = None
         self.weak_point_analyzer = None
         self.forgotten_curve = None
@@ -119,7 +119,7 @@ class AlgomateApp:
         print("="*50)
         print(self.chat_client.get_graph_diagram())
         print("="*50)
-        self.note_analyzer = NoteAnalyzer(self.chat_client)
+        self.content_analyzer = ContentAnalyzer(self.chat_client)
         self.question_generator = QuestionGenerator(self.chat_client)
         self.weak_point_analyzer = WeakPointAnalyzer(self.db)
         self.forgotten_curve = ForgottenCurveEngine()

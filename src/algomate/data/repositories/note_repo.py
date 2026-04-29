@@ -1,6 +1,10 @@
 """
 笔记仓库模块
 
+.. deprecated::
+    此模块已废弃。笔记(Note)模型已迁移到卡牌(Card)模型。
+    请使用 card_repo.CardRepository 替代。
+
 提供笔记数据的数据库操作，包括增删改查等基础功能，
 以及按算法类型查询、获取待复习笔记等业务功能。
 """
@@ -13,6 +17,8 @@ from ..database import Database
 
 class NoteRepository:
     """笔记数据仓库
+
+    .. deprecated:: 此类已废弃。请使用 card_repo.CardRepository 替代。
 
     负责笔记数据的数据库操作，实现数据访问层职责。
 
@@ -213,6 +219,8 @@ class NoteRepository:
         days_ahead: Optional[int] = None,
     ) -> List[Note]:
         """获取待复习的笔记
+
+        .. deprecated:: 此方法已废弃。复习追踪已统一到 Card 模型，请使用 CardRepository 替代。
 
         Args:
             start_date: 开始日期（可选）

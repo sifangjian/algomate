@@ -11,7 +11,7 @@ const navItems = [
     exact: true,
   },
   {
-    path: '/npc/general',
+    path: '/knowledge-spring',
     icon: '💬',
     label: '知识之泉',
   },

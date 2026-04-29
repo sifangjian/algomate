@@ -27,9 +27,8 @@ from algomate.data.database import Database
 from algomate.models.npcs import NPC
 from algomate.models.dialogue_records import DialogueRecord
 from algomate.models.cards import Card, Domain
-from algomate.models.notes import Note
 from algomate.core.agent.chat_client import ChatClient
-from algomate.core.agent.note_analyzer import NoteAnalyzer
+from algomate.core.agent.content_analyzer import ContentAnalyzer
 from algomate.config.settings import AppConfig
 
 
@@ -90,7 +89,7 @@ class NPCDialogueFlow:
     Attributes:
         db: 数据库实例
         chat_client: AI对话客户端
-        note_analyzer: 笔记分析器
+        content_analyzer: 内容分析器
         config: 应用配置
         active_sessions: 活跃的对话会话缓存
         _instance: 单例实例
@@ -116,7 +115,7 @@ class NPCDialogueFlow:
             api_key=self.config.LLM_API_KEY,
             model=self.config.LLM_MODEL
         )
-        self.note_analyzer = NoteAnalyzer(self.chat_client)
+        self.content_analyzer = ContentAnalyzer(self.chat_client)
         self.active_sessions: Dict[int, DialogueSession] = {}
     
     @classmethod
@@ -301,10 +300,12 @@ class NPCDialogueFlow:
                 for msg in dialogue_session.messages
             ]
             
-            npc_response = self.chat_client.chat(
+            chat_result = self.chat_client.chat_with_suggestions(
                 messages=conversation_history,
                 system_prompt=npc.system_prompt
             )
+            npc_response = chat_result["content"]
+            suggestions = chat_result.get("suggestions", [])
             
             dialogue_session.messages.append(
                 DialogueMessage(
@@ -333,6 +334,7 @@ class NPCDialogueFlow:
             return {
                 "dialogue_id": dialogue_id,
                 "npc_response": npc_response,
+                "suggestions": suggestions,
                 "state": dialogue_session.state.value,
                 "message_count": len(dialogue_session.messages)
             }
@@ -397,17 +399,7 @@ class NPCDialogueFlow:
             
             dialogue_session.state = DialogueState.ENDED
             
-            note = Note(
-                title=f"与{dialogue_session.npc_name}的对话笔记",
-                content=user_notes,
-                npc_id=dialogue_session.npc_id,
-                created_at=datetime.now()
-            )
-            session.add(note)
-            session.commit()
-            session.refresh(note)
-            
-            analysis_result = self.note_analyzer.analyze_note(user_notes)
+            analysis_result = self.content_analyzer.analyze_content(user_notes)
             
             cards = []
             domain = self._map_domain_to_enum(dialogue_session.npc_domain)
@@ -416,7 +408,12 @@ class NPCDialogueFlow:
                 name=analysis_result.algorithm_type or f"{dialogue_session.npc_domain}技巧",
                 domain=domain.value if isinstance(domain, Domain) else domain,
                 durability=80,
-                note_id=note.id,
+                knowledge_content=user_notes,
+                key_points=json.dumps(analysis_result.key_points, ensure_ascii=False) if analysis_result.key_points else "[]",
+                summary=analysis_result.summary,
+                algorithm_type=analysis_result.algorithm_type,
+                review_level=0,
+                review_count=0,
                 created_at=datetime.now()
             )
             session.add(card)
@@ -428,7 +425,10 @@ class NPCDialogueFlow:
                 "name": card.name,
                 "domain": card.domain,
                 "durability": card.durability,
-                "note_id": card.note_id
+                "knowledge_content": card.knowledge_content,
+                "key_points": card.key_points,
+                "summary": card.summary,
+                "algorithm_type": card.algorithm_type
             })
             
             dialogue_content = json.dumps([
@@ -443,7 +443,7 @@ class NPCDialogueFlow:
             dialogue_record = DialogueRecord(
                 npc_id=dialogue_session.npc_id,
                 dialogue_content=dialogue_content,
-                generated_cards=json.dumps([card.id for card in session.query(Card).filter(Card.note_id == note.id).all()]),
+                generated_cards=json.dumps([card["id"] for card in cards]),
                 created_at=datetime.now()
             )
             session.add(dialogue_record)
@@ -455,7 +455,6 @@ class NPCDialogueFlow:
             
             return {
                 "dialogue_id": dialogue_record.id,
-                "note_id": note.id,
                 "cards": cards,
                 "analysis": {
                     "algorithm_type": analysis_result.algorithm_type,

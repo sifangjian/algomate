@@ -1,6 +1,9 @@
 """
 笔记分析器模块
 
+.. deprecated::
+    此模块已废弃。请使用 content_analyzer.ContentAnalyzer 替代。
+
 提供笔记内容的分析和处理功能，包括：
 - 调用 AI 分析笔记
 - 提取代码片段
@@ -17,6 +20,8 @@ import json
 
 class NoteAnalyzer:
     """笔记分析器
+
+    .. deprecated:: 此类已废弃。请使用 content_analyzer.ContentAnalyzer 替代。
 
     负责笔记内容的智能分析和结构化处理。
 

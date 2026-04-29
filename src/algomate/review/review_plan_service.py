@@ -2,7 +2,7 @@
 复习计划服务模块
 
 提供今日复习计划相关的业务逻辑：
-- 获取今日应复习的笔记列表
+- 获取今日应复习的卡牌列表
 - 生成和管理复习记录
 - 更新复习状态和掌握程度
 - 获取薄弱点提醒
@@ -11,9 +11,9 @@
 from typing import List, Dict, Any, Optional
 from datetime import datetime, date, timedelta
 from ..data.database import Database
-from ..data.repositories.note_repo import NoteRepository
 from ..data.repositories.review_repo import ReviewRecordRepository
-from algomate.models import Note, ReviewRecord
+from algomate.models import ReviewRecord
+from algomate.models.cards import Card
 from ..core.memory.forgotten_curve import ForgottenCurveEngine
 
 
@@ -21,14 +21,13 @@ class ReviewPlanService:
     """复习计划服务
 
     负责管理今日复习计划的业务逻辑，包括：
-    - 获取今日应复习的笔记
+    - 获取今日应复习的卡牌
     - 创建复习记录
     - 完成复习后更新掌握程度
     - 识别薄弱点
 
     Attributes:
         db: 数据库实例
-        note_repo: 笔记仓库
         review_repo: 复习记录仓库
         forgotten_curve: 遗忘曲线算法
     """
@@ -40,39 +39,38 @@ class ReviewPlanService:
             db: 数据库实例，默认使用单例
         """
         self.db = db or Database.get_instance()
-        self.note_repo = NoteRepository(self.db)
         self.review_repo = ReviewRecordRepository(self.db)
         self.forgotten_curve = ForgottenCurveEngine()
 
     def get_today_review_plan(self, target_date: date = None) -> List[Dict[str, Any]]:
         """获取今日复习计划
 
-        获取指定日期应复习的笔记列表，包含笔记信息和复习状态。
+        获取指定日期应复习的卡牌列表，包含卡牌信息和复习状态。
 
         Args:
             target_date: 目标日期，默认为今天
 
         Returns:
-            复习计划列表，每项包含笔记信息和复习状态
+            复习计划列表，每项包含卡牌信息和复习状态
         """
         if target_date is None:
             target_date = date.today()
 
         session = self.db.get_session()
         try:
-            notes = (
-                session.query(Note)
-                .filter(Note.next_review_date <= target_date)
-                .order_by(Note.next_review_date)
+            cards = (
+                session.query(Card)
+                .filter(Card.next_review_date <= target_date, Card.is_sealed == False)
+                .order_by(Card.next_review_date)
                 .all()
             )
 
             review_plan = []
-            for note in notes:
+            for card in cards:
                 pending_records = (
                     session.query(ReviewRecord)
                     .filter(
-                        ReviewRecord.note_id == note.id,
+                        ReviewRecord.card_id == card.id,
                         ReviewRecord.status == "pending"
                     )
                     .order_by(ReviewRecord.review_date)
@@ -80,20 +78,21 @@ class ReviewPlanService:
                 )
 
                 review_plan.append({
-                    "note_id": note.id,
-                    "title": note.title,
-                    "summary": note.summary or "",
-                    "algorithm_type": note.algorithm_type,
-                    "difficulty": note.difficulty,
-                    "mastery_level": note.mastery_level,
-                    "review_count": note.review_count,
-                    "last_reviewed": note.last_reviewed.isoformat() if note.last_reviewed else None,
-                    "next_review_date": note.next_review_date.isoformat() if note.next_review_date else None,
+                    "card_id": card.id,
+                    "name": card.name,
+                    "domain": card.domain,
+                    "summary": card.summary or "",
+                    "algorithm_type": card.algorithm_type,
+                    "durability": card.durability,
+                    "review_level": card.review_level,
+                    "review_count": card.review_count,
+                    "last_reviewed": card.last_reviewed.isoformat() if card.last_reviewed else None,
+                    "next_review_date": card.next_review_date.isoformat() if card.next_review_date else None,
                     "pending_records": [
                         {"id": r.id, "review_date": r.review_date.isoformat(), "status": r.status}
                         for r in pending_records
                     ],
-                    "is_overdue": note.next_review_date < target_date if note.next_review_date else False
+                    "is_overdue": card.next_review_date < target_date if card.next_review_date else False
                 })
 
             return review_plan
@@ -103,88 +102,88 @@ class ReviewPlanService:
     def get_weak_points(self, threshold: int = 70) -> List[Dict[str, Any]]:
         """获取薄弱点提醒
 
-        获取掌握程度低于阈值的笔记，作为薄弱点提醒。
+        获取耐久度低于阈值的卡牌，作为薄弱点提醒。
 
         Args:
-            threshold: 掌握程度阈值，默认70%
+            threshold: 耐久度阈值，默认70
 
         Returns:
             薄弱点列表
         """
         session = self.db.get_session()
         try:
-            notes = (
-                session.query(Note)
-                .filter(Note.mastery_level < threshold)
-                .order_by(Note.mastery_level)
+            cards = (
+                session.query(Card)
+                .filter(Card.durability < threshold, Card.is_sealed == False)
+                .order_by(Card.durability)
                 .all()
             )
 
             weak_points = []
-            for note in notes:
+            for card in cards:
                 weak_points.append({
-                    "note_id": note.id,
-                    "title": note.title,
-                    "algorithm_type": note.algorithm_type,
-                    "mastery_level": note.mastery_level,
-                    "review_count": note.review_count,
-                    "last_reviewed": note.last_reviewed.isoformat() if note.last_reviewed else None,
-                    "suggestion": self._generate_weak_point_suggestion(note)
+                    "card_id": card.id,
+                    "name": card.name,
+                    "algorithm_type": card.algorithm_type,
+                    "durability": card.durability,
+                    "review_count": card.review_count,
+                    "last_reviewed": card.last_reviewed.isoformat() if card.last_reviewed else None,
+                    "suggestion": self._generate_weak_point_suggestion(card)
                 })
 
             return weak_points
         finally:
             session.close()
 
-    def _generate_weak_point_suggestion(self, note: Note) -> str:
+    def _generate_weak_point_suggestion(self, card: Card) -> str:
         """生成薄弱点学习建议
 
-        根据笔记情况生成个性化的学习建议。
+        根据卡牌情况生成个性化的学习建议。
 
         Args:
-            note: 笔记对象
+            card: 卡牌对象
 
         Returns:
             学习建议文本
         """
         suggestions = []
 
-        if note.review_count == 0:
+        if card.review_count == 0:
             suggestions.append("建议先完成首次复习")
-        elif note.mastery_level < 30:
+        elif card.durability < 30:
             suggestions.append("需要加强基础知识理解")
-        elif note.mastery_level < 50:
+        elif card.durability < 50:
             suggestions.append("建议多做相关练习题")
         else:
             suggestions.append("继续坚持复习巩固")
 
-        if note.last_reviewed is None:
+        if card.last_reviewed is None:
             suggestions.append("该知识点尚未复习，请尽快开始")
-        elif (datetime.now() - note.last_reviewed).days > 7:
+        elif (datetime.now() - card.last_reviewed).days > 7:
             suggestions.append("遗忘风险较高，请增加复习频率")
 
         return "；".join(suggestions)
 
-    def start_review(self, note_id: int) -> Optional[Dict[str, Any]]:
+    def start_review(self, card_id: int) -> Optional[Dict[str, Any]]:
         """开始复习
 
-        为指定笔记创建或更新复习记录。
+        为指定卡牌创建或更新复习记录。
 
         Args:
-            note_id: 笔记ID
+            card_id: 卡牌ID
 
         Returns:
             复习记录信息
         """
         session = self.db.get_session()
         try:
-            note = session.query(Note).filter(Note.id == note_id).first()
-            if not note:
+            card = session.query(Card).filter(Card.id == card_id).first()
+            if not card:
                 return None
 
             now = datetime.now()
             record = ReviewRecord(
-                note_id=note_id,
+                card_id=card_id,
                 review_date=now,
                 status="in_progress"
             )
@@ -194,9 +193,9 @@ class ReviewPlanService:
 
             return {
                 "record_id": record.id,
-                "note_id": note_id,
-                "title": note.title,
-                "content": note.content,
+                "card_id": card_id,
+                "name": card.name,
+                "knowledge_content": card.knowledge_content,
                 "review_date": record.review_date.isoformat(),
                 "status": record.status
             }
@@ -205,77 +204,66 @@ class ReviewPlanService:
 
     def complete_review(
         self,
-        note_id: int,
-        score: int,
-        is_correct: bool,
-        difficulty: str = "中等"
+        card_id: int,
+        action: str = "success"
     ) -> Optional[Dict[str, Any]]:
         """完成复习
 
-        完成复习后更新笔记状态、掌握程度和下次复习时间。
+        完成复习后更新卡牌状态和下次复习时间。
 
         Args:
-            note_id: 笔记ID
-            score: 复习得分（0-100）
-            is_correct: 答题是否正确
-            difficulty: 题目难度
+            card_id: 卡牌ID
+            action: 复习动作（success/fail）
 
         Returns:
-            更新后的笔记信息
+            更新后的卡牌信息
         """
+        from ..core.memory.forgotten_curve import ReviewAction
+
         session = self.db.get_session()
         try:
-            note = session.query(Note).filter(Note.id == note_id).first()
-            if not note:
+            card = session.query(Card).filter(Card.id == card_id).first()
+            if not card:
                 return None
 
             pending_records = (
                 session.query(ReviewRecord)
                 .filter(
-                    ReviewRecord.note_id == note_id,
+                    ReviewRecord.card_id == card_id,
                     ReviewRecord.status.in_(["pending", "in_progress"])
                 )
                 .all()
             )
             for record in pending_records:
                 record.status = "completed"
-                record.score = score
 
-            new_mastery = self.forgotten_curve.update_mastery_level(
-                note.mastery_level, is_correct, difficulty
+            review_action = ReviewAction.SUCCESS if action == "success" else ReviewAction.FAIL
+            new_level, next_review_date = self.forgotten_curve.complete_review_for_card(
+                card, review_action
             )
-
-            note.mastery_level = new_mastery
-            note.review_count += 1
-            note.last_reviewed = datetime.now()
-
-            next_review = self.forgotten_curve.calculate_next_review(
-                new_mastery, note.review_count, datetime.now()
-            )
-            note.next_review_date = next_review.date()
 
             session.commit()
-            session.refresh(note)
+            session.refresh(card)
 
             return {
-                "note_id": note.id,
-                "title": note.title,
-                "mastery_level": note.mastery_level,
-                "review_count": note.review_count,
-                "last_reviewed": note.last_reviewed.isoformat(),
-                "next_review_date": note.next_review_date.isoformat(),
-                "mastery_change": new_mastery - note.mastery_level + (new_mastery - note.mastery_level)
+                "card_id": card.id,
+                "name": card.name,
+                "durability": card.durability,
+                "review_level": card.review_level,
+                "review_count": card.review_count,
+                "last_reviewed": card.last_reviewed.isoformat() if card.last_reviewed else None,
+                "next_review_date": card.next_review_date.isoformat() if card.next_review_date else None
             }
         finally:
             session.close()
 
-    def skip_review(self, note_id: int, reason: str = "") -> bool:
+    def skip_review(self, card_id: int, reason: str = "") -> bool:
         """跳过复习
 
         将复习记录标记为跳过，并计算下次复习时间。
 
         Args:
-            note_id: 笔记ID
+            card_id: 卡牌ID
             reason: 跳过原因
 
         Returns:
@@ -283,14 +271,14 @@ class ReviewPlanService:
         """
         session = self.db.get_session()
         try:
-            note = session.query(Note).filter(Note.id == note_id).first()
-            if not note:
+            card = session.query(Card).filter(Card.id == card_id).first()
+            if not card:
                 return False
 
             pending_records = (
                 session.query(ReviewRecord)
                 .filter(
-                    ReviewRecord.note_id == note_id,
+                    ReviewRecord.card_id == card_id,
                     ReviewRecord.status == "pending"
                 )
                 .all()
@@ -300,7 +288,7 @@ class ReviewPlanService:
 
             short_interval = self.forgotten_curve.intervals[0]
             next_review = datetime.now() + timedelta(days=short_interval)
-            note.next_review_date = next_review.date()
+            card.next_review_date = next_review
 
             session.commit()
             return True
@@ -323,23 +311,23 @@ class ReviewPlanService:
 
         session = self.db.get_session()
         try:
-            total_notes = session.query(Note).count()
+            total_cards = session.query(Card).filter(Card.is_sealed == False).count()
 
-            overdue_notes = (
-                session.query(Note)
-                .filter(Note.next_review_date < target_date)
+            overdue_cards = (
+                session.query(Card)
+                .filter(Card.next_review_date < target_date, Card.is_sealed == False)
                 .count()
             )
 
-            due_today_notes = (
-                session.query(Note)
-                .filter(Note.next_review_date == target_date)
+            due_today_cards = (
+                session.query(Card)
+                .filter(Card.next_review_date == target_date, Card.is_sealed == False)
                 .count()
             )
 
             weak_count = (
-                session.query(Note)
-                .filter(Note.mastery_level < 70)
+                session.query(Card)
+                .filter(Card.durability < 70, Card.is_sealed == False)
                 .count()
             )
 
@@ -358,57 +346,62 @@ class ReviewPlanService:
 
             return {
                 "date": target_date.isoformat(),
-                "total_notes": total_notes,
-                "overdue_count": overdue_notes,
-                "due_today_count": due_today_notes,
+                "total_cards": total_cards,
+                "overdue_count": overdue_cards,
+                "due_today_count": due_today_cards,
                 "completed_today": completed_today,
                 "weak_points_count": weak_count
             }
         finally:
             session.close()
 
-    def generate_review_plan_for_note(self, note_id: int) -> Optional[List[Dict[str, Any]]]:
-        """为笔记生成复习计划
+    def generate_review_plan_for_card(self, card_id: int) -> Optional[List[Dict[str, Any]]]:
+        """为卡牌生成复习计划
 
-        根据笔记创建时间和遗忘曲线算法，生成未来复习时间表。
+        根据卡牌创建时间和遗忘曲线算法，生成未来复习时间表。
 
         Args:
-            note_id: 笔记ID
+            card_id: 卡牌ID
 
         Returns:
             复习计划列表
         """
         session = self.db.get_session()
         try:
-            note = session.query(Note).filter(Note.id == note_id).first()
-            if not note:
+            card = session.query(Card).filter(Card.id == card_id).first()
+            if not card:
                 return None
 
-            schedule = self.forgotten_curve.get_review_schedule(
-                note_id, note.created_at
-            )
+            schedule = []
+            now = datetime.now()
+            current_level = card.review_level
 
-            first_review_date = datetime.now()
-            note.next_review_date = first_review_date.date()
+            for i, interval in enumerate(self.forgotten_curve.intervals):
+                level = i + 1
+                if level <= current_level:
+                    continue
+                review_date = now + timedelta(days=interval)
+                schedule.append({
+                    "card_id": card_id,
+                    "review_date": review_date.isoformat(),
+                    "interval_days": interval,
+                    "review_level": level,
+                    "is_key_review": level in [1, 3, 6]
+                })
+
+            first_review_date = now
+            card.next_review_date = first_review_date
 
             session.commit()
 
-            return [
-                {
-                    "note_id": item["note_id"],
-                    "review_date": item["review_date"].isoformat(),
-                    "interval_days": item["interval"],
-                    "is_key_review": item["is_key_review"]
-                }
-                for item in schedule
-            ]
+            return schedule
         finally:
             session.close()
 
     def is_new_user(self) -> Dict[str, Any]:
         """检测是否为新手用户
 
-        判断用户是否还没有添加任何笔记或尚未开始复习，
+        判断用户是否还没有获取任何卡牌或尚未开始复习，
         以便提供新手引导。
 
         Returns:
@@ -416,24 +409,24 @@ class ReviewPlanService:
         """
         session = self.db.get_session()
         try:
-            total_notes = session.query(Note).count()
+            total_cards = session.query(Card).count()
             total_reviews = session.query(ReviewRecord).count()
 
-            is_new = total_notes == 0
+            is_new = total_cards == 0
             has_started = total_reviews > 0
 
             if is_new:
                 return {
                     "is_new_user": True,
-                    "total_notes": 0,
+                    "total_cards": 0,
                     "learning_days": 0,
-                    "current_step": "add_first_note",
+                    "current_step": "get_first_card",
                     "message": "欢迎开始算法学习之旅！",
                     "next_action": {
-                        "text": "添加第一个笔记",
-                        "description": "点击上方「笔记」按钮，添加您要学习的算法笔记",
-                        "action": "navigate_to_notes",
-                        "icon": "📝"
+                        "text": "获取第一张卡牌",
+                        "description": "与NPC对话，获取您的第一张算法卡牌",
+                        "action": "navigate_to_npc",
+                        "icon": "🃏"
                     },
                     "suggestions": [
                         {
@@ -450,13 +443,13 @@ class ReviewPlanService:
                         }
                     ]
                 }
-            elif total_notes > 0 and not has_started:
+            elif total_cards > 0 and not has_started:
                 return {
                     "is_new_user": True,
-                    "total_notes": total_notes,
+                    "total_cards": total_cards,
                     "learning_days": 0,
                     "current_step": "start_first_review",
-                    "message": "您已添加 {0} 个笔记，开始复习吧！".format(total_notes),
+                    "message": "您已拥有 {0} 张卡牌，开始复习吧！".format(total_cards),
                     "next_action": {
                         "text": "开始首次复习",
                         "description": "您的学习之旅即将开始，点击开始复习来激活遗忘曲线",
@@ -477,7 +470,7 @@ class ReviewPlanService:
             else:
                 return {
                     "is_new_user": False,
-                    "total_notes": total_notes,
+                    "total_cards": total_cards,
                     "learning_days": self._calculate_learning_days(),
                     "current_step": None,
                     "message": None,

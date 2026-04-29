@@ -1,7 +1,10 @@
 """
 笔记模型
 
-存储用户通过NPC对话生成的笔记
+.. deprecated::
+    笔记(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
+    复习追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
+    保留此文件仅为向后兼容和数据迁移参考。
 """
 
 from datetime import datetime
@@ -16,6 +19,10 @@ from algomate.data.database import Base
 
 class Note(Base):
     """笔记模型
+
+    .. deprecated::
+        笔记(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
+        复习追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
 
     存储用户的算法学习笔记，包含笔记内容、关联的NPC等信息。
 
@@ -57,7 +64,6 @@ class Note(Base):
 
     npc = relationship("NPC", back_populates="notes")
     cards = relationship("Card", back_populates="note")
-    questions = relationship("Question", back_populates="note")
     review_records = relationship("ReviewRecord", back_populates="note")
 
 
@@ -121,7 +127,10 @@ router = APIRouter(prefix="/api/notes", tags=["笔记"])
 
 @router.get("/", response_model=list[NoteResponse])
 async def get_notes():
-    """获取笔记列表"""
+    """获取笔记列表
+
+    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    """
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -135,7 +144,10 @@ async def get_notes():
 
 @router.get("/{note_id}", response_model=NoteResponse)
 async def get_note(note_id: int):
-    """获取单个笔记"""
+    """获取单个笔记
+
+    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    """
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -151,7 +163,10 @@ async def get_note(note_id: int):
 
 @router.post("/", response_model=NoteResponse, status_code=201)
 async def create_note(note: NoteCreate):
-    """创建笔记"""
+    """创建笔记
+
+    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    """
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -183,7 +198,10 @@ async def create_note(note: NoteCreate):
 
 @router.put("/{note_id}", response_model=NoteResponse)
 async def update_note(note_id: int, note: NoteUpdate):
-    """更新笔记"""
+    """更新笔记
+
+    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    """
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -220,7 +238,10 @@ async def update_note(note_id: int, note: NoteUpdate):
 
 @router.delete("/{note_id}", status_code=204)
 async def delete_note(note_id: int):
-    """删除笔记"""
+    """删除笔记
+
+    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    """
     from algomate.data.database import Database
     
     db = Database.get_instance()

@@ -19,6 +19,17 @@ const REALM_TO_NPC_ID = {
     '试炼之地': 8,
 }
 
+export const LOCATION_TO_REALM_ID = {
+    '新手森林': 'novice_forest',
+    '迷雾沼泽': 'mist_swamp',
+    '智慧圣殿': 'wisdom_temple',
+    '贪婪之塔': 'greed_tower',
+    '命运迷宫': 'fate_maze',
+    '分裂山脉': 'split_mountain',
+    '数学殿堂': 'math_hall',
+    '试炼之地': 'trial_ground',
+}
+
 export const npcService = {
     getByRealmId: (realmId) => {
         if (!realmId) {
@@ -40,6 +51,8 @@ export const npcService = {
         }
         return REALM_TO_NPC_ID[realmId] || null
     },
+
+    getUnlockedNpcs: () => api.get('/npcs/unlocked'),
 
     chat: (npcId, message, sessionId) =>
         apiWithRetry(() => api.post(`/npc/${npcId}/chat`, { message, sessionId })),

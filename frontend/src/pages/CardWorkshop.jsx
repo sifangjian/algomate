@@ -9,9 +9,391 @@ import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './CardWorkshop.module.css'
 
+const REALM_OPTIONS = [
+  { value: '新手森林', label: '🌲 新手森林' },
+  { value: '迷雾沼泽', label: '🌫️ 迷雾沼泽' },
+  { value: '智慧圣殿', label: '💡 智慧圣殿' },
+  { value: '贪婪之塔', label: '🏰 贪婪之塔' },
+  { value: '命运迷宫', label: '🌀 命运迷宫' },
+  { value: '分裂山脉', label: '⛰️ 分裂山脉' },
+  { value: '数学殿堂', label: '📐 数学殿堂' },
+  { value: '试炼之地', label: '⚔️ 试炼之地' },
+]
+
+const ALGORITHM_CATEGORIES = [
+  'Search', 'Sorting', 'Dynamic Programming', 'Graph',
+  'Tree', 'Recursion', 'Array', 'String', 'Greedy', 'Math',
+]
+
+function CreateCardModal({ open, onClose, onCreated }) {
+  const { addCard } = useCardStore()
+
+  const [form, setForm] = useState({
+    name: '',
+    domain: '',
+    algorithm_category: '',
+    difficulty: 3,
+    keyPoints: [],
+    noteContent: '',
+  })
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [keyPointInput, setKeyPointInput] = useState('')
+
+  const [polishingField, setPolishingField] = useState(null)
+  const [polishPreview, setPolishPreview] = useState(null)
+
+  const resetForm = useCallback(() => {
+    setForm({
+      name: '',
+      domain: '',
+      algorithm_category: '',
+      difficulty: 3,
+      keyPoints: [],
+      noteContent: '',
+    })
+    setErrors({})
+    setKeyPointInput('')
+    setPolishingField(null)
+    setPolishPreview(null)
+    setIsSubmitting(false)
+  }, [])
+
+  const handleClose = useCallback(() => {
+    resetForm()
+    onClose()
+  }, [onClose, resetForm])
+
+  const handleFieldChange = useCallback((field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }))
+    setErrors((prev) => {
+      if (prev[field]) {
+        const next = { ...prev }
+        delete next[field]
+        return next
+      }
+      return prev
+    })
+  }, [])
+
+  const handleAddKeyPoint = useCallback(() => {
+    const trimmed = keyPointInput.trim()
+    if (trimmed && !form.keyPoints.includes(trimmed)) {
+      setForm((prev) => ({ ...prev, keyPoints: [...prev.keyPoints, trimmed] }))
+      setKeyPointInput('')
+    }
+  }, [keyPointInput, form.keyPoints])
+
+  const handleRemoveKeyPoint = useCallback((index) => {
+    setForm((prev) => ({
+      ...prev,
+      keyPoints: prev.keyPoints.filter((_, i) => i !== index),
+    }))
+  }, [])
+
+  const handleKeyPointKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddKeyPoint()
+    }
+  }, [handleAddKeyPoint])
+
+  const handlePolish = useCallback(async (field) => {
+    const content = field === 'key_points'
+      ? form.keyPoints.join('\n')
+      : form.noteContent
+
+    if (!content.trim()) {
+      showToast('请先输入内容再进行润色', 'warning')
+      return
+    }
+
+    setPolishingField(field)
+    setPolishPreview(null)
+
+    try {
+      const result = await cardService.polishCard({ content, type: field })
+      setPolishPreview({ field, content: result.polished_content })
+    } catch (err) {
+      showToast(`AI润色失败: ${err.message}`, 'error')
+      setPolishingField(null)
+    }
+  }, [form.keyPoints, form.noteContent])
+
+  const handleAcceptPolish = useCallback(() => {
+    if (!polishPreview) return
+
+    if (polishPreview.field === 'key_points') {
+      const points = polishPreview.content
+        .split('\n')
+        .map((s) => s.replace(/^[-•*\d.)\s]+/, '').trim())
+        .filter(Boolean)
+      setForm((prev) => ({ ...prev, keyPoints: points }))
+    } else {
+      setForm((prev) => ({ ...prev, noteContent: polishPreview.content }))
+    }
+
+    setPolishPreview(null)
+    setPolishingField(null)
+  }, [polishPreview])
+
+  const handleRejectPolish = useCallback(() => {
+    setPolishPreview(null)
+    setPolishingField(null)
+  }, [])
+
+  const validate = useCallback(() => {
+    const newErrors = {}
+    if (!form.name.trim()) newErrors.name = '卡牌名称不能为空'
+    if (!form.domain) newErrors.domain = '请选择所属秘境'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }, [form.name, form.domain])
+
+  const handleSubmit = useCallback(async () => {
+    if (!validate()) return
+
+    setIsSubmitting(true)
+    try {
+      const payload = {
+        name: form.name.trim(),
+        domain: form.domain,
+        algorithm_category: form.algorithm_category.trim() || null,
+        difficulty: form.difficulty,
+        key_points: JSON.stringify(form.keyPoints),
+        knowledge_content: form.noteContent.trim() || null,
+      }
+
+      const newCard = await cardService.createCard(payload)
+      addCard(newCard)
+      showToast(`卡牌「${newCard.name}」创建成功！`, 'success')
+      onCreated?.(newCard)
+      handleClose()
+    } catch (err) {
+      showToast(`创建失败: ${err.message}`, 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [form, validate, addCard, onCreated, handleClose])
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="✨ 创建新卡牌"
+      size="lg"
+    >
+      <div className={styles.createForm}>
+        <Input
+          label="卡牌名称"
+          placeholder="输入卡牌名称，如：二分查找"
+          value={form.name}
+          onChange={(e) => handleFieldChange('name', e.target.value)}
+          error={errors.name}
+          icon="🎴"
+          id="card-name"
+        />
+
+        <div className={styles.formField}>
+          <label className={styles.fieldLabel} htmlFor="card-domain">
+            所属秘境 <span className={styles.required}>*</span>
+          </label>
+          <select
+            id="card-domain"
+            className={`${styles.fieldSelect} ${errors.domain ? styles.fieldError : ''}`}
+            value={form.domain}
+            onChange={(e) => handleFieldChange('domain', e.target.value)}
+          >
+            <option value="">选择秘境...</option>
+            {REALM_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          {errors.domain && <p className={styles.errorText}>{errors.domain}</p>}
+        </div>
+
+        <div className={styles.formField}>
+          <label className={styles.fieldLabel} htmlFor="card-category">
+            算法分类
+          </label>
+          <input
+            id="card-category"
+            className={styles.fieldInput}
+            placeholder="如：Dynamic Programming"
+            value={form.algorithm_category}
+            onChange={(e) => handleFieldChange('algorithm_category', e.target.value)}
+            list="category-list"
+          />
+          <datalist id="category-list">
+            {ALGORITHM_CATEGORIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </div>
+
+        <div className={styles.formField}>
+          <label className={styles.fieldLabel}>难度</label>
+          <div className={styles.starRating}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                className={`${styles.starBtn} ${star <= form.difficulty ? styles.starActive : ''}`}
+                onClick={() => handleFieldChange('difficulty', star)}
+                aria-label={`${star}星`}
+              >
+                {star <= form.difficulty ? '★' : '☆'}
+              </button>
+            ))}
+            <span className={styles.starLabel}>{form.difficulty}/5</span>
+          </div>
+        </div>
+
+        <div className={styles.formField}>
+          <div className={styles.fieldHeader}>
+            <label className={styles.fieldLabel}>关键要点</label>
+            <button
+              type="button"
+              className={styles.polishBtn}
+              onClick={() => handlePolish('key_points')}
+              disabled={!!polishingField || form.keyPoints.length === 0}
+            >
+              {polishingField === 'key_points' ? '⏳ 润色中...' : '✨ AI润色'}
+            </button>
+          </div>
+          <div className={styles.tagInput}>
+            <input
+              className={styles.tagInputField}
+              placeholder="输入要点后按回车添加"
+              value={keyPointInput}
+              onChange={(e) => setKeyPointInput(e.target.value)}
+              onKeyDown={handleKeyPointKeyDown}
+            />
+            <button
+              type="button"
+              className={styles.tagAddBtn}
+              onClick={handleAddKeyPoint}
+              disabled={!keyPointInput.trim()}
+            >
+              添加
+            </button>
+          </div>
+          {form.keyPoints.length > 0 && (
+            <div className={styles.tagList}>
+              {form.keyPoints.map((kp, i) => (
+                <span key={i} className={styles.tagItem}>
+                  {kp}
+                  <button
+                    type="button"
+                    className={styles.tagRemove}
+                    onClick={() => handleRemoveKeyPoint(i)}
+                    aria-label="移除"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {polishPreview && polishPreview.field === 'key_points' && (
+            <div className={styles.polishPreview}>
+              <div className={styles.polishPreviewHeader}>
+                <span>✨ AI润色结果</span>
+              </div>
+              <div className={styles.polishPreviewContent}>
+                {polishPreview.content.split('\n').map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
+              <div className={styles.polishPreviewActions}>
+                <button
+                  type="button"
+                  className={styles.polishAcceptBtn}
+                  onClick={handleAcceptPolish}
+                >
+                  采纳
+                </button>
+                <button
+                  type="button"
+                  className={styles.polishRejectBtn}
+                  onClick={handleRejectPolish}
+                >
+                  放弃
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.formField}>
+          <div className={styles.fieldHeader}>
+            <label className={styles.fieldLabel} htmlFor="card-note">笔记内容</label>
+            <button
+              type="button"
+              className={styles.polishBtn}
+              onClick={() => handlePolish('note_content')}
+              disabled={!!polishingField || !form.noteContent.trim()}
+            >
+              {polishingField === 'note_content' ? '⏳ 润色中...' : '✨ AI润色'}
+            </button>
+          </div>
+          <textarea
+            id="card-note"
+            className={styles.fieldTextarea}
+            placeholder="输入笔记内容（可选）..."
+            value={form.noteContent}
+            onChange={(e) => handleFieldChange('noteContent', e.target.value)}
+            rows={4}
+          />
+          {polishPreview && polishPreview.field === 'note_content' && (
+            <div className={styles.polishPreview}>
+              <div className={styles.polishPreviewHeader}>
+                <span>✨ AI润色结果</span>
+              </div>
+              <div className={styles.polishPreviewContent}>
+                {polishPreview.content}
+              </div>
+              <div className={styles.polishPreviewActions}>
+                <button
+                  type="button"
+                  className={styles.polishAcceptBtn}
+                  onClick={handleAcceptPolish}
+                >
+                  采纳
+                </button>
+                <button
+                  type="button"
+                  className={styles.polishRejectBtn}
+                  onClick={handleRejectPolish}
+                >
+                  放弃
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.createActions}>
+          <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
+            取消
+          </Button>
+          <Button
+            variant="accent"
+            onClick={handleSubmit}
+            loading={isSubmitting}
+            disabled={!!polishingField}
+          >
+            创建卡牌
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 export default function CardWorkshop() {
   const navigate = useNavigate()
-  const { cards, setCards, selectedCard, setSelectedCard, removeCard } = useCardStore()
+  const { cards, setCards, selectedCard, setSelectedCard, removeCard, addCard } = useCardStore()
 
   const [searchKeyword, setSearchKeyword] = useState('')
   const [selectedRealm, setSelectedRealm] = useState('all')
@@ -19,6 +401,7 @@ export default function CardWorkshop() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [cardToDelete, setCardToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   const lastClickTimeRef = useRef(0)
   const DEBOUNCE_DELAY = 300
@@ -126,8 +509,14 @@ export default function CardWorkshop() {
   }, [cardToDelete, removeCard, setSelectedCard])
 
   const handleReview = useCallback(
-    (card) => {
-      navigate(`/npc/${card.realmId}`)
+    async (card) => {
+      try {
+        await cardService.startReview(card.id)
+        showToast(`开始复习「${card.name}」`, 'success')
+        navigate(`/npc/${card.realmId}`)
+      } catch (err) {
+        showToast(`开始复习失败: ${err.message}`, 'error')
+      }
     },
     [navigate]
   )
@@ -143,9 +532,7 @@ export default function CardWorkshop() {
           variant="accent"
           size="sm"
           icon="➕"
-          onClick={() => {
-            showToast('🚧 卡牌创建功能开发中，敬请期待！', 'info')
-          }}
+          onClick={() => setCreateModalOpen(true)}
         >
           创建新卡牌
         </Button>
@@ -322,30 +709,40 @@ export default function CardWorkshop() {
               </div>
             )}
 
-            {selectedCard.note && (
-              <div className={styles.noteSection}>
-                <div className={styles.noteHeader}>
-                  <span className={styles.detailLabel}>📝 关联笔记</span>
-                  {selectedCard.note.is_favorite === 1 && <span className={styles.favoriteIcon}>⭐</span>}
+            {selectedCard.knowledgeContent && (
+              <div className={styles.knowledgeSection}>
+                <span className={styles.detailLabel}>📖 知识内容</span>
+                <div className={styles.knowledgeContent}>
+                  {selectedCard.knowledgeContent}
                 </div>
-                <div className={styles.noteCard}>
-                  <h4 className={styles.noteTitle}>{selectedCard.note.title}</h4>
-                  {selectedCard.note.summary && (
-                    <p className={styles.noteSummary}>{selectedCard.note.summary}</p>
-                  )}
-                  <div className={styles.noteContent}>
-                    {selectedCard.note.content}
-                  </div>
-                  {selectedCard.note.algorithm_type && (
-                    <div className={styles.noteMeta}>
-                      <span className={styles.noteTag}>{selectedCard.note.algorithm_type}</span>
-                      {selectedCard.note.difficulty && (
-                        <span className={styles.noteTag}>{selectedCard.note.difficulty}</span>
-                      )}
-                      <span className={styles.noteTag}>掌握度: {selectedCard.note.mastery_level}%</span>
-                    </div>
-                  )}
-                </div>
+              </div>
+            )}
+
+            {selectedCard.summary && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>摘要</span>
+                <span className={styles.summaryText}>{selectedCard.summary}</span>
+              </div>
+            )}
+
+            {selectedCard.algorithmType && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>算法类型</span>
+                <span className={styles.tag}>{selectedCard.algorithmType}</span>
+              </div>
+            )}
+
+            {selectedCard.reviewLevel != null && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>复习等级</span>
+                <span>Lv.{selectedCard.reviewLevel}</span>
+              </div>
+            )}
+
+            {selectedCard.nextReviewDate && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>下次复习</span>
+                <span>{new Date(selectedCard.nextReviewDate).toLocaleDateString()}</span>
               </div>
             )}
 
@@ -374,6 +771,12 @@ export default function CardWorkshop() {
         cancelText="取消"
         variant="danger"
         loading={isDeleting}
+      />
+
+      <CreateCardModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreated={() => setCreateModalOpen(false)}
       />
     </div>
   )

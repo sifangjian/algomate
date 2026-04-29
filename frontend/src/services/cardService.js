@@ -16,4 +16,22 @@ export const cardService = {
   deleteCard: (id) => api.delete(`/cards/${id}`),
 
   getAvailable: () => api.get('/cards?available=true'),
+
+  createCard: (data) => api.post('/cards/', data),
+
+  polishCard: (data) => api.post('/cards/polish', data),
+
+  startReview: (cardId) => api.post(`/review/start/${cardId}`),
+
+  completeReview: (cardId, action) => api.post(`/review/complete/${cardId}`, { action }),
+
+  skipReview: (cardId) => api.post(`/review/skip/${cardId}`),
+
+  getReviewSchedule: (cardId) => api.get(`/review/schedule/${cardId}`),
+
+  getTodayReviewPlan: () => api.get('/review/plan'),
+
+  getWeakPoints: (threshold) => api.get(`/review/weak-points?threshold=${threshold || 30}`),
+
+  getReviewStats: () => api.get('/review/statistics'),
 }

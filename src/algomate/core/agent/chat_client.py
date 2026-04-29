@@ -55,13 +55,16 @@ except ImportError:
     IPYTHON_AVAILABLE = False
 
 
-class NoteAnalysisResult(BaseModel):
-    """笔记分析结果结构"""
+class ContentAnalysisResult(BaseModel):
+    """内容分析结果结构"""
     algorithm_type: str = Field(description="算法类型（如：动态规划、贪心、DFS等）")
     key_points: List[str] = Field(description="关键知识点列表")
     difficulty: Literal["简单", "中等", "困难"] = Field(description="难度等级")
     tags: List[str] = Field(description="相关标签列表")
     summary: str = Field(description="一句话总结")
+
+
+NoteAnalysisResult = ContentAnalysisResult
 
 
 class Question(BaseModel):
@@ -165,39 +168,42 @@ class ChatClient:
 
     DEFAULT_SYSTEM_PROMPT = """你是 AlgoMate，一个专业的算法学习助手。
 
-## 🎯 我能帮你做什么
+## 核心教学原则：渐进式对话
 
-### 1. 笔记管理
-- 帮你整理和归类算法笔记
-- 自动识别笔记中的算法类型（DFS、BFS、动态规划、贪心等）
-- 提取关键知识点和代码片段
+你的回答必须遵循以下原则：
 
-### 2. 复习提醒
-- 基于艾宾浩斯遗忘曲线科学安排复习时间
-- 定时提醒你复习重要的算法知识
-- 追踪你的学习进度和掌握程度
+### 1. 精炼聚焦
+- 每次回答只聚焦用户问题的一个核心要点，用1-2句话说清楚核心思想
+- 配以一个形象易懂的例子帮助理解
+- 绝对不要一次性输出过多信息（不要同时讲定义、特征、步骤、代码等）
 
-### 3. 智能出题
-- 根据你的薄弱点生成针对性练习题
-- 支持三种题型：选择题、简答题、代码题
-- 生成详细的解题思路和参考答案
+### 2. 推荐追问
+- 每次回答末尾，必须生成2-4个推荐追问话题，引导用户继续探索
+- 推荐追问应覆盖不同维度：深入概念、算法步骤、代码示例、应用场景、对比分析等
+- 推荐追问应基于当前对话上下文，避免重复已讨论的内容
+- 格式要求：在回答正文结束后，用以下格式输出推荐追问：
 
-### 4. 薄弱点分析
-- 分析你的答题情况，找出知识薄弱环节
-- 提供个性化的学习建议
-- 帮助你有针对性地强化训练
+【推荐追问】
+1. 第一个追问
+2. 第二个追问
+3. 第三个追问
 
-### 5. 进度可视化
-- 雷达图展示各算法类型的掌握程度
-- 游戏化进度追踪，增强学习动力
-- 记录你的学习轨迹
+### 3. 回答示例
+用户问"什么是二分查找"时，你应该这样回答：
 
-## 💡 使用建议
-- 可以直接粘贴你的算法笔记，我会帮你整理和分析
-- 如果忘记了某个知识点，可以问我
-- 定期复习我能帮你生成练习题来巩固学习成果
+二分查找的核心思想是：在有序集合中，每次将搜索范围缩小一半，从而快速定位目标。
 
-有什么关于算法学习的问题，尽管问我吧！"""
+想象你在查字典找"apple"这个单词——你不会从第一页翻到最后一页，而是直接翻到字典中间，发现这一页是"M"开头的，那"apple"一定在前半部分，于是你再把前半部分从中间分开……每次都把范围缩小一半，这就是二分查找！
+
+【推荐追问】
+1. 二分查找的时间复杂度是多少？
+2. 二分查找的代码怎么写？
+3. 什么情况下不能用二分查找？
+
+### 4. 互动引导
+- 鼓励用户通过追问逐步深入，而不是一次讲完所有内容
+- 根据用户的追问方向灵活调整回答深度
+- 如果用户明确要求详细解答，可以适当展开，但仍建议分步进行"""
 
     def __init__(
         self,
@@ -303,6 +309,29 @@ class ChatClient:
             return response.content
         return str(response)
 
+    def chat_with_suggestions(
+        self,
+        messages: Union[List[Dict[str, str]], List[BaseMessage]],
+        temperature: Optional[float] = None,
+        system_prompt: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """发送对话请求，返回结构化结果（包含推荐追问）
+
+        Args:
+            messages: 对话消息列表
+            temperature: 可选的温度参数
+            system_prompt: 可选的系统提示词
+
+        Returns:
+            包含 content 和 suggestions 的字典
+        """
+        raw_response = self.chat(messages, temperature=temperature, system_prompt=system_prompt)
+        clean_content, suggestions = self._parse_suggestions(raw_response)
+        return {
+            "content": clean_content,
+            "suggestions": suggestions,
+        }
+
     def stream_chat(
         self,
         messages: Union[List[Dict[str, str]], List[BaseMessage]],
@@ -339,6 +368,57 @@ class ChatClient:
 
                 if content:
                     yield f"data: {json.dumps({'content': content}, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': f'Stream error: {str(e)}'}, ensure_ascii=False)}\n\n"
+
+    def stream_chat_with_suggestions(
+        self,
+        messages: Union[List[Dict[str, str]], List[BaseMessage]],
+        temperature: Optional[float] = None,
+        system_prompt: Optional[str] = None,
+    ):
+        """发送流式对话请求，流式输出内容，最后输出推荐追问
+
+        先流式输出回答内容，当检测到【推荐追问】标记时，
+        将推荐追问作为特殊事件输出。
+
+        Yields:
+            SSE格式的事件流数据
+        """
+        final_system_prompt = system_prompt if system_prompt is not None else self.DEFAULT_SYSTEM_PROMPT
+        messages_list = self._build_messages(messages, system_prompt=final_system_prompt)
+
+        llm = self.llm
+        if temperature is not None:
+            llm = llm.bind(temperature=temperature)
+
+        full_content = ""
+        in_suggestions = False
+
+        try:
+            for chunk in llm.stream(messages_list):
+                if isinstance(chunk, str):
+                    content = chunk
+                elif hasattr(chunk, 'content'):
+                    content = chunk.content
+                else:
+                    content = str(chunk)
+
+                if content:
+                    full_content += content
+
+                    if '【推荐追问】' in content or in_suggestions:
+                        in_suggestions = True
+                        continue
+                    else:
+                        yield f"data: {json.dumps({'content': content}, ensure_ascii=False)}\n\n"
+
+            clean_content, suggestions = self._parse_suggestions(full_content)
+
+            if suggestions:
+                yield f"data: {json.dumps({'suggestions': suggestions}, ensure_ascii=False)}\n\n"
+
+            yield "data: [DONE]\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'error': f'Stream error: {str(e)}'}, ensure_ascii=False)}\n\n"
 
@@ -382,11 +462,39 @@ class ChatClient:
 
         return result
 
+    def _parse_suggestions(self, response_text: str) -> tuple[str, list[str]]:
+        """解析AI回复，分离回答内容和推荐追问
+
+        Args:
+            response_text: AI原始回复文本
+
+        Returns:
+            (clean_content, suggestions) 元组
+        """
+        suggestions = []
+        clean_content = response_text
+
+        suggestion_pattern = r'【推荐追问】\s*\n((?:\d+\.\s*.+\n?)+)'
+        match = re.search(suggestion_pattern, response_text)
+
+        if match:
+            suggestions_block = match.group(1)
+            for line in suggestions_block.strip().split('\n'):
+                line = line.strip()
+                if re.match(r'^\d+\.\s*', line):
+                    suggestion = re.sub(r'^\d+\.\s*', '', line).strip()
+                    if suggestion:
+                        suggestions.append(suggestion)
+
+            clean_content = response_text[:match.start()].rstrip()
+
+        return clean_content, suggestions
+
     def analyze_note(
         self,
         note_content: str,
         system_prompt: Optional[str] = None,
-    ) -> NoteAnalysisResult:
+    ) -> ContentAnalysisResult:
         """分析算法笔记
 
         调用大模型分析笔记内容，提取关键信息。
@@ -397,7 +505,7 @@ class ChatClient:
             system_prompt: 可选的系统提示词
 
         Returns:
-            NoteAnalysisResult: 包含分析结果的 Pydantic 模型
+            ContentAnalysisResult: 包含分析结果的 Pydantic 模型
         """
         if system_prompt is None:
             system_prompt = """你是一个专业的算法学习助手，擅长分析算法笔记并提取关键信息。
@@ -422,15 +530,15 @@ class ChatClient:
         )
 
         try:
-            llm = self._get_llm_with_structured_output(NoteAnalysisResult)
+            llm = self._get_llm_with_structured_output(ContentAnalysisResult)
             response = llm.invoke(messages)
 
-            if isinstance(response, NoteAnalysisResult):
+            if isinstance(response, ContentAnalysisResult):
                 return response
             elif isinstance(response, dict):
-                return NoteAnalysisResult(**response)
+                return ContentAnalysisResult(**response)
             else:
-                return NoteAnalysisResult(
+                return ContentAnalysisResult(
                     algorithm_type="未知",
                     key_points=[],
                     difficulty="中等",
@@ -455,9 +563,9 @@ class ChatClient:
                 if json_match:
                     json_str = json_match.group()
                     parsed = json.loads(json_str)
-                    return NoteAnalysisResult(**parsed)
+                    return ContentAnalysisResult(**parsed)
                 
-                return NoteAnalysisResult(
+                return ContentAnalysisResult(
                     algorithm_type="未知",
                     key_points=[],
                     difficulty="中等",
@@ -465,7 +573,7 @@ class ChatClient:
                     summary=response_text[:100]
                 )
             except Exception:
-                return NoteAnalysisResult(
+                return ContentAnalysisResult(
                     algorithm_type="未知",
                     key_points=[],
                     difficulty="中等",

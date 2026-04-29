@@ -55,6 +55,7 @@ def _init_default_npcs():
                 "domain": "基础数据结构",
                 "avatar": "🧙‍♀️",
                 "description": "基础数据结构的导师",
+                "system_prompt": "你是引导者艾琳，基础数据结构的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到新手森林！我是这里的守护者艾琳。算法的世界充满奥秘，你想从哪里开始探索？",
                 "topics": ["数组", "链表", "栈", "队列", "哈希表", "二分查找", "线性查找"]
             },
@@ -63,6 +64,7 @@ def _init_default_npcs():
                 "domain": "递归与回溯",
                 "avatar": "🐸",
                 "description": "递归与回溯的导师",
+                "system_prompt": "你是沼泽向导卡尔，递归与回溯的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到迷雾沼泽！我是卡尔，这里的迷雾很浓，但我熟悉每一条路。",
                 "topics": ["递归", "回溯", "树遍历", "DFS", "BFS"]
             },
@@ -71,6 +73,7 @@ def _init_default_npcs():
                 "domain": "动态规划",
                 "avatar": "🦉",
                 "description": "动态规划的导师",
+                "system_prompt": "你是智者雅典娜，动态规划的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到智慧圣殿！我是雅典娜，动态规划是算法的精髓，让我为你指引方向。",
                 "topics": ["动态规划", "贪心算法", "分治策略"]
             },
@@ -79,6 +82,7 @@ def _init_default_npcs():
                 "domain": "图论与高级算法",
                 "avatar": "🏰",
                 "description": "图论与高级算法的导师",
+                "system_prompt": "你是守塔人戈尔，图论与高级算法的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到贪婪之塔！我是戈尔，这座塔充满了挑战，你准备好了吗？",
                 "topics": ["图论", "最短路径", "最小生成树", "网络流"]
             },
@@ -87,6 +91,7 @@ def _init_default_npcs():
                 "domain": "高级数据结构",
                 "avatar": "🌀",
                 "description": "高级数据结构的导师",
+                "system_prompt": "你是迷宫守护者墨丘利，高级数据结构的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到命运迷宫！我是墨丘利，这里的每一条路都通向未知。",
                 "topics": ["堆", "Trie", "并查集", "线段树", "树状数组"]
             },
@@ -95,6 +100,7 @@ def _init_default_npcs():
                 "domain": "算法巅峰",
                 "avatar": "⛰️",
                 "description": "算法巅峰的导师",
+                "system_prompt": "你是山巨人顿，算法巅峰的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到分裂山脉！我是顿，这里的挑战极其艰难。",
                 "topics": ["高级算法", "复杂算法分析", "算法优化"]
             },
@@ -103,6 +109,7 @@ def _init_default_npcs():
                 "domain": "数学与复杂度",
                 "avatar": "📐",
                 "description": "数学与复杂度的导师",
+                "system_prompt": "你是数学家欧几里得，数学与复杂度的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到数学殿堂！我是欧几里得，数学是算法的基础。",
                 "topics": ["数学证明", "时间复杂度", "空间复杂度", "组合数学"]
             },
@@ -111,6 +118,7 @@ def _init_default_npcs():
                 "domain": "终极试炼",
                 "avatar": "⚔️",
                 "description": "终极试炼的导师",
+                "system_prompt": "你是试炼之主，终极试炼的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
                 "greeting": "欢迎来到试炼之地！这是所有秘境的终极试炼！",
                 "topics": ["综合复习", "算法面试", "竞赛题目"]
             },
@@ -179,34 +187,32 @@ async def get_weak_points_endpoint(threshold: int = 70, limit: int = 10):
     return {"weak_points": weak_points[:limit], "total": len(weak_points)}
 
 
-@dashboard_router.post("/review/start/{note_id}")
-async def start_review(note_id: int):
+@dashboard_router.post("/review/start/{card_id}")
+async def start_review(card_id: int):
     review_service = get_review_service()
-    result = review_service.start_review(note_id)
+    result = review_service.start_review(card_id)
     if result is None:
-        raise HTTPException(status_code=404, detail="笔记不存在")
+        raise HTTPException(status_code=404, detail="卡牌不存在")
     return result
 
 
-@dashboard_router.post("/review/complete/{note_id}")
-async def complete_review(note_id: int, review_data: dict):
+@dashboard_router.post("/review/complete/{card_id}")
+async def complete_review(card_id: int, review_data: dict):
     review_service = get_review_service()
-    score = review_data.get("score", 0)
-    is_correct = review_data.get("is_correct", False)
-    difficulty = review_data.get("difficulty", "中等")
-    result = review_service.complete_review(note_id, score, is_correct, difficulty)
+    action = review_data.get("action", "success")
+    result = review_service.complete_review(card_id, action)
     if result is None:
-        raise HTTPException(status_code=404, detail="笔记不存在")
+        raise HTTPException(status_code=404, detail="卡牌不存在")
     return result
 
 
-@dashboard_router.post("/review/skip/{note_id}")
-async def skip_review(note_id: int, reason: str = ""):
+@dashboard_router.post("/review/skip/{card_id}")
+async def skip_review(card_id: int, reason: str = ""):
     review_service = get_review_service()
-    success = review_service.skip_review(note_id, reason)
+    success = review_service.skip_review(card_id, reason)
     if not success:
-        raise HTTPException(status_code=404, detail="笔记不存在")
-    return {"message": "已跳过复习", "note_id": note_id}
+        raise HTTPException(status_code=404, detail="卡牌不存在")
+    return {"message": "已跳过复习", "card_id": card_id}
 
 
 @dashboard_router.get("/review/statistics")
@@ -223,12 +229,12 @@ async def get_review_statistics(target_date: str = None):
     return stats
 
 
-@dashboard_router.get("/review/schedule/{note_id}")
-async def get_note_review_schedule(note_id: int):
+@dashboard_router.get("/review/schedule/{card_id}")
+async def get_card_review_schedule(card_id: int):
     review_service = get_review_service()
-    schedule = review_service.generate_review_plan_for_note(note_id)
+    schedule = review_service.generate_review_plan_for_card(card_id)
     if schedule is None:
-        raise HTTPException(status_code=404, detail="笔记不存在")
+        raise HTTPException(status_code=404, detail="卡牌不存在")
     return {"schedule": schedule}
 
 
@@ -936,9 +942,13 @@ async def npc_chat(npc_id: int, request: dict):
             session_result = await flow.start_dialogue(npc_id, None)
             new_session_id = session_result.dialogue_id
             result = await flow.continue_dialogue(new_session_id, message)
+            if "suggestions" not in result:
+                result["suggestions"] = []
             return result
         else:
             result = await flow.continue_dialogue(int(session_id), message)
+            if "suggestions" not in result:
+                result["suggestions"] = []
             return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -211,10 +211,10 @@ class ForgottenCurveEngine:
         """获取今日需要复习的卡牌列表
         
         Args:
-            cards: 卡牌列表（需要包含 created_at, last_reviewed, review_level 属性）
+            cards: 卡牌列表（Card 对象，包含 created_at, last_reviewed, review_level, durability, next_review_date 属性）
         
         Returns:
-            需要复习的卡牌列表（按优先级排序：濒危卡牌优先）
+            需要复习的卡牌列表（按优先级排序：耐久度低优先，到期日早优先）
         
         Note:
             卡牌对象需要有以下属性：
@@ -222,6 +222,7 @@ class ForgottenCurveEngine:
             - last_reviewed: Optional[datetime]
             - review_level: int
             - durability: int (用于排序)
+            - next_review_date: Optional[datetime] (用于排序)
             - is_sealed: bool (封印卡牌不参与复习)
         """
         due_cards = []
@@ -233,13 +234,73 @@ class ForgottenCurveEngine:
             if self.should_review(
                 card.created_at,
                 card.last_reviewed,
-                getattr(card, 'review_level', 0)
+                card.review_level
             ):
                 due_cards.append(card)
         
-        due_cards.sort(key=lambda c: getattr(c, 'durability', 100))
+        due_cards.sort(key=lambda c: (
+            c.durability,
+            c.next_review_date if c.next_review_date else datetime.max
+        ))
         
         return due_cards
+    
+    def get_review_status_for_card(self, card) -> ReviewResult:
+        """获取卡牌的复习状态详情
+        
+        基于 Card 对象的 created_at、last_reviewed、review_level 字段，
+        计算下次复习日期和是否到期。
+        
+        Args:
+            card: Card 对象，需包含 created_at, last_reviewed, review_level 属性
+        
+        Returns:
+            ReviewResult 包含 next_review_date、review_level、is_due
+        """
+        return self.get_review_status(
+            created_at=card.created_at,
+            last_reviewed=card.last_reviewed,
+            review_level=card.review_level
+        )
+    
+    def complete_review_for_card(
+        self, 
+        card, 
+        action: ReviewAction
+    ) -> Tuple[int, date]:
+        """完成一次卡牌复习，计算新的复习等级和下次复习日期
+        
+        根据复习动作（成功/失败）更新复习等级，同时调整耐久度：
+        - 复习成功：review_level +1（不超过 max_level），durability +20（不超过 100）
+        - 复习失败：review_level -1（不低于 0），durability -5（不低于 0）
+        
+        Args:
+            card: Card 对象，需包含 last_reviewed, review_level, durability 属性
+            action: 复习动作（SUCCESS / FAIL）
+        
+        Returns:
+            (new_review_level, next_review_date) 元组
+        """
+        now = datetime.now()
+        last_reviewed = card.last_reviewed or card.created_at or now
+        
+        next_review_dt, new_level = self.calculate_next_review(
+            last_reviewed=last_reviewed,
+            review_level=card.review_level,
+            action=action
+        )
+        
+        if action == ReviewAction.SUCCESS:
+            card.durability = min(card.durability + 20, card.max_durability if hasattr(card, 'max_durability') else 100)
+        else:
+            card.durability = max(card.durability - 5, 0)
+        
+        card.review_level = new_level
+        card.next_review_date = next_review_dt
+        card.last_reviewed = now
+        card.review_count = getattr(card, 'review_count', 0) + 1
+        
+        return new_level, next_review_dt.date()
     
     def calculate_review_level_from_history(
         self, 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { npcService } from '../services/npcService'
-import { noteService } from '../services/noteService'
+import { cardService } from '../services/cardService'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
 import Input from '../components/ui/Input/Input'
@@ -37,6 +37,7 @@ export default function NpcDialogue() {
     const [sessionId, setSessionId] = useState(null)
     const [showEndDialog, setShowEndDialog] = useState(false)
     const [isNpcLoading, setIsNpcLoading] = useState(true)
+    const [activeSuggestions, setActiveSuggestions] = useState([])
 
     useEffect(() => {
         if (!realmId) return
@@ -106,6 +107,7 @@ export default function NpcDialogue() {
             }
 
             const replyContent = response?.npc_response || '让我想想...'
+            const suggestions = response?.suggestions || []
 
             const npcMsg = {
                 id: `npc_${Date.now()}`,
@@ -113,9 +115,11 @@ export default function NpcDialogue() {
                 content: typeof replyContent === 'string' ? replyContent : JSON.stringify(replyContent),
                 timestamp: new Date().toISOString(),
                 displayed: false,
+                suggestions: suggestions,
             }
 
             setMessages((prev) => [...prev, npcMsg])
+            setActiveSuggestions(suggestions)
         } catch (err) {
             console.error('NPC Chat Error:', err)
 
@@ -143,24 +147,36 @@ export default function NpcDialogue() {
         [handleSend]
     )
 
+    const handleSuggestionClick = useCallback(
+        (suggestion) => {
+            setActiveSuggestions([])
+            handleSend(suggestion)
+        },
+        [handleSend]
+    )
+
+    const [earnedCard, setEarnedCard] = useState(null)
+
     const handleSaveNote = useCallback(async () => {
         if (!noteContent.trim()) {
             showToast('请输入笔记内容', 'warning')
             return
         }
         try {
-            await noteService.create({
-                title: `${npc.name}对话记录 - ${new Date().toLocaleDateString()}`,
-                content: noteContent,
-                algorithm_type: npc.expertise?.[0] || '其他',
-                tags: JSON.stringify(npc.expertise || []),
+            const result = await cardService.createCard({
+                name: `${npc.expertise?.[0] || '算法'}学习记录`,
+                domain: realmId,
+                knowledge_content: noteContent,
+                algorithm_category: npc.expertise?.[0] || null,
+                key_points: JSON.stringify(npc.expertise || []),
             })
-            showToast('笔记已保存 ✓', 'success')
+            setEarnedCard(result)
+            showToast('知识已转化为卡牌 🎴', 'success')
             setNoteContent('')
         } catch (err) {
             showToast(`保存失败: ${err.message}`, 'error')
         }
-    }, [noteContent, npc])
+    }, [noteContent, npc, realmId])
 
     const handleEndSession = useCallback(() => {
         if (noteContent.trim()) {
@@ -191,16 +207,21 @@ export default function NpcDialogue() {
     return (
         <div className={`${styles.container} page-container`}>
             <div className={styles.header}>
-                <button className={styles.backBtn} onClick={() => navigate('/')} aria-label="返回地图">
-                    ← 返回地图
-                </button>
-                <div className={styles.npcInfo}>
-                    <span className={styles.npcAvatar}>{npc.avatar}</span>
-                    <div>
-                        <h2 className={styles.npcName}>{npc.name}</h2>
-                        <span className={styles.npcRealm}>秘境向导</span>
+                <div className={styles.headerLeft}>
+                    <button className={styles.backBtn} onClick={() => navigate('/')} aria-label="返回地图">
+                        ← 返回地图
+                    </button>
+                    <div className={styles.npcInfo}>
+                        <span className={styles.npcAvatar}>{npc.avatar}</span>
+                        <div>
+                            <h2 className={styles.npcName}>{npc.name}</h2>
+                            <span className={styles.npcRealm}>秘境向导</span>
+                        </div>
                     </div>
                 </div>
+                <Button variant="secondary" size="sm" onClick={handleEndSession} icon="🏠">
+                    结束学习
+                </Button>
             </div>
 
             <div className={styles.layout}>
@@ -208,7 +229,7 @@ export default function NpcDialogue() {
                     <div className={styles.messagesList} role="log" aria-live="polite">
                         {messages.map((msg) =>
                             msg.role === 'npc' ? (
-                                <NpcMessage key={msg.id} message={msg} />
+                                <NpcMessage key={msg.id} message={msg} onSuggestionClick={handleSuggestionClick} />
                             ) : (
                                 <UserMessage key={msg.id} message={msg} />
                             )
@@ -243,7 +264,7 @@ export default function NpcDialogue() {
                         />
                         <Button
                             variant="accent"
-                            size="sm"
+                            size="md"
                             onClick={() => handleSend()}
                             disabled={!inputValue.trim() || isLoading}
                             loading={isLoading}
@@ -253,14 +274,12 @@ export default function NpcDialogue() {
                         </Button>
                     </div>
 
-                    <Button variant="ghost" size="sm" fullWidth onClick={handleEndSession} className={styles.endBtn}>
-                        🏠 结束学习，返回地图
-                    </Button>
+
                 </section>
 
                 <aside className={styles.noteSection} aria-label="笔记区域">
-                    <h3 className={styles.noteTitle}>📝 学习笔记</h3>
-                    <p className={styles.noteHint}>记录本次对话中的重点内容</p>
+                    <h3 className={styles.noteTitle}>📝 学习记录</h3>
+                    <p className={styles.noteHint}>记录重点内容，转化为知识卡牌</p>
                     <textarea
                         className={styles.noteEditor}
                         value={noteContent}
@@ -276,8 +295,34 @@ export default function NpcDialogue() {
                         onClick={handleSaveNote}
                         disabled={!noteContent.trim()}
                     >
-                        💾 保存笔记
+                        🎴 转化为卡牌
                     </Button>
+
+                    {earnedCard && (
+                        <div className={styles.earnedCardSection}>
+                            <h4 className={styles.earnedCardTitle}>🎴 获得卡牌</h4>
+                            <div className={styles.earnedCardInfo}>
+                                <p className={styles.earnedCardName}>{earnedCard.name}</p>
+                                {earnedCard.algorithmCategory && (
+                                    <span className={styles.earnedCardTag}>{earnedCard.algorithmCategory}</span>
+                                )}
+                                {earnedCard.knowledgeContent && (
+                                    <p className={styles.earnedCardContent}>
+                                        {earnedCard.knowledgeContent.length > 120
+                                            ? `${earnedCard.knowledgeContent.slice(0, 120)}...`
+                                            : earnedCard.knowledgeContent}
+                                    </p>
+                                )}
+                                {earnedCard.keyPoints?.length > 0 && (
+                                    <div className={styles.earnedCardPoints}>
+                                        {earnedCard.keyPoints.map((kp, i) => (
+                                            <span key={i} className={styles.earnedCardPoint}>{kp}</span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </aside>
             </div>
 
@@ -286,7 +331,7 @@ export default function NpcDialogue() {
                 onClose={() => setShowEndDialog(false)}
                 onConfirm={handleConfirmEnd}
                 title="结束学习"
-                message="你有未保存的笔记，是否在离开前保存？"
+                message="你有未保存的学习内容，是否在离开前转化为卡牌？"
                 confirmText="保存并结束"
                 cancelText="不保存直接结束"
             />
@@ -294,7 +339,7 @@ export default function NpcDialogue() {
     )
 }
 
-function NpcMessage({ message }) {
+function NpcMessage({ message, onSuggestionClick }) {
     const [displayedText, setDisplayedText] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const [started, setStarted] = useState(false)
@@ -317,14 +362,31 @@ function NpcMessage({ message }) {
     }, [message])
 
     const textToShow = message.displayed ? message.content : displayedText
+    const suggestions = message.suggestions || []
+    const showSuggestions = suggestions.length > 0 && !isTyping
 
     return (
         <div className={styles.npcMsg}>
             <span className={styles.msgAvatar}>🧙</span>
-            <GameCard className={styles.msgBubble}>
-                <p className={styles.msgText}>{textToShow}</p>
-                {isTyping && <span className={styles.cursor}>|</span>}
-            </GameCard>
+            <div className={styles.npcMsgContent}>
+                <GameCard className={styles.msgBubble}>
+                    <p className={styles.msgText}>{textToShow}</p>
+                    {isTyping && <span className={styles.cursor}>|</span>}
+                </GameCard>
+                {showSuggestions && (
+                    <div className={styles.suggestionsList}>
+                        {suggestions.map((s, i) => (
+                            <button
+                                key={`sug_${i}`}
+                                className={styles.suggestionBtn}
+                                onClick={() => onSuggestionClick?.(s)}
+                            >
+                                💡 {s}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

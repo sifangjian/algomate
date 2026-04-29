@@ -36,8 +36,7 @@ class Question(Base):
     
     Attributes:
         id: 题目唯一标识
-        note_id: 关联笔记ID（外键，可为NULL）
-        card_id: 关联卡牌ID（外键，可为NULL）
+        card_id: 关联卡牌ID（外键，必填）
         question_type: 题目类型（选择题/简答题/代码题）
         content: 题目内容（Markdown）
         options: 选项列表（JSON，选择题用）
@@ -50,8 +49,7 @@ class Question(Base):
     __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
-    card_id = Column(Integer, ForeignKey("cards.id"), nullable=True)
+    card_id = Column(Integer, ForeignKey("cards.id"), nullable=False)
     question_type = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
     options = Column(Text, default="[]", nullable=False)
@@ -60,15 +58,13 @@ class Question(Base):
     difficulty = Column(String(20), default="medium", nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     
-    note = relationship("Note", back_populates="questions")
     card = relationship("Card", back_populates="questions")
     bosses = relationship("Boss", back_populates="question")
 
 
 class QuestionCreate(BaseModel):
     """创建题目的输入验证模型"""
-    note_id: Optional[int] = Field(None, description="关联笔记ID")
-    card_id: Optional[int] = Field(None, description="关联卡牌ID")
+    card_id: int = Field(..., description="关联卡牌ID")
     question_type: QuestionType = Field(..., description="题目类型")
     content: str = Field(..., min_length=1, description="题目内容")
     options: List[str] = Field(default=[], description="选项列表（选择题用）")
@@ -82,7 +78,6 @@ class QuestionCreate(BaseModel):
 
 class QuestionUpdate(BaseModel):
     """更新题目的输入验证模型"""
-    note_id: Optional[int] = Field(None, description="关联笔记ID")
     card_id: Optional[int] = Field(None, description="关联卡牌ID")
     question_type: Optional[QuestionType] = Field(None, description="题目类型")
     content: Optional[str] = Field(None, min_length=1, description="题目内容")
@@ -98,8 +93,7 @@ class QuestionUpdate(BaseModel):
 class QuestionResponse(BaseModel):
     """返回给前端的题目数据模型"""
     id: int
-    note_id: Optional[int]
-    card_id: Optional[int]
+    card_id: int
     question_type: str
     content: str
     options: List[str]
@@ -137,7 +131,6 @@ async def get_questions():
         for q in questions:
             q_dict = {
                 "id": q.id,
-                "note_id": q.note_id,
                 "card_id": q.card_id,
                 "question_type": q.question_type,
                 "content": q.content,
@@ -167,7 +160,6 @@ async def get_question(question_id: int):
         
         q_dict = {
             "id": question.id,
-            "note_id": question.note_id,
             "card_id": question.card_id,
             "question_type": question.question_type,
             "content": question.content,
@@ -191,20 +183,12 @@ async def create_question(question: QuestionCreate):
     db = Database.get_instance()
     session = db.get_session()
     try:
-        if question.note_id:
-            from algomate.models.notes import Note
-            note = session.query(Note).filter(Note.id == question.note_id).first()
-            if not note:
-                raise HTTPException(status_code=404, detail=f"笔记 {question.note_id} 不存在")
-        
-        if question.card_id:
-            from algomate.models.cards import Card
-            card = session.query(Card).filter(Card.id == question.card_id).first()
-            if not card:
-                raise HTTPException(status_code=404, detail=f"卡牌 {question.card_id} 不存在")
+        from algomate.models.cards import Card
+        card = session.query(Card).filter(Card.id == question.card_id).first()
+        if not card:
+            raise HTTPException(status_code=404, detail=f"卡牌 {question.card_id} 不存在")
         
         new_question = Question(
-            note_id=question.note_id,
             card_id=question.card_id,
             question_type=question.question_type.value,
             content=question.content,
@@ -219,7 +203,6 @@ async def create_question(question: QuestionCreate):
         
         q_dict = {
             "id": new_question.id,
-            "note_id": new_question.note_id,
             "card_id": new_question.card_id,
             "question_type": new_question.question_type,
             "content": new_question.content,
@@ -244,23 +227,30 @@ async def generate_questions(request: dict):
     """AI生成题目
     
     Args:
-        request: 包含 topic（主题）和 count（数量，默认3）的字典
+        request: 包含 card_id（关联卡牌ID）和 count（数量，默认3）的字典
     """
     from algomate.data.database import Database
     from algomate.core.agent.chat_client import ChatClient
     from algomate.config.settings import AppConfig
+    from algomate.models.cards import Card
     import json
     import re
     
-    topic = request.get("topic", "")
+    card_id = request.get("card_id")
     count = request.get("count", 3)
     
-    if not topic:
-        raise HTTPException(status_code=400, detail="主题不能为空")
+    if not card_id:
+        raise HTTPException(status_code=400, detail="card_id 不能为空")
     
     db = Database.get_instance()
     session = db.get_session()
     try:
+        card = session.query(Card).filter(Card.id == card_id).first()
+        if not card:
+            raise HTTPException(status_code=404, detail=f"卡牌 {card_id} 不存在")
+        
+        topic = card.name
+        
         prompt = f"""针对"{topic}"这个算法主题，生成{count}道高质量的练习题。
 
 要求：
@@ -314,6 +304,7 @@ async def generate_questions(request: dict):
         created_questions = []
         for q_data in questions_list:
             new_question = Question(
+                card_id=card_id,
                 question_type=q_data.get("question_type", "简答题"),
                 content=q_data.get("content", ""),
                 options=json.dumps(q_data.get("options", []), ensure_ascii=False),
@@ -331,7 +322,6 @@ async def generate_questions(request: dict):
             session.refresh(q)
             q_dict = {
                 "id": q.id,
-                "note_id": q.note_id,
                 "card_id": q.card_id,
                 "question_type": q.question_type,
                 "content": q.content,
@@ -366,19 +356,11 @@ async def update_question(question_id: int, question: QuestionUpdate):
         if not existing:
             raise HTTPException(status_code=404, detail=f"题目 {question_id} 不存在")
         
-        if question.note_id is not None:
-            if question.note_id:
-                from algomate.models.notes import Note
-                note = session.query(Note).filter(Note.id == question.note_id).first()
-                if not note:
-                    raise HTTPException(status_code=404, detail=f"笔记 {question.note_id} 不存在")
-            existing.note_id = question.note_id
         if question.card_id is not None:
-            if question.card_id:
-                from algomate.models.cards import Card
-                card = session.query(Card).filter(Card.id == question.card_id).first()
-                if not card:
-                    raise HTTPException(status_code=404, detail=f"卡牌 {question.card_id} 不存在")
+            from algomate.models.cards import Card
+            card = session.query(Card).filter(Card.id == question.card_id).first()
+            if not card:
+                raise HTTPException(status_code=404, detail=f"卡牌 {question.card_id} 不存在")
             existing.card_id = question.card_id
         if question.question_type is not None:
             existing.question_type = question.question_type.value
@@ -398,7 +380,6 @@ async def update_question(question_id: int, question: QuestionUpdate):
         
         q_dict = {
             "id": existing.id,
-            "note_id": existing.note_id,
             "card_id": existing.card_id,
             "question_type": existing.question_type,
             "content": existing.content,

@@ -13,6 +13,11 @@ export const useCardStore = create((set) => ({
 
   setCards: (cards) => set({ cards }),
 
+  addCard: (card) =>
+    set((state) => ({
+      cards: [card, ...state.cards],
+    })),
+
   setSelectedCard: (card) => set({ selectedCard: card }),
 
   setFilterState: (filterState) =>

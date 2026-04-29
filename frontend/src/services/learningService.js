@@ -11,7 +11,7 @@ export const learningService = {
 
   generateQuiz: (topic) => api.post('/learning/generate-quiz', { topic }),
 
-  saveNote: (data) => api.post('/learning/save-note', data),
+  saveToCard: (data) => api.post('/cards/', data),
 
   explainConcept: (topic, concept) =>
     api.get(`/learning/explain-concept?topic=${topic}&concept=${concept}`),
