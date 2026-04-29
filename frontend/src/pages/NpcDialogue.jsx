@@ -63,7 +63,7 @@ export default function NpcDialogue() {
         }).catch((err) => {
             console.error('Failed to load NPC:', err)
             showToast(`加载NPC失败: ${err.message}`, 'error')
-            setNpc({...MOCK_NPC, id: 1})
+            setNpc({ ...MOCK_NPC, id: 1 })
             setMessages([{
                 id: 'greeting',
                 role: 'npc',
