@@ -21,22 +21,28 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (!error.response) {
+      console.error('Network Error:', error.message)
       throw new Error('网络连接失败，请检查网络')
     }
-    switch (error.response.status) {
+
+    const status = error.response.status
+    const data = error.response.data
+
+    console.error(`API Error [${status}]:`, data)
+
+    switch (status) {
       case 401:
         localStorage.removeItem('auth_token')
-        window.location.href = '/login'
-        break
+        throw new Error(data?.detail || data?.message || '认证失败，请刷新页面重试')
       case 403:
-        throw new Error('您没有权限执行此操作')
+        throw new Error(data?.detail || '您没有权限执行此操作')
       case 404:
-        throw new Error('请求的资源不存在')
+        throw new Error(data?.detail || '请求的资源不存在')
       case 500:
-        throw new Error('服务器繁忙，请稍后再试')
+        throw new Error(data?.detail || '服务器繁忙，请稍后再试')
       default:
         throw new Error(
-          error.response.data?.message || error.response.data?.error || '请求失败'
+          data?.message || data?.error || data?.detail || `请求失败 (${status})`
         )
     }
   }
