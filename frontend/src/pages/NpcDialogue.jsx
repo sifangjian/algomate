@@ -10,7 +10,7 @@ import { showToast } from '../components/ui/Toast/index'
 import styles from './NpcDialogue.module.css'
 
 const MOCK_NPC = {
-    id: null,
+    id: 1,
     name: '引导者艾琳',
     avatar: '🧙‍♀️',
     realmId: 'novice_forest',
@@ -36,12 +36,18 @@ export default function NpcDialogue() {
     const [noteContent, setNoteContent] = useState('')
     const [sessionId, setSessionId] = useState(null)
     const [showEndDialog, setShowEndDialog] = useState(false)
+    const [isNpcLoading, setIsNpcLoading] = useState(true)
 
     useEffect(() => {
         if (!realmId) return
+        setIsNpcLoading(true)
         npcService.getByRealmId(realmId).then((data) => {
-            if (data) {
-                setNpc(data)
+            if (data && data.id) {
+                const mergedNpc = {
+                    ...data,
+                    quickQuestions: data.quickQuestions || MOCK_NPC.quickQuestions,
+                }
+                setNpc(mergedNpc)
                 setMessages([{
                     id: 'greeting',
                     role: 'npc',
@@ -49,8 +55,14 @@ export default function NpcDialogue() {
                     timestamp: new Date().toISOString(),
                     displayed: true,
                 }])
+            } else {
+                console.error('Invalid NPC data received:', data)
+                showToast('NPC数据加载失败', 'error')
             }
-        }).catch(() => {
+        }).catch((err) => {
+            console.error('Failed to load NPC:', err)
+            showToast(`加载NPC失败: ${err.message}`, 'error')
+            setNpc({...MOCK_NPC, id: 1})
             setMessages([{
                 id: 'greeting',
                 role: 'npc',
@@ -58,7 +70,7 @@ export default function NpcDialogue() {
                 timestamp: new Date().toISOString(),
                 displayed: true,
             }])
-        })
+        }).finally(() => setIsNpcLoading(false))
     }, [realmId])
 
     useEffect(() => {
@@ -105,16 +117,20 @@ export default function NpcDialogue() {
 
             setMessages((prev) => [...prev, npcMsg])
         } catch (err) {
+            console.error('NPC Chat Error:', err)
+
             setMessages((prev) => [
                 ...prev,
                 {
                     id: `npc_err_${Date.now()}`,
                     role: 'npc',
-                    content: `抱歉，我遇到了一些问题：${err.message}。请稍后再试。`,
+                    content: `抱歉，我遇到了一些问题：${err.message}。请稍后再试或刷新页面。`,
                     timestamp: new Date().toISOString(),
                     displayed: true,
                 },
             ])
+
+            showToast(`对话失败: ${err.message}`, 'error')
         } finally {
             setIsLoading(false)
         }
