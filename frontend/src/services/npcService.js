@@ -30,6 +30,17 @@ export const LOCATION_TO_REALM_ID = {
     '试炼之地': 'trial_ground',
 }
 
+export const REALM_ID_TO_NAME = {
+    'novice_forest': '新手森林',
+    'mist_swamp': '迷雾沼泽',
+    'wisdom_temple': '智慧圣殿',
+    'greed_tower': '贪婪之塔',
+    'fate_maze': '命运迷宫',
+    'split_mountain': '分裂山脉',
+    'math_hall': '数学殿堂',
+    'trial_ground': '试炼之地',
+}
+
 export const npcService = {
     getByRealmId: (realmId) => {
         if (!realmId) {

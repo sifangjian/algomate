@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { npcService } from '../services/npcService'
+import { npcService, REALM_ID_TO_NAME } from '../services/npcService'
 import { cardService } from '../services/cardService'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
@@ -163,9 +163,11 @@ export default function NpcDialogue() {
             return
         }
         try {
+            const domainName = npc.location || REALM_ID_TO_NAME[realmId] || realmId
+            console.log('Creating card with domain:', domainName, 'npc.location:', npc.location, 'realmId:', realmId)
             const result = await cardService.createCard({
                 name: `${npc.expertise?.[0] || '算法'}学习记录`,
-                domain: realmId,
+                domain: domainName,
                 knowledge_content: noteContent,
                 algorithm_category: npc.expertise?.[0] || null,
                 key_points: JSON.stringify(npc.expertise || []),
@@ -174,6 +176,7 @@ export default function NpcDialogue() {
             showToast('知识已转化为卡牌 🎴', 'success')
             setNoteContent('')
         } catch (err) {
+            console.error('Create card error:', err)
             showToast(`保存失败: ${err.message}`, 'error')
         }
     }, [noteContent, npc, realmId])

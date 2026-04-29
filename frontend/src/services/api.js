@@ -42,6 +42,15 @@ api.interceptors.response.use(
         throw new Error(data?.detail || '您没有权限执行此操作')
       case 404:
         throw new Error(data?.detail || '请求的资源不存在')
+      case 422:
+        if (Array.isArray(data?.detail)) {
+          const errorMessages = data.detail.map(err => {
+            const field = err.loc?.join('.') || '未知字段'
+            return `${field}: ${err.msg}`
+          }).join('; ')
+          throw new Error(errorMessages || '数据验证失败')
+        }
+        throw new Error(data?.detail || '数据验证失败')
       case 429:
         throw new Error(data?.detail || '请求过于频繁，请稍后再试')
       case 500:
