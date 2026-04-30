@@ -34,6 +34,8 @@ export default function NpcDialogue() {
     const [inputValue, setInputValue] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [noteContent, setNoteContent] = useState('')
+    const [keyPoints, setKeyPoints] = useState([])
+    const [keyPointInput, setKeyPointInput] = useState('')
     const [sessionId, setSessionId] = useState(null)
     const [showEndDialog, setShowEndDialog] = useState(false)
     const [isNpcLoading, setIsNpcLoading] = useState(true)
@@ -159,27 +161,28 @@ export default function NpcDialogue() {
 
     const handleSaveNote = useCallback(async () => {
         if (!noteContent.trim()) {
-            showToast('请输入笔记内容', 'warning')
+            showToast('请输入心得内容', 'warning')
             return
         }
         try {
             const domainName = npc.location || REALM_ID_TO_NAME[realmId] || realmId
             console.log('Creating card with domain:', domainName, 'npc.location:', npc.location, 'realmId:', realmId)
             const result = await cardService.createCard({
-                name: `${npc.expertise?.[0] || '算法'}学习记录`,
+                name: `${npc.expertise?.[0] || '算法'}修习记录`,
                 domain: domainName,
                 knowledge_content: noteContent,
                 algorithm_category: npc.expertise?.[0] || null,
-                key_points: JSON.stringify(npc.expertise || []),
+                key_points: JSON.stringify(keyPoints),
             })
             setEarnedCard(result)
             showToast('知识已转化为卡牌 🎴', 'success')
             setNoteContent('')
+            setKeyPoints([])
         } catch (err) {
             console.error('Create card error:', err)
             showToast(`保存失败: ${err.message}`, 'error')
         }
-    }, [noteContent, npc, realmId])
+    }, [noteContent, keyPoints, npc, realmId])
 
     const handleEndSession = useCallback(() => {
         if (noteContent.trim()) {
@@ -207,6 +210,25 @@ export default function NpcDialogue() {
         [handleSend]
     )
 
+    const handleAddKeyPoint = useCallback(() => {
+        const trimmed = keyPointInput.trim()
+        if (trimmed && !keyPoints.includes(trimmed)) {
+            setKeyPoints((prev) => [...prev, trimmed])
+            setKeyPointInput('')
+        }
+    }, [keyPointInput, keyPoints])
+
+    const handleRemoveKeyPoint = useCallback((index) => {
+        setKeyPoints((prev) => prev.filter((_, i) => i !== index))
+    }, [])
+
+    const handleKeyPointKeyDown = useCallback((e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            handleAddKeyPoint()
+        }
+    }, [handleAddKeyPoint])
+
     return (
         <div className={`${styles.container} page-container`}>
             <div className={styles.header}>
@@ -223,7 +245,7 @@ export default function NpcDialogue() {
                     </div>
                 </div>
                 <Button variant="secondary" size="sm" onClick={handleEndSession} icon="🏠">
-                    结束学习
+                    结束修习
                 </Button>
             </div>
 
@@ -280,16 +302,57 @@ export default function NpcDialogue() {
 
                 </section>
 
-                <aside className={styles.noteSection} aria-label="笔记区域">
-                    <h3 className={styles.noteTitle}>📝 学习记录</h3>
+                <aside className={styles.noteSection} aria-label="心得区域">
+                    <h3 className={styles.noteTitle}>📝 修习记录</h3>
                     <p className={styles.noteHint}>记录重点内容，转化为知识卡牌</p>
+                    
+                    <div className={styles.keyPointsInput}>
+                        <label className={styles.keyPointsLabel}>🏷️ 关键要点</label>
+                        <div className={styles.keyPointsInputRow}>
+                            <input
+                                type="text"
+                                className={styles.keyPointsInputField}
+                                placeholder="输入要点后按回车添加"
+                                value={keyPointInput}
+                                onChange={(e) => setKeyPointInput(e.target.value)}
+                                onKeyDown={handleKeyPointKeyDown}
+                            />
+                            <button
+                                type="button"
+                                className={styles.keyPointsAddBtn}
+                                onClick={handleAddKeyPoint}
+                                disabled={!keyPointInput.trim()}
+                            >
+                                添加
+                            </button>
+                        </div>
+                        {keyPoints.length > 0 && (
+                            <div className={styles.keyPointsList}>
+                                {keyPoints.map((kp, i) => (
+                                    <span key={i} className={styles.keyPointTag}>
+                                        {kp}
+                                        <button
+                                            type="button"
+                                            className={styles.keyPointRemove}
+                                            onClick={() => handleRemoveKeyPoint(i)}
+                                            aria-label="移除"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <label className={styles.noteLabel}>📖 心得内容</label>
                     <textarea
                         className={styles.noteEditor}
                         value={noteContent}
                         onChange={(e) => setNoteContent(e.target.value)}
-                        placeholder="在这里写下你的学习笔记..."
+                        placeholder="在这里写下你的修炼心得..."
                         rows={10}
-                        aria-label="笔记编辑器"
+                        aria-label="心得编辑器"
                     />
                     <Button
                         variant="primary"
@@ -333,8 +396,8 @@ export default function NpcDialogue() {
                 open={showEndDialog}
                 onClose={() => setShowEndDialog(false)}
                 onConfirm={handleConfirmEnd}
-                title="结束学习"
-                message="你有未保存的学习内容，是否在离开前转化为卡牌？"
+                title="结束修习"
+                message="你有未保存的修习内容，是否在离开前转化为卡牌？"
                 confirmText="保存并结束"
                 cancelText="不保存直接结束"
             />
