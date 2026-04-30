@@ -1,15 +1,13 @@
 import { create } from 'zustand'
 
-export const useUIStore = create((set) => ({
+export const useUIStore = create((set, get) => ({
     toasts: [],
     taskDrawerOpen: false,
     modalOpen: false,
     modalContent: null,
-    taskSummary: {
-        totalToday: 3,
-        completedToday: 1,
-        hasIncomplete: true,
-    },
+    tasks: [],
+    tasksLoading: false,
+    taskSummary: {},
 
     addToast: (toast) =>
         set((state) => ({
@@ -29,5 +27,20 @@ export const useUIStore = create((set) => ({
 
     setModalContent: (content) => set({ modalContent: content }),
 
+    setTasks: (tasks) => set({ tasks }),
+
+    setTasksLoading: (loading) => set({ tasksLoading: loading }),
+
     setTaskSummary: (summary) => set({ taskSummary: summary }),
+
+    getTaskSummary: () => {
+        const tasks = get().tasks
+        const totalToday = tasks.length
+        const completedToday = 0
+        return {
+            totalToday,
+            completedToday,
+            hasIncomplete: totalToday > completedToday,
+        }
+    },
 }))

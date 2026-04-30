@@ -5,6 +5,7 @@ import { useUserStore } from '../stores/userStore'
 import { useUIStore } from '../stores/uiStore'
 import { realmService } from '../services/realmService'
 import { userService } from '../services/userService'
+import { taskService } from '../services/learningService'
 import GameCard from '../components/ui/Card/GameCard'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './AdventureMap.module.css'
@@ -13,14 +14,16 @@ export default function AdventureMap() {
     const navigate = useNavigate()
     const { realms, setRealms, setLoading, setError } = useGameStore()
     const { setUser } = useUserStore()
-    const { setTaskSummary, addToast } = useUIStore()
+    const { setTasks, setTasksLoading, addToast } = useUIStore()
 
     const fetchInitialData = useCallback(async () => {
         setLoading(true)
+        setTasksLoading(true)
         try {
-            const [realmsData] = await Promise.allSettled([
+            const [realmsData, userData, tasksData] = await Promise.allSettled([
                 realmService.getAll(),
                 userService.getUser().catch(() => null),
+                taskService.getTodayTasks(),
             ])
 
             if (realmsData.status === 'fulfilled' && Array.isArray(realmsData.value)) {
@@ -42,18 +45,24 @@ export default function AdventureMap() {
                 nextLevelExp: 3000,
             })
 
-            setTaskSummary({
-                totalToday: 3,
-                completedToday: 1,
-                hasIncomplete: true,
-            })
+            if (tasksData.status === 'fulfilled' && tasksData.value?.tasks) {
+                setTasks(tasksData.value.tasks)
+            } else {
+                setTasks([])
+                if (tasksData.status === 'rejected') {
+                    console.error('Tasks API Error:', tasksData.reason)
+                    showToast('获取今日任务失败', 'error')
+                }
+            }
         } catch (err) {
             setError(err.message)
             showToast('加载失败: ' + err.message, 'error')
+            setTasks([])
         } finally {
             setLoading(false)
+            setTasksLoading(false)
         }
-    }, [setRealms, setUser, setTaskSummary, setLoading, setError])
+    }, [setRealms, setUser, setTasks, setTasksLoading, setLoading, setError])
 
     useEffect(() => {
         fetchInitialData()
@@ -126,7 +135,7 @@ export default function AdventureMap() {
                             {realm.status !== 'locked' && (
                                 <div className={styles.progressSection}>
                                     <div className={styles.progressLabel}>
-                                        <span>探索进度</span>
+                                        <span>修为</span>
                                         <span>{realm.progress}%</span>
                                     </div>
                                     <div className={styles.progressBar} role="progressbar" aria-valuenow={realm.progress} aria-valuemin={0} aria-valuemax={100}>
@@ -186,7 +195,7 @@ export default function AdventureMap() {
                         <span className={styles.statIcon}>🔥</span>
                         <div className={styles.statInfo}>
                             <span className={styles.statValue}>7</span>
-                            <span className={styles.statLabel}>连续学习天数</span>
+                            <span className={styles.statLabel}>连续修习天数</span>
                         </div>
                     </GameCard>
                 </div>

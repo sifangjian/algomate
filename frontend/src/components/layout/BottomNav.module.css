@@ -93,75 +93,8 @@
     animation: pulse-glow 2s infinite;
 }
 
-.drawerOverlay {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: rgba(0, 0, 0, 0.6);
-    animation: fadeIn 200ms ease forwards;
-}
-
-.drawer {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: min(360px, 85vw);
-    background: var(--color-bg-secondary);
-    border-left: 1px solid var(--border-color);
-    animation: slideInRight 300ms ease forwards;
-    display: flex;
-    flex-direction: column;
-}
-
-.drawerHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.drawerHeader h2 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-}
-
-.closeBtn {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-color);
-    background: var(--color-bg-elevated);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-fast);
-}
-
-.closeBtn:hover {
-    background: var(--color-danger);
-    border-color: var(--color-danger);
-    color: white;
-}
-
-.drawerBody {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 20px;
-}
-
-.taskProgress {
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-}
-
 @media (max-width: 768px) {
     .mainContent {
-        paddingBottom: 70px;
+        padding-bottom: 70px;
     }
 }
