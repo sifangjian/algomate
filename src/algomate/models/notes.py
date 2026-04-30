@@ -1,9 +1,9 @@
 """
-笔记模型
+心得模型
 
 .. deprecated::
-    笔记(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
-    复习追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
+    心得(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
+    修炼追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
     保留此文件仅为向后兼容和数据迁移参考。
 """
 
@@ -18,26 +18,26 @@ from algomate.data.database import Base
 
 
 class Note(Base):
-    """笔记模型
+    """心得模型
 
     .. deprecated::
-        笔记(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
-        复习追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
+        心得(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
+        修炼追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
 
-    存储用户的算法学习笔记，包含笔记内容、关联的NPC等信息。
+    存储用户的算法修炼心得，包含心得内容、关联的NPC等信息。
 
     Attributes:
-        id: 笔记唯一标识
-        title: 笔记标题
-        content: 笔记内容（Markdown格式）
+        id: 心得唯一标识
+        title: 心得标题
+        content: 心得内容（Markdown格式）
         npc_id: 关联NPC ID（外键）
         summary: 摘要/概述
         algorithm_type: 算法类型
         difficulty: 难度等级
-        mastery_level: 掌握程度 (0-100)
-        review_count: 复习次数
-        last_reviewed: 最近复习时间
-        next_review_date: 下次复习日期
+        mastery_level: 领悟程度 (0-100)
+        review_count: 修炼次数
+        last_reviewed: 最近修炼时间
+        next_review_date: 下次修炼日期
         tags: 标签（JSON数组）
         is_favorite: 是否收藏
         created_at: 创建时间
@@ -68,9 +68,9 @@ class Note(Base):
 
 
 class NoteCreate(BaseModel):
-    """创建笔记的输入验证模型"""
-    title: str = Field(..., min_length=1, max_length=200, description="笔记标题")
-    content: str = Field(..., min_length=1, description="笔记内容（Markdown格式）")
+    """创建心得的输入验证模型"""
+    title: str = Field(..., min_length=1, max_length=200, description="心得标题")
+    content: str = Field(..., min_length=1, description="心得内容（Markdown格式）")
     npc_id: Optional[int] = Field(None, description="关联NPC ID")
     summary: Optional[str] = Field(None, description="摘要/概述")
     algorithm_type: Optional[str] = Field(None, description="算法类型")
@@ -82,17 +82,17 @@ class NoteCreate(BaseModel):
 
 
 class NoteUpdate(BaseModel):
-    """更新笔记的输入验证模型"""
-    title: Optional[str] = Field(None, min_length=1, max_length=200, description="笔记标题")
-    content: Optional[str] = Field(None, min_length=1, description="笔记内容（Markdown格式）")
+    """更新心得的输入验证模型"""
+    title: Optional[str] = Field(None, min_length=1, max_length=200, description="心得标题")
+    content: Optional[str] = Field(None, min_length=1, description="心得内容（Markdown格式）")
     npc_id: Optional[int] = Field(None, description="关联NPC ID")
     summary: Optional[str] = Field(None, description="摘要/概述")
     algorithm_type: Optional[str] = Field(None, description="算法类型")
     difficulty: Optional[str] = Field(None, description="难度等级")
-    mastery_level: Optional[int] = Field(None, ge=0, le=100, description="掌握程度")
-    review_count: Optional[int] = Field(None, ge=0, description="复习次数")
-    last_reviewed: Optional[datetime] = Field(None, description="最近复习时间")
-    next_review_date: Optional[datetime] = Field(None, description="下次复习日期")
+    mastery_level: Optional[int] = Field(None, ge=0, le=100, description="领悟程度")
+    review_count: Optional[int] = Field(None, ge=0, description="修炼次数")
+    last_reviewed: Optional[datetime] = Field(None, description="最近修炼时间")
+    next_review_date: Optional[datetime] = Field(None, description="下次修炼日期")
     tags: Optional[str] = Field(None, description="标签（JSON数组）")
     is_favorite: Optional[int] = Field(None, description="是否收藏")
 
@@ -101,7 +101,7 @@ class NoteUpdate(BaseModel):
 
 
 class NoteResponse(BaseModel):
-    """返回给前端的笔记数据模型"""
+    """返回给前端的心得数据模型"""
     id: int
     title: str
     content: str
@@ -122,14 +122,14 @@ class NoteResponse(BaseModel):
         from_attributes = True
 
 
-router = APIRouter(prefix="/api/notes", tags=["笔记"])
+router = APIRouter(prefix="/api/notes", tags=["心得"])
 
 
 @router.get("/", response_model=list[NoteResponse])
 async def get_notes():
-    """获取笔记列表
+    """获取心得列表
 
-    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    .. deprecated:: 心得API已废弃，请使用卡牌(Card)相关API替代。
     """
     from algomate.data.database import Database
     
@@ -144,9 +144,9 @@ async def get_notes():
 
 @router.get("/{note_id}", response_model=NoteResponse)
 async def get_note(note_id: int):
-    """获取单个笔记
+    """获取单个心得
 
-    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    .. deprecated:: 心得API已废弃，请使用卡牌(Card)相关API替代。
     """
     from algomate.data.database import Database
     
@@ -155,7 +155,7 @@ async def get_note(note_id: int):
     try:
         note = session.query(Note).filter(Note.id == note_id).first()
         if not note:
-            raise HTTPException(status_code=404, detail=f"笔记 {note_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"心得 {note_id} 不存在")
         return note
     finally:
         session.close()
@@ -163,9 +163,9 @@ async def get_note(note_id: int):
 
 @router.post("/", response_model=NoteResponse, status_code=201)
 async def create_note(note: NoteCreate):
-    """创建笔记
+    """创建心得
 
-    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    .. deprecated:: 心得API已废弃，请使用卡牌(Card)相关API替代。
     """
     from algomate.data.database import Database
     
@@ -191,16 +191,16 @@ async def create_note(note: NoteCreate):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"创建笔记失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"创建心得失败: {str(e)}")
     finally:
         session.close()
 
 
 @router.put("/{note_id}", response_model=NoteResponse)
 async def update_note(note_id: int, note: NoteUpdate):
-    """更新笔记
+    """更新心得
 
-    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    .. deprecated:: 心得API已废弃，请使用卡牌(Card)相关API替代。
     """
     from algomate.data.database import Database
     
@@ -209,7 +209,7 @@ async def update_note(note_id: int, note: NoteUpdate):
     try:
         existing = session.query(Note).filter(Note.id == note_id).first()
         if not existing:
-            raise HTTPException(status_code=404, detail=f"笔记 {note_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"心得 {note_id} 不存在")
         
         if note.title is not None:
             existing.title = note.title
@@ -231,16 +231,16 @@ async def update_note(note_id: int, note: NoteUpdate):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"更新笔记失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"更新心得失败: {str(e)}")
     finally:
         session.close()
 
 
 @router.delete("/{note_id}", status_code=204)
 async def delete_note(note_id: int):
-    """删除笔记
+    """删除心得
 
-    .. deprecated:: 笔记API已废弃，请使用卡牌(Card)相关API替代。
+    .. deprecated:: 心得API已废弃，请使用卡牌(Card)相关API替代。
     """
     from algomate.data.database import Database
     
@@ -249,7 +249,7 @@ async def delete_note(note_id: int):
     try:
         note = session.query(Note).filter(Note.id == note_id).first()
         if not note:
-            raise HTTPException(status_code=404, detail=f"笔记 {note_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"心得 {note_id} 不存在")
         
         session.delete(note)
         session.commit()
@@ -258,6 +258,6 @@ async def delete_note(note_id: int):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"删除笔记失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"删除心得失败: {str(e)}")
     finally:
         session.close()

@@ -4,7 +4,7 @@
 提供用户答案的智能评估功能，包括：
 - 调用 AI 评估答案正确性
 - 生成详细反馈和改进建议
-- 分析用户知识薄弱点
+- 分析用户秘术薄弱点
 - 持久化评估结果到数据库
 """
 
@@ -47,10 +47,10 @@ class AnswerEvaluator:
         调用 AI 模型评估答案，返回详细的评估结果。
 
         Args:
-            question: 题目内容
+            question: 试炼内容
             user_answer: 用户答案
             correct_answer: 参考答案
-            question_type: 题目类型（选择题/简答题/代码题），可选
+            question_type: 试炼类型（选择题/简答题/代码题），可选
 
         Returns:
             包含以下字段的字典：
@@ -83,28 +83,28 @@ class AnswerEvaluator:
         question_id: int,
         user_answer: str,
     ) -> Dict[str, Any]:
-        """根据题目 ID 评估答案
+        """根据试炼 ID 评估答案
 
-        从数据库加载题目信息，评估用户答案并保存记录。
+        从数据库加载试炼信息，评估用户答案并保存记录。
 
         Args:
-            question_id: 题目 ID
+            question_id: 试炼 ID
             user_answer: 用户答案
 
         Returns:
             评估结果字典
 
         Raises:
-            ValueError: 当数据库未初始化或题目不存在时
+            ValueError: 当数据库未初始化或试炼不存在时
         """
         if self.db is None:
-            raise ValueError("数据库未初始化，无法根据题目ID评估答案")
+            raise ValueError("数据库未初始化，无法根据试炼ID评估答案")
 
         session = self.db.get_session()
         try:
             question = session.query(Question).filter(Question.id == question_id).first()
             if not question:
-                raise ValueError(f"题目 {question_id} 不存在")
+                raise ValueError(f"试炼 {question_id} 不存在")
 
             result = self.evaluate(
                 question=question.content,
@@ -134,10 +134,10 @@ class AnswerEvaluator:
     ) -> Dict[str, Any]:
         """评估答案并分析薄弱点
 
-        在评估答案的基础上，分析用户的知识薄弱点。
+        在评估答案的基础上，分析用户的秘术薄弱点。
 
         Args:
-            question_id: 题目 ID
+            question_id: 试炼 ID
             user_answer: 用户答案
 
         Returns:
@@ -170,11 +170,11 @@ class AnswerEvaluator:
     ) -> int:
         """计算得分
 
-        根据评估结果和题目类型计算得分。
+        根据评估结果和试炼类型计算得分。
 
         Args:
             evaluation: 评估结果
-            question_type: 题目类型
+            question_type: 试炼类型
 
         Returns:
             得分（0-100）
@@ -204,12 +204,12 @@ class AnswerEvaluator:
     ) -> str:
         """生成解析说明
 
-        根据题目和正确答案生成解析说明。
+        根据试炼和正确答案生成解析说明。
 
         Args:
-            question: 题目内容
+            question: 试炼内容
             correct_answer: 正确答案
-            question_type: 题目类型
+            question_type: 试炼类型
 
         Returns:
             解析说明文本
@@ -229,7 +229,7 @@ class AnswerEvaluator:
         correct_answer: str,
         algorithm_type: str,
     ) -> Dict[str, Any]:
-        """分析知识薄弱点
+        """分析秘术薄弱点
 
         根据用户答案分析其在特定算法类型上的薄弱点。
 
@@ -241,7 +241,7 @@ class AnswerEvaluator:
         Returns:
             薄弱点分析结果
         """
-        prompt = f"""分析用户答案，找出其在"{algorithm_type}"方面的知识薄弱点。
+        prompt = f"""分析用户答案，找出其在"{algorithm_type}"方面的秘术薄弱点。
 
 用户答案：{user_answer}
 正确答案：{correct_answer}
@@ -250,7 +250,7 @@ class AnswerEvaluator:
 {{
     "weak_aspects": ["薄弱方面1", "薄弱方面2"],
     "suggestions": ["改进建议1", "改进建议2"],
-    "related_topics": ["相关知识点1", "相关知识点2"]
+    "related_topics": ["相关秘术1", "相关秘术2"]
 }}"""
 
         messages = [{"role": "user", "content": prompt}]
@@ -277,10 +277,10 @@ class AnswerEvaluator:
     ) -> list[Dict[str, Any]]:
         """批量评估答案
 
-        一次性评估多个答案，适用于批量练习场景。
+        一次性评估多个答案，适用于批量试炼场景。
 
         Args:
-            questions_and_answers: 包含题目和答案的字典列表
+            questions_and_answers: 包含试炼和答案的字典列表
                 每个字典应包含：question_id, question, user_answer, correct_answer
 
         Returns:
@@ -308,7 +308,7 @@ class AnswerEvaluator:
         从数据库查询历史评估记录。
 
         Args:
-            question_id: 题目 ID（可选，不指定则返回所有）
+            question_id: 试炼 ID（可选，不指定则返回所有）
             limit: 返回记录数量限制
 
         Returns:

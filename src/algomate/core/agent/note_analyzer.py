@@ -1,11 +1,11 @@
 """
-笔记分析器模块
+心得分析器模块
 
 .. deprecated::
     此模块已废弃。请使用 content_analyzer.ContentAnalyzer 替代。
 
-提供笔记内容的分析和处理功能，包括：
-- 调用 AI 分析笔记
+提供心得内容的分析和处理功能，包括：
+- 调用 AI 分析心得
 - 提取代码片段
 - 解析 Markdown 结构
 """
@@ -19,11 +19,11 @@ import json
 
 
 class NoteAnalyzer:
-    """笔记分析器
+    """心得分析器
 
     .. deprecated:: 此类已废弃。请使用 content_analyzer.ContentAnalyzer 替代。
 
-    负责笔记内容的智能分析和结构化处理。
+    负责心得内容的智能分析和结构化处理。
 
     Attributes:
         chat_client: AI 对话客户端实例
@@ -38,12 +38,12 @@ class NoteAnalyzer:
         self.chat_client = chat_client
 
     def analyze_note(self, note_content: str) -> NoteAnalysisResult:
-        """分析笔记内容
+        """分析心得内容
 
-        调用 AI 模型分析笔记，提取关键信息。
+        调用 AI 模型分析心得，提取关键信息。
 
         Args:
-            note_content: 笔记内容
+            note_content: 心得内容
 
         Returns:
             包含分析结果的 NoteAnalysisResult 对象
@@ -53,10 +53,10 @@ class NoteAnalyzer:
     def extract_code_snippets(self, content: str) -> List[str]:
         """提取代码片段
 
-        从笔记内容中提取所有代码块和行内代码。
+        从心得内容中提取所有代码块和行内代码。
 
         Args:
-            content: 笔记内容
+            content: 心得内容
 
         Returns:
             代码片段列表
@@ -66,16 +66,16 @@ class NoteAnalyzer:
         return matches
 
     async def process_note(self, note: Note, db: Database) -> Note:
-        """处理笔记
+        """处理心得
 
-        分析笔记内容并更新笔记属性。
+        分析心得内容并更新心得属性。
 
         Args:
-            note: 笔记对象
+            note: 心得对象
             db: 数据库实例
 
         Returns:
-            更新后的笔记对象
+            更新后的心得对象
         """
         session = db.get_session()
         try:
@@ -106,7 +106,7 @@ class NoteAnalyzer:
         将 Markdown 内容按标题分段，提取各部分内容。
 
         Args:
-            content: Markdown 格式的笔记内容
+            content: Markdown 格式的心得内容
 
         Returns:
             字典，键为标题，值为对应的内容

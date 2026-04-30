@@ -1,7 +1,7 @@
 """
-答题记录仓库模块
+应战记录仓库模块
 
-提供答题记录数据的数据库操作，包括记录的创建、查询等功能。
+提供应战记录数据的数据库操作，包括记录的创建、查询等功能。
 """
 
 from typing import List, Optional
@@ -11,16 +11,16 @@ from ..database import Database
 
 
 class AnswerRecordRepository:
-    """答题记录数据仓库
+    """应战记录数据仓库
 
-    负责答题记录数据的数据库操作。
+    负责应战记录数据的数据库操作。
 
     Attributes:
         db: 数据库实例
     """
 
     def __init__(self, db: Database):
-        """初始化答题记录仓库
+        """初始化应战记录仓库
 
         Args:
             db: 数据库实例
@@ -30,16 +30,16 @@ class AnswerRecordRepository:
     def create(
         self, question_id: int, user_answer: str, is_correct: bool, **kwargs
     ) -> AnswerRecord:
-        """创建答题记录
+        """创建应战记录
 
         Args:
-            question_id: 题目ID
+            question_id: 试炼ID
             user_answer: 用户答案
             is_correct: 是否正确
             **kwargs: 其他可选参数
 
         Returns:
-            创建的答题记录对象
+            创建的应战记录对象
         """
         session = self.db.get_session()
         try:
@@ -57,13 +57,13 @@ class AnswerRecordRepository:
             session.close()
 
     def get_by_id(self, record_id: int) -> Optional[AnswerRecord]:
-        """根据ID获取答题记录
+        """根据ID获取应战记录
 
         Args:
             record_id: 记录ID
 
         Returns:
-            答题记录对象，若不存在则返回 None
+            应战记录对象，若不存在则返回 None
         """
         session = self.db.get_session()
         try:
@@ -72,13 +72,13 @@ class AnswerRecordRepository:
             session.close()
 
     def get_recent_records(self, days: int = 30) -> List[AnswerRecord]:
-        """获取近期的答题记录
+        """获取近期的应战记录
 
         Args:
             days: 天数，默认30天
 
         Returns:
-            答题记录列表
+            应战记录列表
         """
         session = self.db.get_session()
         try:
@@ -92,13 +92,13 @@ class AnswerRecordRepository:
             session.close()
 
     def get_by_question_id(self, question_id: int) -> List[AnswerRecord]:
-        """获取指定题目的所有答题记录
+        """获取指定试炼的所有应战记录
 
         Args:
-            question_id: 题目ID
+            question_id: 试炼ID
 
         Returns:
-            答题记录列表
+            应战记录列表
         """
         session = self.db.get_session()
         try:
@@ -112,12 +112,12 @@ class AnswerRecordRepository:
             session.close()
 
     def get_all(self) -> List[AnswerRecord]:
-        """获取所有答题记录
+        """获取所有应战记录
 
-        按答题时间倒序返回。
+        按应战时间倒序返回。
 
         Returns:
-            答题记录列表
+            应战记录列表
         """
         session = self.db.get_session()
         try:

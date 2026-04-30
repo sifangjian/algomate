@@ -2,15 +2,15 @@
 耐久度管理系统模块
 
 管理卡牌耐久度的增减，包括：
-- 复习成功/失败的耐久度变化
+- 修炼成功/失败的耐久度变化
 - 每日衰减机制
 - 濒危和消散状态判断
 - 难度系数应用
 
 耐久度规则：
     - 范围：0-100
-    - 复习成功：+20 × 难度系数
-    - 复习失败：-5 × 难度系数
+    - 修炼成功：+20 × 难度系数
+    - 修炼失败：-5 × 难度系数
     - 每日衰减：-2 × 难度系数
     - 濒危阈值：<30
     - 消散阈值：=0（卡牌封印）
@@ -35,8 +35,8 @@ class DurabilityConfig:
     """耐久度配置数据结构
     
     Attributes:
-        success_base: 复习成功基础增量
-        fail_base: 复习失败基础减量
+        success_base: 修炼成功基础增量
+        fail_base: 修炼失败基础减量
         daily_decay_base: 每日衰减基础减量
         critical_threshold: 濒危阈值
         sealed_threshold: 封印阈值
@@ -222,10 +222,10 @@ class DurabilityManager:
         
         if is_sealed:
             status = "封印"
-            description = "卡牌已消散，需要通过复习解封"
+            description = "卡牌已消散，需要通过修炼解封"
         elif is_critical:
             status = "濒危"
-            description = "卡牌耐久度过低，建议尽快复习"
+            description = "卡牌耐久度过低，建议尽快修炼"
         else:
             status = "正常"
             description = "卡牌状态良好"

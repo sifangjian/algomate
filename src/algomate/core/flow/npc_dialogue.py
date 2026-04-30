@@ -14,7 +14,7 @@ NPC对话流程模块
     5. 更新对话历史
     6. 用户选择：
        a) 继续提问 → 返回步骤3
-       b) 结束学习 → 保存对话记录 → 触发笔记分析 → 生成卡牌
+       b) 结束修习 → 保存对话记录 → 触发心得分析 → 生成卡牌
 """
 
 from datetime import datetime
@@ -156,7 +156,7 @@ class NPCDialogueFlow:
         
         Args:
             npc_id: NPC ID
-            topic: 学习话题（可选）
+            topic: 修习话题（可选）
         
         Returns:
             对话会话对象
@@ -350,7 +350,7 @@ class NPCDialogueFlow:
         
         Args:
             dialogue_id: 对话ID
-            user_notes: 用户笔记内容
+            user_notes: 用户心得内容
         
         Returns:
             包含生成的卡牌列表的字典

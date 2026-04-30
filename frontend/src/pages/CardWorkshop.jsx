@@ -327,7 +327,7 @@ function CreateCardModal({ open, onClose, onCreated }) {
 
                 <div className={styles.formField}>
                     <div className={styles.fieldHeader}>
-                        <label className={styles.fieldLabel} htmlFor="card-note">笔记内容</label>
+                        <label className={styles.fieldLabel} htmlFor="card-note">心得内容</label>
                         <button
                             type="button"
                             className={styles.polishBtn}
@@ -340,7 +340,7 @@ function CreateCardModal({ open, onClose, onCreated }) {
                     <textarea
                         id="card-note"
                         className={styles.fieldTextarea}
-                        placeholder="输入笔记内容（可选）..."
+                        placeholder="输入心得内容（可选）..."
                         value={form.noteContent}
                         onChange={(e) => handleFieldChange('noteContent', e.target.value)}
                         rows={4}
@@ -512,10 +512,10 @@ export default function CardWorkshop() {
         async (card) => {
             try {
                 await cardService.startReview(card.id)
-                showToast(`开始复习「${card.name}」`, 'success')
+                showToast(`开始修炼「${card.name}」`, 'success')
                 navigate(`/npc/${card.realmId}`)
             } catch (err) {
-                showToast(`开始复习失败: ${err.message}`, 'error')
+                showToast(`开始修炼失败: ${err.message}`, 'error')
             }
         },
         [navigate]
@@ -542,7 +542,7 @@ export default function CardWorkshop() {
                 <div className={styles.warningBanner} role="alert">
                     <span>⚠️</span>
                     <span>
-                        有 <strong>{dangerCount}</strong> 张卡牌濒危（耐久度 &lt; 30%），请及时复习！
+                        有 <strong>{dangerCount}</strong> 张卡牌濒危（耐久度 &lt; 30%），请及时修炼！
                     </span>
                 </div>
             )}
@@ -580,7 +580,7 @@ export default function CardWorkshop() {
                 >
                     <option value="name">按名称</option>
                     <option value="durability">按耐久度</option>
-                    <option value="reviewedDate">按复习时间</option>
+                    <option value="reviewedDate">按修炼时间</option>
                 </select>
             </div>
 
@@ -634,8 +634,8 @@ export default function CardWorkshop() {
 
                             <div className={styles.cardMeta}>
                                 <span>{card.realmIcon} {card.realmName}</span>
-                                <span>复习 {card.reviewCount}次</span>
-                                <span>笔记 {card.noteCount}</span>
+                                <span>修炼 {card.reviewCount}次</span>
+                                <span>心得 {card.noteCount}</span>
                             </div>
                         </GameCard>
                     ))
@@ -694,8 +694,8 @@ export default function CardWorkshop() {
                             <span>{new Date(selectedCard.createdAt).toLocaleDateString()}</span>
                         </div>
                         <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>最后复习</span>
-                            <span>{new Date(selectedCard.lastReviewed).toLocaleDateString()}</span>
+                            <span className={styles.detailLabel}>最后修炼</span>
+                            <span>{selectedCard.lastReviewed ? new Date(selectedCard.lastReviewed).toLocaleDateString() : '从未修炼'}</span>
                         </div>
 
                         {selectedCard.keyPoints?.length > 0 && (
@@ -734,21 +734,21 @@ export default function CardWorkshop() {
 
                         {selectedCard.reviewLevel != null && (
                             <div className={styles.detailRow}>
-                                <span className={styles.detailLabel}>复习等级</span>
+                                <span className={styles.detailLabel}>修炼等级</span>
                                 <span>Lv.{selectedCard.reviewLevel}</span>
                             </div>
                         )}
 
                         {selectedCard.nextReviewDate && (
                             <div className={styles.detailRow}>
-                                <span className={styles.detailLabel}>下次复习</span>
+                                <span className={styles.detailLabel}>下次修炼</span>
                                 <span>{new Date(selectedCard.nextReviewDate).toLocaleDateString()}</span>
                             </div>
                         )}
 
                         <div className={styles.modalActions}>
                             <Button variant="primary" onClick={() => handleReview(selectedCard)}>
-                                📖 复习此卡牌
+                                📖 修炼此卡牌
                             </Button>
                             <Button
                                 variant="danger"
@@ -766,7 +766,7 @@ export default function CardWorkshop() {
                 onClose={() => setDeleteConfirmOpen(false)}
                 onConfirm={handleDeleteConfirm}
                 title="确认删除"
-                message={`确定要删除「${cardToDelete?.name}」卡牌吗？\n删除后关联的笔记将保留，但无法再通过卡牌访问。`}
+                message={`确定要删除「${cardToDelete?.name}」卡牌吗？\n删除后关联的心得将保留，但无法再通过卡牌访问。`}
                 confirmText="确认删除"
                 cancelText="取消"
                 variant="danger"

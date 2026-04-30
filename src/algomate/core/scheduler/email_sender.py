@@ -1,8 +1,8 @@
 """
 邮件提醒系统模块
 
-发送每日复习提醒邮件，包括：
-- 发送复习提醒邮件
+发送每日修炼提醒邮件，包括：
+- 发送修炼提醒邮件
 - 测试邮件配置
 - 定时任务：每日发送提醒
 
@@ -11,13 +11,13 @@
     正文:
         尊敬的大陆冒险者，
         
-        根据您的修炼进度，以下是今日的复习任务：
+        根据您的修炼进度，以下是今日的修炼任务：
         
         📋 今日任务（3项）
         1. 【濒危卡牌】二分查找（耐久度: 28）
-           → 建议立即复习，避免卡牌消散
-        2. 【遗忘复习】滑动窗口（到期: 今天）
-           → 您的记忆正在淡去，快来复习吧！
+           → 建议立即修炼，避免卡牌消散
+        2. 【功力衰退·修炼】滑动窗口（到期: 今天）
+           → 您的功力正在衰退，快来修炼吧！
         3. 【Boss挑战】迷雾史莱姆王
            → 使用「滑动窗口」卡牌应战
         
@@ -41,11 +41,11 @@ from algomate.core.scheduler.review_scheduler import ReviewScheduler, ReviewTask
 class EmailSender:
     """邮件提醒系统
     
-    负责发送每日复习提醒邮件。
+    负责发送每日修炼提醒邮件。
     
     Attributes:
         config: 应用配置
-        review_scheduler: 复习调度器
+        review_scheduler: 修炼调度器
     """
     
     def __init__(
@@ -57,7 +57,7 @@ class EmailSender:
         
         Args:
             config: 应用配置，默认自动加载
-            review_scheduler: 复习调度器，默认自动创建
+            review_scheduler: 修炼调度器，默认自动创建
         """
         self.config = config or AppConfig.load()
         self.review_scheduler = review_scheduler or ReviewScheduler()
@@ -67,11 +67,11 @@ class EmailSender:
         recipients: List[str],
         tasks: Optional[List[ReviewTask]] = None
     ) -> bool:
-        """发送复习提醒邮件
+        """发送修炼提醒邮件
         
         Args:
             recipients: 收件人邮箱列表
-            tasks: 复习任务列表，默认自动生成
+            tasks: 修炼任务列表，默认自动生成
         
         Returns:
             是否发送成功
@@ -210,7 +210,7 @@ class EmailSender:
         """构建邮件内容
         
         Args:
-            tasks: 复习任务列表
+            tasks: 修炼任务列表
         
         Returns:
             包含主题和正文的字典
@@ -223,7 +223,7 @@ class EmailSender:
         
         body = f"""尊敬的大陆冒险者，
 
-根据您的修炼进度，以下是今日的复习任务：
+根据您的修炼进度，以下是今日的修炼任务：
 
 📋 今日任务（{len(tasks)}项）
 """
@@ -233,15 +233,15 @@ class EmailSender:
         for task in critical_tasks:
             body += f"""
 {task_num}. 【濒危卡牌】{task.card_name}（耐久度: {task.card_durability}）
-   → 建议立即复习，避免卡牌消散
+   → 建议立即修炼，避免卡牌消散
 """
             task_num += 1
         
         for task in review_tasks:
             due_text = "今天" if task.due_date == datetime.now().date() else task.due_date.strftime("%m月%d日")
             body += f"""
-{task_num}. 【遗忘复习】{task.card_name}（到期: {due_text}）
-   → 您的记忆正在淡去，快来复习吧！
+{task_num}. 【功力衰退·修炼】{task.card_name}（到期: {due_text}）
+   → 您的功力正在衰退，快来修炼吧！
 """
             task_num += 1
         

@@ -60,30 +60,30 @@ def test_forgotten_curve():
     
     engine = ForgottenCurveEngine()
     
-    print("\n1. 测试获取复习间隔")
-    assert engine.get_review_interval(0) == 0, "复习等级0失败"
-    print("   [OK] 复习等级0: 间隔0天")
+    print("\n1. 测试获取修炼间隔")
+    assert engine.get_review_interval(0) == 0, "修炼等级0失败"
+    print("   [OK] 修炼等级0: 间隔0天")
     
-    assert engine.get_review_interval(1) == 1, "复习等级1失败"
-    print("   [OK] 复习等级1: 间隔1天")
+    assert engine.get_review_interval(1) == 1, "修炼等级1失败"
+    print("   [OK] 修炼等级1: 间隔1天")
     
-    assert engine.get_review_interval(3) == 7, "复习等级3失败"
-    print("   [OK] 复习等级3: 间隔7天")
+    assert engine.get_review_interval(3) == 7, "修炼等级3失败"
+    print("   [OK] 修炼等级3: 间隔7天")
     
-    print("\n2. 测试复习成功后的下次复习时间")
+    print("\n2. 测试修炼成功后的下次修炼时间")
     last_reviewed = datetime(2024, 1, 1, 10, 0)
     next_review, new_level = engine.calculate_next_review(
         last_reviewed, 1, ReviewAction.SUCCESS
     )
-    assert new_level == 2, "复习成功等级提升失败"
-    print(f"   [OK] 复习成功: 等级从1提升到{new_level}")
+    assert new_level == 2, "修炼成功等级提升失败"
+    print(f"   [OK] 修炼成功: 等级从1提升到{new_level}")
     
-    print("\n3. 测试复习失败后的下次复习时间")
+    print("\n3. 测试修炼失败后的下次修炼时间")
     next_review, new_level = engine.calculate_next_review(
         last_reviewed, 2, ReviewAction.FAIL
     )
-    assert new_level == 1, "复习失败等级下降失败"
-    print(f"   [OK] 复习失败: 等级从2下降到{new_level}")
+    assert new_level == 1, "修炼失败等级下降失败"
+    print(f"   [OK] 修炼失败: 等级从2下降到{new_level}")
     
     print("\n[OK] M3.1 遗忘曲线引擎测试通过")
 
@@ -106,19 +106,19 @@ def test_durability():
     assert manager.get_difficulty_multiplier("hard") == 1.5, "困难难度系数失败"
     print("   [OK] 困难难度系数: 1.5")
     
-    print("\n2. 测试复习成功的耐久度变化")
+    print("\n2. 测试修炼成功的耐久度变化")
     change = manager.calculate_durability_change(
         DurabilityAction.REVIEW_SUCCESS, "normal"
     )
-    assert change == 20, "复习成功耐久度变化失败"
-    print(f"   [OK] 复习成功(普通): +{change}")
+    assert change == 20, "修炼成功耐久度变化失败"
+    print(f"   [OK] 修炼成功(普通): +{change}")
     
-    print("\n3. 测试复习失败的耐久度变化")
+    print("\n3. 测试修炼失败的耐久度变化")
     change = manager.calculate_durability_change(
         DurabilityAction.REVIEW_FAIL, "normal"
     )
-    assert change == -5, "复习失败耐久度变化失败"
-    print(f"   [OK] 复习失败(普通): {change}")
+    assert change == -5, "修炼失败耐久度变化失败"
+    print(f"   [OK] 修炼失败(普通): {change}")
     
     print("\n4. 测试更新耐久度")
     new_dur, is_critical, is_sealed = manager.update_durability(

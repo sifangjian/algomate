@@ -5,7 +5,7 @@
 - 格式化和解析日期时间
 - 计算日期间隔
 - 获取相对时间描述
-- 艾宾浩斯复习日期计算
+- 艾宾浩斯修炼日期计算
 
 所有函数支持 timezone-aware 和 timezone-naive 两种 datetime 对象。
 """
@@ -329,19 +329,19 @@ def calculate_review_dates(
     intervals: list,
     include_initial: bool = True
 ) -> list:
-    """计算艾宾浩斯复习日期序列
+    """计算艾宾浩斯修炼日期序列
 
-    根据复习间隔计算一系列复习时间点，常用于学习类应用。
+    根据修炼间隔计算一系列修炼时间点，常用于修习类应用。
 
     标准艾宾浩斯间隔：1, 3, 7, 14, 30, 60 天
 
     Args:
-        start_date: 首次学习/记忆日期
-        intervals: 复习间隔天数列表
-        include_initial: 是否包含起始日期作为第一个复习点
+        start_date: 首次修习/功力日期
+        intervals: 修炼间隔天数列表
+        include_initial: 是否包含起始日期作为第一个修炼点
 
     Returns:
-        复习日期列表（datetime 对象）
+        修炼日期列表（datetime 对象）
 
     Example:
         >>> start = datetime(2024, 1, 1)
@@ -366,19 +366,19 @@ def get_next_review_info(
     review_dates: list,
     current_date: Optional[datetime] = None
 ) -> dict:
-    """获取下一次复习的信息
+    """获取下一次修炼的信息
 
     Args:
-        review_dates: 复习日期列表（已排序）
+        review_dates: 修炼日期列表（已排序）
         current_date: 当前日期，默认为 datetime.now()
 
     Returns:
-        包含 next_review（下次复习日期）、remaining（剩余天数）、index（第几次复习）的字典
+        包含 next_review（下次修炼日期）、remaining（剩余天数）、index（第几次修炼）的字典
 
     Example:
         >>> dates = calculate_review_dates(datetime.now(), [1, 3, 7])
         >>> info = get_next_review_info(dates)
-        >>> info["remaining"]  # 距离下次复习的天数
+        >>> info["remaining"]  # 距离下次修炼的天数
     """
     if current_date is None:
         current_date = datetime.now()

@@ -73,7 +73,7 @@ class TestForgottenCurveEngine:
     """遗忘曲线引擎测试"""
     
     def test_get_review_interval(self):
-        """测试获取复习间隔"""
+        """测试获取修炼间隔"""
         engine = ForgottenCurveEngine()
         
         assert engine.get_review_interval(0) == 0
@@ -85,7 +85,7 @@ class TestForgottenCurveEngine:
         assert engine.get_review_interval(6) == 60
     
     def test_get_review_interval_invalid_level(self):
-        """测试无效复习等级"""
+        """测试无效修炼等级"""
         engine = ForgottenCurveEngine()
         
         with pytest.raises(ValueError):
@@ -95,7 +95,7 @@ class TestForgottenCurveEngine:
             engine.get_review_interval(7)
     
     def test_calculate_next_review_success(self):
-        """测试复习成功后的下次复习时间"""
+        """测试修炼成功后的下次修炼时间"""
         engine = ForgottenCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
@@ -107,7 +107,7 @@ class TestForgottenCurveEngine:
         assert next_review == last_reviewed + timedelta(days=3)
     
     def test_calculate_next_review_fail(self):
-        """测试复习失败后的下次复习时间"""
+        """测试修炼失败后的下次修炼时间"""
         engine = ForgottenCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
@@ -119,7 +119,7 @@ class TestForgottenCurveEngine:
         assert next_review == last_reviewed + timedelta(days=1)
     
     def test_calculate_next_review_max_level(self):
-        """测试最高等级复习成功"""
+        """测试最高等级修炼成功"""
         engine = ForgottenCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
@@ -130,7 +130,7 @@ class TestForgottenCurveEngine:
         assert new_level == 6
     
     def test_calculate_next_review_min_level(self):
-        """测试最低等级复习失败"""
+        """测试最低等级修炼失败"""
         engine = ForgottenCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
@@ -141,14 +141,14 @@ class TestForgottenCurveEngine:
         assert new_level == 0
     
     def test_should_review_never_reviewed(self):
-        """测试从未复习的卡牌"""
+        """测试从未修炼的卡牌"""
         engine = ForgottenCurveEngine()
         created_at = datetime.now() - timedelta(days=2)
         
         assert engine.should_review(created_at, None, 0) is True
     
     def test_should_review_recently_reviewed(self):
-        """测试刚复习过的卡牌"""
+        """测试刚修炼过的卡牌"""
         engine = ForgottenCurveEngine()
         created_at = datetime(2024, 1, 1, 10, 0)
         last_reviewed = datetime.now() - timedelta(hours=12)
@@ -156,7 +156,7 @@ class TestForgottenCurveEngine:
         assert engine.should_review(created_at, last_reviewed, 1) is False
     
     def test_get_daily_review_tasks(self):
-        """测试获取今日复习任务"""
+        """测试获取今日修炼任务"""
         engine = ForgottenCurveEngine()
         
         cards = [
@@ -218,7 +218,7 @@ class TestDurabilityManager:
         assert manager.get_difficulty_multiplier("hard") == 1.5
     
     def test_calculate_durability_change_success(self):
-        """测试复习成功的耐久度变化"""
+        """测试修炼成功的耐久度变化"""
         manager = DurabilityManager()
         
         change = manager.calculate_durability_change(
@@ -237,7 +237,7 @@ class TestDurabilityManager:
         assert change == 30
     
     def test_calculate_durability_change_fail(self):
-        """测试复习失败的耐久度变化"""
+        """测试修炼失败的耐久度变化"""
         manager = DurabilityManager()
         
         change = manager.calculate_durability_change(
@@ -539,7 +539,7 @@ class TestDifficultyManager:
         assert manager.get_daily_task_count(DifficultyLevel.HARD) == 8
     
     def test_get_review_interval_multiplier(self):
-        """测试获取复习间隔倍数"""
+        """测试获取修炼间隔倍数"""
         manager = DifficultyManager()
         
         assert manager.get_review_interval_multiplier(DifficultyLevel.EASY) == 0.8

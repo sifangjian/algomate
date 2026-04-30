@@ -1,9 +1,9 @@
 """
-题目生成器模块
+试炼生成器模块
 
 提供智能出题功能，包括：
-- 根据笔记生成练习题
-- 根据薄弱点生成针对性练习题
+- 根据心得生成试炼
+- 根据薄弱点生成针对性试炼
 - 将生成结果持久化到数据库
 """
 
@@ -17,13 +17,13 @@ import json
 
 
 class QuestionGenerator:
-    """题目生成器
+    """试炼生成器
 
-    负责根据笔记内容和薄弱点生成练习题。
+    负责根据心得内容和薄弱点生成试炼。
 
     Attributes:
         chat_client: AI 对话客户端实例
-        QUESTION_TYPES: 支持的题目类型列表
+        QUESTION_TYPES: 支持的试炼类型列表
     """
 
     QUESTION_TYPES = ["选择题", "简答题", "代码题"]
@@ -39,16 +39,16 @@ class QuestionGenerator:
     def generate_for_note(
         self, note_content: str, count: int = 3
     ) -> List[Dict[str, Any]]:
-        """根据笔记生成练习题
+        """根据心得生成试炼
 
-        随机选择题目类型，调用 AI 生成练习题。
+        随机选择试炼类型，调用 AI 生成试炼。
 
         Args:
-            note_content: 笔记内容
-            count: 生成题目数量
+            note_content: 心得内容
+            count: 生成试炼数量
 
         Returns:
-            题目列表
+            试炼列表
         """
         selected_types = random.sample(self.QUESTION_TYPES, min(3, count))
         result = self.chat_client.generate_questions(note_content, selected_types, count)
@@ -62,19 +62,19 @@ class QuestionGenerator:
     ) -> List[Dict[str, Any]]:
         """生成选择题
 
-        根据笔记内容生成高质量的选择题，包含4个选项。
+        根据心得内容生成高质量的选择题，包含4个选项。
 
         Args:
-            note_content: 笔记内容
+            note_content: 心得内容
             difficulty: 难度等级（简单/中等/困难）
-            count: 生成题目数量
+            count: 生成试炼数量
 
         Returns:
             选择题列表，每道题包含选项
         """
         questions = []
         for _ in range(count):
-            prompt = f"""根据以下算法笔记，生成一道高质量的选择题：
+            prompt = f"""根据以下算法心得，生成一道高质量的选择题：
 
 {note_content}
 
@@ -87,7 +87,7 @@ class QuestionGenerator:
 请返回JSON格式：
 {{
     "question_type": "选择题",
-    "content": "题目内容（包含选项A、B、C、D）",
+    "content": "试炼内容（包含选项A、B、C、D）",
     "answer": "正确答案（如：A）",
     "explanation": "解析"
 }}"""
@@ -107,19 +107,19 @@ class QuestionGenerator:
     ) -> List[Dict[str, Any]]:
         """生成简答题
 
-        根据笔记内容生成简答题，考查对概念和原理的理解。
+        根据心得内容生成简答题，考查对概念和原理的理解。
 
         Args:
-            note_content: 笔记内容
+            note_content: 心得内容
             difficulty: 难度等级（简单/中等/困难）
-            count: 生成题目数量
+            count: 生成试炼数量
 
         Returns:
             简答题列表
         """
         questions = []
         for _ in range(count):
-            prompt = f"""根据以下算法笔记，生成一道高质量的简答题：
+            prompt = f"""根据以下算法心得，生成一道高质量的简答题：
 
 {note_content}
 
@@ -131,7 +131,7 @@ class QuestionGenerator:
 请返回JSON格式：
 {{
     "question_type": "简答题",
-    "content": "题目内容",
+    "content": "试炼内容",
     "answer": "参考答案要点",
     "explanation": "解析"
 }}"""
@@ -150,19 +150,19 @@ class QuestionGenerator:
     ) -> List[Dict[str, Any]]:
         """生成代码题
 
-        根据笔记内容生成代码题，要求实现特定算法或解决编程问题。
+        根据心得内容生成代码题，要求实现特定算法或解决编程问题。
 
         Args:
-            note_content: 笔记内容
+            note_content: 心得内容
             difficulty: 难度等级（简单/中等/困难）
-            count: 生成题目数量
+            count: 生成试炼数量
 
         Returns:
             代码题列表
         """
         questions = []
         for _ in range(count):
-            prompt = f"""根据以下算法笔记，生成一道高质量的代码题：
+            prompt = f"""根据以下算法心得，生成一道高质量的代码题：
 
 {note_content}
 
@@ -174,7 +174,7 @@ class QuestionGenerator:
 请返回JSON格式：
 {{
     "question_type": "代码题",
-    "content": "题目描述（包含函数签名、输入输出说明）",
+    "content": "试炼描述（包含函数签名、输入输出说明）",
     "answer": "参考代码实现",
     "explanation": "解题思路分析"
 }}"""
@@ -191,17 +191,17 @@ class QuestionGenerator:
         count: int = 5,
         question_types: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        """根据薄弱点生成练习题
+        """根据薄弱点生成试炼
 
-        针对用户薄弱知识点生成专项练习。
+        针对用户薄弱秘术生成专项试炼。
 
         Args:
-            weak_topics: 薄弱知识点列表，每个元素包含 name（知识点名称）
-            count: 生成题目数量
-            question_types: 题目类型列表，默认包含选择题和简答题
+            weak_topics: 薄弱秘术列表，每个元素包含 name（秘术名称）
+            count: 生成试炼数量
+            question_types: 试炼类型列表，默认包含选择题和简答题
 
         Returns:
-            题目列表
+            试炼列表
         """
         if question_types is None:
             question_types = ["选择题", "简答题"]
@@ -225,11 +225,11 @@ class QuestionGenerator:
         topic: Dict[str, Any],
         question_type: str,
     ) -> str:
-        """构建薄弱点题目的提示词
+        """构建薄弱点试炼的提示词
 
         Args:
-            topic: 薄弱知识点字典
-            question_type: 题目类型
+            topic: 薄弱秘术字典
+            question_type: 试炼类型
 
         Returns:
             格式化的提示词
@@ -238,11 +238,11 @@ class QuestionGenerator:
         topic_context = topic.get("context", "")
         difficulty = topic.get("difficulty", "中等")
 
-        base_prompt = f"""针对"{topic_name}"这个薄弱知识点，生成一道高质量练习题。
+        base_prompt = f"""针对"{topic_name}"这个薄弱秘术，生成一道高质量试炼。
 
 知识背景：{topic_context}
 难度：{difficulty}
-题目类型：{question_type}
+试炼类型：{question_type}
 
 """
 
@@ -255,7 +255,7 @@ class QuestionGenerator:
 请返回JSON格式：
 {
     "question_type": "选择题",
-    "content": "题目内容（包含选项）",
+    "content": "试炼内容（包含选项）",
     "answer": "正确答案",
     "explanation": "解析"
 }"""
@@ -267,7 +267,7 @@ class QuestionGenerator:
 请返回JSON格式：
 {
     "question_type": "简答题",
-    "content": "题目内容",
+    "content": "试炼内容",
     "answer": "参考答案要点",
     "explanation": "解析"
 }"""
@@ -279,7 +279,7 @@ class QuestionGenerator:
 请返回JSON格式：
 {
     "question_type": "代码题",
-    "content": "题目描述",
+    "content": "试炼描述",
     "answer": "参考代码",
     "explanation": "解题思路"
 }"""
@@ -287,10 +287,10 @@ class QuestionGenerator:
         return base_prompt
 
     def _extract_options(self, content: str) -> Dict[str, str]:
-        """从题目内容中提取选项
+        """从试炼内容中提取选项
 
         Args:
-            content: 题目内容
+            content: 试炼内容
 
         Returns:
             选项字典，键为 A/B/C/D，值为选项内容
@@ -329,11 +329,11 @@ class QuestionGenerator:
 
         Args:
             card_id: 关联的卡牌 ID
-            result: 生成的题目列表
+            result: 生成的试炼列表
             db: 数据库实例
 
         Returns:
-            创建的题目对象列表
+            创建的试炼对象列表
         """
         session = db.get_session()
         created_questions = []

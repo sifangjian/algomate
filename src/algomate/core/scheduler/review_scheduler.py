@@ -1,14 +1,14 @@
 """
-复习调度器模块
+修炼调度器模块
 
-管理每日复习任务生成和调度，包括：
-- 生成每日复习任务列表
-- 获取未来复习计划
-- 执行每日复习任务
+管理每日修炼任务生成和调度，包括：
+- 生成每日修炼任务列表
+- 获取未来修炼计划
+- 执行每日修炼任务
 
-复习任务生成规则：
+修炼任务生成规则：
     1. 优先濒危卡牌（耐久度 < 30）
-    2. 然后到期的遗忘曲线复习卡牌
+    2. 然后到期的遗忘曲线修炼卡牌
     3. 结合长期遗忘曲线和Boss挑战
     4. 根据游戏难度设置每日任务数量
 """
@@ -35,7 +35,7 @@ class TaskType(str, Enum):
 
 @dataclass
 class ReviewTask:
-    """复习任务数据结构"""
+    """修炼任务数据结构"""
     task_id: str
     task_type: TaskType
     card_id: int
@@ -62,9 +62,9 @@ class ReviewTask:
 
 
 class ReviewScheduler:
-    """复习调度器
+    """修炼调度器
     
-    管理每日复习任务的生成和调度。
+    管理每日修炼任务的生成和调度。
     
     Attributes:
         db: 数据库实例
@@ -79,7 +79,7 @@ class ReviewScheduler:
         db: Optional[Database] = None,
         config: Optional[AppConfig] = None
     ):
-        """初始化复习调度器
+        """初始化修炼调度器
         
         Args:
             db: 数据库实例，默认使用单例
@@ -95,13 +95,13 @@ class ReviewScheduler:
         self,
         user_id: Optional[int] = None
     ) -> List[ReviewTask]:
-        """生成每日复习任务
+        """生成每日修炼任务
         
         Args:
             user_id: 用户ID（可选，当前系统为单用户）
         
         Returns:
-            复习任务列表
+            修炼任务列表
         
         Example:
             >>> scheduler = ReviewScheduler()
@@ -155,7 +155,7 @@ class ReviewScheduler:
                         card_domain=card.domain,
                         card_durability=card.durability,
                         priority="high" if review_status.is_due else "medium",
-                        reason="遗忘曲线复习",
+                        reason="遗忘曲线修炼",
                         due_date=review_status.next_review_date
                     ))
                     task_counter += 1
@@ -199,13 +199,13 @@ class ReviewScheduler:
         self,
         days: int = 7
     ) -> List[Dict[str, Any]]:
-        """获取未来N天需要复习的卡牌
+        """获取未来N天需要修炼的卡牌
         
         Args:
             days: 查询的天数范围
         
         Returns:
-            复习计划列表
+            修炼计划列表
         
         Example:
             >>> scheduler = ReviewScheduler()
@@ -246,7 +246,7 @@ class ReviewScheduler:
             session.close()
     
     async def execute_daily_review(self) -> int:
-        """执行每日复习任务（定时调用）
+        """执行每日修炼任务（定时调用）
         
         Returns:
             执行的任务数量
@@ -254,7 +254,7 @@ class ReviewScheduler:
         Example:
             >>> scheduler = ReviewScheduler()
             >>> count = await scheduler.execute_daily_review()
-            >>> print(f"执行了 {count} 个复习任务")
+            >>> print(f"执行了 {count} 个修炼任务")
         """
         tasks = self.generate_daily_tasks()
         
@@ -280,7 +280,7 @@ class ReviewScheduler:
             session.close()
     
     def get_review_statistics(self) -> Dict[str, Any]:
-        """获取复习统计数据
+        """获取修炼统计数据
         
         Returns:
             统计数据字典
@@ -312,7 +312,7 @@ class ReviewScheduler:
             session.close()
     
     def get_domain_review_stats(self) -> List[Dict[str, Any]]:
-        """获取各领域的复习统计
+        """获取各领域的修炼统计
         
         Returns:
             各领域统计数据列表

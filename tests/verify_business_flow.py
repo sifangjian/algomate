@@ -48,7 +48,7 @@ def test_imports():
         return False
     
     try:
-        print("\n[OK] 导入 复习调度器模块...")
+        print("\n[OK] 导入 修炼调度器模块...")
         from algomate.core.scheduler.review_scheduler import (
             ReviewScheduler,
             ReviewTask,
@@ -217,7 +217,7 @@ def test_to_dict_methods():
             card_domain="迷雾沼泽",
             card_durability=80,
             priority="high",
-            reason="遗忘曲线复习",
+            reason="遗忘曲线修炼",
             due_date=datetime.now().date()
         )
         task_dict = task.to_dict()

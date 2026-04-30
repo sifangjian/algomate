@@ -148,7 +148,7 @@ export default function BossBattle() {
       <p className={styles.quote}>「{boss.quote}」</p>
 
       <div className={styles.battleLayout}>
-        <section className={styles.problemSection} aria-label="题目区域">
+        <section className={styles.problemSection} aria-label="试炼区域">
           <GameCard className={styles.problemCard}>
             <h3 className={styles.problemTitle}>{problem.title}</h3>
             <div className={styles.problemMeta}>
@@ -176,7 +176,7 @@ export default function BossBattle() {
 
             {problem.hints?.length > 0 && (
               <div className={styles.hints}>
-                <strong>💡 提示:</strong>
+                <strong>💡 指引:</strong>
                 <ul>{problem.hints.map((h, i) => <li key={i}>{h}</li>)}</ul>
               </div>
             )}

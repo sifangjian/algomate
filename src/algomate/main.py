@@ -1,10 +1,10 @@
 """
 Algomate 主程序模块
 
-算法学习助手主程序入口，负责：
+算法修习助手主程序入口，负责：
 - 应用初始化和配置
 - AI 组件的初始化
-- 复习调度器的启动和管理
+- 修炼调度器的启动和管理
 - 日志系统配置
 - FastAPI 服务器管理（后端 API）
 - 前后端统一启动
@@ -13,7 +13,7 @@ Usage:
     from src.algomate.main import AlgomateApp
 
     app = AlgomateApp()
-    app.start()  # 启动全部服务（后端 API + 复习调度器）
+    app.start()  # 启动全部服务（后端 API + 修炼调度器）
     # 或
     app.start_api_only()  # 仅启动后端 API
 """
@@ -68,7 +68,7 @@ def setup_logging(config: AppConfig):
 
 
 class AlgomateApp:
-    """算法学习助手应用类
+    """算法修习助手应用类
 
     应用主类，负责整体组件的初始化和管理。
 
@@ -77,10 +77,10 @@ class AlgomateApp:
         db: 数据库实例
         chat_client: AI 对话客户端
         content_analyzer: 内容分析器
-        question_generator: 题目生成器
+        question_generator: 试炼生成器
         weak_point_analyzer: 薄弱点分析器
         forgotten_curve: 遗忘曲线算法
-        review_scheduler: 复习调度器
+        review_scheduler: 修炼调度器
     """
 
     def __init__(self, config: AppConfig = None):
@@ -126,9 +126,9 @@ class AlgomateApp:
         logger.info("AI components initialized")
 
     def start_review_scheduler(self):
-        """启动复习调度器
+        """启动修炼调度器
 
-        如果配置启用了复习提醒，则启动定时调度任务。
+        如果配置启用了修炼提醒，则启动定时调度任务。
         """
         if self.config.REVIEW_ENABLED:
             self.review_scheduler = ReviewScheduler(self.config, self.db)
@@ -144,7 +144,7 @@ class AlgomateApp:
         from fastapi.middleware.cors import CORSMiddleware
 
         self.api_app = FastAPI(
-            title="算法学习助手 API",
+            title="算法修习助手 API",
             version="1.0.0",
         )
 
@@ -198,7 +198,7 @@ class AlgomateApp:
             logger.info("FastAPI server started on http://0.0.0.0:8000")
 
     def start_api_only(self):
-        """仅启动后端 API 服务（不启动复习调度器）"""
+        """仅启动后端 API 服务（不启动修炼调度器）"""
         self.start_api_server()
         logger.info("API server running. Press Ctrl+C to stop.")
         try:
@@ -214,7 +214,7 @@ class AlgomateApp:
     def start(self):
         """启动全部服务
 
-        启动后端 API 服务器和复习调度器。
+        启动后端 API 服务器和修炼调度器。
         """
         self.start_api_server()
         self.start_review_scheduler()
@@ -245,7 +245,7 @@ def run_interactive_chat(chat_client: ChatClient):
         chat_client: 聊天客户端实例
     """
     print("\n" + "="*50)
-    print("欢迎使用 Algomate 算法学习助手！")
+    print("欢迎使用 Algomate 算法修习助手！")
     print("输入您的问题，按回车发送。输入 'quit' 或 'exit' 退出。")
     print("="*50 + "\n")
 
@@ -293,11 +293,11 @@ def run_interactive_chat(chat_client: ChatClient):
 def main():
     """应用入口函数
 
-    创建应用实例，启动全部服务（API 服务器 + 复习调度器 + 交互式对话）。
+    创建应用实例，启动全部服务（API 服务器 + 修炼调度器 + 交互式对话）。
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description="Algomate 算法学习助手")
+    parser = argparse.ArgumentParser(description="Algomate 算法修习助手")
     parser.add_argument(
         "--api-only",
         action="store_true",

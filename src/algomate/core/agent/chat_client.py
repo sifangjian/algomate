@@ -3,8 +3,8 @@
 
 基于 LangChain v1 和 LangGraph 实现的大模型交互接口，提供：
 - 通用对话功能（Chat）
-- 笔记分析功能（Note Analysis）
-- 题目生成功能（Question Generation）
+- 心得分析功能（Note Analysis）
+- 试炼生成功能（Question Generation）
 - 答案评估功能（Answer Evaluation）
 
 LangChain v1 主要更新：
@@ -58,7 +58,7 @@ except ImportError:
 class ContentAnalysisResult(BaseModel):
     """内容分析结果结构"""
     algorithm_type: str = Field(description="算法类型（如：动态规划、贪心、DFS等）")
-    key_points: List[str] = Field(description="关键知识点列表")
+    key_points: List[str] = Field(description="关键秘术列表")
     difficulty: Literal["简单", "中等", "困难"] = Field(description="难度等级")
     tags: List[str] = Field(description="相关标签列表")
     summary: str = Field(description="一句话总结")
@@ -68,9 +68,9 @@ NoteAnalysisResult = ContentAnalysisResult
 
 
 class Question(BaseModel):
-    """题目结构"""
-    question_type: Literal["选择题", "简答题", "代码题"] = Field(description="题目类型")
-    content: str = Field(description="题目内容")
+    """试炼结构"""
+    question_type: Literal["选择题", "简答题", "代码题"] = Field(description="试炼类型")
+    content: str = Field(description="试炼内容")
     answer: str = Field(description="参考答案")
     explanation: str = Field(description="解析")
 
@@ -83,8 +83,8 @@ class AnswerEvaluationResult(BaseModel):
 
 
 class QuestionsResult(BaseModel):
-    """题目生成结果（包装列表）"""
-    questions: List[Question] = Field(description="生成的题目列表")
+    """试炼生成结果（包装列表）"""
+    questions: List[Question] = Field(description="生成的试炼列表")
 
 
 class RouteDecision(BaseModel):
@@ -93,7 +93,7 @@ class RouteDecision(BaseModel):
     Router 节点使用 LLM 判断用户意图后，输出结构化的路由决策。
     """
     next_node: Literal["chat", "practice", "review", "end"] = Field(
-        description="下一个执行的节点：chat-聊天, practice-题目练习, review-复习, end-结束对话"
+        description="下一个执行的节点：chat-聊天, practice-试炼挑战, review-修炼, end-结束对话"
     )
     reason: str = Field(description="决策理由，说明为什么选择该分支")
     context: Dict[str, Any] = Field(default_factory=dict, description="传递给下一个节点的上下文")
@@ -111,7 +111,7 @@ class AgentState(TypedDict):
         context: 跨节点传递的上下文信息
         result: 任务执行结果
         should_continue: 是否继续循环
-        pending_question: 缓存待回答的题目（用于 practice 分支）
+        pending_question: 缓存待回答的试炼（用于 practice 分支）
     """
     messages: Annotated[List[BaseMessage], "对话消息列表"]
     current_node: str
@@ -126,7 +126,7 @@ class ChatClient:
     """通用 LLM API 客户端
 
     基于 LangChain v1 create_agent 和 LangGraph 实现的客户端。
-    支持通用对话和特定任务（笔记分析、题目生成、答案评估）。
+    支持通用对话和特定任务（心得分析、试炼生成、答案评估）。
 
     LangChain v1 新特性使用：
     - create_agent: 简化的智能体构建
@@ -140,10 +140,10 @@ class ChatClient:
         # 通用对话
         response = client.chat([{"role": "user", "content": "你好"}])
 
-        # 笔记分析（结构化输出）
+        # 心得分析（结构化输出）
         result = client.analyze_note("# 动态规划\\n\\n动态规划是...")
 
-        # 生成题目
+        # 生成试炼
         questions = client.generate_questions(
             note_content="...",
             question_types=["选择题", "代码题"],
@@ -159,16 +159,16 @@ class ChatClient:
 
         # 使用 LangChain v1 create_agent
         agent = client.build_agent(
-            system_prompt="你是一个有帮助的算法学习助手。"
+            system_prompt="你是一个有帮助的算法修习助手。"
         )
         result = agent.invoke({
             "messages": [{"role": "user", "content": "什么是动态规划？"}]
         })
     """
 
-    DEFAULT_SYSTEM_PROMPT = """你是 AlgoMate，一个专业的算法学习助手。
+    DEFAULT_SYSTEM_PROMPT = """你是 AlgoMate，一个专业的算法修习助手。
 
-## 核心教学原则：渐进式对话
+## 核心传授原则：渐进式对话
 
 你的回答必须遵循以下原则：
 
@@ -495,30 +495,30 @@ class ChatClient:
         note_content: str,
         system_prompt: Optional[str] = None,
     ) -> ContentAnalysisResult:
-        """分析算法笔记
+        """分析算法心得
 
-        调用大模型分析笔记内容，提取关键信息。
+        调用大模型分析心得内容，提取关键信息。
         使用 LangChain v1 结构化输出，直接返回 Pydantic 模型。
 
         Args:
-            note_content: 笔记内容（Markdown格式）
+            note_content: 心得内容（Markdown格式）
             system_prompt: 可选的系统提示词
 
         Returns:
             ContentAnalysisResult: 包含分析结果的 Pydantic 模型
         """
         if system_prompt is None:
-            system_prompt = """你是一个专业的算法学习助手，擅长分析算法笔记并提取关键信息。
+            system_prompt = """你是一个专业的算法修习助手，擅长分析算法心得并提取关键信息。
 请严格按照JSON格式返回，不要包含任何其他内容。"""
 
-        user_prompt = f"""请分析以下算法笔记，提取关键信息：
+        user_prompt = f"""请分析以下算法心得，提取关键信息：
 
 {note_content}
 
 请严格按照以下JSON格式返回：
 {{
     "algorithm_type": "算法类型（如：动态规划、贪心、DFS等）",
-    "key_points": ["关键知识点1", "关键知识点2", "关键知识点3"],
+    "key_points": ["关键秘术1", "关键秘术2", "关键秘术3"],
     "difficulty": "难度等级（简单/中等/困难）",
     "tags": ["标签1", "标签2"],
     "summary": "一句话总结"
@@ -588,40 +588,40 @@ class ChatClient:
         count: int = 3,
         system_prompt: Optional[str] = None,
     ) -> List[Question]:
-        """生成练习题
+        """生成试炼
 
-        根据笔记内容生成指定数量和类型的练习题。
+        根据心得内容生成指定数量和类型的试炼。
         使用 LangChain v1 结构化输出。
 
         Args:
-            note_content: 笔记内容
-            question_types: 题目类型列表，默认包含选择题、简答题、代码题
-            count: 生成题目数量
+            note_content: 心得内容
+            question_types: 试炼类型列表，默认包含选择题、简答题、代码题
+            count: 生成试炼数量
             system_prompt: 可选的系统提示词
 
         Returns:
-            List[Question]: 题目列表
+            List[Question]: 试炼列表
         """
         if question_types is None:
             question_types = ["选择题", "简答题", "代码题"]
 
         if system_prompt is None:
-            system_prompt = """你是一个专业的算法出题助手，擅长根据算法笔记生成高质量练习题。
+            system_prompt = """你是一个专业的算法试炼助手，擅长根据算法心得生成高质量试炼。
 请严格按照JSON格式返回，不要包含任何其他内容。"""
 
         types_str = "、".join(question_types)
-        user_prompt = f"""根据以下算法笔记，生成{count}道练习题：
+        user_prompt = f"""根据以下算法心得，生成{count}道试炼：
 
 {note_content}
 
-题目类型要求：{types_str}
+试炼类型要求：{types_str}
 
 请严格按照以下JSON格式返回（必须包含 questions 字段）：
 {{
     "questions": [
         {{
-            "question_type": "题目类型",
-            "content": "题目内容",
+            "question_type": "试炼类型",
+            "content": "试炼内容",
             "answer": "参考答案",
             "explanation": "解析"
         }}
@@ -686,7 +686,7 @@ class ChatClient:
         使用 LangChain v1 结构化输出。
 
         Args:
-            question: 题目内容
+            question: 试炼内容
             user_answer: 用户答案
             correct_answer: 参考答案
             system_prompt: 可选的系统提示词
@@ -695,10 +695,10 @@ class ChatClient:
             AnswerEvaluationResult: 评估结果 Pydantic 模型
         """
         if system_prompt is None:
-            system_prompt = """你是一个严格的算法学习评估师，擅长评估用户的答案并给出改进建议。
+            system_prompt = """你是一个严格的算法修习评估师，擅长评估用户的答案并给出改进建议。
 请严格按照JSON格式返回，不要包含任何其他内容。"""
 
-        user_prompt = f"""题目：{question}
+        user_prompt = f"""试炼：{question}
 用户答案：{user_answer}
 参考答案：{correct_answer}
 
@@ -835,12 +835,12 @@ class ChatClient:
                 "should_continue": True,
             }
 
-        system_prompt = """你是一个算法学习助手，负责理解用户意图并决定下一步操作。
+        system_prompt = """你是一个算法修习助手，负责理解用户意图并决定下一步操作。
 
 用户可能处于以下几种模式：
 - chat: 用户想闲聊、讨论算法问题、或者一般对话
-- practice: 用户想做练习题、答题测试
-- review: 用户想复习算法知识点、查看记忆卡片
+- practice: 用户想做试炼、应战测试
+- review: 用户想修炼算法秘术、查看功力卡片
 - end: 用户想结束对话
 
 根据用户的消息内容，判断用户当前意图。如果不确定，默认进入 chat 模式。
@@ -923,7 +923,7 @@ class ChatClient:
             }
 
     def _create_practice_node(self, state: AgentState) -> AgentState:
-        """练习节点：生成题目让用户作答并评估
+        """试炼节点：生成试炼让用户应战并评估
 
         Args:
             state: 当前图状态
@@ -937,7 +937,7 @@ class ChatClient:
 
         try:
             if pending_question is None:
-                note_content = context.get("note_content", "算法学习")
+                note_content = context.get("note_content", "算法修习")
                 questions = self.generate_questions(
                     note_content=note_content,
                     question_types=["选择题", "简答题"],
@@ -946,7 +946,7 @@ class ChatClient:
                 if not questions:
                     return {
                         **state,
-                        "messages": messages + [AIMessage(content="抱歉，无法生成练习题。")],
+                        "messages": messages + [AIMessage(content="抱歉，无法生成试炼。")],
                         "current_node": "practice",
                         "pending_question": None,
                     }
@@ -954,11 +954,11 @@ class ChatClient:
                 q = questions[0]
                 pending_q = q.model_dump() if hasattr(q, 'model_dump') else q
 
-                practice_message = f"""好的，让我们来做一道练习题：
+                practice_message = f"""好的，让我们来挑战一道试炼：
 
-**题目类型**：{pending_q.get('question_type', '未知')}
+**试炼类型**：{pending_q.get('question_type', '未知')}
 
-**题目内容**：
+**试炼内容**：
 {pending_q.get('content', '')}
 
 请回答这道题，我会评估你的答案。"""
@@ -1000,7 +1000,7 @@ class ChatClient:
 **改进建议**：
 {improvement}
 
-还想继续练习还是换个话题？"""
+还想继续试炼还是换个话题？"""
 
                 return {
                     **state,
@@ -1012,13 +1012,13 @@ class ChatClient:
         except Exception as e:
             return {
                 **state,
-                "messages": messages + [AIMessage(content=f"练习过程出错: {str(e)}")],
+                "messages": messages + [AIMessage(content=f"试炼过程出错: {str(e)}")],
                 "current_node": "practice",
                 "pending_question": None,
             }
 
     def _create_review_node(self, state: AgentState) -> AgentState:
-        """复习节点：帮助用户复习算法知识点
+        """修炼节点：帮助用户修炼算法秘术
 
         Args:
             state: 当前图状态
@@ -1033,30 +1033,30 @@ class ChatClient:
         note_content = context.get("note_content", "")
         review_type = context.get("review_type", "general")
 
-        system_prompt = """你是一个算法复习助手。请根据用户的请求，以友好且交互的方式帮助用户复习算法知识点。
+        system_prompt = """你是一个算法修炼助手。请根据用户的请求，以友好且交互的方式帮助用户修炼算法秘术。
 你可以：
 - 解释重要概念
-- 提供记忆技巧
+- 提供功力技巧
 - 用图解方式说明算法步骤
 - 与用户互动确认理解程度
 
-用简洁清晰的语言进行复习，保持与用户的互动。"""
+用简洁清晰的语言进行修炼，保持与用户的互动。"""
 
         try:
             if review_type == "general":
-                prompt = f"请帮用户复习以下算法知识点，用简洁易懂的方式说明关键概念：\n\n{note_content or '算法与数据结构'}"
+                prompt = f"请帮用户修炼以下算法秘术，用简洁易懂的方式说明关键概念：\n\n{note_content or '算法与数据结构'}"
             else:
-                prompt = f"用户请求复习：{review_type}"
+                prompt = f"用户请求修炼：{review_type}"
 
             review_messages = [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]
             response = self.llm.invoke(review_messages)
 
             response_text = response.content if isinstance(response, AIMessage) else str(response)
-            review_text = f"""📚 **复习时间**
+            review_text = f"""📚 **修炼时间**
 
 {response_text}
 
-还想复习其他内容吗，或者想做些练习题？"""
+还想修炼其他内容吗，或者想做些试炼？"""
 
             return {
                 **state,
@@ -1067,7 +1067,7 @@ class ChatClient:
         except Exception as e:
             return {
                 **state,
-                "messages": messages + [AIMessage(content=f"复习过程出错: {str(e)}")],
+                "messages": messages + [AIMessage(content=f"修炼过程出错: {str(e)}")],
                 "current_node": "review",
             }
 
@@ -1170,7 +1170,7 @@ class ChatClient:
             from langchain.agents import create_agent
 
             if system_prompt is None:
-                system_prompt = "你是一个有帮助的算法学习助手。"
+                system_prompt = "你是一个有帮助的算法修习助手。"
 
             return create_agent(
                 model=self.llm,
@@ -1257,7 +1257,7 @@ class ChatClient:
             print(state["messages"][-1].content)  # AI 回复
 
             # 用户输入后，继续
-            state["messages"].append(HumanMessage(content="我想做练习题"))
+            state["messages"].append(HumanMessage(content="我想挑战试炼"))
             state["should_continue"] = True
             state = client.invoke_task(state=state)
 

@@ -68,7 +68,7 @@ def test_chat_client():
 
 
 def test_note_analyzer():
-    """测试笔记分析器"""
+    """测试心得分析器"""
     print("\n" + "=" * 60)
     print("测试 M4.2 NoteAnalyzer")
     print("=" * 60)
@@ -87,7 +87,7 @@ def test_note_analyzer():
     
     analyzer = NoteAnalyzer(client)
     
-    print("\n1. 测试笔记分析功能")
+    print("\n1. 测试心得分析功能")
     try:
         note_content = """
 # 二分查找算法
@@ -123,16 +123,16 @@ def binary_search(nums, target):
         
         assert isinstance(result, NoteAnalysisResult), "返回类型错误"
         assert result.algorithm_type, "算法类型为空"
-        assert len(result.key_points) > 0, "关键知识点为空"
+        assert len(result.key_points) > 0, "关键秘术为空"
         assert result.difficulty in ["简单", "中等", "困难"], "难度等级错误"
         
         print(f"   [OK] 算法类型: {result.algorithm_type}")
-        print(f"   [OK] 关键知识点: {result.key_points[:3]}")
+        print(f"   [OK] 关键秘术: {result.key_points[:3]}")
         print(f"   [OK] 难度等级: {result.difficulty}")
         print(f"   [OK] 标签: {result.tags}")
         print(f"   [OK] 总结: {result.summary[:50]}...")
     except Exception as e:
-        print(f"   [FAIL] 笔记分析失败: {e}")
+        print(f"   [FAIL] 心得分析失败: {e}")
         raise
     
     print("\n2. 测试代码片段提取")
@@ -157,7 +157,7 @@ def binary_search(nums, target):
 
 
 def test_question_generator():
-    """测试题目生成器"""
+    """测试试炼生成器"""
     print("\n" + "=" * 60)
     print("测试 M4.3 QuestionGenerator")
     print("=" * 60)
@@ -176,7 +176,7 @@ def test_question_generator():
     
     generator = QuestionGenerator(client)
     
-    print("\n1. 测试根据笔记生成题目")
+    print("\n1. 测试根据心得生成试炼")
     try:
         note_content = """
 # 二分查找算法
@@ -189,18 +189,18 @@ def test_question_generator():
         questions = generator.generate_for_note(note_content, count=2)
         
         if len(questions) == 0:
-            print("   [WARN] 未生成题目，可能是API调用问题")
+            print("   [WARN] 未生成试炼，可能是API调用问题")
             return
         
         for i, q in enumerate(questions, 1):
             if hasattr(q, 'question_type'):
-                print(f"   [OK] 题目{i}: {q.question_type}")
+                print(f"   [OK] 试炼{i}: {q.question_type}")
                 print(f"        内容: {q.content[:50]}...")
             else:
-                print(f"   [OK] 题目{i}: {q.get('question_type', '未知类型')}")
+                print(f"   [OK] 试炼{i}: {q.get('question_type', '未知类型')}")
                 print(f"        内容: {q.get('content', '')[:50]}...")
     except Exception as e:
-        print(f"   [FAIL] 题目生成失败: {e}")
+        print(f"   [FAIL] 试炼生成失败: {e}")
         import traceback
         traceback.print_exc()
         raise
@@ -310,9 +310,9 @@ def test_answer_evaluator():
         results = evaluator.batch_evaluate(questions_and_answers)
         assert len(results) == 2, "批量评估结果数量错误"
         
-        print(f"   [OK] 批量评估 {len(results)} 道题目")
+        print(f"   [OK] 批量评估 {len(results)} 道试炼")
         for i, r in enumerate(results, 1):
-            print(f"        题目{i}: 得分 {r['score']}")
+            print(f"        试炼{i}: 得分 {r['score']}")
     except Exception as e:
         print(f"   [FAIL] 批量评估失败: {e}")
         raise
@@ -338,7 +338,7 @@ def test_structured_output():
         base_url=config.LLM_BASE_URL,
     )
     
-    print("\n1. 测试笔记分析结构化输出")
+    print("\n1. 测试心得分析结构化输出")
     try:
         note_content = "# 快速排序\n\n快速排序是一种分治算法，平均时间复杂度为 O(n log n)。"
         result = client.analyze_note(note_content)
@@ -347,10 +347,10 @@ def test_structured_output():
         print(f"   [OK] 结构化输出类型正确: {type(result).__name__}")
         print(f"   [OK] 算法类型: {result.algorithm_type}")
     except Exception as e:
-        print(f"   [FAIL] 笔记分析结构化输出失败: {e}")
+        print(f"   [FAIL] 心得分析结构化输出失败: {e}")
         raise
     
-    print("\n2. 测试题目生成结构化输出")
+    print("\n2. 测试试炼生成结构化输出")
     try:
         questions = client.generate_questions(
             note_content="动态规划是一种通过把原问题分解为相对简单的子问题的方式求解复杂问题的方法。",
@@ -359,15 +359,15 @@ def test_structured_output():
         )
         
         if len(questions) == 0:
-            print("   [WARN] 未生成题目，可能是API调用问题")
+            print("   [WARN] 未生成试炼，可能是API调用问题")
         else:
             if isinstance(questions[0], Question):
                 print(f"   [OK] 结构化输出类型正确: {type(questions[0]).__name__}")
-                print(f"   [OK] 题目类型: {questions[0].question_type}")
+                print(f"   [OK] 试炼类型: {questions[0].question_type}")
             else:
                 print(f"   [OK] 返回字典格式: {type(questions[0]).__name__}")
     except Exception as e:
-        print(f"   [WARN] 题目生成结构化输出失败: {e}")
+        print(f"   [WARN] 试炼生成结构化输出失败: {e}")
     
     print("\n3. 测试答案评估结构化输出")
     try:

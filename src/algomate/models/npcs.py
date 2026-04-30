@@ -1,7 +1,7 @@
 """
 NPC模型
 
-NPC是各领域的专家导师，引导用户学习
+NPC是各领域的专家导师，引导用户修习
 """
 
 from typing import Optional, List
@@ -16,7 +16,7 @@ from algomate.data.database import Base
 class NPC(Base):
     """NPC模型
     
-    NPC是各领域的专家导师，引导用户学习。
+    NPC是各领域的专家导师，引导用户修习。
     
     Attributes:
         id: NPC唯一标识

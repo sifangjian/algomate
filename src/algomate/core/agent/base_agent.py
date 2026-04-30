@@ -4,7 +4,7 @@
 基于 LangChain create_agent v1 实现的 Tool-augmented Agent 架构。
 
 核心设计：
-- Tool：LLM 自主调用的能力单元（笔记分析、题目生成、答案评估等）
+- Tool：LLM 自主调用的能力单元（心得分析、试炼生成、答案评估等）
 - Agent：由 create_agent 构建，使用 ReAct 模式自主选择工具
 
 架构图：
@@ -52,74 +52,74 @@ from .chat_client import (
 
 
 class NoteAnalysisInput(BaseModel):
-    """笔记分析输入"""
-    note_content: str = Field(description="算法笔记内容（Markdown格式）")
+    """心得分析输入"""
+    note_content: str = Field(description="算法心得内容（Markdown格式）")
 
 
 class QuestionGenerationInput(BaseModel):
-    """题目生成输入"""
-    note_content: str = Field(description="相关笔记内容")
+    """试炼生成输入"""
+    note_content: str = Field(description="相关心得内容")
     question_types: Optional[List[str]] = Field(
         default=["选择题", "简答题", "代码题"],
-        description="题目类型列表"
+        description="试炼类型列表"
     )
-    count: int = Field(default=3, description="生成题目数量")
+    count: int = Field(default=3, description="生成试炼数量")
 
 
 class AnswerEvaluationInput(BaseModel):
     """答案评估输入"""
-    question_content: str = Field(description="题目内容")
+    question_content: str = Field(description="试炼内容")
     user_answer: str = Field(description="用户提交的答案")
     correct_answer: str = Field(description="参考答案")
 
 
 class NoteSearchInput(BaseModel):
-    """笔记搜索输入"""
+    """心得搜索输入"""
     query: str = Field(description="搜索关键词或算法类型")
     limit: int = Field(default=5, description="返回结果数量限制")
 
 
 class ReviewScheduleInput(BaseModel):
-    """复习计划输入"""
-    days: int = Field(default=7, description="获取未来几天的复习计划")
+    """修炼计划输入"""
+    days: int = Field(default=7, description="获取未来几天的修炼计划")
 
 
 class AlgoMateAgent:
     """AlgoMate 智能体
 
-    基于 LangChain create_agent 和 Tool 封装的学习助手 Agent。
+    基于 LangChain create_agent 和 Tool 封装的修习助手 Agent。
 
     核心能力（封装为 Tools）：
-    - analyze_note: 分析算法笔记，提取关键知识点
-    - generate_questions: 根据笔记或薄弱点生成练习题
+    - analyze_note: 分析算法心得，提取关键秘术
+    - generate_questions: 根据心得或薄弱点生成试炼
     - evaluate_answer: 评估用户答案，给出反馈和改进建议
-    - search_notes: 搜索已存储的笔记
-    - get_review_schedule: 获取复习计划
+    - search_notes: 搜索已存储的心得
+    - get_review_schedule: 获取修炼计划
 
     使用方式：
         agent = AlgoMateAgent(chat_client=client, database=db)
-        result = agent.invoke({"messages": [HumanMessage(content="帮我分析一下这段笔记")]})
+        result = agent.invoke({"messages": [HumanMessage(content="帮我分析一下这段心得")]})
     """
 
-    SYSTEM_PROMPT = """你是 AlgoMate，一个专业的算法学习助手。
+    SYSTEM_PROMPT = """你是 AlgoMate，一个专业的算法修习助手。
 
 你的核心能力：
-1. 笔记管理：分析、归类、整理算法笔记
-2. 智能出题：根据薄弱点生成针对性练习题
-3. 答题评估：分析答案，给出反馈和改进建议
-4. 复习引导：基于遗忘曲线安排复习计划
+1. 心得管理：分析、归类、整理算法心得
+2. 智能出题：根据薄弱点生成针对性试炼
+3. 应战评估：分析答案，给出反馈和改进建议
+4. 修炼引导：基于遗忘曲线安排修炼计划
 
 当用户提问时，你应该：
-- 理解用户的真实意图（是学习新知识、复习巩固、还是做练习）
+- 理解用户的真实意图（是修习新秘术、修炼巩固、还是挑战试炼）
 - 选择合适的工具来完成任务
 - 用清晰友好的语言回复
 
 可用工具：
-- analyze_note: 分析算法笔记
-- generate_questions: 生成练习题
+- analyze_note: 分析算法心得
+- generate_questions: 生成试炼
 - evaluate_answer: 评估用户答案
-- search_notes: 搜索已存储的笔记
-- get_review_schedule: 获取复习计划
+- search_notes: 搜索已存储的心得
+- get_review_schedule: 获取修炼计划
 """
 
     def __init__(
@@ -131,7 +131,7 @@ class AlgoMateAgent:
 
         Args:
             chat_client: ChatClient 实例，提供 LLM 和核心方法
-            database: 数据库实例（可选，用于笔记存储）
+            database: 数据库实例（可选，用于心得存储）
         """
         self.chat_client = chat_client
         self.database = database
@@ -163,20 +163,20 @@ class AlgoMateAgent:
         ]
 
     def _create_analyze_note_tool(self) -> BaseTool:
-        """创建笔记分析工具"""
+        """创建心得分析工具"""
 
         @tool(args_schema=NoteAnalysisInput, parse_docstring=True)
         def analyze_note(note_content: str) -> str:
-            """分析算法笔记
+            """分析算法心得
 
-            当用户分享了一段算法笔记，需要提取关键知识点、判断难度、
-            或者理解笔记内容时使用。
+            当用户分享了一段算法心得，需要提取关键秘术、判断难度、
+            或者理解心得内容时使用。
 
             Args:
-                note_content: 算法笔记内容（Markdown格式）
+                note_content: 算法心得内容（Markdown格式）
 
             Returns:
-                JSON格式的分析结果，包含算法类型、关键知识点、难度等级、标签、总结
+                JSON格式的分析结果，包含算法类型、关键秘术、难度等级、标签、总结
             """
             result = self.chat_client.analyze_note(note_content)
             return result.model_dump_json(ensure_ascii=False)
@@ -184,7 +184,7 @@ class AlgoMateAgent:
         return analyze_note
 
     def _create_generate_questions_tool(self) -> BaseTool:
-        """创建题目生成工具"""
+        """创建试炼生成工具"""
 
         @tool(args_schema=QuestionGenerationInput, parse_docstring=True)
         def generate_questions(
@@ -192,17 +192,17 @@ class AlgoMateAgent:
             question_types: Optional[List[str]] = None,
             count: int = 3,
         ) -> str:
-            """生成练习题
+            """生成试炼
 
-            当用户想做练习题、测试自己对某个算法的掌握程度时使用。
+            当用户想挑战试炼、测试自己对某个算法的领悟程度时使用。
 
             Args:
-                note_content: 相关笔记内容
-                question_types: 题目类型列表，默认包含选择题、简答题、代码题
-                count: 生成题目数量，默认3道
+                note_content: 相关心得内容
+                question_types: 试炼类型列表，默认包含选择题、简答题、代码题
+                count: 生成试炼数量，默认3道
 
             Returns:
-                JSON格式的题目列表
+                JSON格式的试炼列表
             """
             questions = self.chat_client.generate_questions(
                 note_content=note_content,
@@ -231,7 +231,7 @@ class AlgoMateAgent:
             当用户提交了答案，需要判断对错、了解改进方向时使用。
 
             Args:
-                question_content: 题目内容
+                question_content: 试炼内容
                 user_answer: 用户提交的答案
                 correct_answer: 参考答案
 
@@ -248,20 +248,20 @@ class AlgoMateAgent:
         return evaluate_answer
 
     def _create_search_notes_tool(self) -> BaseTool:
-        """创建笔记搜索工具"""
+        """创建心得搜索工具"""
 
         @tool(args_schema=NoteSearchInput, parse_docstring=True)
         def search_notes(query: str, limit: int = 5) -> str:
-            """搜索已存储的笔记
+            """搜索已存储的心得
 
-            当用户想查看之前保存的笔记、或者搜索特定算法的笔记时使用。
+            当用户想查看之前保存的心得、或者搜索特定算法的心得时使用。
 
             Args:
                 query: 搜索关键词，可以是算法类型、标签或内容关键词
                 limit: 返回结果数量限制，默认5条
 
             Returns:
-                匹配的笔记列表（JSON格式）
+                匹配的心得列表（JSON格式）
             """
             if self.database is None:
                 return json.dumps({"error": "数据库未初始化"}, ensure_ascii=False)
@@ -289,20 +289,20 @@ class AlgoMateAgent:
         return search_notes
 
     def _create_get_review_schedule_tool(self) -> BaseTool:
-        """创建复习计划工具"""
+        """创建修炼计划工具"""
 
         @tool(args_schema=ReviewScheduleInput, parse_docstring=True)
         def get_review_schedule(days: int = 7) -> str:
-            """获取复习计划
+            """获取修炼计划
 
-            当用户想了解接下来需要复习哪些内容、
-            或者查看复习进度时使用。
+            当用户想了解接下来需要修炼哪些内容、
+            或者查看修炼进度时使用。
 
             Args:
-                days: 获取未来几天的复习计划，默认7天
+                days: 获取未来几天的修炼计划，默认7天
 
             Returns:
-                复习计划列表（JSON格式），包含笔记信息和建议复习时间
+                修炼计划列表（JSON格式），包含心得信息和建议修炼时间
             """
             if self.database is None:
                 return json.dumps({"error": "数据库未初始化"}, ensure_ascii=False)
@@ -339,13 +339,13 @@ class AlgoMateAgent:
             """分析薄弱点
 
             当用户想了解自己在哪些算法类型上比较薄弱，
-            或者需要针对性练习建议时使用。
+            或者需要针对性试炼建议时使用。
 
             Args:
-                days: 分析最近多少天的答题记录，默认30天
+                days: 分析最近多少天的应战记录，默认30天
 
             Returns:
-                薄弱点分析结果（JSON格式），包含薄弱算法类型、总体正确率、学习建议
+                薄弱点分析结果（JSON格式），包含薄弱算法类型、总体胜率、修习建议
             """
             if self.database is None:
                 return json.dumps({"error": "数据库未初始化"}, ensure_ascii=False)
@@ -435,7 +435,7 @@ class ToolAugmentedChatClient(ChatClient):
 
         # 方式2：使用新的 Tool-augmented Agent
         agent = client.build_agent()
-        result = agent.invoke({"messages": [{"role": "user", "content": "分析我的笔记"}]})
+        result = agent.invoke({"messages": [{"role": "user", "content": "分析我的心得"}]})
     """
 
     def __init__(

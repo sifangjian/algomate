@@ -34,9 +34,9 @@ const DEFAULT_SETTINGS = {
 }
 
 const DIFFICULTY_OPTIONS = [
-  { value: 'easy', label: '简单', desc: '题目较简单，经验获取少' },
+  { value: 'easy', label: '简单', desc: '试炼较简单，经验获取少' },
   { value: 'normal', label: '普通', desc: '平衡模式' },
-  { value: 'hard', label: '困难', desc: '题目有挑战，经验获取多' },
+  { value: 'hard', label: '困难', desc: '试炼有挑战，经验获取多' },
 ]
 
 export default function Settings() {
@@ -200,7 +200,7 @@ export default function Settings() {
             value={settings.apiConfig.openaiApiKey}
             onChange={(e) => updateApiConfig('openaiApiKey', e.target.value)}
             icon="🔐"
-            helperText="用于AI对话和题目生成功能"
+            helperText="用于AI对话和试炼生成功能"
           />
           <div className={styles.inputRow}>
             <button
@@ -307,7 +307,7 @@ export default function Settings() {
         <h2 className={styles.sectionTitle}>⏰ 提醒设置</h2>
         <GameCard className={styles.sectionCard}>
           <div className={styles.toggleRow}>
-            <label className={styles.fieldLabel}>启用学习提醒</label>
+            <label className={styles.fieldLabel}>启用修炼提醒</label>
             <button
               className={`${styles.switch} ${settings.reminderConfig.enabled ? styles.switchOn : ''}`}
               onClick={() =>

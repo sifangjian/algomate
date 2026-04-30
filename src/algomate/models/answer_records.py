@@ -1,7 +1,7 @@
 """
-答题记录模型
+应战记录模型
 
-记录用户每次答题的结果，用于薄弱点分析
+记录用户每次应战的结果，用于薄弱点分析
 """
 
 from datetime import datetime
@@ -15,9 +15,9 @@ from algomate.data.database import Base
 
 
 class AnswerRecord(Base):
-    """答题记录模型
+    """应战记录模型
     
-    记录用户每次答题的结果，用于薄弱点分析。
+    记录用户每次应战的结果，用于薄弱点分析。
     
     Attributes:
         id: 记录唯一标识
@@ -26,7 +26,7 @@ class AnswerRecord(Base):
         user_answer: 用户答案
         is_correct: 是否正确
         feedback: AI反馈
-        answered_at: 答题时间
+        answered_at: 应战时间
     """
     __tablename__ = "answer_records"
     __table_args__ = {'extend_existing': True}
@@ -44,7 +44,7 @@ class AnswerRecord(Base):
 
 
 class AnswerRecordCreate(BaseModel):
-    """创建答题记录的输入验证模型"""
+    """创建应战记录的输入验证模型"""
     boss_id: Optional[int] = Field(None, description="关联Boss ID")
     card_id: Optional[int] = Field(None, description="使用的卡牌ID")
     user_answer: str = Field(..., min_length=1, description="用户答案")
@@ -56,7 +56,7 @@ class AnswerRecordCreate(BaseModel):
 
 
 class AnswerRecordResponse(BaseModel):
-    """返回给前端的答题记录数据模型"""
+    """返回给前端的应战记录数据模型"""
     id: int
     boss_id: Optional[int]
     card_id: Optional[int]
@@ -70,7 +70,7 @@ class AnswerRecordResponse(BaseModel):
 
 
 class AnswerStats(BaseModel):
-    """答题统计数据模型"""
+    """应战统计数据模型"""
     total_count: int
     correct_count: int
     incorrect_count: int
@@ -78,12 +78,12 @@ class AnswerStats(BaseModel):
     domain_stats: dict
 
 
-router = APIRouter(prefix="/api/answers", tags=["答题记录"])
+router = APIRouter(prefix="/api/answers", tags=["应战记录"])
 
 
 @router.get("/", response_model=list[AnswerRecordResponse])
 async def get_answer_records():
-    """获取答题记录列表"""
+    """获取应战记录列表"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -97,7 +97,7 @@ async def get_answer_records():
 
 @router.post("/", response_model=AnswerRecordResponse, status_code=201)
 async def create_answer_record(record: AnswerRecordCreate):
-    """提交答题记录"""
+    """提交应战记录"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -130,14 +130,14 @@ async def create_answer_record(record: AnswerRecordCreate):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"创建答题记录失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"创建应战记录失败: {str(e)}")
     finally:
         session.close()
 
 
 @router.get("/stats", response_model=AnswerStats)
 async def get_answer_stats():
-    """获取答题统计（正确率等）"""
+    """获取应战统计（胜率等）"""
     from algomate.data.database import Database
     from algomate.models.cards import Card
     from sqlalchemy import func
@@ -176,7 +176,7 @@ async def get_answer_stats():
 
 @router.get("/{record_id}", response_model=AnswerRecordResponse)
 async def get_answer_record(record_id: int):
-    """获取单个答题记录"""
+    """获取单个应战记录"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -184,7 +184,7 @@ async def get_answer_record(record_id: int):
     try:
         record = session.query(AnswerRecord).filter(AnswerRecord.id == record_id).first()
         if not record:
-            raise HTTPException(status_code=404, detail=f"答题记录 {record_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"应战记录 {record_id} 不存在")
         return record
     finally:
         session.close()
@@ -192,7 +192,7 @@ async def get_answer_record(record_id: int):
 
 @router.delete("/{record_id}", status_code=204)
 async def delete_answer_record(record_id: int):
-    """删除答题记录"""
+    """删除应战记录"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -200,7 +200,7 @@ async def delete_answer_record(record_id: int):
     try:
         record = session.query(AnswerRecord).filter(AnswerRecord.id == record_id).first()
         if not record:
-            raise HTTPException(status_code=404, detail=f"答题记录 {record_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"应战记录 {record_id} 不存在")
         
         session.delete(record)
         session.commit()
@@ -209,6 +209,6 @@ async def delete_answer_record(record_id: int):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"删除答题记录失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"删除应战记录失败: {str(e)}")
     finally:
         session.close()

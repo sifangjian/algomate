@@ -1,12 +1,12 @@
 """
-笔记仓库模块
+心得仓库模块
 
 .. deprecated::
-    此模块已废弃。笔记(Note)模型已迁移到卡牌(Card)模型。
+    此模块已废弃。心得(Note)模型已迁移到卡牌(Card)模型。
     请使用 card_repo.CardRepository 替代。
 
-提供笔记数据的数据库操作，包括增删改查等基础功能，
-以及按算法类型查询、获取待复习笔记等业务功能。
+提供心得数据的数据库操作，包括增删改查等基础功能，
+以及按算法类型查询、获取待修炼心得等业务功能。
 """
 
 from typing import List, Optional
@@ -16,18 +16,18 @@ from ..database import Database
 
 
 class NoteRepository:
-    """笔记数据仓库
+    """心得数据仓库
 
     .. deprecated:: 此类已废弃。请使用 card_repo.CardRepository 替代。
 
-    负责笔记数据的数据库操作，实现数据访问层职责。
+    负责心得数据的数据库操作，实现数据访问层职责。
 
     Attributes:
         db: 数据库实例
     """
 
     def __init__(self, db: Database):
-        """初始化笔记仓库
+        """初始化心得仓库
 
         Args:
             db: 数据库实例
@@ -35,15 +35,15 @@ class NoteRepository:
         self.db = db
 
     def create(self, title: str, content: str, **kwargs) -> Note:
-        """创建新笔记
+        """创建新心得
 
         Args:
-            title: 笔记标题
-            content: 笔记内容
+            title: 心得标题
+            content: 心得内容
             **kwargs: 其他可选参数
 
         Returns:
-            创建的笔记对象
+            创建的心得对象
         """
         session = self.db.get_session()
         try:
@@ -56,13 +56,13 @@ class NoteRepository:
             session.close()
 
     def get_by_id(self, note_id: int) -> Optional[Note]:
-        """根据ID获取笔记
+        """根据ID获取心得
 
         Args:
-            note_id: 笔记ID
+            note_id: 心得ID
 
         Returns:
-            笔记对象，若不存在则返回 None
+            心得对象，若不存在则返回 None
         """
         session = self.db.get_session()
         try:
@@ -71,12 +71,12 @@ class NoteRepository:
             session.close()
 
     def get_all(self) -> List[Note]:
-        """获取所有笔记
+        """获取所有心得
 
         按创建时间倒序返回。
 
         Returns:
-            笔记列表
+            心得列表
         """
         session = self.db.get_session()
         try:
@@ -85,13 +85,13 @@ class NoteRepository:
             session.close()
 
     def update(self, note: Note) -> Note:
-        """更新笔记
+        """更新心得
 
         Args:
-            note: 笔记对象
+            note: 心得对象
 
         Returns:
-            更新后的笔记对象
+            更新后的心得对象
         """
         session = self.db.get_session()
         try:
@@ -103,10 +103,10 @@ class NoteRepository:
             session.close()
 
     def delete(self, note_id: int) -> bool:
-        """删除笔记
+        """删除心得
 
         Args:
-            note_id: 笔记ID
+            note_id: 心得ID
 
         Returns:
             删除是否成功
@@ -123,13 +123,13 @@ class NoteRepository:
             session.close()
 
     def get_notes_due_for_review(self, end_date: date) -> List[Note]:
-        """获取待复习的笔记
+        """获取待修炼的心得
 
         Args:
             end_date: 截止日期
 
         Returns:
-            符合复习条件的笔记列表
+            符合修炼条件的心得列表
         """
         session = self.db.get_session()
         try:
@@ -143,13 +143,13 @@ class NoteRepository:
             session.close()
 
     def get_by_algorithm_type(self, algo_type: str) -> List[Note]:
-        """按算法类型获取笔记
+        """按算法类型获取心得
 
         Args:
             algo_type: 算法类型
 
         Returns:
-            指定类型的笔记列表
+            指定类型的心得列表
         """
         session = self.db.get_session()
         try:
@@ -163,13 +163,13 @@ class NoteRepository:
             session.close()
 
     def get_weak_notes(self, threshold: int = 50) -> List[Note]:
-        """获取薄弱笔记
+        """获取薄弱心得
 
         Args:
-            threshold: 掌握程度阈值，默认50
+            threshold: 领悟程度阈值，默认50
 
         Returns:
-            掌握程度低于阈值的笔记列表
+            领悟程度低于阈值的心得列表
         """
         session = self.db.get_session()
         try:
@@ -183,16 +183,16 @@ class NoteRepository:
             session.close()
 
     def search_by_keyword(self, keyword: str, limit: int = 10) -> List[Note]:
-        """搜索笔记
+        """搜索心得
 
-        根据关键词搜索笔记，支持算法类型、标题、内容搜索。
+        根据关键词搜索心得，支持算法类型、标题、内容搜索。
 
         Args:
             keyword: 搜索关键词
             limit: 返回结果数量限制
 
         Returns:
-            匹配的笔记列表
+            匹配的心得列表
         """
         session = self.db.get_session()
         try:
@@ -218,9 +218,9 @@ class NoteRepository:
         end_date: Optional[date] = None,
         days_ahead: Optional[int] = None,
     ) -> List[Note]:
-        """获取待复习的笔记
+        """获取待修炼的心得
 
-        .. deprecated:: 此方法已废弃。复习追踪已统一到 Card 模型，请使用 CardRepository 替代。
+        .. deprecated:: 此方法已废弃。修炼追踪已统一到 Card 模型，请使用 CardRepository 替代。
 
         Args:
             start_date: 开始日期（可选）
@@ -228,7 +228,7 @@ class NoteRepository:
             days_ahead: 未来天数（可选，与 end_date 互斥）
 
         Returns:
-            符合复习条件的笔记列表
+            符合修炼条件的心得列表
         """
         session = self.db.get_session()
         try:

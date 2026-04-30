@@ -8,15 +8,15 @@
 
 解锁规则：
     - 新手森林：默认解锁
-    - 迷雾沼泽：新手森林熟练度≥60的卡牌 ≥ 3张
-    - 智慧圣殿：迷雾沼泽熟练度≥60的卡牌 ≥ 3张
-    - 贪婪之塔：智慧圣殿熟练度≥60的卡牌 ≥ 3张
-    - 命运迷宫：贪婪之塔熟练度≥60的卡牌 ≥ 3张
-    - 分裂山脉：命运迷宫熟练度≥60的卡牌 ≥ 3张
-    - 数学殿堂：分裂山脉熟练度≥60的卡牌 ≥ 3张
-    - 试炼之地：所有领域熟练度≥60的卡牌 ≥ 5张
+    - 迷雾沼泽：新手森林精通度≥60的卡牌 ≥ 3张
+    - 智慧圣殿：迷雾沼泽精通度≥60的卡牌 ≥ 3张
+    - 贪婪之塔：智慧圣殿精通度≥60的卡牌 ≥ 3张
+    - 命运迷宫：贪婪之塔精通度≥60的卡牌 ≥ 3张
+    - 分裂山脉：命运迷宫精通度≥60的卡牌 ≥ 3张
+    - 数学殿堂：分裂山脉精通度≥60的卡牌 ≥ 3张
+    - 试炼之地：所有领域精通度≥60的卡牌 ≥ 5张
 
-熟练度达标定义：耐久度 ≥ 60
+精通度达标定义：耐久度 ≥ 60
 """
 
 from enum import Enum
@@ -44,7 +44,7 @@ class UnlockCondition:
         realm: 秘境名称
         required_realm: 需要的前置秘境
         required_count: 需要的达标卡牌数量
-        mastery_threshold: 熟练度阈值
+        mastery_threshold: 精通度阈值
         is_default_unlocked: 是否默认解锁
     """
     realm: str
@@ -79,7 +79,7 @@ class RealmUnlockManager:
     
     Attributes:
         unlock_conditions: 解锁条件映射
-        mastery_threshold: 熟练度阈值（耐久度）
+        mastery_threshold: 精通度阈值（耐久度）
     """
     
     DEFAULT_UNLOCK_CONDITIONS = {
@@ -142,7 +142,7 @@ class RealmUnlockManager:
         
         Args:
             unlock_conditions: 自定义解锁条件映射
-            mastery_threshold: 熟练度阈值（耐久度）
+            mastery_threshold: 精通度阈值（耐久度）
         """
         self.unlock_conditions = unlock_conditions or self.DEFAULT_UNLOCK_CONDITIONS
         self.mastery_threshold = mastery_threshold

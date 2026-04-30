@@ -40,17 +40,17 @@ class Card(Base):
         difficulty: 难度等级 1-5
         durability: 耐久度 0-100
         max_durability: 最大耐久度，默认100
-        note_id: 关联笔记ID（外键，可为NULL，向后兼容）
+        note_id: 关联心得ID（外键，可为NULL，向后兼容）
         created_at: 创建时间
-        last_reviewed: 最近复习时间
+        last_reviewed: 最近修炼时间
         is_sealed: 是否封印（耐久度=0时为True）
-        knowledge_content: 知识内容（原笔记内容）
+        knowledge_content: 知识内容（原心得内容）
         key_points: 要点列表（JSON数组字符串）
         summary: 摘要
         algorithm_type: 算法类型
-        review_level: 复习等级（0-6）
-        next_review_date: 下次复习日期
-        review_count: 复习次数
+        review_level: 修炼等级（0-6）
+        next_review_date: 下次修炼日期
+        review_count: 修炼次数
     """
     __tablename__ = "cards"
     __table_args__ = {'extend_existing': True}
@@ -88,14 +88,14 @@ class CardCreate(BaseModel):
     difficulty: int = Field(default=3, ge=1, le=5, description="难度等级 1-5")
     durability: int = Field(default=100, ge=0, le=100, description="耐久度")
     max_durability: int = Field(default=100, ge=0, le=100, description="最大耐久度")
-    note_id: Optional[int] = Field(None, description="关联笔记ID")
+    note_id: Optional[int] = Field(None, description="关联心得ID")
     knowledge_content: Optional[str] = Field(None, description="知识内容")
     key_points: Optional[str] = Field("[]", description="要点列表（JSON数组）")
     summary: Optional[str] = Field(None, description="摘要")
     algorithm_type: Optional[str] = Field(None, description="算法类型")
-    review_level: Optional[int] = Field(None, ge=0, le=6, description="复习等级")
-    next_review_date: Optional[datetime] = Field(None, description="下次复习日期")
-    review_count: Optional[int] = Field(None, ge=0, description="复习次数")
+    review_level: Optional[int] = Field(None, ge=0, le=6, description="修炼等级")
+    next_review_date: Optional[datetime] = Field(None, description="下次修炼日期")
+    review_count: Optional[int] = Field(None, ge=0, description="修炼次数")
     
     class Config:
         from_attributes = True
@@ -109,16 +109,16 @@ class CardUpdate(BaseModel):
     difficulty: Optional[int] = Field(None, ge=1, le=5, description="难度等级 1-5")
     durability: Optional[int] = Field(None, ge=0, le=100, description="耐久度")
     max_durability: Optional[int] = Field(None, ge=0, le=100, description="最大耐久度")
-    note_id: Optional[int] = Field(None, description="关联笔记ID")
-    last_reviewed: Optional[datetime] = Field(None, description="最近复习时间")
+    note_id: Optional[int] = Field(None, description="关联心得ID")
+    last_reviewed: Optional[datetime] = Field(None, description="最近修炼时间")
     is_sealed: Optional[bool] = Field(None, description="是否封印")
     knowledge_content: Optional[str] = Field(None, description="知识内容")
     key_points: Optional[str] = Field(None, description="要点列表（JSON数组）")
     summary: Optional[str] = Field(None, description="摘要")
     algorithm_type: Optional[str] = Field(None, description="算法类型")
-    review_level: Optional[int] = Field(None, ge=0, le=6, description="复习等级")
-    next_review_date: Optional[datetime] = Field(None, description="下次复习日期")
-    review_count: Optional[int] = Field(None, ge=0, description="复习次数")
+    review_level: Optional[int] = Field(None, ge=0, le=6, description="修炼等级")
+    next_review_date: Optional[datetime] = Field(None, description="下次修炼日期")
+    review_count: Optional[int] = Field(None, ge=0, description="修炼次数")
     
     class Config:
         from_attributes = True
@@ -353,7 +353,7 @@ async def create_card(card: CardCreate):
             from algomate.models.notes import Note
             note = session.query(Note).filter(Note.id == card.note_id).first()
             if not note:
-                raise HTTPException(status_code=404, detail=f"笔记 {card.note_id} 不存在")
+                raise HTTPException(status_code=404, detail=f"心得 {card.note_id} 不存在")
         
         is_sealed = card.durability == 0
         new_card = Card(
@@ -417,7 +417,7 @@ async def update_card(card_id: int, card: CardUpdate):
                 from algomate.models.notes import Note
                 note = session.query(Note).filter(Note.id == card.note_id).first()
                 if not note:
-                    raise HTTPException(status_code=404, detail=f"笔记 {card.note_id} 不存在")
+                    raise HTTPException(status_code=404, detail=f"心得 {card.note_id} 不存在")
             existing.note_id = card.note_id
         if card.last_reviewed is not None:
             existing.last_reviewed = card.last_reviewed
@@ -498,11 +498,11 @@ async def polish_card_content(request: CardPolishRequest):
 直接返回润色后的要点列表，每行一个，不要编号，不要其他说明。"""
             user_prompt = f"请润色以下算法关键要点：\n{request.content}"
         else:
-            system_prompt = """你是一个专业的算法知识编辑，擅长优化算法笔记的表述。
-请将用户提供的笔记内容进行润色，改善语言流畅性和逻辑性。
+            system_prompt = """你是一个专业的算法知识编辑，擅长优化算法心得的表述。
+请将用户提供的心得内容进行润色，改善语言流畅性和逻辑性。
 保持原文的核心含义不变，优化表述方式，使其更清晰易懂。
 直接返回润色后的内容，不要添加额外说明。"""
-            user_prompt = f"请润色以下算法笔记内容：\n{request.content}"
+            user_prompt = f"请润色以下算法心得内容：\n{request.content}"
 
         result = client.chat(
             messages=[{"role": "user", "content": user_prompt}],

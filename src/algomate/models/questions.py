@@ -1,7 +1,7 @@
 """
-题目模型
+试炼模型
 
-存储算法题目及答案
+存储算法试炼及答案
 """
 
 from datetime import datetime
@@ -16,29 +16,29 @@ from algomate.data.database import Base
 
 
 class QuestionType(str, Enum):
-    """题目类型枚举"""
+    """试炼类型枚举"""
     CHOICE = "选择题"
     SHORT_ANSWER = "简答题"
     CODE = "代码题"
 
 
 class QuestionDifficulty(str, Enum):
-    """题目难度枚举"""
+    """试炼难度枚举"""
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
 
 
 class Question(Base):
-    """题目模型
+    """试炼模型
     
-    存储算法题目及答案。
+    存储算法试炼及答案。
     
     Attributes:
-        id: 题目唯一标识
+        id: 试炼唯一标识
         card_id: 关联卡牌ID（外键，必填）
-        question_type: 题目类型（选择题/简答题/代码题）
-        content: 题目内容（Markdown）
+        question_type: 试炼类型（选择题/简答题/代码题）
+        content: 试炼内容（Markdown）
         options: 选项列表（JSON，选择题用）
         answer: 参考答案
         explanation: 详细解析
@@ -63,10 +63,10 @@ class Question(Base):
 
 
 class QuestionCreate(BaseModel):
-    """创建题目的输入验证模型"""
+    """创建试炼的输入验证模型"""
     card_id: int = Field(..., description="关联卡牌ID")
-    question_type: QuestionType = Field(..., description="题目类型")
-    content: str = Field(..., min_length=1, description="题目内容")
+    question_type: QuestionType = Field(..., description="试炼类型")
+    content: str = Field(..., min_length=1, description="试炼内容")
     options: List[str] = Field(default=[], description="选项列表（选择题用）")
     answer: str = Field(..., min_length=1, description="参考答案")
     explanation: str = Field(default="", description="详细解析")
@@ -77,10 +77,10 @@ class QuestionCreate(BaseModel):
 
 
 class QuestionUpdate(BaseModel):
-    """更新题目的输入验证模型"""
+    """更新试炼的输入验证模型"""
     card_id: Optional[int] = Field(None, description="关联卡牌ID")
-    question_type: Optional[QuestionType] = Field(None, description="题目类型")
-    content: Optional[str] = Field(None, min_length=1, description="题目内容")
+    question_type: Optional[QuestionType] = Field(None, description="试炼类型")
+    content: Optional[str] = Field(None, min_length=1, description="试炼内容")
     options: Optional[List[str]] = Field(None, description="选项列表（选择题用）")
     answer: Optional[str] = Field(None, min_length=1, description="参考答案")
     explanation: Optional[str] = Field(None, description="详细解析")
@@ -91,7 +91,7 @@ class QuestionUpdate(BaseModel):
 
 
 class QuestionResponse(BaseModel):
-    """返回给前端的题目数据模型"""
+    """返回给前端的试炼数据模型"""
     id: int
     card_id: int
     question_type: str
@@ -106,7 +106,7 @@ class QuestionResponse(BaseModel):
         from_attributes = True
 
 
-router = APIRouter(prefix="/api/questions", tags=["题目"])
+router = APIRouter(prefix="/api/questions", tags=["试炼"])
 
 
 def parse_options(options_str: str) -> List[str]:
@@ -120,7 +120,7 @@ def parse_options(options_str: str) -> List[str]:
 
 @router.get("/", response_model=list[QuestionResponse])
 async def get_questions():
-    """获取题目列表"""
+    """获取试炼列表"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -148,7 +148,7 @@ async def get_questions():
 
 @router.get("/{question_id}", response_model=QuestionResponse)
 async def get_question(question_id: int):
-    """获取单个题目"""
+    """获取单个试炼"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -156,7 +156,7 @@ async def get_question(question_id: int):
     try:
         question = session.query(Question).filter(Question.id == question_id).first()
         if not question:
-            raise HTTPException(status_code=404, detail=f"题目 {question_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"试炼 {question_id} 不存在")
         
         q_dict = {
             "id": question.id,
@@ -176,7 +176,7 @@ async def get_question(question_id: int):
 
 @router.post("/", response_model=QuestionResponse, status_code=201)
 async def create_question(question: QuestionCreate):
-    """创建题目"""
+    """创建试炼"""
     from algomate.data.database import Database
     import json
     
@@ -217,14 +217,14 @@ async def create_question(question: QuestionCreate):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"创建题目失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"创建试炼失败: {str(e)}")
     finally:
         session.close()
 
 
 @router.post("/generate", response_model=list[QuestionResponse], status_code=201)
 async def generate_questions(request: dict):
-    """AI生成题目
+    """AI生成试炼
     
     Args:
         request: 包含 card_id（关联卡牌ID）和 count（数量，默认3）的字典
@@ -251,7 +251,7 @@ async def generate_questions(request: dict):
         
         topic = card.name
         
-        prompt = f"""针对"{topic}"这个算法主题，生成{count}道高质量的练习题。
+        prompt = f"""针对"{topic}"这个算法主题，生成{count}道高质量的试炼。
 
 要求：
 - 包含选择题、简答题和代码题的组合
@@ -265,7 +265,7 @@ async def generate_questions(request: dict):
     "questions": [
         {{
             "question_type": "选择题",
-            "content": "题目内容（包含选项A、B、C、D）",
+            "content": "试炼内容（包含选项A、B、C、D）",
             "options": ["选项A", "选项B", "选项C", "选项D"],
             "answer": "正确答案",
             "explanation": "解析",
@@ -273,7 +273,7 @@ async def generate_questions(request: dict):
         }},
         {{
             "question_type": "简答题",
-            "content": "题目内容",
+            "content": "试炼内容",
             "options": [],
             "answer": "参考答案要点",
             "explanation": "解析",
@@ -281,7 +281,7 @@ async def generate_questions(request: dict):
         }},
         {{
             "question_type": "代码题",
-            "content": "题目描述",
+            "content": "试炼描述",
             "options": [],
             "answer": "参考代码",
             "explanation": "解题思路",
@@ -296,7 +296,7 @@ async def generate_questions(request: dict):
         
         json_match = re.search(r'\{[\s\S]*\}', result)
         if not json_match:
-            raise HTTPException(status_code=500, detail="AI生成题目失败：无法解析结果")
+            raise HTTPException(status_code=500, detail="AI生成试炼失败：无法解析结果")
         
         questions_data = json.loads(json_match.group())
         questions_list = questions_data.get("questions", [])
@@ -338,14 +338,14 @@ async def generate_questions(request: dict):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"生成题目失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"生成试炼失败: {str(e)}")
     finally:
         session.close()
 
 
 @router.put("/{question_id}", response_model=QuestionResponse)
 async def update_question(question_id: int, question: QuestionUpdate):
-    """更新题目"""
+    """更新试炼"""
     from algomate.data.database import Database
     import json
     
@@ -354,7 +354,7 @@ async def update_question(question_id: int, question: QuestionUpdate):
     try:
         existing = session.query(Question).filter(Question.id == question_id).first()
         if not existing:
-            raise HTTPException(status_code=404, detail=f"题目 {question_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"试炼 {question_id} 不存在")
         
         if question.card_id is not None:
             from algomate.models.cards import Card
@@ -394,14 +394,14 @@ async def update_question(question_id: int, question: QuestionUpdate):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"更新题目失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"更新试炼失败: {str(e)}")
     finally:
         session.close()
 
 
 @router.delete("/{question_id}", status_code=204)
 async def delete_question(question_id: int):
-    """删除题目"""
+    """删除试炼"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -409,7 +409,7 @@ async def delete_question(question_id: int):
     try:
         question = session.query(Question).filter(Question.id == question_id).first()
         if not question:
-            raise HTTPException(status_code=404, detail=f"题目 {question_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"试炼 {question_id} 不存在")
         
         session.delete(question)
         session.commit()
@@ -418,6 +418,6 @@ async def delete_question(question_id: int):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"删除题目失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"删除试炼失败: {str(e)}")
     finally:
         session.close()

@@ -2,7 +2,7 @@
 """
 Algomate 后端启动脚本
 
-启动后端服务（FastAPI + 复习调度器）。
+启动后端服务（FastAPI + 修炼调度器）。
 
 Usage:
     python start_backend.py

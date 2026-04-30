@@ -1,10 +1,10 @@
 """
-复习计划服务模块
+修炼计划服务模块
 
-提供今日复习计划相关的业务逻辑：
-- 获取今日应复习的卡牌列表
-- 生成和管理复习记录
-- 更新复习状态和掌握程度
+提供今日修炼计划相关的业务逻辑：
+- 获取今日应修炼的卡牌列表
+- 生成和管理修炼记录
+- 更新修炼状态和领悟程度
 - 获取薄弱点提醒
 """
 
@@ -18,22 +18,22 @@ from ..core.memory.forgotten_curve import ForgottenCurveEngine
 
 
 class ReviewPlanService:
-    """复习计划服务
+    """修炼计划服务
 
-    负责管理今日复习计划的业务逻辑，包括：
-    - 获取今日应复习的卡牌
-    - 创建复习记录
-    - 完成复习后更新掌握程度
+    负责管理今日修炼计划的业务逻辑，包括：
+    - 获取今日应修炼的卡牌
+    - 创建修炼记录
+    - 完成修炼后更新领悟程度
     - 识别薄弱点
 
     Attributes:
         db: 数据库实例
-        review_repo: 复习记录仓库
+        review_repo: 修炼记录仓库
         forgotten_curve: 遗忘曲线算法
     """
 
     def __init__(self, db: Database = None):
-        """初始化复习计划服务
+        """初始化修炼计划服务
 
         Args:
             db: 数据库实例，默认使用单例
@@ -43,15 +43,15 @@ class ReviewPlanService:
         self.forgotten_curve = ForgottenCurveEngine()
 
     def get_today_review_plan(self, target_date: date = None) -> List[Dict[str, Any]]:
-        """获取今日复习计划
+        """获取今日修炼计划
 
-        获取指定日期应复习的卡牌列表，包含卡牌信息和复习状态。
+        获取指定日期应修炼的卡牌列表，包含卡牌信息和修炼状态。
 
         Args:
             target_date: 目标日期，默认为今天
 
         Returns:
-            复习计划列表，每项包含卡牌信息和复习状态
+            修炼计划列表，每项包含卡牌信息和修炼状态
         """
         if target_date is None:
             target_date = date.today()
@@ -136,44 +136,44 @@ class ReviewPlanService:
             session.close()
 
     def _generate_weak_point_suggestion(self, card: Card) -> str:
-        """生成薄弱点学习建议
+        """生成薄弱点修习建议
 
-        根据卡牌情况生成个性化的学习建议。
+        根据卡牌情况生成个性化的修习建议。
 
         Args:
             card: 卡牌对象
 
         Returns:
-            学习建议文本
+            修习建议文本
         """
         suggestions = []
 
         if card.review_count == 0:
-            suggestions.append("建议先完成首次复习")
+            suggestions.append("建议先完成首次修炼")
         elif card.durability < 30:
             suggestions.append("需要加强基础知识理解")
         elif card.durability < 50:
-            suggestions.append("建议多做相关练习题")
+            suggestions.append("建议多做相关试炼题")
         else:
-            suggestions.append("继续坚持复习巩固")
+            suggestions.append("继续坚持修炼巩固")
 
         if card.last_reviewed is None:
-            suggestions.append("该知识点尚未复习，请尽快开始")
+            suggestions.append("该秘术尚未修炼，请尽快开始")
         elif (datetime.now() - card.last_reviewed).days > 7:
-            suggestions.append("遗忘风险较高，请增加复习频率")
+            suggestions.append("遗忘风险较高，请增加修炼频率")
 
         return "；".join(suggestions)
 
     def start_review(self, card_id: int) -> Optional[Dict[str, Any]]:
-        """开始复习
+        """开始修炼
 
-        为指定卡牌创建或更新复习记录。
+        为指定卡牌创建或更新修炼记录。
 
         Args:
             card_id: 卡牌ID
 
         Returns:
-            复习记录信息
+            修炼记录信息
         """
         session = self.db.get_session()
         try:
@@ -207,13 +207,13 @@ class ReviewPlanService:
         card_id: int,
         action: str = "success"
     ) -> Optional[Dict[str, Any]]:
-        """完成复习
+        """完成修炼
 
-        完成复习后更新卡牌状态和下次复习时间。
+        完成修炼后更新卡牌状态和下次修炼时间。
 
         Args:
             card_id: 卡牌ID
-            action: 复习动作（success/fail）
+            action: 修炼动作（success/fail）
 
         Returns:
             更新后的卡牌信息
@@ -258,9 +258,9 @@ class ReviewPlanService:
             session.close()
 
     def skip_review(self, card_id: int, reason: str = "") -> bool:
-        """跳过复习
+        """跳过修炼
 
-        将复习记录标记为跳过，并计算下次复习时间。
+        将修炼记录标记为跳过，并计算下次修炼时间。
 
         Args:
             card_id: 卡牌ID
@@ -296,9 +296,9 @@ class ReviewPlanService:
             session.close()
 
     def get_review_statistics(self, target_date: date = None) -> Dict[str, Any]:
-        """获取复习统计
+        """获取修炼统计
 
-        获取指定日期的复习统计数据。
+        获取指定日期的修炼统计数据。
 
         Args:
             target_date: 目标日期，默认为今天
@@ -356,15 +356,15 @@ class ReviewPlanService:
             session.close()
 
     def generate_review_plan_for_card(self, card_id: int) -> Optional[List[Dict[str, Any]]]:
-        """为卡牌生成复习计划
+        """为卡牌生成修炼计划
 
-        根据卡牌创建时间和遗忘曲线算法，生成未来复习时间表。
+        根据卡牌创建时间和遗忘曲线算法，生成未来修炼时间表。
 
         Args:
             card_id: 卡牌ID
 
         Returns:
-            复习计划列表
+            修炼计划列表
         """
         session = self.db.get_session()
         try:
@@ -401,7 +401,7 @@ class ReviewPlanService:
     def is_new_user(self) -> Dict[str, Any]:
         """检测是否为新手用户
 
-        判断用户是否还没有获取任何卡牌或尚未开始复习，
+        判断用户是否还没有获取任何卡牌或尚未开始修炼，
         以便提供新手引导。
 
         Returns:
@@ -421,7 +421,7 @@ class ReviewPlanService:
                     "total_cards": 0,
                     "learning_days": 0,
                     "current_step": "get_first_card",
-                    "message": "欢迎开始算法学习之旅！",
+                    "message": "欢迎开始算法修习之旅！",
                     "next_action": {
                         "text": "获取第一张卡牌",
                         "description": "与NPC对话，获取您的第一张算法卡牌",
@@ -431,15 +431,15 @@ class ReviewPlanService:
                     "suggestions": [
                         {
                             "title": "从基础开始",
-                            "content": "建议从排序算法、二分查找等基础内容开始学习"
+                            "content": "建议从排序算法、二分查找等基础内容开始修习"
                         },
                         {
                             "title": "循序渐进",
-                            "content": "先理解原理，再做练习，最后复习巩固"
+                            "content": "先理解原理，再做试炼，最后修炼巩固"
                         },
                         {
                             "title": "记录重点",
-                            "content": "每学完一个知识点，记下核心思路和易错点"
+                            "content": "每学完一个秘术，记下核心思路和易错点"
                         }
                     ]
                 }
@@ -449,21 +449,21 @@ class ReviewPlanService:
                     "total_cards": total_cards,
                     "learning_days": 0,
                     "current_step": "start_first_review",
-                    "message": "您已拥有 {0} 张卡牌，开始复习吧！".format(total_cards),
+                    "message": "您已拥有 {0} 张卡牌，开始修炼吧！".format(total_cards),
                     "next_action": {
-                        "text": "开始首次复习",
-                        "description": "您的学习之旅即将开始，点击开始复习来激活遗忘曲线",
+                        "text": "开始首次修炼",
+                    "description": "您的修习之旅即将开始，点击开始修炼来激活遗忘曲线",
                         "action": "start_review",
                         "icon": "🚀"
                     },
                     "suggestions": [
                         {
-                            "title": "首次复习很重要",
-                            "content": "根据艾宾浩斯遗忘曲线，首次复习应在学习后1天进行"
+                            "title": "首次修炼很重要",
+                            "content": "根据艾宾浩斯遗忘曲线，首次修炼应在修习后1天进行"
                         },
                         {
                             "title": "保持连续性",
-                            "content": "每天坚持复习，学习效果会更好"
+                            "content": "每天坚持修炼，修习效果会更好"
                         }
                     ]
                 }
@@ -481,10 +481,10 @@ class ReviewPlanService:
             session.close()
 
     def _calculate_learning_days(self) -> int:
-        """计算学习天数
+        """计算修习天数
 
         Returns:
-            从第一条复习记录到现在的天数
+            从第一条修炼记录到现在的天数
         """
         session = self.db.get_session()
         try:

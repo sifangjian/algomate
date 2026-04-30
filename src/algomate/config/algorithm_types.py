@@ -1,12 +1,12 @@
 """
 算法分类配置模块
 
-定义算法学习的分类体系，包括：
+定义算法修习的分类体系，包括：
 - 算法类型主分类
 - 算法分类层级结构
 - 难度等级
-- 掌握程度等级
-- 笔记来源
+- 领悟程度等级
+- 心得来源
 """
 
 ALGORITHM_TYPES = [
@@ -41,6 +41,6 @@ ALGORITHM_CATEGORIES = {
 
 DIFFICULTY_LEVELS = ["简单", "中等", "困难"]
 
-MASTERY_LEVELS = ["未接触", "薄弱", "模糊", "已掌握"]
+MASTERY_LEVELS = ["未接触", "薄弱", "模糊", "已领悟"]
 
 NOTE_SOURCES = ["LeetCode", "代码随想录", "ACM", "自定义"]

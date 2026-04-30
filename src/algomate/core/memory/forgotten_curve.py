@@ -1,14 +1,14 @@
 """
 遗忘曲线引擎模块
 
-基于艾宾浩斯遗忘曲线理论，实现科学的复习时间节点计算：
-- 复习节点：创建 → 1天 → 3天 → 7天 → 14天 → 30天 → 60天
-- 复习成功后推进到下一个节点
-- 复习失败后退回到前一个节点
+基于艾宾浩斯遗忘曲线理论，实现科学的修炼时间节点计算：
+- 修炼节点：创建 → 1天 → 3天 → 7天 → 14天 → 30天 → 60天
+- 修炼成功后推进到下一个节点
+- 修炼失败后退回到前一个节点
 
 核心算法：
-    复习节点：[1, 3, 7, 14, 30, 60] 天
-    复习等级：1-7级（0级为初始状态，1-6级对应6个复习节点）
+    修炼节点：[1, 3, 7, 14, 30, 60] 天
+    修炼等级：1-7级（0级为初始状态，1-6级对应6个修炼节点）
 """
 
 from datetime import datetime, timedelta, date
@@ -20,19 +20,19 @@ from algomate.config.settings import AppConfig
 
 
 class ReviewAction(str, Enum):
-    """复习动作枚举"""
+    """修炼动作枚举"""
     SUCCESS = "success"
     FAIL = "fail"
 
 
 @dataclass
 class ReviewResult:
-    """复习结果数据结构
+    """修炼结果数据结构
     
     Attributes:
-        next_review_date: 下次复习日期
-        review_level: 复习等级（0-6）
-        is_due: 是否应该复习
+        next_review_date: 下次修炼日期
+        review_level: 修炼等级（0-6）
+        is_due: 是否应该修炼
     """
     next_review_date: date
     review_level: int
@@ -42,16 +42,16 @@ class ReviewResult:
 class ForgottenCurveEngine:
     """遗忘曲线引擎
     
-    基于艾宾浩斯遗忘曲线理论，计算最优复习时机。
+    基于艾宾浩斯遗忘曲线理论，计算最优修炼时机。
     
     核心原理：
-        - 记忆越深刻，复习间隔越长
-        - 复习成功推进到下一个节点
-        - 复习失败退回到前一个节点
+        - 记忆越深刻，修炼间隔越长
+        - 修炼成功推进到下一个节点
+        - 修炼失败退回到前一个节点
     
     Attributes:
-        intervals: 复习间隔天数列表 [1, 3, 7, 14, 30, 60]
-        max_level: 最大复习等级（6级）
+        intervals: 修炼间隔天数列表 [1, 3, 7, 14, 30, 60]
+        max_level: 最大修炼等级（6级）
     """
     
     DEFAULT_INTERVALS = [1, 3, 7, 14, 30, 60]
@@ -60,19 +60,19 @@ class ForgottenCurveEngine:
         """初始化遗忘曲线引擎
         
         Args:
-            intervals: 自定义复习间隔列表，默认为 [1, 3, 7, 14, 30, 60]
+            intervals: 自定义修炼间隔列表，默认为 [1, 3, 7, 14, 30, 60]
         """
         config = AppConfig.load()
         self.intervals = intervals or config.REVIEW_INTERVALS or self.DEFAULT_INTERVALS
         self.max_level = len(self.intervals)
     
     def get_review_interval(self, review_level: int) -> int:
-        """获取指定复习等级的间隔天数
+        """获取指定修炼等级的间隔天数
         
         Args:
-            review_level: 复习等级（0-6）
+            review_level: 修炼等级（0-6）
                 - 0级：初始状态，间隔为0天
-                - 1-6级：对应复习节点 [1, 3, 7, 14, 30, 60]
+                - 1-6级：对应修炼节点 [1, 3, 7, 14, 30, 60]
         
         Returns:
             间隔天数
@@ -90,7 +90,7 @@ class ForgottenCurveEngine:
             7
         """
         if review_level < 0 or review_level > self.max_level:
-            raise ValueError(f"复习等级必须在 0-{self.max_level} 之间，当前为 {review_level}")
+            raise ValueError(f"修炼等级必须在 0-{self.max_level} 之间，当前为 {review_level}")
         
         if review_level == 0:
             return 0
@@ -103,15 +103,15 @@ class ForgottenCurveEngine:
         review_level: int,
         action: ReviewAction = ReviewAction.SUCCESS
     ) -> Tuple[datetime, int]:
-        """计算下次复习时间和新的复习等级
+        """计算下次修炼时间和新的修炼等级
         
         Args:
-            last_reviewed: 上次复习时间
-            review_level: 当前复习等级（0-6）
-            action: 复习动作（成功/失败）
+            last_reviewed: 上次修炼时间
+            review_level: 当前修炼等级（0-6）
+            action: 修炼动作（成功/失败）
         
         Returns:
-            (下次复习时间, 新的复习等级)
+            (下次修炼时间, 新的修炼等级)
         
         Example:
             >>> engine = ForgottenCurveEngine()
@@ -138,23 +138,23 @@ class ForgottenCurveEngine:
         last_reviewed: Optional[datetime],
         review_level: int
     ) -> bool:
-        """判断卡牌是否需要复习
+        """判断卡牌是否需要修炼
         
         Args:
             created_at: 卡牌创建时间
-            last_reviewed: 上次复习时间（None表示从未复习）
-            review_level: 当前复习等级（0-6）
+            last_reviewed: 上次修炼时间（None表示从未修炼）
+            review_level: 当前修炼等级（0-6）
         
         Returns:
-            是否应该复习
+            是否应该修炼
         
         Example:
             >>> engine = ForgottenCurveEngine()
             >>> created = datetime(2024, 1, 1, 10, 0)
-            >>> # 从未复习，创建时间超过1天
+            >>> # 从未修炼，创建时间超过1天
             >>> engine.should_review(created, None, 0)
             True
-            >>> # 刚复习过
+            >>> # 刚修炼过
             >>> last = datetime.now() - timedelta(hours=12)
             >>> engine.should_review(created, last, 1)
             False
@@ -176,15 +176,15 @@ class ForgottenCurveEngine:
         last_reviewed: Optional[datetime],
         review_level: int
     ) -> ReviewResult:
-        """获取复习状态详情
+        """获取修炼状态详情
         
         Args:
             created_at: 卡牌创建时间
-            last_reviewed: 上次复习时间
-            review_level: 当前复习等级
+            last_reviewed: 上次修炼时间
+            review_level: 当前修炼等级
         
         Returns:
-            ReviewResult 包含下次复习日期、复习等级、是否应该复习
+            ReviewResult 包含下次修炼日期、修炼等级、是否应该修炼
         """
         now = datetime.now()
         
@@ -208,13 +208,13 @@ class ForgottenCurveEngine:
         )
     
     def get_daily_review_tasks(self, cards: List) -> List:
-        """获取今日需要复习的卡牌列表
+        """获取今日需要修炼的卡牌列表
         
         Args:
             cards: 卡牌列表（Card 对象，包含 created_at, last_reviewed, review_level, durability, next_review_date 属性）
         
         Returns:
-            需要复习的卡牌列表（按优先级排序：耐久度低优先，到期日早优先）
+            需要修炼的卡牌列表（按优先级排序：耐久度低优先，到期日早优先）
         
         Note:
             卡牌对象需要有以下属性：
@@ -223,7 +223,7 @@ class ForgottenCurveEngine:
             - review_level: int
             - durability: int (用于排序)
             - next_review_date: Optional[datetime] (用于排序)
-            - is_sealed: bool (封印卡牌不参与复习)
+            - is_sealed: bool (封印卡牌不参与修炼)
         """
         due_cards = []
         
@@ -246,10 +246,10 @@ class ForgottenCurveEngine:
         return due_cards
     
     def get_review_status_for_card(self, card) -> ReviewResult:
-        """获取卡牌的复习状态详情
+        """获取卡牌的修炼状态详情
         
         基于 Card 对象的 created_at、last_reviewed、review_level 字段，
-        计算下次复习日期和是否到期。
+        计算下次修炼日期和是否到期。
         
         Args:
             card: Card 对象，需包含 created_at, last_reviewed, review_level 属性
@@ -268,15 +268,15 @@ class ForgottenCurveEngine:
         card, 
         action: ReviewAction
     ) -> Tuple[int, date]:
-        """完成一次卡牌复习，计算新的复习等级和下次复习日期
+        """完成一次卡牌修炼，计算新的修炼等级和下次修炼日期
         
-        根据复习动作（成功/失败）更新复习等级，同时调整耐久度：
-        - 复习成功：review_level +1（不超过 max_level），durability +20（不超过 100）
-        - 复习失败：review_level -1（不低于 0），durability -5（不低于 0）
+        根据修炼动作（成功/失败）更新修炼等级，同时调整耐久度：
+        - 修炼成功：review_level +1（不超过 max_level），durability +20（不超过 100）
+        - 修炼失败：review_level -1（不低于 0），durability -5（不低于 0）
         
         Args:
             card: Card 对象，需包含 last_reviewed, review_level, durability 属性
-            action: 复习动作（SUCCESS / FAIL）
+            action: 修炼动作（SUCCESS / FAIL）
         
         Returns:
             (new_review_level, next_review_date) 元组
@@ -308,18 +308,18 @@ class ForgottenCurveEngine:
         last_reviewed: Optional[datetime],
         success_count: int = 0
     ) -> int:
-        """根据历史复习记录计算复习等级
+        """根据历史修炼记录计算修炼等级
         
         Args:
             created_at: 卡牌创建时间
-            last_reviewed: 上次复习时间
+            last_reviewed: 上次修炼时间
             success_count: 连续成功次数
         
         Returns:
-            推断的复习等级
+            推断的修炼等级
         
         Note:
-            这是一个辅助函数，用于在没有明确记录复习等级时推断等级
+            这是一个辅助函数，用于在没有明确记录修炼等级时推断等级
         """
         if last_reviewed is None:
             return 0
@@ -347,15 +347,15 @@ def calculate_next_review(
     review_level: int,
     action: ReviewAction = ReviewAction.SUCCESS
 ) -> Tuple[datetime, int]:
-    """计算下次复习时间（便捷函数）
+    """计算下次修炼时间（便捷函数）
     
     Args:
-        last_reviewed: 上次复习时间
-        review_level: 当前复习等级
-        action: 复习动作
+        last_reviewed: 上次修炼时间
+        review_level: 当前修炼等级
+        action: 修炼动作
     
     Returns:
-        (下次复习时间, 新的复习等级)
+        (下次修炼时间, 新的修炼等级)
     """
     engine = ForgottenCurveEngine()
     return engine.calculate_next_review(last_reviewed, review_level, action)
@@ -366,25 +366,25 @@ def should_review(
     last_reviewed: Optional[datetime],
     review_level: int
 ) -> bool:
-    """判断卡牌是否需要复习（便捷函数）
+    """判断卡牌是否需要修炼（便捷函数）
     
     Args:
         created_at: 卡牌创建时间
-        last_reviewed: 上次复习时间
-        review_level: 当前复习等级
+        last_reviewed: 上次修炼时间
+        review_level: 当前修炼等级
     
     Returns:
-        是否应该复习
+        是否应该修炼
     """
     engine = ForgottenCurveEngine()
     return engine.should_review(created_at, last_reviewed, review_level)
 
 
 def get_review_interval(review_level: int) -> int:
-    """获取指定复习等级的间隔天数（便捷函数）
+    """获取指定修炼等级的间隔天数（便捷函数）
     
     Args:
-        review_level: 复习等级
+        review_level: 修炼等级
     
     Returns:
         间隔天数
@@ -394,13 +394,13 @@ def get_review_interval(review_level: int) -> int:
 
 
 def get_daily_review_tasks(cards: List) -> List:
-    """获取今日需要复习的卡牌列表（便捷函数）
+    """获取今日需要修炼的卡牌列表（便捷函数）
     
     Args:
         cards: 卡牌列表
     
     Returns:
-        需要复习的卡牌列表
+        需要修炼的卡牌列表
     """
     engine = ForgottenCurveEngine()
     return engine.get_daily_review_tasks(cards)

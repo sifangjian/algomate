@@ -1,7 +1,7 @@
 """
-复习记录模型
+修炼记录模型
 
-记录用户的复习活动，用于追踪复习历史和效果
+记录用户的修炼活动，用于追踪修炼历史和效果
 """
 
 from datetime import datetime
@@ -15,17 +15,17 @@ from algomate.data.database import Base
 
 
 class ReviewRecord(Base):
-    """复习记录模型
+    """修炼记录模型
     
-    记录用户的复习活动，用于追踪复习历史和效果。
+    记录用户的修炼活动，用于追踪修炼历史和效果。
     
     Attributes:
         id: 记录唯一标识
         card_id: 关联卡牌ID（外键）
-        note_id: 关联笔记ID（外键）— deprecated，请使用 card_id
-        review_date: 复习日期
-        status: 复习状态（pending/completed/skipped）
-        score: 本次复习得分
+        note_id: 关联心得ID（外键）— deprecated，请使用 card_id
+        review_date: 修炼日期
+        status: 修炼状态（pending/completed/skipped）
+        score: 本次修炼战绩
     """
     __tablename__ = "review_records"
     __table_args__ = {'extend_existing': True}
@@ -42,18 +42,18 @@ class ReviewRecord(Base):
 
 
 class ReviewRecordCreate(BaseModel):
-    """创建复习记录的输入验证模型"""
-    note_id: Optional[int] = Field(None, description="关联笔记ID — deprecated，请使用 card_id")
+    """创建修炼记录的输入验证模型"""
+    note_id: Optional[int] = Field(None, description="关联心得ID — deprecated，请使用 card_id")
     card_id: Optional[int] = Field(None, description="关联卡牌ID")
-    status: str = Field(default="pending", description="复习状态")
-    score: Optional[int] = Field(None, description="本次复习得分")
+    status: str = Field(default="pending", description="修炼状态")
+    score: Optional[int] = Field(None, description="本次修炼战绩")
     
     class Config:
         from_attributes = True
 
 
 class ReviewRecordResponse(BaseModel):
-    """返回给前端的复习记录数据模型"""
+    """返回给前端的修炼记录数据模型"""
     id: int
     note_id: Optional[int] = None  # deprecated: 请使用 card_id
     card_id: Optional[int] = None
@@ -65,12 +65,12 @@ class ReviewRecordResponse(BaseModel):
         from_attributes = True
 
 
-router = APIRouter(prefix="/api/review-records", tags=["复习记录"])
+router = APIRouter(prefix="/api/review-records", tags=["修炼记录"])
 
 
 @router.get("/", response_model=list[ReviewRecordResponse])
 async def get_review_records():
-    """获取复习记录列表"""
+    """获取修炼记录列表"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -84,7 +84,7 @@ async def get_review_records():
 
 @router.get("/{record_id}", response_model=ReviewRecordResponse)
 async def get_review_record(record_id: int):
-    """获取单个复习记录"""
+    """获取单个修炼记录"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -92,7 +92,7 @@ async def get_review_record(record_id: int):
     try:
         record = session.query(ReviewRecord).filter(ReviewRecord.id == record_id).first()
         if not record:
-            raise HTTPException(status_code=404, detail=f"复习记录 {record_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"修炼记录 {record_id} 不存在")
         return record
     finally:
         session.close()
@@ -100,7 +100,7 @@ async def get_review_record(record_id: int):
 
 @router.post("/", response_model=ReviewRecordResponse, status_code=201)
 async def create_review_record(record: ReviewRecordCreate):
-    """创建复习记录"""
+    """创建修炼记录"""
     from algomate.data.database import Database
     
     if not record.card_id and not record.note_id:
@@ -119,7 +119,7 @@ async def create_review_record(record: ReviewRecordCreate):
             from algomate.models.notes import Note
             note = session.query(Note).filter(Note.id == record.note_id).first()
             if not note:
-                raise HTTPException(status_code=404, detail=f"笔记 {record.note_id} 不存在")
+                raise HTTPException(status_code=404, detail=f"心得 {record.note_id} 不存在")
         
         new_record = ReviewRecord(
             note_id=record.note_id,
@@ -135,6 +135,6 @@ async def create_review_record(record: ReviewRecordCreate):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"创建复习记录失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"创建修炼记录失败: {str(e)}")
     finally:
         session.close()

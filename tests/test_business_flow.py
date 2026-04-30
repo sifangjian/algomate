@@ -4,7 +4,7 @@
 测试 M5 业务流程层的所有模块：
 - M5.1 NPC对话流程
 - M5.2 Boss战流程
-- M5.3 复习调度器
+- M5.3 修炼调度器
 - M5.4 邮件提醒系统
 """
 
@@ -164,7 +164,7 @@ class TestBossBattleFlow:
 
 
 class TestReviewScheduler:
-    """复习调度器测试"""
+    """修炼调度器测试"""
     
     @pytest.fixture
     def mock_db(self):
@@ -176,11 +176,11 @@ class TestReviewScheduler:
     
     @pytest.fixture
     def scheduler(self, mock_db):
-        """创建复习调度器实例"""
+        """创建修炼调度器实例"""
         return ReviewScheduler(db=mock_db)
     
     def test_review_task_creation(self):
-        """测试复习任务创建"""
+        """测试修炼任务创建"""
         task = ReviewTask(
             task_id="review_1",
             task_type=TaskType.CRITICAL_REVIEW,
@@ -199,7 +199,7 @@ class TestReviewScheduler:
         assert task.priority == "critical"
     
     def test_review_task_to_dict(self):
-        """测试复习任务转换为字典"""
+        """测试修炼任务转换为字典"""
         task = ReviewTask(
             task_id="review_1",
             task_type=TaskType.FORGETTING_CURVE_REVIEW,
@@ -208,7 +208,7 @@ class TestReviewScheduler:
             card_domain="迷雾沼泽",
             card_durability=80,
             priority="high",
-            reason="遗忘曲线复习",
+            reason="遗忘曲线修炼",
             due_date=datetime.now().date()
         )
         
@@ -238,7 +238,7 @@ class TestEmailSender:
     
     @pytest.fixture
     def mock_review_scheduler(self):
-        """模拟复习调度器"""
+        """模拟修炼调度器"""
         scheduler = Mock()
         scheduler.generate_daily_tasks.return_value = [
             ReviewTask(
@@ -294,7 +294,7 @@ class TestEmailSender:
                 card_domain="迷雾沼泽",
                 card_durability=80,
                 priority="high",
-                reason="遗忘曲线复习",
+                reason="遗忘曲线修炼",
                 due_date=datetime.now().date()
             )
         ]
@@ -303,7 +303,7 @@ class TestEmailSender:
         
         assert "今日任务（2项）" in content["body"]
         assert "濒危卡牌" in content["body"]
-        assert "遗忘复习" in content["body"]
+        assert "遗忘修炼" in content["body"]
     
     def test_validate_email_config(self, email_sender):
         """测试验证邮件配置"""

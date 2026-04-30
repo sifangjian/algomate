@@ -1,10 +1,10 @@
 """
 薄弱点分析器模块
 
-提供答题数据的统计分析功能，包括：
-- 按算法类型统计正确率
-- 识别薄弱知识点
-- 生成学习建议
+提供应战数据的统计分析功能，包括：
+- 按算法类型统计胜率
+- 识别薄弱秘术
+- 生成修习建议
 """
 
 from typing import Dict, List, Any
@@ -17,7 +17,7 @@ from ...data.repositories import AnswerRecordRepository, NoteRepository
 class WeakPointAnalyzer:
     """薄弱点分析器
 
-    通过分析用户的答题记录，识别薄弱知识点并提供学习建议。
+    通过分析用户的应战记录，识别薄弱秘术并提供修习建议。
 
     Attributes:
         db: 数据库实例
@@ -34,7 +34,7 @@ class WeakPointAnalyzer:
     def analyze(self, days: int = 30) -> Dict[str, Any]:
         """分析薄弱点
 
-        分析近期的答题记录，识别薄弱知识点。
+        分析近期的应战记录，识别薄弱秘术。
 
         Args:
             days: 分析的时间范围（天数），默认30天
@@ -42,8 +42,8 @@ class WeakPointAnalyzer:
         Returns:
             包含以下字段的字典：
             - weak_points: 薄弱点列表
-            - overall_accuracy: 总体正确率
-            - recommendations: 学习建议列表
+            - overall_accuracy: 总体胜率
+            - recommendations: 修习建议列表
         """
         session = self.db.get_session()
         try:
@@ -89,22 +89,22 @@ class WeakPointAnalyzer:
             session.close()
 
     def _calc_overall_accuracy(self, type_stats: Dict) -> float:
-        """计算总体正确率
+        """计算总体胜率
 
         Args:
             type_stats: 各算法类型的统计数据
 
         Returns:
-            总体正确率
+            总体胜率
         """
         total = sum(s["total"] for s in type_stats.values())
         correct = sum(s["correct"] for s in type_stats.values())
         return correct / total if total > 0 else 0.0
 
     def _generate_recommendations(self, weak_points: List[Dict]) -> List[str]:
-        """生成学习建议
+        """生成修习建议
 
-        根据薄弱点生成针对性的学习建议。
+        根据薄弱点生成针对性的修习建议。
 
         Args:
             weak_points: 薄弱点列表
@@ -115,6 +115,6 @@ class WeakPointAnalyzer:
         recommendations = []
         for wp in weak_points[:3]:
             recommendations.append(
-                f"建议加强{wp['type']}的学习，当前正确率仅{wp['accuracy']:.1%}"
+                f"建议加强{wp['type']}的修习，当前胜率仅{wp['accuracy']:.1%}"
             )
         return recommendations

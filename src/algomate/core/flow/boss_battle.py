@@ -13,7 +13,7 @@ Boss战流程：
        a) 选择弱点匹配该卡牌的Boss
        b) 或根据卡牌技巧生成新Boss
     3. 显示Boss信息（名称、难度、描述、弱点提示）
-    4. 用户进入答题界面
+    4. 用户进入应战界面
     5. 用户提交答案
     6. 调用 answer_evaluator 评估
     7. 判定结果：
@@ -98,7 +98,7 @@ class BossBattleFlow:
     Attributes:
         db: 数据库实例
         chat_client: AI对话客户端
-        question_generator: 题目生成器
+        question_generator: 试炼生成器
         answer_evaluator: 答案评估器
         durability_manager: 耐久度管理器
         difficulty_manager: 难度管理器

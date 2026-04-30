@@ -5,7 +5,7 @@
 - 应用基础配置（名称、版本、数据目录）
 - AI模型配置（智谱GLM API）
 - 邮件服务配置（SMTP）
-- 复习提醒配置
+- 修炼提醒配置
 
 配置支持 YAML 文件的序列化与反序列化。
 """
@@ -39,13 +39,13 @@ class AppConfig:
         SMTP_USE_TLS: 是否使用 TLS 加密
         EMAIL_FROM: 发件人邮箱
         EMAIL_TO: 收件人邮箱
-        REVIEW_TIME: 每日复习提醒时间
-        REVIEW_ENABLED: 是否启用复习提醒
-        REVIEW_INTERVALS: 复习间隔天数列表（基于艾宾浩斯遗忘曲线）
+        REVIEW_TIME: 每日修炼提醒时间
+        REVIEW_ENABLED: 是否启用修炼提醒
+        REVIEW_INTERVALS: 修炼间隔天数列表（基于艾宾浩斯遗忘曲线）
     """
     _instance: Optional["AppConfig"] = None
     
-    APP_NAME: str = "算法学习助手"
+    APP_NAME: str = "算法修习助手"
     VERSION: str = "0.1.0"
     DATA_DIR: Path = Path(__file__).resolve().parent.parent.parent.parent / "data"
     DB_PATH: Path = DATA_DIR / "algomate.db"
@@ -112,7 +112,7 @@ class AppConfig:
         Example:
             >>> config = AppConfig.get()
             >>> print(config.APP_NAME)
-            算法学习助手
+            算法修习助手
         """
         if cls._instance is None:
             cls._instance = cls.load(config_path)

@@ -38,7 +38,7 @@ class Boss(Base):
         difficulty: 难度等级
         weakness_domains: 弱点领域列表（JSON数组）
         description: 描述（游戏化包装的故事背景）
-        question_id: 关联题目ID（外键）
+        question_id: 关联试炼ID（外键）
         source: leetcode / ai_generated
         drop_rate: 掉宝率 0.0-1.0
     """
@@ -64,7 +64,7 @@ class BossCreate(BaseModel):
     difficulty: Difficulty = Field(..., description="难度等级")
     weakness_domains: List[str] = Field(default=[], description="弱点领域列表")
     description: str = Field(..., min_length=1, description="描述")
-    question_id: Optional[int] = Field(None, description="关联题目ID")
+    question_id: Optional[int] = Field(None, description="关联试炼ID")
     source: BossSource = Field(..., description="来源")
     drop_rate: float = Field(default=0.5, ge=0.0, le=1.0, description="掉宝率")
     
@@ -78,7 +78,7 @@ class BossUpdate(BaseModel):
     difficulty: Optional[Difficulty] = Field(None, description="难度等级")
     weakness_domains: Optional[List[str]] = Field(None, description="弱点领域列表")
     description: Optional[str] = Field(None, min_length=1, description="描述")
-    question_id: Optional[int] = Field(None, description="关联题目ID")
+    question_id: Optional[int] = Field(None, description="关联试炼ID")
     source: Optional[BossSource] = Field(None, description="来源")
     drop_rate: Optional[float] = Field(None, ge=0.0, le=1.0, description="掉宝率")
     
@@ -180,7 +180,7 @@ async def create_boss(boss: BossCreate):
             from algomate.models.questions import Question
             question = session.query(Question).filter(Question.id == boss.question_id).first()
             if not question:
-                raise HTTPException(status_code=404, detail=f"题目 {boss.question_id} 不存在")
+                raise HTTPException(status_code=404, detail=f"试炼 {boss.question_id} 不存在")
         
         new_boss = Boss(
             name=boss.name,
@@ -327,7 +327,7 @@ async def update_boss(boss_id: int, boss: BossUpdate):
                 from algomate.models.questions import Question
                 question = session.query(Question).filter(Question.id == boss.question_id).first()
                 if not question:
-                    raise HTTPException(status_code=404, detail=f"题目 {boss.question_id} 不存在")
+                    raise HTTPException(status_code=404, detail=f"试炼 {boss.question_id} 不存在")
             existing.question_id = boss.question_id
         if boss.source is not None:
             existing.source = boss.source.value

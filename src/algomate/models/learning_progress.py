@@ -1,7 +1,7 @@
 """
-学习进度模型
+修为模型
 
-记录用户每日的学习统计数据
+记录用户每日的修习统计数据
 """
 
 from datetime import date as date_type
@@ -14,17 +14,17 @@ from algomate.data.database import Base
 
 
 class LearningProgress(Base):
-    """学习进度模型
+    """修为模型
     
-    记录用户每日的学习统计数据。
+    记录用户每日的修习统计数据。
     
     Attributes:
         id: 记录唯一标识
         date: 日期（唯一）
-        notes_count: 当日新增笔记数
-        review_count: 当日复习题目数
-        correct_count: 当日正确答题数
-        total_count: 当日总答题数
+        notes_count: 当日新增心得数
+        review_count: 当日修炼试炼数
+        correct_count: 当日正确应战数
+        total_count: 当日总应战数
     """
     __tablename__ = "learning_progress"
     __table_args__ = {'extend_existing': True}
@@ -38,19 +38,19 @@ class LearningProgress(Base):
 
 
 class LearningProgressCreate(BaseModel):
-    """创建学习进度的输入验证模型"""
+    """创建修为的输入验证模型"""
     date: date_type = Field(..., description="日期")
-    notes_count: int = Field(default=0, description="当日新增笔记数")
-    review_count: int = Field(default=0, description="当日复习题目数")
-    correct_count: int = Field(default=0, description="当日正确答题数")
-    total_count: int = Field(default=0, description="当日总答题数")
+    notes_count: int = Field(default=0, description="当日新增心得数")
+    review_count: int = Field(default=0, description="当日修炼试炼数")
+    correct_count: int = Field(default=0, description="当日正确应战数")
+    total_count: int = Field(default=0, description="当日总应战数")
     
     class Config:
         from_attributes = True
 
 
 class LearningProgressResponse(BaseModel):
-    """返回给前端的学习进度数据模型"""
+    """返回给前端的修为数据模型"""
     id: int
     date: date_type
     notes_count: int
@@ -62,7 +62,7 @@ class LearningProgressResponse(BaseModel):
         from_attributes = True
 
 
-router = APIRouter(prefix="/api/learning-progress", tags=["学习进度"])
+router = APIRouter(prefix="/api/learning-progress", tags=["修为"])
 
 
 @router.get("/", response_model=list[LearningProgressResponse])
@@ -70,7 +70,7 @@ async def get_learning_progress(
     start_date: Optional[date_type] = None,
     end_date: Optional[date_type] = None
 ):
-    """获取学习进度列表"""
+    """获取修为列表"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -91,7 +91,7 @@ async def get_learning_progress(
 
 @router.get("/{progress_id}", response_model=LearningProgressResponse)
 async def get_progress(progress_id: int):
-    """获取单个学习进度"""
+    """获取单个修为"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -99,7 +99,7 @@ async def get_progress(progress_id: int):
     try:
         progress = session.query(LearningProgress).filter(LearningProgress.id == progress_id).first()
         if not progress:
-            raise HTTPException(status_code=404, detail=f"学习进度 {progress_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"修为 {progress_id} 不存在")
         return progress
     finally:
         session.close()
@@ -107,7 +107,7 @@ async def get_progress(progress_id: int):
 
 @router.post("/", response_model=LearningProgressResponse, status_code=201)
 async def create_learning_progress(progress: LearningProgressCreate):
-    """创建学习进度"""
+    """创建修为"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -115,7 +115,7 @@ async def create_learning_progress(progress: LearningProgressCreate):
     try:
         existing = session.query(LearningProgress).filter(LearningProgress.date == progress.date).first()
         if existing:
-            raise HTTPException(status_code=400, detail=f"日期 {progress.date} 的学习进度已存在")
+            raise HTTPException(status_code=400, detail=f"日期 {progress.date} 的修为已存在")
         
         new_progress = LearningProgress(
             date=progress.date,
@@ -132,6 +132,6 @@ async def create_learning_progress(progress: LearningProgressCreate):
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"创建学习进度失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"创建修为失败: {str(e)}")
     finally:
         session.close()

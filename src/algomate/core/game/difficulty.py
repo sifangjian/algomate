@@ -5,7 +5,7 @@
 - 耐久度变化率
 - Boss掉宝率加成
 - 每日任务数量
-- 复习间隔压缩
+- 修炼间隔压缩
 
 难度参数表：
     | 参数           | 简单(easy) | 普通(normal) | 困难(hard) |
@@ -13,7 +13,7 @@
     | 耐久度变化率   | ×0.5       | ×1.0         | ×1.5       |
     | Boss掉宝率加成 | +15%       | +0%          | +30%       |
     | 每日任务数量   | 3          | 5            | 8          |
-    | 复习间隔压缩   | 间隔×0.8   | 标准间隔     | 间隔×1.2   |
+    | 修炼间隔压缩   | 间隔×0.8   | 标准间隔     | 间隔×1.2   |
 """
 
 from enum import Enum
@@ -36,7 +36,7 @@ class DifficultyParams:
         durability_change_rate: 耐久度变化率
         boss_drop_rate_bonus: Boss掉宝率加成
         daily_task_count: 每日任务数量
-        review_interval_multiplier: 复习间隔倍数
+        review_interval_multiplier: 修炼间隔倍数
     """
     durability_change_rate: float
     boss_drop_rate_bonus: float
@@ -198,13 +198,13 @@ class DifficultyManager:
         return params.daily_task_count
     
     def get_review_interval_multiplier(self, difficulty: Optional[DifficultyLevel] = None) -> float:
-        """获取复习间隔倍数
+        """获取修炼间隔倍数
         
         Args:
             difficulty: 难度等级，默认使用当前难度
         
         Returns:
-            复习间隔倍数
+            修炼间隔倍数
         """
         if difficulty is None:
             difficulty = self.current_difficulty

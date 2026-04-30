@@ -22,11 +22,11 @@ def test_file_existence():
         ('core/flow/npc_dialogue.py', 'NPC对话流程'),
         ('core/flow/boss_battle.py', 'Boss战流程'),
         ('core/scheduler/__init__.py', '调度器模块初始化'),
-        ('core/scheduler/review_scheduler.py', '复习调度器'),
+        ('core/scheduler/review_scheduler.py', '修炼调度器'),
         ('core/scheduler/email_sender.py', '邮件提醒系统'),
         ('models/__init__.py', '模型模块初始化'),
-        ('models/review_records.py', '复习记录模型'),
-        ('models/learning_progress.py', '学习进度模型'),
+        ('models/review_records.py', '修炼记录模型'),
+        ('models/learning_progress.py', '修习进度模型'),
     ]
     
     all_exist = True
@@ -274,7 +274,7 @@ def main():
         print("\nM5 业务流程层已成功实现，包含以下模块：")
         print("  1. NPC对话流程 (npc_dialogue.py)")
         print("  2. Boss战流程 (boss_battle.py)")
-        print("  3. 复习调度器 (review_scheduler.py)")
+        print("  3. 修炼调度器 (review_scheduler.py)")
         print("  4. 邮件提醒系统 (email_sender.py)")
         print("\n模型已统一迁移到 models/ 目录：")
         print("  - ReviewRecord (review_records.py)")

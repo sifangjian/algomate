@@ -55,7 +55,7 @@ def _init_default_npcs():
                 "domain": "基础数据结构",
                 "avatar": "🧙‍♀️",
                 "description": "基础数据结构的导师",
-                "system_prompt": "你是引导者艾琳，基础数据结构的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是引导者艾琳，基础数据结构的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到新手森林！我是这里的守护者艾琳。算法的世界充满奥秘，你想从哪里开始探索？",
                 "topics": ["数组", "链表", "栈", "队列", "哈希表", "二分查找", "线性查找"]
             },
@@ -64,7 +64,7 @@ def _init_default_npcs():
                 "domain": "递归与回溯",
                 "avatar": "🐸",
                 "description": "递归与回溯的导师",
-                "system_prompt": "你是沼泽向导卡尔，递归与回溯的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是沼泽向导卡尔，递归与回溯的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到迷雾沼泽！我是卡尔，这里的迷雾很浓，但我熟悉每一条路。",
                 "topics": ["递归", "回溯", "树遍历", "DFS", "BFS"]
             },
@@ -73,7 +73,7 @@ def _init_default_npcs():
                 "domain": "动态规划",
                 "avatar": "🦉",
                 "description": "动态规划的导师",
-                "system_prompt": "你是智者雅典娜，动态规划的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是智者雅典娜，动态规划的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到智慧圣殿！我是雅典娜，动态规划是算法的精髓，让我为你指引方向。",
                 "topics": ["动态规划", "贪心算法", "分治策略"]
             },
@@ -82,7 +82,7 @@ def _init_default_npcs():
                 "domain": "图论与高级算法",
                 "avatar": "🏰",
                 "description": "图论与高级算法的导师",
-                "system_prompt": "你是守塔人戈尔，图论与高级算法的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是守塔人戈尔，图论与高级算法的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到贪婪之塔！我是戈尔，这座塔充满了挑战，你准备好了吗？",
                 "topics": ["图论", "最短路径", "最小生成树", "网络流"]
             },
@@ -91,7 +91,7 @@ def _init_default_npcs():
                 "domain": "高级数据结构",
                 "avatar": "🌀",
                 "description": "高级数据结构的导师",
-                "system_prompt": "你是迷宫守护者墨丘利，高级数据结构的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是迷宫守护者墨丘利，高级数据结构的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到命运迷宫！我是墨丘利，这里的每一条路都通向未知。",
                 "topics": ["堆", "Trie", "并查集", "线段树", "树状数组"]
             },
@@ -100,7 +100,7 @@ def _init_default_npcs():
                 "domain": "算法巅峰",
                 "avatar": "⛰️",
                 "description": "算法巅峰的导师",
-                "system_prompt": "你是山巨人顿，算法巅峰的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是山巨人顿，算法巅峰的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到分裂山脉！我是顿，这里的挑战极其艰难。",
                 "topics": ["高级算法", "复杂算法分析", "算法优化"]
             },
@@ -109,7 +109,7 @@ def _init_default_npcs():
                 "domain": "数学与复杂度",
                 "avatar": "📐",
                 "description": "数学与复杂度的导师",
-                "system_prompt": "你是数学家欧几里得，数学与复杂度的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是数学家欧几里得，数学与复杂度的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到数学殿堂！我是欧几里得，数学是算法的基础。",
                 "topics": ["数学证明", "时间复杂度", "空间复杂度", "组合数学"]
             },
@@ -118,9 +118,9 @@ def _init_default_npcs():
                 "domain": "终极试炼",
                 "avatar": "⚔️",
                 "description": "终极试炼的导师",
-                "system_prompt": "你是试炼之主，终极试炼的导师。你采用渐进式教学法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导学习者逐步深入。不要一次性输出过多信息，让学习成为互动的渐进过程。",
+                "system_prompt": "你是试炼之主，终极试炼的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
                 "greeting": "欢迎来到试炼之地！这是所有秘境的终极试炼！",
-                "topics": ["综合复习", "算法面试", "竞赛题目"]
+                "topics": ["综合修炼", "算法面试", "竞赛试炼"]
             },
         }
 
@@ -212,7 +212,7 @@ async def skip_review(card_id: int, reason: str = ""):
     success = review_service.skip_review(card_id, reason)
     if not success:
         raise HTTPException(status_code=404, detail="卡牌不存在")
-    return {"message": "已跳过复习", "card_id": card_id}
+    return {"message": "已跳过修炼", "card_id": card_id}
 
 
 @dashboard_router.get("/review/statistics")
@@ -343,7 +343,7 @@ async def test_email_config(emailConfig: dict):
 
 @learning_router.get("/topics")
 async def get_learning_topics():
-    """获取可学习的主题列表
+    """获取可修习的主题列表
 
     Returns:
         包含算法类型分类的主题列表
@@ -393,10 +393,10 @@ async def get_learning_topics():
 
 @learning_router.post("/chat")
 async def learning_chat(message: dict):
-    """学习模式下的对话（流式）
+    """修习模式下的对话（流式）
 
     Args:
-        message: 包含 topic（学习主题）和 question（用户问题）的字典
+        message: 包含 topic（修习主题）和 question（用户问题）的字典
 
     Returns:
         流式 AI 回复内容 (text/event-stream)
@@ -410,9 +410,9 @@ async def learning_chat(message: dict):
     if not question:
         return {"error": "问题不能为空"}
 
-    system_prompt = f"""你是一个专业的算法学习导师，擅长用简洁清晰的方式讲解算法知识。
+    system_prompt = f"""你是一个专业的算法修习导师，擅长用简洁清晰的方式讲解算法知识。
 
-当前学习主题：{topic}
+当前修习主题：{topic}
 
 请用易于理解的方式解释，并穿插适当的例子和图示说明。
 如果用户提问，要耐心解答，可以适当提问引导用户思考。
@@ -446,13 +446,13 @@ async def learning_chat(message: dict):
 
 @learning_router.post("/generate-quiz")
 async def generate_quiz(request: dict):
-    """为当前学习主题生成小测验
+    """为当前修习主题生成小试炼
 
     Args:
-        request: 包含 topic（学习主题）的字典
+        request: 包含 topic（修习主题）的字典
 
     Returns:
-        生成的测验题目
+        生成的试炼
     """
     from algomate.core.agent.question_generator import QuestionGenerator
 
@@ -463,7 +463,7 @@ async def generate_quiz(request: dict):
 
     try:
         generator = QuestionGenerator()
-        prompt = f"""针对"{topic}"这个算法主题，生成3道高质量的练习题，包括1道选择题、1道简答题和1道代码题。
+        prompt = f"""针对"{topic}"这个算法主题，生成3道高质量的试炼，包括1道选择题、1道简答题和1道代码题。
 
 要求：
 - 选择题必须有4个选项（A、B、C、D），只有一个正确答案
@@ -475,19 +475,19 @@ async def generate_quiz(request: dict):
     "questions": [
         {{
             "question_type": "选择题",
-            "content": "题目内容（包含选项A、B、C、D）",
+            "content": "试炼内容（包含选项A、B、C、D）",
             "answer": "正确答案",
             "explanation": "解析"
         }},
         {{
             "question_type": "简答题",
-            "content": "题目内容",
+            "content": "试炼内容",
             "answer": "参考答案要点",
             "explanation": "解析"
         }},
         {{
             "question_type": "代码题",
-            "content": "题目描述",
+            "content": "试炼描述",
             "answer": "参考代码",
             "explanation": "解题思路"
         }}
@@ -511,13 +511,13 @@ async def generate_quiz(request: dict):
 
 @learning_router.post("/save-note")
 async def save_learning_note(note_data: dict):
-    """保存学习笔记
+    """保存修炼心得
 
     Args:
         note_data: 包含 title, content, algorithm_type, difficulty 的字典
 
     Returns:
-        创建的笔记信息
+        创建的心得信息
     """
     from algomate.data.database import Database
     from algomate.data.repositories.note_repo import NoteRepository
@@ -534,7 +534,7 @@ async def save_learning_note(note_data: dict):
             summary=note_data.get("summary", ""),
             tags=note_data.get("tags", "[]")
         )
-        return {"id": new_note.id, "message": "笔记保存成功"}
+        return {"id": new_note.id, "message": "心得保存成功"}
     except Exception as e:
         return {"error": str(e)}, 500
 
@@ -544,7 +544,7 @@ async def explain_concept(topic: str, concept: str):
     """获取概念解释
 
     Args:
-        topic: 学习主题
+        topic: 修习主题
         concept: 概念名称
 
     Returns:
@@ -555,7 +555,7 @@ async def explain_concept(topic: str, concept: str):
     if not concept:
         return {"error": "概念名称不能为空"}
 
-    system_prompt = f"""你是一个专业的算法学习导师，擅长解释算法概念。
+    system_prompt = f"""你是一个专业的算法修习导师，擅长解释算法概念。
 
 当前主题：{topic}
 需要解释的概念：{concept}
@@ -740,7 +740,7 @@ async def get_realms():
         realm_config = {
             "新手森林": {
                 "icon": "🌲",
-                "description": "算法之旅的起点，学习基础数据结构与查找算法",
+                "description": "算法之旅的起点，修习基础数据结构与查找算法",
                 "bossInfo": None,
             },
             "迷雾沼泽": {
@@ -975,7 +975,7 @@ async def npc_chat(npc_id: int, request: dict):
 
 @tasks_router.get("/tasks")
 async def get_tasks(date: str = None):
-    """获取复习任务
+    """获取修炼任务
 
     Args:
         date: 日期字符串，支持 'today' 或 'YYYY-MM-DD' 格式
@@ -999,7 +999,7 @@ async def get_tasks(date: str = None):
 
 @tasks_router.get("/tasks/upcoming")
 async def get_upcoming_tasks(days: int = 7):
-    """获取未来N天复习计划"""
+    """获取未来N天修炼计划"""
     from algomate.core.scheduler.review_scheduler import ReviewScheduler
 
     try:
@@ -1012,13 +1012,13 @@ async def get_upcoming_tasks(days: int = 7):
 
 @tasks_router.post("/tasks/execute")
 async def execute_daily_tasks():
-    """执行每日复习任务"""
+    """执行每日修炼任务"""
     from algomate.core.scheduler.review_scheduler import ReviewScheduler
 
     try:
         scheduler = ReviewScheduler()
         count = await scheduler.execute_daily_review()
-        return {"executed": count, "message": f"执行了 {count} 个复习任务"}
+        return {"executed": count, "message": f"执行了 {count} 个修炼任务"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1069,7 +1069,7 @@ async def continue_dialogue(dialogue_id: int, request: dict):
 
 @dialogue_router.post("/dialogue/{dialogue_id}/end")
 async def end_dialogue(dialogue_id: int, request: dict):
-    """结束对话并提交笔记"""
+    """结束对话并提交心得"""
     from algomate.core.flow.npc_dialogue import NPCDialogueFlow
 
     notes = request.get("notes", "")
