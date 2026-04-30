@@ -65,6 +65,8 @@ export const npcService = {
 
     getUnlockedNpcs: () => api.get('/npcs/unlocked'),
 
+    getAllNpcs: () => api.get('/npcs/'),
+
     chat: (npcId, message, sessionId) =>
         apiWithRetry(() => api.post(`/npc/${npcId}/chat`, { message, sessionId })),
 }
