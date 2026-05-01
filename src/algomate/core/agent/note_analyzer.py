@@ -91,9 +91,6 @@ class NoteAnalyzer:
             else:
                 note.tags = json.dumps([tags], ensure_ascii=False) if tags else "[]"
 
-            if not note.summary and result.key_points:
-                note.summary = "; ".join(result.key_points[:3])
-
             session.commit()
             session.refresh(note)
             return note

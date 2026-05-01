@@ -5,7 +5,6 @@ export const useCardStore = create((set) => ({
   selectedCard: null,
   filterState: {
     searchKeyword: '',
-    selectedRealm: 'all',
     sortBy: 'name',
     sortOrder: 'asc',
   },
@@ -40,7 +39,6 @@ export const useCardStore = create((set) => ({
       selectedCard: null,
       filterState: {
         searchKeyword: '',
-        selectedRealm: 'all',
         sortBy: 'name',
         sortOrder: 'asc',
       },

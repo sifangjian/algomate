@@ -58,7 +58,6 @@ except ImportError:
 class ContentAnalysisResult(BaseModel):
     """内容分析结果结构"""
     algorithm_type: str = Field(description="算法类型（如：动态规划、贪心、DFS等）")
-    key_points: List[str] = Field(description="关键秘术列表")
     difficulty: Literal["简单", "中等", "困难"] = Field(description="难度等级")
     tags: List[str] = Field(description="相关标签列表")
     summary: str = Field(description="一句话总结")
@@ -518,7 +517,6 @@ class ChatClient:
 请严格按照以下JSON格式返回：
 {{
     "algorithm_type": "算法类型（如：动态规划、贪心、DFS等）",
-    "key_points": ["关键秘术1", "关键秘术2", "关键秘术3"],
     "difficulty": "难度等级（简单/中等/困难）",
     "tags": ["标签1", "标签2"],
     "summary": "一句话总结"
@@ -540,7 +538,6 @@ class ChatClient:
             else:
                 return ContentAnalysisResult(
                     algorithm_type="未知",
-                    key_points=[],
                     difficulty="中等",
                     tags=[],
                     summary=str(response)
@@ -567,7 +564,6 @@ class ChatClient:
                 
                 return ContentAnalysisResult(
                     algorithm_type="未知",
-                    key_points=[],
                     difficulty="中等",
                     tags=[],
                     summary=response_text[:100]
@@ -575,7 +571,6 @@ class ChatClient:
             except Exception:
                 return ContentAnalysisResult(
                     algorithm_type="未知",
-                    key_points=[],
                     difficulty="中等",
                     tags=[],
                     summary="分析失败"

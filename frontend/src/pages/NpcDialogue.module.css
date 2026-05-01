@@ -307,108 +307,6 @@
     color: var(--color-text-primary);
 }
 
-.keyPointsInput {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.keyPointsLabel {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
-
-.keyPointsInputRow {
-    display: flex;
-    gap: 8px;
-    align-items: stretch;
-}
-
-.keyPointsInputField {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
-    font-size: 0.85rem;
-    font-family: inherit;
-    outline: none;
-    transition: border-color var(--transition-fast);
-}
-
-.keyPointsInputField:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-.keyPointsInputField::placeholder {
-    color: var(--color-text-muted);
-}
-
-.keyPointsAddBtn {
-    padding: 8px 16px;
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-family: inherit;
-}
-
-.keyPointsAddBtn:hover:not(:disabled) {
-    background: var(--color-primary-dark);
-}
-
-.keyPointsAddBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.keyPointsList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.keyPointTag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 14px;
-    font-size: 0.8rem;
-    color: var(--color-primary-light);
-    animation: slideUp 200ms ease forwards;
-}
-
-.keyPointRemove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    background: rgba(239, 68, 68, 0.1);
-    border: none;
-    border-radius: 50%;
-    color: #ef4444;
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.keyPointRemove:hover {
-    background: rgba(239, 68, 68, 0.2);
-}
-
 .noteEditor {
     width: 100%;
     padding: 12px;
@@ -543,17 +441,44 @@
     margin: 0;
 }
 
-.earnedCardPoints {
+.greetingContainer {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
 }
 
-.earnedCardPoint {
-    padding: 2px 8px;
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: 10px;
-    font-size: 0.7rem;
-    color: #10b981;
+.greetingCapabilities {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+
+.greetingCapabilities strong {
+    font-weight: 700;
+    color: var(--color-primary-light);
+}
+
+.greetingTopics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.greetingTopicTag {
+    display: inline-block;
+    padding: 3px 10px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    font-size: 0.78rem;
+    color: var(--color-primary-light);
+    white-space: nowrap;
+}
+
+.greetingWelcome {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
 }

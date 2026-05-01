@@ -184,11 +184,11 @@ class NPCDialogueFlow:
                 state=DialogueState.IN_PROGRESS
             )
             
-            greeting = npc.greeting or f"欢迎来到{npc.location}，我是{npc.name}。"
-            if topic:
-                topics = json.loads(npc.topics) if npc.topics else []
-                if topics:
-                    greeting += f"\n\n我可以教你以下内容：{', '.join(topics)}"
+            greeting = "\n".join([
+                self._build_capabilities_section(npc),
+                self._build_topics_section(npc),
+                self._build_welcome_section(npc)
+            ])
             
             dialogue_session.messages.append(
                 DialogueMessage(
@@ -408,8 +408,11 @@ class NPCDialogueFlow:
                 name=analysis_result.algorithm_type or f"{dialogue_session.npc_domain}技巧",
                 domain=domain.value if isinstance(domain, Domain) else domain,
                 durability=80,
+                max_durability=80,
+                difficulty=3,
+                is_sealed=False,
+                key_points="[]",
                 knowledge_content=user_notes,
-                key_points=json.dumps(analysis_result.key_points, ensure_ascii=False) if analysis_result.key_points else "[]",
                 summary=analysis_result.summary,
                 algorithm_type=analysis_result.algorithm_type,
                 review_level=0,
@@ -426,7 +429,6 @@ class NPCDialogueFlow:
                 "domain": card.domain,
                 "durability": card.durability,
                 "knowledge_content": card.knowledge_content,
-                "key_points": card.key_points,
                 "summary": card.summary,
                 "algorithm_type": card.algorithm_type
             })
@@ -458,7 +460,6 @@ class NPCDialogueFlow:
                 "cards": cards,
                 "analysis": {
                     "algorithm_type": analysis_result.algorithm_type,
-                    "key_points": analysis_result.key_points,
                     "difficulty": analysis_result.difficulty,
                     "tags": analysis_result.tags,
                     "summary": analysis_result.summary
@@ -506,6 +507,25 @@ class NPCDialogueFlow:
         finally:
             session.close()
     
+    def _build_capabilities_section(self, npc: NPC) -> str:
+        topics = json.loads(npc.topics) if npc.topics else []
+        if topics:
+            capabilities = "、".join(topics[:4])
+            return f"**我是{npc.name}，专精{npc.domain}。**\n我可以帮你：{capabilities}"
+        return f"**我是{npc.name}，专精{npc.domain}。**\n我可以帮你探索这个领域的知识。"
+
+    def _build_topics_section(self, npc: NPC) -> str:
+        topics = json.loads(npc.topics) if npc.topics else []
+        if topics:
+            topics_str = " · ".join(topics)
+            return f"📖 可修习话题：{topics_str}"
+        return "📖 暂无可修习话题"
+
+    def _build_welcome_section(self, npc: NPC) -> str:
+        if npc.greeting:
+            return npc.greeting
+        return f"欢迎来到{npc.location}！准备好开始探索了吗？"
+
     def _map_domain_to_enum(self, domain_str: str) -> str:
         """将领域字符串映射到枚举值
         

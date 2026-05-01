@@ -34,8 +34,6 @@ export default function NpcDialogue() {
     const [inputValue, setInputValue] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [noteContent, setNoteContent] = useState('')
-    const [keyPoints, setKeyPoints] = useState([])
-    const [keyPointInput, setKeyPointInput] = useState('')
     const [sessionId, setSessionId] = useState(null)
     const [showEndDialog, setShowEndDialog] = useState(false)
     const [isNpcLoading, setIsNpcLoading] = useState(true)
@@ -172,17 +170,15 @@ export default function NpcDialogue() {
                 domain: domainName,
                 knowledge_content: noteContent,
                 algorithm_category: npc.expertise?.[0] || null,
-                key_points: JSON.stringify(keyPoints),
             })
             setEarnedCard(result)
             showToast('知识已转化为卡牌 🎴', 'success')
             setNoteContent('')
-            setKeyPoints([])
         } catch (err) {
             console.error('Create card error:', err)
             showToast(`保存失败: ${err.message}`, 'error')
         }
-    }, [noteContent, keyPoints, npc, realmId])
+    }, [noteContent, npc, realmId])
 
     const handleEndSession = useCallback(() => {
         if (noteContent.trim()) {
@@ -209,25 +205,6 @@ export default function NpcDialogue() {
         },
         [handleSend]
     )
-
-    const handleAddKeyPoint = useCallback(() => {
-        const trimmed = keyPointInput.trim()
-        if (trimmed && !keyPoints.includes(trimmed)) {
-            setKeyPoints((prev) => [...prev, trimmed])
-            setKeyPointInput('')
-        }
-    }, [keyPointInput, keyPoints])
-
-    const handleRemoveKeyPoint = useCallback((index) => {
-        setKeyPoints((prev) => prev.filter((_, i) => i !== index))
-    }, [])
-
-    const handleKeyPointKeyDown = useCallback((e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            handleAddKeyPoint()
-        }
-    }, [handleAddKeyPoint])
 
     return (
         <div className={`${styles.container} page-container`}>
@@ -302,57 +279,17 @@ export default function NpcDialogue() {
 
                 </section>
 
-                <aside className={styles.noteSection} aria-label="心得区域">
-                    <h3 className={styles.noteTitle}>📝 修习记录</h3>
-                    <p className={styles.noteHint}>记录重点内容，转化为知识卡牌</p>
-                    
-                    <div className={styles.keyPointsInput}>
-                        <label className={styles.keyPointsLabel}>🏷️ 关键要点</label>
-                        <div className={styles.keyPointsInputRow}>
-                            <input
-                                type="text"
-                                className={styles.keyPointsInputField}
-                                placeholder="输入要点后按回车添加"
-                                value={keyPointInput}
-                                onChange={(e) => setKeyPointInput(e.target.value)}
-                                onKeyDown={handleKeyPointKeyDown}
-                            />
-                            <button
-                                type="button"
-                                className={styles.keyPointsAddBtn}
-                                onClick={handleAddKeyPoint}
-                                disabled={!keyPointInput.trim()}
-                            >
-                                添加
-                            </button>
-                        </div>
-                        {keyPoints.length > 0 && (
-                            <div className={styles.keyPointsList}>
-                                {keyPoints.map((kp, i) => (
-                                    <span key={i} className={styles.keyPointTag}>
-                                        {kp}
-                                        <button
-                                            type="button"
-                                            className={styles.keyPointRemove}
-                                            onClick={() => handleRemoveKeyPoint(i)}
-                                            aria-label="移除"
-                                        >
-                                            ×
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                    
-                    <label className={styles.noteLabel}>📖 心得内容</label>
+                <aside className={styles.noteSection} aria-label="修炼日记区域">
+                    <h3 className={styles.noteTitle}>📝 修炼日记</h3>
+                    <p className={styles.noteHint}>按模板记录修炼过程，转化为知识卡牌</p>
+
                     <textarea
                         className={styles.noteEditor}
                         value={noteContent}
                         onChange={(e) => setNoteContent(e.target.value)}
-                        placeholder="在这里写下你的修炼心得..."
+                        placeholder={"📌 今日主题：学习的算法/知识点\n💡 核心理解：用自己的话概括关键思路\n⚠️ 易错难点：踩过的坑或容易混淆的点\n🔑 关键代码：核心代码片段或伪代码\n🧠 个人感悟：总结与反思"}
                         rows={10}
-                        aria-label="心得编辑器"
+                        aria-label="修炼日记编辑器"
                     />
                     <Button
                         variant="primary"
@@ -379,13 +316,6 @@ export default function NpcDialogue() {
                                             : earnedCard.knowledgeContent}
                                     </p>
                                 )}
-                                {earnedCard.keyPoints?.length > 0 && (
-                                    <div className={styles.earnedCardPoints}>
-                                        {earnedCard.keyPoints.map((kp, i) => (
-                                            <span key={i} className={styles.earnedCardPoint}>{kp}</span>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     )}
@@ -401,6 +331,66 @@ export default function NpcDialogue() {
                 confirmText="保存并结束"
                 cancelText="不保存直接结束"
             />
+        </div>
+    )
+}
+
+function NpcGreetingMessage({ text }) {
+    const lines = text.split('\n')
+
+    let capabilitiesText = ''
+    let topicsText = ''
+    let welcomeText = ''
+    let foundTopics = false
+
+    for (const line of lines) {
+        if (!foundTopics && (line.includes('**我是') || line.includes('我可以帮你'))) {
+            capabilitiesText += (capabilitiesText ? '\n' : '') + line
+        } else if (line.startsWith('📖') || line.includes('可修习话题')) {
+            topicsText = line
+            foundTopics = true
+        } else if (foundTopics) {
+            welcomeText += (welcomeText ? '\n' : '') + line
+        } else {
+            capabilitiesText += (capabilitiesText ? '\n' : '') + line
+        }
+    }
+
+    const renderCapabilities = (str) => {
+        if (!str) return null
+        const parts = str.split(/(\*\*[^*]+\*\*)/g)
+        return parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={i}>{part.slice(2, -2)}</strong>
+            }
+            return <span key={i}>{part}</span>
+        })
+    }
+
+    const parseTopics = (str) => {
+        if (!str) return []
+        const colonIndex = str.indexOf('：')
+        if (colonIndex === -1) return [str]
+        const topicsStr = str.slice(colonIndex + 1).trim()
+        if (!topicsStr) return []
+        return topicsStr.split(' · ').filter(Boolean)
+    }
+
+    return (
+        <div className={styles.greetingContainer}>
+            {capabilitiesText && (
+                <div className={styles.greetingCapabilities}>{renderCapabilities(capabilitiesText)}</div>
+            )}
+            {topicsText && parseTopics(topicsText).length > 0 && (
+                <div className={styles.greetingTopics}>
+                    {parseTopics(topicsText).map((topic, i) => (
+                        <span key={i} className={styles.greetingTopicTag}>{topic}</span>
+                    ))}
+                </div>
+            )}
+            {welcomeText && (
+                <div className={styles.greetingWelcome}>{welcomeText}</div>
+            )}
         </div>
     )
 }
@@ -436,7 +426,11 @@ function NpcMessage({ message, onSuggestionClick }) {
             <span className={styles.msgAvatar}>🧙</span>
             <div className={styles.npcMsgContent}>
                 <GameCard className={styles.msgBubble}>
-                    <p className={styles.msgText}>{textToShow}</p>
+                    {message.id === 'greeting' ? (
+                        <NpcGreetingMessage text={textToShow} />
+                    ) : (
+                        <p className={styles.msgText}>{textToShow}</p>
+                    )}
                     {isTyping && <span className={styles.cursor}>|</span>}
                 </GameCard>
                 {showSuggestions && (

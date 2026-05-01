@@ -9,17 +9,6 @@ import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './CardWorkshop.module.css'
 
-const REALM_OPTIONS = [
-    { value: '新手森林', label: '🌲 新手森林' },
-    { value: '迷雾沼泽', label: '🌫️ 迷雾沼泽' },
-    { value: '智慧圣殿', label: '💡 智慧圣殿' },
-    { value: '贪婪之塔', label: '🏰 贪婪之塔' },
-    { value: '命运迷宫', label: '🌀 命运迷宫' },
-    { value: '分裂山脉', label: '⛰️ 分裂山脉' },
-    { value: '数学殿堂', label: '📐 数学殿堂' },
-    { value: '试炼之地', label: '⚔️ 试炼之地' },
-]
-
 const ALGORITHM_CATEGORIES = [
     'Search', 'Sorting', 'Dynamic Programming', 'Graph',
     'Tree', 'Recursion', 'Array', 'String', 'Greedy', 'Math',
@@ -30,15 +19,12 @@ function CreateCardModal({ open, onClose, onCreated }) {
 
     const [form, setForm] = useState({
         name: '',
-        domain: '',
         algorithm_category: '',
         difficulty: 3,
-        keyPoints: [],
         noteContent: '',
     })
     const [errors, setErrors] = useState({})
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [keyPointInput, setKeyPointInput] = useState('')
 
     const [polishingField, setPolishingField] = useState(null)
     const [polishPreview, setPolishPreview] = useState(null)
@@ -46,14 +32,11 @@ function CreateCardModal({ open, onClose, onCreated }) {
     const resetForm = useCallback(() => {
         setForm({
             name: '',
-            domain: '',
             algorithm_category: '',
             difficulty: 3,
-            keyPoints: [],
             noteContent: '',
         })
         setErrors({})
-        setKeyPointInput('')
         setPolishingField(null)
         setPolishPreview(null)
         setIsSubmitting(false)
@@ -76,32 +59,8 @@ function CreateCardModal({ open, onClose, onCreated }) {
         })
     }, [])
 
-    const handleAddKeyPoint = useCallback(() => {
-        const trimmed = keyPointInput.trim()
-        if (trimmed && !form.keyPoints.includes(trimmed)) {
-            setForm((prev) => ({ ...prev, keyPoints: [...prev.keyPoints, trimmed] }))
-            setKeyPointInput('')
-        }
-    }, [keyPointInput, form.keyPoints])
-
-    const handleRemoveKeyPoint = useCallback((index) => {
-        setForm((prev) => ({
-            ...prev,
-            keyPoints: prev.keyPoints.filter((_, i) => i !== index),
-        }))
-    }, [])
-
-    const handleKeyPointKeyDown = useCallback((e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            handleAddKeyPoint()
-        }
-    }, [handleAddKeyPoint])
-
     const handlePolish = useCallback(async (field) => {
-        const content = field === 'key_points'
-            ? form.keyPoints.join('\n')
-            : form.noteContent
+        const content = form.noteContent
 
         if (!content.trim()) {
             showToast('请先输入内容再进行润色', 'warning')
@@ -118,20 +77,12 @@ function CreateCardModal({ open, onClose, onCreated }) {
             showToast(`AI润色失败: ${err.message}`, 'error')
             setPolishingField(null)
         }
-    }, [form.keyPoints, form.noteContent])
+    }, [form.noteContent])
 
     const handleAcceptPolish = useCallback(() => {
         if (!polishPreview) return
 
-        if (polishPreview.field === 'key_points') {
-            const points = polishPreview.content
-                .split('\n')
-                .map((s) => s.replace(/^[-•*\d.)\s]+/, '').trim())
-                .filter(Boolean)
-            setForm((prev) => ({ ...prev, keyPoints: points }))
-        } else {
-            setForm((prev) => ({ ...prev, noteContent: polishPreview.content }))
-        }
+        setForm((prev) => ({ ...prev, noteContent: polishPreview.content }))
 
         setPolishPreview(null)
         setPolishingField(null)
@@ -145,10 +96,9 @@ function CreateCardModal({ open, onClose, onCreated }) {
     const validate = useCallback(() => {
         const newErrors = {}
         if (!form.name.trim()) newErrors.name = '卡牌名称不能为空'
-        if (!form.domain) newErrors.domain = '请选择所属秘境'
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
-    }, [form.name, form.domain])
+    }, [form.name])
 
     const handleSubmit = useCallback(async () => {
         if (!validate()) return
@@ -157,10 +107,8 @@ function CreateCardModal({ open, onClose, onCreated }) {
         try {
             const payload = {
                 name: form.name.trim(),
-                domain: form.domain,
                 algorithm_category: form.algorithm_category.trim() || null,
                 difficulty: form.difficulty,
-                key_points: JSON.stringify(form.keyPoints),
                 knowledge_content: form.noteContent.trim() || null,
             }
 
@@ -193,24 +141,6 @@ function CreateCardModal({ open, onClose, onCreated }) {
                     icon="🎴"
                     id="card-name"
                 />
-
-                <div className={styles.formField}>
-                    <label className={styles.fieldLabel} htmlFor="card-domain">
-                        所属秘境 <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                        id="card-domain"
-                        className={`${styles.fieldSelect} ${errors.domain ? styles.fieldError : ''}`}
-                        value={form.domain}
-                        onChange={(e) => handleFieldChange('domain', e.target.value)}
-                    >
-                        <option value="">选择秘境...</option>
-                        {REALM_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                    {errors.domain && <p className={styles.errorText}>{errors.domain}</p>}
-                </div>
 
                 <div className={styles.formField}>
                     <label className={styles.fieldLabel} htmlFor="card-category">
@@ -247,82 +177,6 @@ function CreateCardModal({ open, onClose, onCreated }) {
                         ))}
                         <span className={styles.starLabel}>{form.difficulty}/5</span>
                     </div>
-                </div>
-
-                <div className={styles.formField}>
-                    <div className={styles.fieldHeader}>
-                        <label className={styles.fieldLabel}>关键要点</label>
-                        <button
-                            type="button"
-                            className={styles.polishBtn}
-                            onClick={() => handlePolish('key_points')}
-                            disabled={!!polishingField || form.keyPoints.length === 0}
-                        >
-                            {polishingField === 'key_points' ? '⏳ 润色中...' : '✨ AI润色'}
-                        </button>
-                    </div>
-                    <div className={styles.tagInput}>
-                        <input
-                            className={styles.tagInputField}
-                            placeholder="输入要点后按回车添加"
-                            value={keyPointInput}
-                            onChange={(e) => setKeyPointInput(e.target.value)}
-                            onKeyDown={handleKeyPointKeyDown}
-                        />
-                        <button
-                            type="button"
-                            className={styles.tagAddBtn}
-                            onClick={handleAddKeyPoint}
-                            disabled={!keyPointInput.trim()}
-                        >
-                            添加
-                        </button>
-                    </div>
-                    {form.keyPoints.length > 0 && (
-                        <div className={styles.tagList}>
-                            {form.keyPoints.map((kp, i) => (
-                                <span key={i} className={styles.tagItem}>
-                                    {kp}
-                                    <button
-                                        type="button"
-                                        className={styles.tagRemove}
-                                        onClick={() => handleRemoveKeyPoint(i)}
-                                        aria-label="移除"
-                                    >
-                                        ×
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                    {polishPreview && polishPreview.field === 'key_points' && (
-                        <div className={styles.polishPreview}>
-                            <div className={styles.polishPreviewHeader}>
-                                <span>✨ AI润色结果</span>
-                            </div>
-                            <div className={styles.polishPreviewContent}>
-                                {polishPreview.content.split('\n').map((line, i) => (
-                                    <div key={i}>{line}</div>
-                                ))}
-                            </div>
-                            <div className={styles.polishPreviewActions}>
-                                <button
-                                    type="button"
-                                    className={styles.polishAcceptBtn}
-                                    onClick={handleAcceptPolish}
-                                >
-                                    采纳
-                                </button>
-                                <button
-                                    type="button"
-                                    className={styles.polishRejectBtn}
-                                    onClick={handleRejectPolish}
-                                >
-                                    放弃
-                                </button>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 <div className={styles.formField}>
@@ -396,7 +250,6 @@ export default function CardWorkshop() {
     const { cards, setCards, selectedCard, setSelectedCard, removeCard, addCard } = useCardStore()
 
     const [searchKeyword, setSearchKeyword] = useState('')
-    const [selectedRealm, setSelectedRealm] = useState('all')
     const [sortBy, setSortBy] = useState('name')
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [cardToDelete, setCardToDelete] = useState(null)
@@ -420,13 +273,8 @@ export default function CardWorkshop() {
             result = result.filter(
                 (c) =>
                     c.name.toLowerCase().includes(kw) ||
-                    c.algorithmCategory?.toLowerCase().includes(kw) ||
-                    c.keyPoints?.some((kp) => kp.toLowerCase().includes(kw))
+                    c.algorithmCategory?.toLowerCase().includes(kw)
             )
-        }
-
-        if (selectedRealm !== 'all') {
-            result = result.filter((c) => c.realmId === selectedRealm)
         }
 
         result = [...result].sort((a, b) => {
@@ -443,30 +291,12 @@ export default function CardWorkshop() {
         })
 
         return result
-    }, [cards, searchKeyword, selectedRealm, sortBy])
+    }, [cards, searchKeyword, sortBy])
 
     const dangerCount = useMemo(
         () => cards.filter((c) => c.durability < 30).length,
         [cards]
     )
-
-    const realms = useMemo(() => {
-        const all = cards
-        const unique = [...new Set(all.map((c) => c.realmId))]
-        return unique.map((id) => {
-            const card = all.find((c) => c.realmId === id)
-            return { id, name: card?.realmName || id, icon: card?.realmIcon || '📍' }
-        })
-    }, [cards])
-
-    const handleRealmChange = useCallback((realmId) => {
-        const now = Date.now()
-        if (now - lastClickTimeRef.current < DEBOUNCE_DELAY) {
-            return
-        }
-        lastClickTimeRef.current = now
-        setSelectedRealm(realmId)
-    }, [])
 
     const handleSortChange = useCallback((e) => {
         const now = Date.now()
@@ -509,14 +339,12 @@ export default function CardWorkshop() {
     }, [cardToDelete, removeCard, setSelectedCard])
 
     const handleReview = useCallback(
-        async (card) => {
-            try {
-                await cardService.startReview(card.id)
-                showToast(`开始修炼「${card.name}」`, 'success')
-                navigate(`/npc/${card.realmId}`)
-            } catch (err) {
-                showToast(`开始修炼失败: ${err.message}`, 'error')
+        (card) => {
+            if (card.is_sealed || card.durability === 0) {
+                showToast('该卡牌已封印，无法修炼', 'warning')
+                return
             }
+            navigate(`/boss/battle?cardId=${card.id}`)
         },
         [navigate]
     )
@@ -555,23 +383,6 @@ export default function CardWorkshop() {
                     icon="🔍"
                     className={styles.searchInput}
                 />
-                <div className={styles.realmTabs}>
-                    <button
-                        className={`${styles.realmTab} ${selectedRealm === 'all' ? styles.activeTab : ''}`}
-                        onClick={() => handleRealmChange('all')}
-                    >
-                        全部
-                    </button>
-                    {realms.map((r) => (
-                        <button
-                            key={r.id}
-                            className={`${styles.realmTab} ${selectedRealm === r.id ? styles.activeTab : ''}`}
-                            onClick={() => handleRealmChange(r.id)}
-                        >
-                            {r.icon} {r.name}
-                        </button>
-                    ))}
-                </div>
                 <select
                     className={styles.sortSelect}
                     value={sortBy}
@@ -633,7 +444,6 @@ export default function CardWorkshop() {
                             </div>
 
                             <div className={styles.cardMeta}>
-                                <span>{card.realmIcon} {card.realmName}</span>
                                 <span>修炼 {card.reviewCount}次</span>
                                 <span>心得 {card.noteCount}</span>
                             </div>
@@ -645,114 +455,138 @@ export default function CardWorkshop() {
             <Modal
                 open={!!selectedCard}
                 onClose={() => setSelectedCard(null)}
-                title={`🎴 ${selectedCard?.name || ''}`}
+                title={selectedCard?.name || ''}
                 size="lg"
             >
                 {selectedCard && (
                     <div className={styles.modalContent}>
-                        <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>分类</span>
-                            <span>{selectedCard.algorithmCategory}</span>
-                        </div>
-                        <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>所属秘境</span>
-                            <span>
-                                {selectedCard.realmIcon} {selectedCard.realmName}
+                        <div className={styles.heroSection}>
+                            <span className={`${styles.heroIcon} ${styles[selectedCard.status]}`}>
+                                {getAlgorithmIcon(selectedCard.algorithmCategory)}
                             </span>
-                        </div>
-                        <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>难度</span>
-                            <span>{'★'.repeat(selectedCard.difficulty)}{'☆'.repeat(5 - selectedCard.difficulty)}</span>
-                        </div>
-                        <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>耐久度</span>
-                            <div className={styles.durBarLarge}>
-                                <div
-                                    className={styles.durFill}
-                                    style={{
-                                        width: `${(selectedCard.durability / selectedCard.maxDurability) * 100}%`,
-                                        background:
-                                            selectedCard.durability >= 60
-                                                ? 'var(--color-success)'
-                                                : selectedCard.durability >= 30
-                                                    ? 'var(--color-warning)'
-                                                    : 'var(--color-danger)',
-                                    }}
-                                />
-                                <span className={styles.durValue}>
-                                    {selectedCard.durability}%{' '}
-                                    {selectedCard.durability >= 60
-                                        ? '(正常)'
-                                        : selectedCard.durability >= 30
-                                            ? '(注意)'
-                                            : '(濒危)'}
+                            <h2 className={styles.heroName}>{selectedCard.name}</h2>
+                            <div className={styles.heroBadges}>
+                                {selectedCard.algorithmCategory && (
+                                    <span className={styles.heroCategoryBadge}>{selectedCard.algorithmCategory}</span>
+                                )}
+                                <span className={`${styles.heroStatus} ${styles[selectedCard.status]}`}>
+                                    {selectedCard.status === 'normal' ? '正常' : selectedCard.status === 'warning' ? '注意' : '濒危'}
                                 </span>
                             </div>
+                            <div className={styles.heroDivider} />
                         </div>
-                        <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>创建时间</span>
-                            <span>{new Date(selectedCard.createdAt).toLocaleDateString()}</span>
+
+                        <div className={styles.statsGrid}>
+                            <div className={styles.statCell}>
+                                <span className={styles.statIcon}>🛡️</span>
+                                <span className={styles.statValue}>
+                                    {Math.round((selectedCard.durability / selectedCard.maxDurability) * 100)}%
+                                </span>
+                                <span className={styles.statDesc}>
+                                    {selectedCard.durability >= 60 ? '状态良好' : selectedCard.durability >= 30 ? '需要关注' : '濒危警告'}
+                                </span>
+                                <div className={styles.durProgressBar}>
+                                    <div
+                                        className={styles.durProgressFill}
+                                        style={{
+                                            width: `${(selectedCard.durability / selectedCard.maxDurability) * 100}%`,
+                                            background: selectedCard.durability >= 60
+                                                ? 'linear-gradient(90deg, #10b981, #34d399)'
+                                                : selectedCard.durability >= 30
+                                                    ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                                                    : 'linear-gradient(90deg, #ef4444, #f87171)',
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={styles.statCell}>
+                                <span className={styles.statIcon}>⭐</span>
+                                <span className={styles.statValue}>{'★'.repeat(selectedCard.difficulty)}{'☆'.repeat(5 - selectedCard.difficulty)}</span>
+                                <span className={styles.statDesc}>
+                                    {['', '入门难度', '简单难度', '中等难度', '困难难度', '地狱难度'][selectedCard.difficulty] || ''}
+                                </span>
+                            </div>
+
+                            {selectedCard.reviewLevel != null && (
+                                <div className={styles.statCell}>
+                                    <span className={styles.statIcon}>⚔️</span>
+                                    <span className={styles.statValue}>Lv.{selectedCard.reviewLevel}</span>
+                                    <span className={styles.statDesc}>
+                                        {selectedCard.reviewLevel <= 1 ? '初窥门径'
+                                            : selectedCard.reviewLevel <= 3 ? '初学乍练'
+                                            : selectedCard.reviewLevel <= 5 ? '小有所成'
+                                            : selectedCard.reviewLevel <= 7 ? '融会贯通'
+                                            : '登峰造极'}
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className={styles.statCell}>
+                                <span className={styles.statIcon}>📖</span>
+                                <span className={styles.statValue}>{selectedCard.reviewCount ?? 0}</span>
+                                <span className={styles.statDesc}>次修炼</span>
+                            </div>
                         </div>
-                        <div className={styles.detailRow}>
-                            <span className={styles.detailLabel}>最后修炼</span>
-                            <span>{selectedCard.lastReviewed ? new Date(selectedCard.lastReviewed).toLocaleDateString() : '从未修炼'}</span>
+
+                        <div className={styles.infoRow}>
+                            <span className={styles.infoItem}>📅 {new Date(selectedCard.createdAt).toLocaleDateString()}</span>
+                            <span className={styles.infoDot}>·</span>
+                            <span className={styles.infoItem}>
+                                🕐 {selectedCard.lastReviewed ? new Date(selectedCard.lastReviewed).toLocaleDateString() : '从未修炼'}
+                            </span>
+                            {selectedCard.nextReviewDate && (
+                                <>
+                                    <span className={styles.infoDot}>·</span>
+                                    <span className={styles.infoItem}>⏳ {new Date(selectedCard.nextReviewDate).toLocaleDateString()}</span>
+                                </>
+                            )}
+                            {selectedCard.algorithmType && (
+                                <>
+                                    <span className={styles.infoDot}>·</span>
+                                    <span className={styles.infoItem}>
+                                        <span className={styles.runeTagInline}>{selectedCard.algorithmType}</span>
+                                    </span>
+                                </>
+                            )}
                         </div>
 
                         {selectedCard.keyPoints?.length > 0 && (
-                            <div className={styles.detailSection}>
-                                <span className={styles.detailLabel}>关键要点</span>
-                                <div className={styles.tagsList}>
+                            <div className={styles.runeTagSection}>
+                                <span className={styles.runeTagTitle}>🔑 关键要点</span>
+                                <div className={styles.runeTagList}>
                                     {selectedCard.keyPoints.map((kp, i) => (
-                                        <span key={i} className={styles.tag}>{kp}</span>
+                                        <span key={i} className={styles.runeTagItem}>{kp}</span>
                                     ))}
                                 </div>
                             </div>
                         )}
 
                         {selectedCard.knowledgeContent && (
-                            <div className={styles.knowledgeSection}>
-                                <span className={styles.detailLabel}>📖 知识内容</span>
-                                <div className={styles.knowledgeContent}>
+                            <div className={styles.scrollSection}>
+                                <div className={styles.scrollTitle}>📖 知识内容</div>
+                                <div className={styles.scrollContent}>
                                     {selectedCard.knowledgeContent}
                                 </div>
                             </div>
                         )}
 
                         {selectedCard.summary && (
-                            <div className={styles.detailRow}>
-                                <span className={styles.detailLabel}>摘要</span>
-                                <span className={styles.summaryText}>{selectedCard.summary}</span>
-                            </div>
-                        )}
-
-                        {selectedCard.algorithmType && (
-                            <div className={styles.detailRow}>
-                                <span className={styles.detailLabel}>算法类型</span>
-                                <span className={styles.tag}>{selectedCard.algorithmType}</span>
-                            </div>
-                        )}
-
-                        {selectedCard.reviewLevel != null && (
-                            <div className={styles.detailRow}>
-                                <span className={styles.detailLabel}>修炼等级</span>
-                                <span>Lv.{selectedCard.reviewLevel}</span>
-                            </div>
-                        )}
-
-                        {selectedCard.nextReviewDate && (
-                            <div className={styles.detailRow}>
-                                <span className={styles.detailLabel}>下次修炼</span>
-                                <span>{new Date(selectedCard.nextReviewDate).toLocaleDateString()}</span>
+                            <div className={styles.quoteCard}>
+                                <span className={styles.quoteMark}>"</span>
+                                <p className={styles.quoteText}>{selectedCard.summary}</p>
+                                <span className={styles.quoteAttribution}>—— 算法心得</span>
                             </div>
                         )}
 
                         <div className={styles.modalActions}>
-                            <Button variant="primary" onClick={() => handleReview(selectedCard)}>
+                            <Button variant="primary" onClick={() => handleReview(selectedCard)} className={styles.reviewBtn}>
                                 📖 修炼此卡牌
                             </Button>
                             <Button
-                                variant="danger"
+                                variant="ghost"
                                 onClick={() => handleDeleteRequest(selectedCard)}
+                                className={styles.deleteBtn}
                             >
                                 🗑️ 删除卡牌
                             </Button>
