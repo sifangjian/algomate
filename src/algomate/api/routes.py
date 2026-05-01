@@ -56,7 +56,7 @@ def _init_default_npcs():
                 "avatar": "🧙‍♀️",
                 "description": "基础数据结构的导师",
                 "system_prompt": "你是引导者艾琳，基础数据结构的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到新手森林！我是这里的守护者艾琳。算法的世界充满奥秘，你想从哪里开始探索？",
+                "greeting": "欢迎来到新手森林！准备好开始你的算法之旅了吗？",
                 "topics": ["数组", "链表", "栈", "队列", "哈希表", "二分查找", "线性查找"]
             },
             "迷雾沼泽": {
@@ -65,7 +65,7 @@ def _init_default_npcs():
                 "avatar": "🐸",
                 "description": "递归与回溯的导师",
                 "system_prompt": "你是沼泽向导卡尔，递归与回溯的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到迷雾沼泽！我是卡尔，这里的迷雾很浓，但我熟悉每一条路。",
+                "greeting": "欢迎来到迷雾沼泽！迷雾虽浓，但我会为你指引方向。想从哪里开始？",
                 "topics": ["递归", "回溯", "树遍历", "DFS", "BFS"]
             },
             "智慧圣殿": {
@@ -74,7 +74,7 @@ def _init_default_npcs():
                 "avatar": "🦉",
                 "description": "动态规划的导师",
                 "system_prompt": "你是智者雅典娜，动态规划的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到智慧圣殿！我是雅典娜，动态规划是算法的精髓，让我为你指引方向。",
+                "greeting": "欢迎来到智慧圣殿！让我为你照亮智慧之路。",
                 "topics": ["动态规划", "贪心算法", "分治策略"]
             },
             "贪婪之塔": {
@@ -83,7 +83,7 @@ def _init_default_npcs():
                 "avatar": "🏰",
                 "description": "图论与高级算法的导师",
                 "system_prompt": "你是守塔人戈尔，图论与高级算法的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到贪婪之塔！我是戈尔，这座塔充满了挑战，你准备好了吗？",
+                "greeting": "欢迎来到贪婪之塔！挑战就在眼前，你准备好了吗？",
                 "topics": ["图论", "最短路径", "最小生成树", "网络流"]
             },
             "命运迷宫": {
@@ -92,7 +92,7 @@ def _init_default_npcs():
                 "avatar": "🌀",
                 "description": "高级数据结构的导师",
                 "system_prompt": "你是迷宫守护者墨丘利，高级数据结构的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到命运迷宫！我是墨丘利，这里的每一条路都通向未知。",
+                "greeting": "欢迎来到命运迷宫！每一条路都通向新的发现。",
                 "topics": ["堆", "Trie", "并查集", "线段树", "树状数组"]
             },
             "分裂山脉": {
@@ -101,7 +101,7 @@ def _init_default_npcs():
                 "avatar": "⛰️",
                 "description": "算法巅峰的导师",
                 "system_prompt": "你是山巨人顿，算法巅峰的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到分裂山脉！我是顿，这里的挑战极其艰难。",
+                "greeting": "欢迎来到分裂山脉！前方的挑战将考验你的极限。",
                 "topics": ["高级算法", "复杂算法分析", "算法优化"]
             },
             "数学殿堂": {
@@ -110,7 +110,7 @@ def _init_default_npcs():
                 "avatar": "📐",
                 "description": "数学与复杂度的导师",
                 "system_prompt": "你是数学家欧几里得，数学与复杂度的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到数学殿堂！我是欧几里得，数学是算法的基础。",
+                "greeting": "欢迎来到数学殿堂！让我们一起探索数学的奥秘。",
                 "topics": ["数学证明", "时间复杂度", "空间复杂度", "组合数学"]
             },
             "试炼之地": {
@@ -119,7 +119,7 @@ def _init_default_npcs():
                 "avatar": "⚔️",
                 "description": "终极试炼的导师",
                 "system_prompt": "你是试炼之主，终极试炼的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到试炼之地！这是所有秘境的终极试炼！",
+                "greeting": "欢迎来到试炼之地！终极试炼等待着你。",
                 "topics": ["综合修炼", "算法面试", "竞赛试炼"]
             },
         }
@@ -527,12 +527,12 @@ async def save_learning_note(note_data: dict):
 
     try:
         new_note = note_repo.create(
-            title=note_data.get("title", ""),
-            content=note_data.get("content", ""),
-            algorithm_type=note_data.get("algorithm_type", "其他"),
-            difficulty=note_data.get("difficulty", "中等"),
-            summary=note_data.get("summary", ""),
-            tags=note_data.get("tags", "[]")
+            title=note_data.get("title") or "",
+            content=note_data.get("content") or "",
+            algorithm_type=note_data.get("algorithm_type") or "其他",
+            difficulty=note_data.get("difficulty") or "中等",
+            summary=note_data.get("summary") or "",
+            tags=note_data.get("tags") or "[]"
         )
         return {"id": new_note.id, "message": "心得保存成功"}
     except Exception as e:
@@ -614,23 +614,91 @@ async def get_boss(boss_id: int):
 
 @boss_router.post("/boss/{boss_id}/submit")
 async def submit_boss_answer(boss_id: int, request: dict):
-    """提交Boss战斗答案（前端直接调用格式）"""
     from algomate.core.flow.boss_battle import BossBattleFlow
 
     code = request.get("code")
-    card_id = request.get("cardId")
+    answer = request.get("answer", "")
+    card_id = request.get("card_id") or request.get("cardId")
 
-    if not code:
-        raise HTTPException(status_code=400, detail="code 不能为空")
     if not card_id:
-        raise HTTPException(status_code=400, detail="cardId 不能为空")
+        raise HTTPException(status_code=400, detail="card_id 不能为空")
+
+    if not code and not answer:
+        raise HTTPException(status_code=400, detail="code 或 answer 不能同时为空")
 
     try:
         flow = BossBattleFlow()
-        result = await flow.submit_answer(boss_id, card_id, code)
-        return result.to_dict()
+        battle_session = None
+        for bid, bs in flow.active_battles.items():
+            if bs.boss_id == boss_id:
+                battle_session = bs
+                battle_id = bid
+                break
+
+        if not battle_session:
+            battle_session = await flow.start_battle(boss_id, [int(card_id)])
+            battle_id = id(battle_session)
+            flow.active_battles[battle_id] = battle_session
+
+        result = await flow.submit_answer(battle_id, answer, code=code)
+        return {
+            "is_victory": result.is_victory,
+            "is_correct": result.is_victory,
+            "durability_change": result.durability_change,
+            "new_card_dropped": result.new_card_dropped,
+            "dropped_card": result.dropped_card,
+            "feedback": result.feedback,
+            "improvement": result.improvement,
+            "reward": {
+                "exp": 100 if result.is_victory else 0,
+                "durability_change": result.durability_change
+            }
+        }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@boss_router.post("/boss/{boss_id}/run-code")
+async def run_boss_code(boss_id: int, request: dict):
+    from algomate.core.flow.boss_battle import BossBattleFlow
+    from algomate.data.database import Database
+    from algomate.models.bosses import Boss
+    from algomate.models.questions import Question
+    import json
+
+    code = request.get("code", "")
+
+    if not code.strip():
+        raise HTTPException(status_code=400, detail="code 不能为空")
+
+    try:
+        db = Database.get_instance()
+        session = db.get_session()
+        try:
+            boss = session.query(Boss).filter(Boss.id == boss_id).first()
+            if not boss:
+                raise HTTPException(status_code=404, detail=f"Boss {boss_id} 不存在")
+
+            test_cases = []
+            if boss.question_id:
+                question = session.query(Question).filter(Question.id == boss.question_id).first()
+                if question and question.options:
+                    try:
+                        parsed = json.loads(question.options)
+                        if isinstance(parsed, list):
+                            test_cases = parsed
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+            flow = BossBattleFlow()
+            result = flow.run_code(code, test_cases)
+            return result
+        finally:
+            session.close()
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -649,6 +717,25 @@ async def generate_boss(request: dict):
     try:
         flow = BossBattleFlow()
         result = await flow.generate_boss_for_card(card_id, difficulty)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@boss_router.post("/boss/generate-for-card")
+async def generate_boss_for_card(request: dict):
+    from algomate.core.flow.boss_battle import BossBattleFlow
+
+    card_id = request.get("card_id")
+
+    if not card_id:
+        raise HTTPException(status_code=400, detail="card_id 不能为空")
+
+    try:
+        flow = BossBattleFlow()
+        result = await flow.generate_boss_for_card(card_id)
         return result
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -28,15 +28,15 @@ class AnswerRecordRepository:
         self.db = db
 
     def create(
-        self, question_id: int, user_answer: str, is_correct: bool, **kwargs
+        self, card_id: int, user_answer: str, is_correct: bool, **kwargs
     ) -> AnswerRecord:
         """创建应战记录
 
         Args:
-            question_id: 试炼ID
+            card_id: 卡牌ID
             user_answer: 用户答案
             is_correct: 是否正确
-            **kwargs: 其他可选参数
+            **kwargs: 其他可选参数（如 boss_id）
 
         Returns:
             创建的应战记录对象
@@ -44,7 +44,7 @@ class AnswerRecordRepository:
         session = self.db.get_session()
         try:
             record = AnswerRecord(
-                question_id=question_id,
+                card_id=card_id,
                 user_answer=user_answer,
                 is_correct=is_correct,
                 **kwargs
@@ -91,11 +91,11 @@ class AnswerRecordRepository:
         finally:
             session.close()
 
-    def get_by_question_id(self, question_id: int) -> List[AnswerRecord]:
-        """获取指定试炼的所有应战记录
+    def get_by_card_id(self, card_id: int) -> List[AnswerRecord]:
+        """获取指定卡牌的所有应战记录
 
         Args:
-            question_id: 试炼ID
+            card_id: 卡牌ID
 
         Returns:
             应战记录列表
@@ -104,7 +104,7 @@ class AnswerRecordRepository:
         try:
             return (
                 session.query(AnswerRecord)
-                .filter(AnswerRecord.question_id == question_id)
+                .filter(AnswerRecord.card_id == card_id)
                 .order_by(AnswerRecord.answered_at.desc())
                 .all()
             )

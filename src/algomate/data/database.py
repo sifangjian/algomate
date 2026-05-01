@@ -34,7 +34,10 @@ def _auto_migrate(db_path: Union[str, Path]):
     inspector = inspect(engine)
 
     for table_name in Base.metadata.tables:
-        columns = inspector.get_columns(table_name)
+        try:
+            columns = inspector.get_columns(table_name)
+        except Exception:
+            continue
         existing_columns = {col['name'] for col in columns}
 
         table = Base.metadata.tables[table_name]
@@ -42,15 +45,34 @@ def _auto_migrate(db_path: Union[str, Path]):
             if column.name not in existing_columns:
                 try:
                     col_type = column.type.compile(engine.dialect)
-                    default_value = column.default.arg if column.default else 'NULL'
+
+                    default_value = 'NULL'
+                    if column.default is not None:
+                        if callable(column.default.arg):
+                            default_value = 'NULL'
+                        else:
+                            default_value = column.default.arg
+
+                    if column.server_default is not None:
+                        default_value = 'NULL'
+
                     nullable = 'NOT NULL' if not column.nullable else 'NULL'
+
+                    if nullable == 'NOT NULL' and default_value == 'NULL':
+                        nullable = 'NULL'
 
                     alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable}"
                     if default_value != 'NULL' and default_value is not None:
                         if isinstance(default_value, str):
-                            alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable} DEFAULT '{default_value}'"
-                        else:
+                            escaped = default_value.replace("'", "''")
+                            alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable} DEFAULT '{escaped}'"
+                        elif isinstance(default_value, bool):
+                            alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable} DEFAULT {1 if default_value else 0}"
+                        elif isinstance(default_value, (int, float)):
                             alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable} DEFAULT {default_value}"
+                        else:
+                            nullable = 'NULL'
+                            alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {col_type} {nullable}"
 
                     with engine.connect() as conn:
                         conn.execute(text(alter_stmt))
@@ -59,7 +81,116 @@ def _auto_migrate(db_path: Union[str, Path]):
                 except Exception as e:
                     print(f"  [MIGRATION] Could not add column {column.name}: {e}")
 
+    _fix_orphan_notnull_columns(engine)
+
     engine.dispose()
+
+
+def _fix_orphan_notnull_columns(engine):
+    inspector = inspect(engine)
+
+    for table_name in Base.metadata.tables:
+        try:
+            db_columns = inspector.get_columns(table_name)
+        except Exception:
+            continue
+
+        model_column_names = {col.name for col in Base.metadata.tables[table_name].columns}
+
+        orphan_notnull = set()
+        for col in db_columns:
+            if col['name'] not in model_column_names and not col.get('nullable', True):
+                orphan_notnull.add(col['name'])
+
+        if not orphan_notnull:
+            continue
+
+        pk_constraint = inspector.get_pk_constraint(table_name)
+        foreign_keys = inspector.get_foreign_keys(table_name)
+        indexes = inspector.get_indexes(table_name)
+
+        pk_columns = pk_constraint.get('constrained_columns', [])
+
+        has_autoincrement = False
+        with engine.connect() as conn:
+            result = conn.execute(
+                text("SELECT sql FROM sqlite_master WHERE type='table' AND name=:tname"),
+                {"tname": table_name}
+            )
+            row = result.fetchone()
+            if row and row[0] and 'AUTOINCREMENT' in row[0].upper():
+                has_autoincrement = True
+
+        col_defs = []
+        for col in db_columns:
+            parts = []
+            col_name = col['name']
+            col_type = str(col['type'])
+
+            parts.append(f'"{col_name}"')
+            parts.append(col_type)
+
+            is_pk = col_name in pk_columns and len(pk_columns) == 1
+
+            if is_pk:
+                parts.append('PRIMARY KEY')
+                if has_autoincrement and col_type.upper() == 'INTEGER':
+                    parts.append('AUTOINCREMENT')
+            elif col_name not in orphan_notnull and not col.get('nullable', True):
+                parts.append('NOT NULL')
+
+            default = col.get('default')
+            if default is not None:
+                if isinstance(default, (int, float)):
+                    parts.append(f'DEFAULT {default}')
+                elif isinstance(default, str):
+                    parts.append(f'DEFAULT {default}')
+                else:
+                    parts.append(f'DEFAULT {default}')
+
+            col_defs.append(' '.join(parts))
+
+        if len(pk_columns) > 1:
+            pk_str = ', '.join(f'"{c}"' for c in pk_columns)
+            col_defs.append(f'PRIMARY KEY ({pk_str})')
+
+        for fk in foreign_keys:
+            constrained = ', '.join(f'"{c}"' for c in fk['constrained_columns'])
+            referred_table = fk['referred_table']
+            referred = ', '.join(f'"{c}"' for c in fk['referred_columns'])
+            col_defs.append(f'FOREIGN KEY ({constrained}) REFERENCES "{referred_table}" ({referred})')
+
+        try:
+            unique_constraints = inspector.get_unique_constraints(table_name)
+            for uc in unique_constraints:
+                uc_cols = ', '.join(f'"{c}"' for c in uc['column_names'])
+                col_defs.append(f'UNIQUE ({uc_cols})')
+        except Exception:
+            pass
+
+        temp_name = f'_temp_{table_name}'
+        create_sql = f'CREATE TABLE "{temp_name}" (\n    ' + ',\n    '.join(col_defs) + '\n)'
+
+        with engine.connect() as conn:
+            conn.execute(text(create_sql))
+
+            col_names = [col['name'] for col in db_columns]
+            cols = ', '.join(f'"{c}"' for c in col_names)
+            conn.execute(text(f'INSERT INTO "{temp_name}" ({cols}) SELECT {cols} FROM "{table_name}"'))
+            conn.execute(text(f'DROP TABLE "{table_name}"'))
+            conn.execute(text(f'ALTER TABLE "{temp_name}" RENAME TO "{table_name}"'))
+
+            for idx in indexes:
+                if idx['name'].startswith('sqlite_autoindex_'):
+                    continue
+                unique = 'UNIQUE ' if idx.get('unique', False) else ''
+                idx_cols = ', '.join(f'"{c}"' for c in idx['column_names'])
+                conn.execute(text(f'CREATE {unique}INDEX "{idx["name"]}" ON "{table_name}" ({idx_cols})'))
+
+            conn.commit()
+
+        for col_name in orphan_notnull:
+            print(f"  [MIGRATION] Made orphan column {col_name} in table {table_name} nullable")
 
 
 def init_db(config: Optional["AppConfig"] = None) -> "Database":

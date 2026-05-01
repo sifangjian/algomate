@@ -27,6 +27,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import random
+import subprocess
+import sys
 
 from algomate.data.database import Database
 from algomate.models.bosses import Boss, Difficulty, BossSource
@@ -136,23 +138,6 @@ class BossBattleFlow:
         card_id: int,
         difficulty: Optional[str] = None
     ) -> Dict[str, Any]:
-        """为指定卡牌生成Boss
-        
-        Args:
-            card_id: 卡牌ID
-            difficulty: 难度等级（可选）
-        
-        Returns:
-            生成的Boss信息
-        
-        Raises:
-            ValueError: 当卡牌不存在时
-        
-        Example:
-            >>> boss = await flow.generate_boss_for_card(1, "medium")
-            >>> print(boss["name"])
-            "迷雾史莱姆王"
-        """
         session = self.db.get_session()
         try:
             card = session.query(Card).filter(Card.id == card_id).first()
@@ -164,7 +149,7 @@ class BossBattleFlow:
             ).first()
             
             if existing_boss:
-                return {
+                boss_info = {
                     "id": existing_boss.id,
                     "name": existing_boss.name,
                     "difficulty": existing_boss.difficulty,
@@ -173,10 +158,10 @@ class BossBattleFlow:
                     "drop_rate": existing_boss.drop_rate,
                     "source": existing_boss.source
                 }
-            
-            boss_difficulty = difficulty or self._determine_difficulty(card.durability)
-            
-            prompt = f"""根据以下卡牌信息，生成一个Boss挑战：
+            else:
+                boss_difficulty = difficulty or self._determine_difficulty(card.durability)
+                
+                prompt = f"""根据以下卡牌信息，生成一个Boss挑战：
 
 卡牌信息：
 - 名称：{card.name}
@@ -198,45 +183,191 @@ class BossBattleFlow:
     "description": "Boss描述",
     "drop_rate": 0.5
 }}"""
+                
+                result = self.chat_client.chat([{"role": "user", "content": prompt}])
+                
+                import re
+                json_match = re.search(r'\{[\s\S]*\}', result)
+                if not json_match:
+                    boss_data = {
+                        "name": f"{card.domain}守护者",
+                        "difficulty": boss_difficulty,
+                        "weakness_domains": [card.domain],
+                        "description": f"这是{card.domain}领域的守护Boss，需要使用{card.name}技巧才能击败它。",
+                        "drop_rate": 0.5 if boss_difficulty == "medium" else (0.8 if boss_difficulty == "easy" else 0.3)
+                    }
+                else:
+                    boss_data = json.loads(json_match.group())
+                
+                new_boss = Boss(
+                    name=boss_data.get("name", f"{card.domain}守护者"),
+                    difficulty=boss_data.get("difficulty", boss_difficulty),
+                    weakness_domains=json.dumps(boss_data.get("weakness_domains", [card.domain]), ensure_ascii=False),
+                    description=boss_data.get("description", ""),
+                    source="ai_generated",
+                    drop_rate=boss_data.get("drop_rate", 0.5)
+                )
+                session.add(new_boss)
+                session.commit()
+                session.refresh(new_boss)
+                
+                boss_info = {
+                    "id": new_boss.id,
+                    "name": new_boss.name,
+                    "difficulty": new_boss.difficulty,
+                    "weakness_domains": json.loads(new_boss.weakness_domains),
+                    "description": new_boss.description,
+                    "drop_rate": new_boss.drop_rate,
+                    "source": new_boss.source
+                }
             
-            result = self.chat_client.chat([{"role": "user", "content": prompt}])
+            boss_obj = existing_boss or session.query(Boss).filter(Boss.id == boss_info["id"]).first()
             
-            import re
-            json_match = re.search(r'\{[\s\S]*\}', result)
-            if not json_match:
-                boss_data = {
-                    "name": f"{card.domain}守护者",
-                    "difficulty": boss_difficulty,
-                    "weakness_domains": [card.domain],
-                    "description": f"这是{card.domain}领域的守护Boss，需要使用{card.name}技巧才能击败它。",
-                    "drop_rate": 0.5 if boss_difficulty == "medium" else (0.8 if boss_difficulty == "easy" else 0.3)
+            question_type = random.choice(["选择题", "简答题", "代码题"])
+            
+            knowledge_content = card.knowledge_content or card.name
+            
+            if question_type == "选择题":
+                question_data_list = self.question_generator.generate_multiple_choice(
+                    note_content=knowledge_content,
+                    difficulty=boss_info["difficulty"],
+                    count=1
+                )
+            elif question_type == "简答题":
+                question_data_list = self.question_generator.generate_short_answer(
+                    note_content=knowledge_content,
+                    difficulty=boss_info["difficulty"],
+                    count=1
+                )
+            else:
+                question_data_list = self.question_generator.generate_code_question(
+                    note_content=knowledge_content,
+                    difficulty=boss_info["difficulty"],
+                    count=1
+                )
+            
+            if question_data_list:
+                q_data = question_data_list[0]
+                question = Question(
+                    card_id=card_id,
+                    question_type=q_data.get("question_type", question_type),
+                    content=q_data.get("content", ""),
+                    options=json.dumps(q_data.get("options", []), ensure_ascii=False),
+                    answer=q_data.get("answer", ""),
+                    explanation=q_data.get("explanation", ""),
+                    difficulty=boss_info["difficulty"]
+                )
+                session.add(question)
+                session.commit()
+                session.refresh(question)
+                
+                boss_obj.question_id = question.id
+                session.commit()
+                
+                raw_options = json.loads(question.options) if question.options else []
+                normalized_options = [raw_options[k] for k in sorted(raw_options.keys())] if isinstance(raw_options, dict) else raw_options
+                question_info = {
+                    "id": question.id,
+                    "question_type": question.question_type,
+                    "content": question.content,
+                    "options": normalized_options,
+                    "explanation": question.explanation,
+                    "template": q_data.get("template", "")
                 }
             else:
-                boss_data = json.loads(json_match.group())
+                question_info = {
+                    "question_type": question_type,
+                    "content": "",
+                    "options": [],
+                    "explanation": "",
+                    "template": ""
+                }
             
-            new_boss = Boss(
-                name=boss_data.get("name", f"{card.domain}守护者"),
-                difficulty=boss_data.get("difficulty", boss_difficulty),
-                weakness_domains=json.dumps(boss_data.get("weakness_domains", [card.domain]), ensure_ascii=False),
-                description=boss_data.get("description", ""),
-                source="ai_generated",
-                drop_rate=boss_data.get("drop_rate", 0.5)
-            )
-            session.add(new_boss)
-            session.commit()
-            session.refresh(new_boss)
+            card_info = {
+                "name": card.name,
+                "key_points": json.loads(card.key_points) if card.key_points else [],
+                "knowledge_content": card.knowledge_content or "",
+                "durability": card.durability,
+                "max_durability": card.max_durability,
+                "icon": getattr(card, 'icon', None)
+            }
             
             return {
-                "id": new_boss.id,
-                "name": new_boss.name,
-                "difficulty": new_boss.difficulty,
-                "weakness_domains": json.loads(new_boss.weakness_domains),
-                "description": new_boss.description,
-                "drop_rate": new_boss.drop_rate,
-                "source": new_boss.source
+                "boss": boss_info,
+                "question": question_info,
+                "card": card_info
             }
         finally:
             session.close()
+    
+    def run_code(
+        self,
+        code: str,
+        test_cases: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        passed_cases = 0
+        total_cases = len(test_cases)
+        outputs = []
+        errors = []
+        
+        for i, test_case in enumerate(test_cases):
+            test_input = test_case.get("input", "")
+            expected_output = test_case.get("expected_output", "")
+            
+            try:
+                wrapped_code = f"""
+__builtins_dict = {{k: v for k, v in __builtins__.items() if k not in ['exec', 'eval', 'compile', '__import__', 'open', 'input']}}
+__builtins__ = type('SafeBuiltins', (), __builtins_dict)()
+
+{code}
+
+"""
+                if test_input:
+                    wrapped_code += f"""
+_test_input = {repr(test_input)}
+"""
+                
+                wrapped_code += """
+if 'solution' in dir():
+    if _test_input is not None:
+        _result = solution(_test_input)
+    else:
+        _result = solution()
+    print(_result)
+"""
+                
+                process = subprocess.run(
+                    [sys.executable, "-c", wrapped_code],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                
+                if process.returncode != 0:
+                    errors.append(f"Test case {i+1}: {process.stderr.strip()}")
+                    outputs.append("")
+                else:
+                    actual_output = process.stdout.strip()
+                    outputs.append(actual_output)
+                    
+                    if str(actual_output) == str(expected_output):
+                        passed_cases += 1
+            except subprocess.TimeoutExpired:
+                errors.append(f"Test case {i+1}: 执行超时（5秒）")
+                outputs.append("")
+            except Exception as e:
+                errors.append(f"Test case {i+1}: {str(e)}")
+                outputs.append("")
+        
+        success = passed_cases == total_cases and total_cases > 0
+        
+        return {
+            "success": success,
+            "passed_cases": passed_cases,
+            "total_cases": total_cases,
+            "output": outputs,
+            "error": errors
+        }
     
     async def start_battle(
         self,
@@ -281,8 +412,10 @@ class BossBattleFlow:
             
             if question_data:
                 question = Question(
+                    card_id=card_ids[0],
                     question_type=question_data[0].get("question_type", "简答题"),
                     content=question_data[0].get("content", boss.description),
+                    options=json.dumps(question_data[0].get("options", []), ensure_ascii=False),
                     answer=question_data[0].get("answer", ""),
                     explanation=question_data[0].get("explanation", ""),
                     difficulty=boss.difficulty
@@ -314,25 +447,9 @@ class BossBattleFlow:
     async def submit_answer(
         self,
         battle_id: int,
-        user_answer: str
+        user_answer: str,
+        code: Optional[str] = None
     ) -> BattleResult:
-        """提交答案，返回战斗结果
-        
-        Args:
-            battle_id: 战斗ID
-            user_answer: 用户答案
-        
-        Returns:
-            战斗结果对象
-        
-        Raises:
-            ValueError: 当战斗不存在或已结束时
-        
-        Example:
-            >>> result = await flow.submit_answer(1, "使用二分查找...")
-            >>> print(result.is_victory)
-            True
-        """
         session = self.db.get_session()
         try:
             battle_session = self.active_battles.get(battle_id)
@@ -347,18 +464,35 @@ class BossBattleFlow:
             
             boss = session.query(Boss).filter(Boss.id == battle_session.boss_id).first()
             
+            question = None
             if battle_session.question_id:
                 question = session.query(Question).filter(
                     Question.id == battle_session.question_id
                 ).first()
-                
+            
+            if question and question.question_type == "代码题" and code:
+                test_cases = self._parse_test_cases_from_question(question)
+                code_result = self.run_code(code, test_cases)
+                is_correct = code_result["success"]
+                evaluation = {
+                    "is_correct": is_correct,
+                    "feedback": f"通过 {code_result['passed_cases']}/{code_result['total_cases']} 个测试用例" if not is_correct else "所有测试用例通过！",
+                    "improvement": "; ".join(code_result["error"]) if code_result["error"] else ""
+                }
+            elif question and question.question_type == "选择题":
+                is_correct = str(user_answer).strip().upper() == str(question.answer).strip().upper()
+                evaluation = {
+                    "is_correct": is_correct,
+                    "feedback": "回答正确！" if is_correct else f"回答错误，正确答案是 {question.answer}",
+                    "improvement": question.explanation if not is_correct else ""
+                }
+            elif question:
                 evaluation = self.answer_evaluator.evaluate(
                     question=question.content,
                     user_answer=user_answer,
                     correct_answer=question.answer,
                     question_type=question.question_type
                 )
-                
                 is_correct = evaluation.get("is_correct", False)
             else:
                 evaluation = self.answer_evaluator.evaluate(
@@ -411,7 +545,7 @@ class BossBattleFlow:
             answer_record = AnswerRecord(
                 boss_id=battle_session.boss_id,
                 card_id=battle_session.card_ids[0] if battle_session.card_ids else None,
-                user_answer=user_answer,
+                user_answer=code or user_answer,
                 is_correct=is_correct,
                 feedback=evaluation.get("feedback", ""),
                 answered_at=datetime.now()
@@ -432,6 +566,22 @@ class BossBattleFlow:
             )
         finally:
             session.close()
+    
+    def _parse_test_cases_from_question(self, question: Question) -> List[Dict[str, Any]]:
+        test_cases = []
+        try:
+            options = json.loads(question.options) if question.options else []
+            if isinstance(options, list):
+                for opt in options:
+                    if isinstance(opt, dict) and "input" in opt and "expected_output" in opt:
+                        test_cases.append(opt)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        
+        if not test_cases and question.answer:
+            test_cases = [{"input": "", "expected_output": ""}]
+        
+        return test_cases
     
     def calculate_drops(
         self,
@@ -486,6 +636,12 @@ class BossBattleFlow:
                     name=f"{domain}技巧卡",
                     domain=domain,
                     durability=80,
+                    max_durability=80,
+                    difficulty=3,
+                    is_sealed=False,
+                    key_points="[]",
+                    review_level=0,
+                    review_count=0,
                     created_at=datetime.now()
                 )
                 session.add(card)
