@@ -1,291 +1,591 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUserStore } from '../stores/userStore'
 import { bossService } from '../services/bossService'
-import { cardService } from '../services/cardService'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
-import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './BossBattle.module.css'
 
-const MOCK_BOSS = {
-  id: 'boss_slime_king',
-  name: '迷雾史莱姆王',
-  icon: '🐉',
-  realmId: 'mist_swamp',
-  difficulty: 2,
-  difficultyLabel: '★★☆ 中等',
-  weaknesses: ['DFS', 'BFS'],
-  quote: '只有用正确的算法才能将它驱逐！',
-  reward: {
-    expMin: 100,
-    expMax: 200,
-    durabilityChange: -10,
-  },
+const DIFFICULTY_CONFIG = {
+    easy: { emoji: '🟢', hpDrop: 33, stars: 1, timeLimit: 120 },
+    medium: { emoji: '🟡', hpDrop: 50, stars: 2, timeLimit: 120 },
+    hard: { emoji: '🔴', hpDrop: 100, stars: 3, timeLimit: 300 },
 }
 
-const MOCK_PROBLEM = {
-  id: 'prob_001',
-  title: '最长连续子数组',
-  difficulty: 2,
-  description:
-    '给定一个整数数组 nums 和一个整数 k，找出该数组中长度为 k 的连续子数组的最大平均值。',
-  examples: [
-    {
-      input: 'nums = [1,12,-5,-6,50,3], k = 4',
-      output: '12.75',
-      explanation: '最大平均值是 (12-5-6+50)/4 = 51/4 = 12.75',
-    },
-  ],
-  constraints: [
-    'n == nums.length',
-    '1 <= k <= n <= 10^5',
-    '-10^4 <= nums[i] <= 10^4',
-  ],
-  template: 'def solution(nums, k):\n    # 在这里编写你的代码\n    pass',
-  hints: ['考虑使用滑动窗口来优化时间复杂度'],
-  timeLimit: '1秒',
-  memoryLimit: '256MB',
+const QUESTION_TYPE_LABELS = {
+    '选择题': '选择题',
+    '简答题': '简答题',
+    '代码题': '代码题',
 }
 
-const MOCK_CARDS = [
-  { id: 'card_001', name: '双指针', algorithmType: 'Two Pointers', durability: 85, maxDurability: 100, icon: '👆', isUsable: true },
-  { id: 'card_002', name: '滑动窗口', algorithmType: 'Sliding Window', durability: 72, maxDurability: 100, icon: '🪟', isUsable: true },
-  { id: 'card_003', name: '二分查找', algorithmType: 'Binary Search', durability: 25, maxDurability: 100, icon: '🔍', isUsable: true },
-  { id: 'card_004', name: '动态规划', algorithmType: 'DP', durability: 0, maxDurability: 100, icon: '🎯', isUsable: false },
-]
+function getComboMultiplier(combo) {
+    if (combo >= 5) return 2.0
+    if (combo >= 3) return 1.5
+    if (combo >= 2) return 1.2
+    return 1.0
+}
+
+function formatTime(seconds) {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 export default function BossBattle() {
-  const { bossId } = useParams()
-  const navigate = useNavigate()
-  const { addExperience } = useUserStore()
+    const [searchParams] = useSearchParams()
+    const navigate = useNavigate()
+    const addExperience = useUserStore((s) => s.addExperience)
+    const cardId = searchParams.get('cardId')
 
-  const [boss] = useState(MOCK_BOSS)
-  const [problem] = useState(MOCK_PROBLEM)
-  const [cards, setCards] = useState(MOCK_CARDS)
-  const [selectedCardId, setSelectedCardId] = useState(null)
-  const [code, setCode] = useState(MOCK_PROBLEM.template)
-  const [submissionStatus, setSubmissionStatus] = useState('idle')
-  const [result, setResult] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [bossData, setBossData] = useState(null)
+    const [questionData, setQuestionData] = useState(null)
+    const [cardData, setCardData] = useState(null)
+    const [bossHP, setBossHP] = useState(100)
+    const [combo, setCombo] = useState(0)
+    const [attempts, setAttempts] = useState(0)
+    const [selectedOption, setSelectedOption] = useState('')
+    const [fillAnswer, setFillAnswer] = useState('')
+    const [code, setCode] = useState('')
+    const [codeOutput, setCodeOutput] = useState('')
+    const [isRunningCode, setIsRunningCode] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [battleResult, setBattleResult] = useState(null)
+    const [isVictory, setIsVictory] = useState(null)
+    const [showCardRef, setShowCardRef] = useState(false)
+    const [showHint, setShowHint] = useState(true)
+    const [shakeScreen, setShakeScreen] = useState(false)
+    const [showFlash, setShowFlash] = useState(false)
+    const [showHitText, setShowHitText] = useState(false)
+    const [startTime, setStartTime] = useState(null)
+    const [elapsedTime, setElapsedTime] = useState(0)
+    const [totalExpGained, setTotalExpGained] = useState(0)
+    const [speedBonus, setSpeedBonus] = useState(0)
+    const [comboBonus, setComboBonus] = useState(0)
 
-  useEffect(() => {
-    if (bossId) {
-      bossService.getBoss(bossId).catch(() => {})
-      cardService.getAvailable().then((data) => {
-        if (Array.isArray(data)) setCards(data)
-      }).catch(() => {})
-    }
-    setCode(MOCK_PROBLEM.template)
-  }, [bossId])
+    const timerRef = useRef(null)
+    const hasLoadedRef = useRef(false)
 
-  const handleCardSelect = useCallback(
-    (card) => {
-      if (!card.isUsable) {
-        showToast('该卡牌已损坏，无法使用', 'warning')
-        return
-      }
-      setSelectedCardId(card.id === selectedCardId ? null : card.id)
-    },
-    [selectedCardId]
-  )
+    useEffect(() => {
+        if (!cardId) {
+            showToast('缺少卡牌参数', 'error')
+            navigate('/')
+            return
+        }
 
-  const handleSubmit = useCallback(async () => {
-    if (!selectedCardId) {
-      showToast('请选择一张应战卡牌', 'warning')
-      return
-    }
-    if (!code.trim() || code.trim() === 'pass') {
-      showToast('请编写代码', 'warning')
-      return
-    }
+        if (hasLoadedRef.current) return
+        hasLoadedRef.current = true
 
-    setSubmissionStatus('submitting')
-    setResult(null)
+        const loadBattle = async () => {
+            try {
+                setLoading(true)
+                const data = await bossService.generateForCard(cardId)
+                setBossData(data.boss)
+                setQuestionData(data.question)
+                setCardData(data.card)
+                if (data.question?.template) {
+                    setCode(data.question.template)
+                }
+                setStartTime(Date.now())
+            } catch (err) {
+                showToast(err.message || '加载Boss战失败', 'error')
+                navigate('/')
+            } finally {
+                setLoading(false)
+            }
+        }
 
-    try {
-      const response = await bossService.submitAnswer(boss.id, code, selectedCardId)
-      const submissionResult = response || {}
+        loadBattle()
+    }, [cardId])
 
-      setSubmissionStatus(submissionResult.success ? 'success' : 'fail')
-      setResult(submissionResult)
+    useEffect(() => {
+        if (!startTime) return
+        timerRef.current = setInterval(() => {
+            setElapsedTime(Math.floor((Date.now() - startTime) / 1000))
+        }, 1000)
+        return () => clearInterval(timerRef.current)
+    }, [startTime])
 
-      if (submissionResult.success && submissionResult.reward?.exp) {
-        addExperience(submissionResult.reward.exp)
-        showToast(`🎉 挑战成功！获得 ${submissionResult.reward.exp} XP`, 'success')
-      } else if (!submissionResult.success) {
-        showToast(`❌ 挑战失败: ${submissionResult.errorType || '答案错误'}`, 'error')
-      }
-    } catch (err) {
-      setSubmissionStatus('fail')
-      setResult({ errorType: 'System Error', message: err.message })
-      showToast(`提交失败: ${err.message}`, 'error')
-    }
-  }, [selectedCardId, code, boss.id, addExperience])
+    useEffect(() => {
+        if (showHint) {
+            const t = setTimeout(() => setShowHint(false), 3000)
+            return () => clearTimeout(t)
+        }
+    }, [showHint])
 
-  const handleRetry = useCallback(() => {
-    setSubmissionStatus('idle')
-    setResult(null)
-  }, [])
+    useEffect(() => {
+        if (shakeScreen) {
+            const t = setTimeout(() => setShakeScreen(false), 400)
+            return () => clearTimeout(t)
+        }
+    }, [shakeScreen])
 
-  const selectedCard = cards.find((c) => c.id === selectedCardId)
+    useEffect(() => {
+        if (showFlash) {
+            const t = setTimeout(() => setShowFlash(false), 500)
+            return () => clearTimeout(t)
+        }
+    }, [showFlash])
 
-  return (
-    <div className={`${styles.container} page-container`}>
-      <div className={styles.header}>
-        <button className={styles.backBtn} onClick={() => navigate('/')} aria-label="返回地图">
-          ← 返回地图
-        </button>
-        <div className={styles.bossHeaderInfo}>
-          <span className={styles.bossIcon}>{boss.icon}</span>
-          <div>
-            <h2 className={styles.bossName}>{boss.name}</h2>
-            <span className={styles.difficultyLabel}>{boss.difficultyLabel}</span>
-          </div>
-        </div>
-      </div>
+    useEffect(() => {
+        if (showHitText) {
+            const t = setTimeout(() => setShowHitText(false), 1000)
+            return () => clearTimeout(t)
+        }
+    }, [showHitText])
 
-      <p className={styles.quote}>「{boss.quote}」</p>
+    const triggerHitAnimation = useCallback(() => {
+        setShakeScreen(true)
+        setShowFlash(true)
+        setShowHitText(true)
+    }, [])
 
-      <div className={styles.battleLayout}>
-        <section className={styles.problemSection} aria-label="试炼区域">
-          <GameCard className={styles.problemCard}>
-            <h3 className={styles.problemTitle}>{problem.title}</h3>
-            <div className={styles.problemMeta}>
-              <span>⏱ {problem.timeLimit}</span>
-              <span>💾 {problem.memoryLimit}</span>
-              <span>难度: {'★'.repeat(problem.difficulty)}{'☆'.repeat(3 - problem.difficulty)}</span>
-            </div>
-            <pre className={styles.problemDesc}>{problem.description}</pre>
+    const handleSubmit = useCallback(async () => {
+        if (!bossData || !questionData) return
+        if (isSubmitting) return
 
-            <div className={styles.examplesSection}>
-              <h4>示例</h4>
-              {problem.examples.map((ex, i) => (
-                <div key={i} className={styles.exampleBlock}>
-                  <div><strong>输入:</strong> <code>{ex.input}</code></div>
-                  <div><strong>输出:</strong> <code>{ex.output}</code></div>
-                  {ex.explanation && <div className={styles.explain}><strong>解释:</strong> {ex.explanation}</div>}
+        const qType = questionData.question_type
+        let answerData = {}
+
+        if (qType === '选择题') {
+            if (!selectedOption) {
+                showToast('请选择一个选项', 'warning')
+                return
+            }
+            answerData = { answer: selectedOption, card_id: parseInt(cardId), question_id: questionData.id }
+        } else if (qType === '简答题') {
+            if (!fillAnswer.trim()) {
+                showToast('请输入答案', 'warning')
+                return
+            }
+            answerData = { answer: fillAnswer, card_id: parseInt(cardId), question_id: questionData.id }
+        } else if (qType === '代码题') {
+            if (!code.trim()) {
+                showToast('请编写代码', 'warning')
+                return
+            }
+            answerData = { code: code, answer: code, card_id: parseInt(cardId), question_id: questionData.id }
+        }
+
+        setIsSubmitting(true)
+
+        try {
+            const result = await bossService.submitAnswer(bossData.id, answerData)
+
+            if (result.is_correct) {
+                const newCombo = combo + 1
+                setCombo(newCombo)
+
+                const difficulty = bossData.difficulty || 'medium'
+                const hpDrop = DIFFICULTY_CONFIG[difficulty]?.hpDrop || 50
+                const newHP = Math.max(0, bossHP - hpDrop)
+                setBossHP(newHP)
+
+                const baseExp = result.reward?.exp || 100
+                const multiplier = getComboMultiplier(newCombo)
+                const comboBonusVal = Math.round(baseExp * (multiplier - 1))
+                setComboBonus((prev) => prev + comboBonusVal)
+
+                const timeLimit = DIFFICULTY_CONFIG[difficulty]?.timeLimit || 120
+                const remainingTime = Math.max(0, timeLimit - elapsedTime)
+                const speedBonusVal = remainingTime > 0 ? Math.round(baseExp * (remainingTime / timeLimit) * 0.3) : 0
+                setSpeedBonus(speedBonusVal)
+
+                const totalExp = baseExp + comboBonusVal + speedBonusVal
+                setTotalExpGained((prev) => prev + totalExp)
+                addExperience(totalExp)
+
+                if (newHP <= 0) {
+                    setIsVictory(true)
+                    setBattleResult({
+                        ...result,
+                        totalExp,
+                        speedBonus: speedBonusVal,
+                        comboBonus: comboBonusVal,
+                    })
+                    clearInterval(timerRef.current)
+                } else {
+                    showToast(`✅ 回答正确！Boss HP -${hpDrop}%`, 'success')
+                }
+            } else {
+                const newAttempts = attempts + 1
+                setAttempts(newAttempts)
+                setCombo(0)
+                setComboBonus(0)
+                triggerHitAnimation()
+
+                if (newAttempts >= 3) {
+                    setIsVictory(false)
+                    setBattleResult({
+                        ...result,
+                        attempts: newAttempts,
+                    })
+                    clearInterval(timerRef.current)
+                } else {
+                    showToast(`❌ 回答错误！剩余机会 ${3 - newAttempts}/3`, 'error')
+                }
+            }
+        } catch (err) {
+            showToast(err.message || '提交失败', 'error')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }, [bossData, questionData, selectedOption, fillAnswer, code, combo, attempts, bossHP, elapsedTime, isSubmitting, addExperience, triggerHitAnimation])
+
+    const handleRunCode = useCallback(async () => {
+        if (!bossData || !code.trim()) {
+            showToast('请编写代码', 'warning')
+            return
+        }
+        setIsRunningCode(true)
+        setCodeOutput('')
+        try {
+            const result = await bossService.runCode(bossData.id, code)
+            if (result.success) {
+                setCodeOutput(result.output || '运行成功（无输出）')
+            } else {
+                setCodeOutput(result.error || '运行失败')
+            }
+        } catch (err) {
+            setCodeOutput(err.message || '运行出错')
+        } finally {
+            setIsRunningCode(false)
+        }
+    }, [bossData, code])
+
+    const handleRetry = useCallback(() => {
+        setBattleResult(null)
+        setIsVictory(null)
+        setBossHP(100)
+        setCombo(0)
+        setAttempts(0)
+        setSelectedOption('')
+        setFillAnswer('')
+        setCodeOutput('')
+        setTotalExpGained(0)
+        setSpeedBonus(0)
+        setComboBonus(0)
+        setStartTime(Date.now())
+        setElapsedTime(0)
+        if (questionData?.template) {
+            setCode(questionData.template)
+        }
+    }, [questionData])
+
+    const difficulty = bossData?.difficulty || 'medium'
+    const diffConfig = DIFFICULTY_CONFIG[difficulty]
+    const hpBarClass = bossHP > 60 ? '' : bossHP > 30 ? styles.yellow : styles.red
+    const timerWarning = diffConfig && elapsedTime > diffConfig.timeLimit * 0.8
+
+    if (loading) {
+        return (
+            <div className={`${styles.container} page-container`}>
+                <div className={styles.loadingContainer}>
+                    <div className={styles.loadingSpinner} />
+                    <div className={styles.loadingText}>正在召唤Boss...</div>
                 </div>
-              ))}
             </div>
+        )
+    }
 
-            <div className={styles.constraints}>
-              <strong>约束:</strong>
-              <ul>{problem.constraints?.map((c, i) => <li key={i}>{c}</li>)}</ul>
+    if (!bossData || !questionData) {
+        return (
+            <div className={`${styles.container} page-container`}>
+                <div className={styles.loadingContainer}>
+                    <div className={styles.loadingText}>加载失败，请返回重试</div>
+                    <Button variant="secondary" onClick={() => navigate('/')}>返回地图</Button>
+                </div>
             </div>
+        )
+    }
 
-            {problem.hints?.length > 0 && (
-              <div className={styles.hints}>
-                <strong>💡 指引:</strong>
-                <ul>{problem.hints.map((h, i) => <li key={i}>{h}</li>)}</ul>
-              </div>
+    const qType = questionData.question_type
+
+    return (
+        <div className={`${styles.container} ${shakeScreen ? styles.shakeScreen : ''} ${combo >= 3 ? styles.comboGlow : ''} page-container`}>
+            {showFlash && <div className={styles.flashOverlay} />}
+            {showHitText && <div className={styles.hitText}>受到攻击!</div>}
+
+            {combo >= 2 && (
+                <div className={styles.comboDisplay} key={combo}>
+                    <span className={styles.comboText}>{combo}连击!</span>
+                    <span className={styles.comboMultiplier}>x{getComboMultiplier(combo)}</span>
+                </div>
             )}
-          </GameCard>
-        </section>
 
-        <section className={styles.actionSection} aria-label="操作区域">
-          <div className={styles.cardSelectArea}>
-            <h4 className={styles.sectionLabel}>选择应战卡牌</h4>
-            <div className={styles.cardGrid}>
-              {cards.map((card) => (
-                <button
-                  key={card.id}
-                  className={`${styles.cardBtn} ${
-                    selectedCardId === card.id ? styles.selected : ''
-                  } ${!card.isUsable ? styles.disabled : ''}`}
-                  onClick={() => handleCardSelect(card)}
-                  disabled={!card.isUsable}
-                  title={card.isUsable ? `使用 ${card.name}` : '卡牌已损坏'}
-                >
-                  <span className={styles.cardIcon}>{card.icon}</span>
-                  <span className={styles.cardName}>{card.name}</span>
-                  <div className={styles.cardDurability}>
-                    <div
-                      className={styles.durFill}
-                      style={{
-                        width: `${(card.durability / card.maxDurability) * 100}%`,
-                        background:
-                          card.durability >= 60
-                            ? 'var(--color-success)'
-                            : card.durability >= 30
-                              ? 'var(--color-warning)'
-                              : 'var(--color-danger)',
-                      }}
-                    />
-                  </div>
-                  <span className={styles.durText}>{card.durability}%</span>
-                  {selectedCardId === card.id && <span className={styles.checkMark}>✓</span>}
+            <div className={styles.header}>
+                <button className={styles.backBtn} onClick={() => navigate('/')} aria-label="返回地图">
+                    ← 返回地图
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.codeArea}>
-            <h4 className={styles.sectionLabel}>代码编辑器</h4>
-            <textarea
-              className={styles.codeEditor}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              spellCheck={false}
-              rows={14}
-              disabled={submissionStatus === 'submitting'}
-              aria-label="代码编辑器"
-            />
-          </div>
-
-          <Button
-            variant="danger"
-            size="lg"
-            fullWidth
-            onClick={handleSubmit}
-            loading={submissionStatus === 'submitting'}
-            disabled={submissionStatus !== 'idle' || !selectedCardId}
-            icon='⚔️'
-          >
-            提交挑战
-          </Button>
-
-          {result && (
-            <GameCard className={`${styles.resultCard} ${styles[submissionStatus]}`}>
-              <div className={styles.resultHeader}>
-                <span className={styles.resultIcon}>
-                  {submissionStatus === 'success' ? '🎉' : '❌'}
-                </span>
-                <span className={styles.resultTitle}>
-                  {submissionStatus === 'success' ? '挑战成功!' : '挑战失败'}
-                </span>
-              </div>
-              {submissionStatus === 'success' && result.reward && (
-                <div className={styles.resultRewards}>
-                  <span>+{result.reward.exp || 0} XP</span>
-                  {result.reward.durabilityChange != null && (
-                    <span className={result.reward.durabilityChange < 0 ? styles.negative : styles.positive}>
-                      耐久度 {result.reward.durabilityChange > 0 ? '+' : ''}
-                      {result.reward.durabilityChange}
+                <div className={styles.bossInfoBar}>
+                    <span className={`${styles.bossIcon} ${styles[difficulty]}`}>
+                        {diffConfig.emoji}
                     </span>
-                  )}
+                    <div className={styles.bossDetails}>
+                        <div className={styles.bossName}>{bossData.name}</div>
+                        <div className={styles.bossMeta}>
+                            <span className={styles.difficultyStars}>
+                                {'★'.repeat(diffConfig.stars)}{'☆'.repeat(3 - diffConfig.stars)}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-              )}
-              {submissionStatus === 'fail' && (
-                <div className={styles.resultError}>
-                  <p><strong>错误类型:</strong> {result.errorType || 'Unknown'}</p>
-                  {result.passedCases != null && (
-                    <p>通过用例: {result.passedCases}/{result.totalCases}</p>
-                  )}
+                <div className={styles.hpBarContainer}>
+                    <div className={styles.hpBarLabel}>
+                        <span>HP</span>
+                        <span>{bossHP}%</span>
+                    </div>
+                    <div className={styles.hpBar}>
+                        <div
+                            className={`${styles.hpBarFill} ${hpBarClass}`}
+                            style={{ width: `${bossHP}%` }}
+                        />
+                    </div>
                 </div>
-              )}
-              <div className={styles.resultActions}>
-                <Button variant="secondary" size="sm" onClick={handleRetry}>
-                  {submissionStatus === 'success' ? '再战一次' : '重新挑战'}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-                  返回地图
-                </Button>
-              </div>
-            </GameCard>
-          )}
-        </section>
-      </div>
-    </div>
-  )
+                <div className={`${styles.timer} ${timerWarning ? styles.warning : ''}`}>
+                    {formatTime(elapsedTime)}
+                </div>
+            </div>
+
+            <div className={styles.battleLayout}>
+                <div className={styles.leftPanel}>
+                    <div className={styles.questionCard}>
+                        <span className={`${styles.questionType} ${styles[qType === '选择题' ? 'choice' : qType === '简答题' ? 'fill' : 'code']}`}>
+                            {QUESTION_TYPE_LABELS[qType] || qType}
+                        </span>
+                        <div className={styles.questionContent}>
+                            {questionData.content}
+                        </div>
+                    </div>
+
+                    <div className={`${styles.cardRefSection} ${showCardRef ? styles.mobileOpen : ''}`}>
+                        <button
+                            className={styles.cardRefToggle}
+                            onClick={() => setShowCardRef(!showCardRef)}
+                        >
+                            <span>🎴 查看卡牌</span>
+                            <span className={`${styles.cardRefToggleIcon} ${showCardRef ? styles.expanded : ''}`}>
+                                ▶
+                            </span>
+                        </button>
+                        {showCardRef && cardData && (
+                            <div className={styles.cardRefPanel}>
+                                <div className={styles.cardRefName}>{cardData.name}</div>
+                                {cardData.knowledge_content && (
+                                    <div className={styles.cardRefContent}>
+                                        {cardData.knowledge_content}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className={styles.rightPanel}>
+                    {qType === '选择题' && (
+                        <>
+                            <div className={styles.optionsGrid}>
+                                {(Array.isArray(questionData.options)
+                                    ? questionData.options
+                                    : Object.keys(questionData.options || {}).sort().map(k => questionData.options[k])
+                                ).map((option, i) => {
+                                    const label = String.fromCharCode(65 + i)
+                                    return (
+                                        <button
+                                            key={i}
+                                            className={`${styles.optionCard} ${selectedOption === label ? styles.selected : ''}`}
+                                            onClick={() => setSelectedOption(label)}
+                                        >
+                                            <span className={styles.optionLabel}>{label}</span>
+                                            <span className={styles.optionText}>{option}</span>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                            <div className={styles.submitArea}>
+                                <Button
+                                    variant="danger"
+                                    size="lg"
+                                    fullWidth
+                                    onClick={handleSubmit}
+                                    loading={isSubmitting}
+                                    disabled={!selectedOption || isSubmitting}
+                                    icon="⚔️"
+                                >
+                                    提交挑战
+                                </Button>
+                            </div>
+                        </>
+                    )}
+
+                    {qType === '简答题' && (
+                        <>
+                            <textarea
+                                className={styles.fillTextarea}
+                                value={fillAnswer}
+                                onChange={(e) => setFillAnswer(e.target.value)}
+                                placeholder="请输入你的答案..."
+                                disabled={isSubmitting}
+                            />
+                            <div className={styles.submitArea}>
+                                <Button
+                                    variant="danger"
+                                    size="lg"
+                                    fullWidth
+                                    onClick={handleSubmit}
+                                    loading={isSubmitting}
+                                    disabled={!fillAnswer.trim() || isSubmitting}
+                                    icon="⚔️"
+                                >
+                                    提交挑战
+                                </Button>
+                            </div>
+                        </>
+                    )}
+
+                    {qType === '代码题' && (
+                        <>
+                            <textarea
+                                className={styles.codeEditor}
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                spellCheck={false}
+                                disabled={isSubmitting}
+                            />
+                            <div className={styles.codeActions}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={handleRunCode}
+                                    loading={isRunningCode}
+                                    disabled={isRunningCode || isSubmitting}
+                                    icon="▶"
+                                >
+                                    运行代码
+                                </Button>
+                                <Button
+                                    variant="danger"
+                                    onClick={handleSubmit}
+                                    loading={isSubmitting}
+                                    disabled={!code.trim() || isSubmitting}
+                                    icon="⚔️"
+                                >
+                                    提交挑战
+                                </Button>
+                            </div>
+                            {codeOutput && (
+                                <div className={`${styles.codeOutput} ${codeOutput.includes('Error') || codeOutput.includes('失败') ? styles.error : styles.success}`}>
+                                    {codeOutput}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {showHint && !showCardRef && (
+                <div className={styles.cardRefHint}>💡 可展开卡牌参考</div>
+            )}
+
+            <button
+                className={styles.mobileCardRefBtn}
+                onClick={() => setShowCardRef(!showCardRef)}
+            >
+                🎴 {showCardRef ? '收起卡牌' : '查看卡牌'}
+            </button>
+
+            {battleResult && isVictory !== null && (
+                <div className={styles.resultOverlay} onClick={(e) => e.target === e.currentTarget && null}>
+                    <div className={`${styles.resultCard} ${isVictory ? styles.victory : styles.defeat}`}>
+                        <div className={styles.resultHeader}>
+                            <span className={styles.resultIcon}>
+                                {isVictory ? '🏆' : '💀'}
+                            </span>
+                            <span className={styles.resultTitle}>
+                                {isVictory ? '挑战成功!' : '挑战失败'}
+                            </span>
+                        </div>
+
+                        {isVictory ? (
+                            <>
+                                <div className={styles.resultStats}>
+                                    <div className={styles.resultStatRow}>
+                                        <span className={styles.resultStatLabel}>基础经验</span>
+                                        <span className={styles.resultStatValue}>
+                                            +{battleResult.reward?.exp || 0} XP
+                                        </span>
+                                    </div>
+                                    {battleResult.speedBonus > 0 && (
+                                        <div className={styles.resultStatRow}>
+                                            <span className={styles.resultStatLabel}>⚡ 速度奖励</span>
+                                            <span className={`${styles.resultStatValue} ${styles.positive}`}>
+                                                +{battleResult.speedBonus} XP
+                                            </span>
+                                        </div>
+                                    )}
+                                    {battleResult.comboBonus > 0 && (
+                                        <div className={styles.resultStatRow}>
+                                            <span className={styles.resultStatLabel}>🔥 连击奖励</span>
+                                            <span className={`${styles.resultStatValue} ${styles.positive}`}>
+                                                +{battleResult.comboBonus} XP
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className={styles.resultStatRow}>
+                                        <span className={styles.resultStatLabel}>总计经验</span>
+                                        <span className={`${styles.resultStatValue} ${styles.positive}`}>
+                                            +{battleResult.totalExp} XP
+                                        </span>
+                                    </div>
+                                    {battleResult.reward?.durability_change != null && (
+                                        <div className={styles.resultStatRow}>
+                                            <span className={styles.resultStatLabel}>卡牌耐久</span>
+                                            <span className={`${styles.resultStatValue} ${battleResult.reward.durability_change < 0 ? styles.negative : styles.positive}`}>
+                                                {battleResult.reward.durability_change > 0 ? '+' : ''}
+                                                {battleResult.reward.durability_change}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                {battleResult.new_card_dropped && battleResult.dropped_card && (
+                                    <div className={styles.droppedCard}>
+                                        <div className={styles.droppedCardTitle}>🎁 掉落新卡牌!</div>
+                                        <div className={styles.droppedCardName}>{battleResult.dropped_card.name}</div>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className={styles.defeatInfo}>
+                                <div className={styles.defeatInfoTitle}>错误分析</div>
+                                <div className={styles.defeatInfoText}>
+                                    {battleResult.feedback || '回答错误，请继续努力！'}
+                                </div>
+                                {battleResult.improvement && (
+                                    <>
+                                        <div className={styles.defeatInfoTitle} style={{ marginTop: '10px' }}>改进建议</div>
+                                        <div className={styles.defeatInfoText}>{battleResult.improvement}</div>
+                                    </>
+                                )}
+                                {questionData.explanation && (
+                                    <>
+                                        <div className={styles.defeatInfoTitle} style={{ marginTop: '10px' }}>正确解析</div>
+                                        <div className={styles.defeatInfoText}>{questionData.explanation}</div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        <div className={styles.resultActions}>
+                            <Button variant="secondary" size="sm" onClick={handleRetry}>
+                                {isVictory ? '再战一次' : '重新挑战'}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+                                返回地图
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
 }
