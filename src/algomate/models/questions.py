@@ -16,10 +16,9 @@ from algomate.data.database import Base
 
 
 class QuestionType(str, Enum):
-    """试炼类型枚举"""
     CHOICE = "选择题"
     SHORT_ANSWER = "简答题"
-    CODE = "代码题"
+    LEETCODE = "LeetCode挑战"
 
 
 class QuestionDifficulty(str, Enum):
@@ -30,21 +29,6 @@ class QuestionDifficulty(str, Enum):
 
 
 class Question(Base):
-    """试炼模型
-    
-    存储算法试炼及答案。
-    
-    Attributes:
-        id: 试炼唯一标识
-        card_id: 关联卡牌ID（外键，必填）
-        question_type: 试炼类型（选择题/简答题/代码题）
-        content: 试炼内容（Markdown）
-        options: 选项列表（JSON，选择题用）
-        answer: 参考答案
-        explanation: 详细解析
-        difficulty: 难度等级
-        created_at: 创建时间
-    """
     __tablename__ = "questions"
     __table_args__ = {'extend_existing': True}
     
@@ -56,6 +40,9 @@ class Question(Base):
     answer = Column(Text, nullable=False)
     explanation = Column(Text, default="", nullable=False)
     difficulty = Column(String(20), default="medium", nullable=False)
+    leetcode_url = Column(String(500), default="", nullable=False)
+    leetcode_title = Column(String(200), default="", nullable=False)
+    leetcode_difficulty = Column(String(20), default="", nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     
     card = relationship("Card", back_populates="questions")
@@ -63,7 +50,6 @@ class Question(Base):
 
 
 class QuestionCreate(BaseModel):
-    """创建试炼的输入验证模型"""
     card_id: int = Field(..., description="关联卡牌ID")
     question_type: QuestionType = Field(..., description="试炼类型")
     content: str = Field(..., min_length=1, description="试炼内容")
@@ -71,13 +57,15 @@ class QuestionCreate(BaseModel):
     answer: str = Field(..., min_length=1, description="参考答案")
     explanation: str = Field(default="", description="详细解析")
     difficulty: QuestionDifficulty = Field(default=QuestionDifficulty.MEDIUM, description="难度等级")
+    leetcode_url: str = Field(default="", description="LeetCode题目链接")
+    leetcode_title: str = Field(default="", description="LeetCode题目标题")
+    leetcode_difficulty: str = Field(default="", description="LeetCode难度")
     
     class Config:
         from_attributes = True
 
 
 class QuestionUpdate(BaseModel):
-    """更新试炼的输入验证模型"""
     card_id: Optional[int] = Field(None, description="关联卡牌ID")
     question_type: Optional[QuestionType] = Field(None, description="试炼类型")
     content: Optional[str] = Field(None, min_length=1, description="试炼内容")
@@ -85,13 +73,15 @@ class QuestionUpdate(BaseModel):
     answer: Optional[str] = Field(None, min_length=1, description="参考答案")
     explanation: Optional[str] = Field(None, description="详细解析")
     difficulty: Optional[QuestionDifficulty] = Field(None, description="难度等级")
+    leetcode_url: Optional[str] = Field(None, description="LeetCode题目链接")
+    leetcode_title: Optional[str] = Field(None, description="LeetCode题目标题")
+    leetcode_difficulty: Optional[str] = Field(None, description="LeetCode难度")
     
     class Config:
         from_attributes = True
 
 
 class QuestionResponse(BaseModel):
-    """返回给前端的试炼数据模型"""
     id: int
     card_id: int
     question_type: str
@@ -100,6 +90,9 @@ class QuestionResponse(BaseModel):
     answer: str
     explanation: str
     difficulty: str
+    leetcode_url: str = ""
+    leetcode_title: str = ""
+    leetcode_difficulty: str = ""
     created_at: datetime
     
     class Config:
@@ -138,6 +131,9 @@ async def get_questions():
                 "answer": q.answer,
                 "explanation": q.explanation,
                 "difficulty": q.difficulty,
+                "leetcode_url": q.leetcode_url or "",
+                "leetcode_title": q.leetcode_title or "",
+                "leetcode_difficulty": q.leetcode_difficulty or "",
                 "created_at": q.created_at
             }
             result.append(QuestionResponse(**q_dict))
@@ -148,7 +144,6 @@ async def get_questions():
 
 @router.get("/{question_id}", response_model=QuestionResponse)
 async def get_question(question_id: int):
-    """获取单个试炼"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -167,6 +162,9 @@ async def get_question(question_id: int):
             "answer": question.answer,
             "explanation": question.explanation,
             "difficulty": question.difficulty,
+            "leetcode_url": question.leetcode_url or "",
+            "leetcode_title": question.leetcode_title or "",
+            "leetcode_difficulty": question.leetcode_difficulty or "",
             "created_at": question.created_at
         }
         return QuestionResponse(**q_dict)
@@ -176,7 +174,6 @@ async def get_question(question_id: int):
 
 @router.post("/", response_model=QuestionResponse, status_code=201)
 async def create_question(question: QuestionCreate):
-    """创建试炼"""
     from algomate.data.database import Database
     import json
     
@@ -195,7 +192,10 @@ async def create_question(question: QuestionCreate):
             options=json.dumps(question.options, ensure_ascii=False),
             answer=question.answer,
             explanation=question.explanation,
-            difficulty=question.difficulty.value
+            difficulty=question.difficulty.value,
+            leetcode_url=question.leetcode_url,
+            leetcode_title=question.leetcode_title,
+            leetcode_difficulty=question.leetcode_difficulty
         )
         session.add(new_question)
         session.commit()
@@ -210,6 +210,9 @@ async def create_question(question: QuestionCreate):
             "answer": new_question.answer,
             "explanation": new_question.explanation,
             "difficulty": new_question.difficulty,
+            "leetcode_url": new_question.leetcode_url or "",
+            "leetcode_title": new_question.leetcode_title or "",
+            "leetcode_difficulty": new_question.leetcode_difficulty or "",
             "created_at": new_question.created_at
         }
         return QuestionResponse(**q_dict)
@@ -254,10 +257,10 @@ async def generate_questions(request: dict):
         prompt = f"""针对"{topic}"这个算法主题，生成{count}道高质量的试炼。
 
 要求：
-- 包含选择题、简答题和代码题的组合
+- 包含选择题、简答题和LeetCode挑战的组合
 - 选择题必须有4个选项（A、B、C、D），只有一个正确答案
 - 简答题考查对概念和原理的理解
-- 代码题需要编写代码实现
+- LeetCode挑战需要推荐一道LeetCode题目
 - 每道题都要有详细的解析
 
 请返回JSON格式，包含一个questions数组：
@@ -280,12 +283,15 @@ async def generate_questions(request: dict):
             "difficulty": "easy/medium/hard"
         }},
         {{
-            "question_type": "代码题",
+            "question_type": "LeetCode挑战",
             "content": "试炼描述",
             "options": [],
             "answer": "参考代码",
             "explanation": "解题思路",
-            "difficulty": "easy/medium/hard"
+            "difficulty": "easy/medium/hard",
+            "leetcode_url": "https://leetcode.cn/problems/xxx/",
+            "leetcode_title": "LeetCode题目标题",
+            "leetcode_difficulty": "Easy/Medium/Hard"
         }}
     ]
 }}"""
@@ -310,7 +316,10 @@ async def generate_questions(request: dict):
                 options=json.dumps(q_data.get("options", []), ensure_ascii=False),
                 answer=q_data.get("answer", ""),
                 explanation=q_data.get("explanation", ""),
-                difficulty=q_data.get("difficulty", "medium")
+                difficulty=q_data.get("difficulty", "medium"),
+                leetcode_url=q_data.get("leetcode_url", ""),
+                leetcode_title=q_data.get("leetcode_title", ""),
+                leetcode_difficulty=q_data.get("leetcode_difficulty", "")
             )
             session.add(new_question)
             created_questions.append(new_question)
@@ -329,6 +338,9 @@ async def generate_questions(request: dict):
                 "answer": q.answer,
                 "explanation": q.explanation,
                 "difficulty": q.difficulty,
+                "leetcode_url": q.leetcode_url or "",
+                "leetcode_title": q.leetcode_title or "",
+                "leetcode_difficulty": q.leetcode_difficulty or "",
                 "created_at": q.created_at
             }
             result_list.append(QuestionResponse(**q_dict))
@@ -374,6 +386,12 @@ async def update_question(question_id: int, question: QuestionUpdate):
             existing.explanation = question.explanation
         if question.difficulty is not None:
             existing.difficulty = question.difficulty.value
+        if question.leetcode_url is not None:
+            existing.leetcode_url = question.leetcode_url
+        if question.leetcode_title is not None:
+            existing.leetcode_title = question.leetcode_title
+        if question.leetcode_difficulty is not None:
+            existing.leetcode_difficulty = question.leetcode_difficulty
         
         session.commit()
         session.refresh(existing)
@@ -387,6 +405,9 @@ async def update_question(question_id: int, question: QuestionUpdate):
             "answer": existing.answer,
             "explanation": existing.explanation,
             "difficulty": existing.difficulty,
+            "leetcode_url": existing.leetcode_url or "",
+            "leetcode_title": existing.leetcode_title or "",
+            "leetcode_difficulty": existing.leetcode_difficulty or "",
             "created_at": existing.created_at
         }
         return QuestionResponse(**q_dict)

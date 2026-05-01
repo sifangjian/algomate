@@ -27,8 +27,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import random
-import subprocess
-import sys
 
 from algomate.data.database import Database
 from algomate.models.bosses import Boss, Difficulty, BossSource
@@ -223,7 +221,7 @@ class BossBattleFlow:
             
             boss_obj = existing_boss or session.query(Boss).filter(Boss.id == boss_info["id"]).first()
             
-            question_type = random.choice(["选择题", "简答题", "代码题"])
+            question_type = random.choice(["选择题", "简答题", "LeetCode挑战"])
             
             knowledge_content = card.knowledge_content or card.name
             
@@ -240,11 +238,11 @@ class BossBattleFlow:
                     count=1
                 )
             else:
-                question_data_list = self.question_generator.generate_code_question(
+                question_data_list = [self.question_generator.generate_leetcode_challenge(
                     note_content=knowledge_content,
                     difficulty=boss_info["difficulty"],
-                    count=1
-                )
+                    algorithm_type=card.domain
+                )]
             
             if question_data_list:
                 q_data = question_data_list[0]
@@ -255,7 +253,10 @@ class BossBattleFlow:
                     options=json.dumps(q_data.get("options", []), ensure_ascii=False),
                     answer=q_data.get("answer", ""),
                     explanation=q_data.get("explanation", ""),
-                    difficulty=boss_info["difficulty"]
+                    difficulty=boss_info["difficulty"],
+                    leetcode_url=q_data.get("leetcode_url", ""),
+                    leetcode_title=q_data.get("leetcode_title", ""),
+                    leetcode_difficulty=q_data.get("leetcode_difficulty", "")
                 )
                 session.add(question)
                 session.commit()
@@ -272,7 +273,11 @@ class BossBattleFlow:
                     "content": question.content,
                     "options": normalized_options,
                     "explanation": question.explanation,
-                    "template": q_data.get("template", "")
+                    "template": q_data.get("template", ""),
+                    "leetcode_url": question.leetcode_url,
+                    "leetcode_title": question.leetcode_title,
+                    "leetcode_difficulty": question.leetcode_difficulty,
+                    "leetcode_description": q_data.get("leetcode_description", ""),
                 }
             else:
                 question_info = {
@@ -280,7 +285,10 @@ class BossBattleFlow:
                     "content": "",
                     "options": [],
                     "explanation": "",
-                    "template": ""
+                    "template": "",
+                    "leetcode_url": "",
+                    "leetcode_title": "",
+                    "leetcode_difficulty": ""
                 }
             
             card_info = {
@@ -299,75 +307,6 @@ class BossBattleFlow:
             }
         finally:
             session.close()
-    
-    def run_code(
-        self,
-        code: str,
-        test_cases: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        passed_cases = 0
-        total_cases = len(test_cases)
-        outputs = []
-        errors = []
-        
-        for i, test_case in enumerate(test_cases):
-            test_input = test_case.get("input", "")
-            expected_output = test_case.get("expected_output", "")
-            
-            try:
-                wrapped_code = f"""
-__builtins_dict = {{k: v for k, v in __builtins__.items() if k not in ['exec', 'eval', 'compile', '__import__', 'open', 'input']}}
-__builtins__ = type('SafeBuiltins', (), __builtins_dict)()
-
-{code}
-
-"""
-                if test_input:
-                    wrapped_code += f"""
-_test_input = {repr(test_input)}
-"""
-                
-                wrapped_code += """
-if 'solution' in dir():
-    if _test_input is not None:
-        _result = solution(_test_input)
-    else:
-        _result = solution()
-    print(_result)
-"""
-                
-                process = subprocess.run(
-                    [sys.executable, "-c", wrapped_code],
-                    capture_output=True,
-                    text=True,
-                    timeout=5
-                )
-                
-                if process.returncode != 0:
-                    errors.append(f"Test case {i+1}: {process.stderr.strip()}")
-                    outputs.append("")
-                else:
-                    actual_output = process.stdout.strip()
-                    outputs.append(actual_output)
-                    
-                    if str(actual_output) == str(expected_output):
-                        passed_cases += 1
-            except subprocess.TimeoutExpired:
-                errors.append(f"Test case {i+1}: 执行超时（5秒）")
-                outputs.append("")
-            except Exception as e:
-                errors.append(f"Test case {i+1}: {str(e)}")
-                outputs.append("")
-        
-        success = passed_cases == total_cases and total_cases > 0
-        
-        return {
-            "success": success,
-            "passed_cases": passed_cases,
-            "total_cases": total_cases,
-            "output": outputs,
-            "error": errors
-        }
     
     async def start_battle(
         self,
@@ -448,7 +387,7 @@ if 'solution' in dir():
         self,
         battle_id: int,
         user_answer: str,
-        code: Optional[str] = None
+        request_data: Optional[Dict] = None
     ) -> BattleResult:
         session = self.db.get_session()
         try:
@@ -470,21 +409,20 @@ if 'solution' in dir():
                     Question.id == battle_session.question_id
                 ).first()
             
-            if question and question.question_type == "代码题" and code:
-                test_cases = self._parse_test_cases_from_question(question)
-                code_result = self.run_code(code, test_cases)
-                is_correct = code_result["success"]
-                evaluation = {
-                    "is_correct": is_correct,
-                    "feedback": f"通过 {code_result['passed_cases']}/{code_result['total_cases']} 个测试用例" if not is_correct else "所有测试用例通过！",
-                    "improvement": "; ".join(code_result["error"]) if code_result["error"] else ""
-                }
-            elif question and question.question_type == "选择题":
+            if question and question.question_type == "选择题":
                 is_correct = str(user_answer).strip().upper() == str(question.answer).strip().upper()
                 evaluation = {
                     "is_correct": is_correct,
                     "feedback": "回答正确！" if is_correct else f"回答错误，正确答案是 {question.answer}",
                     "improvement": question.explanation if not is_correct else ""
+                }
+            elif question and question.question_type == "LeetCode挑战":
+                is_solved = request_data.get("is_solved", False) if request_data else False
+                is_correct = is_solved
+                evaluation = {
+                    "is_correct": is_correct,
+                    "feedback": "恭喜！你已在 LeetCode 上解决了这道题目！" if is_correct else "这次没有通过挑战，下次继续加油！",
+                    "improvement": "" if is_correct else "建议回顾卡牌知识内容，理清解题思路后再尝试。"
                 }
             elif question:
                 evaluation = self.answer_evaluator.evaluate(
@@ -545,7 +483,7 @@ if 'solution' in dir():
             answer_record = AnswerRecord(
                 boss_id=battle_session.boss_id,
                 card_id=battle_session.card_ids[0] if battle_session.card_ids else None,
-                user_answer=code or user_answer,
+                user_answer=user_answer,
                 is_correct=is_correct,
                 feedback=evaluation.get("feedback", ""),
                 answered_at=datetime.now()
@@ -566,22 +504,6 @@ if 'solution' in dir():
             )
         finally:
             session.close()
-    
-    def _parse_test_cases_from_question(self, question: Question) -> List[Dict[str, Any]]:
-        test_cases = []
-        try:
-            options = json.loads(question.options) if question.options else []
-            if isinstance(options, list):
-                for opt in options:
-                    if isinstance(opt, dict) and "input" in opt and "expected_output" in opt:
-                        test_cases.append(opt)
-        except (json.JSONDecodeError, TypeError):
-            pass
-        
-        if not test_cases and question.answer:
-            test_cases = [{"input": "", "expected_output": ""}]
-        
-        return test_cases
     
     def calculate_drops(
         self,

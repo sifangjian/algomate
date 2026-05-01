@@ -277,9 +277,94 @@
   color: var(--color-accent);
 }
 
-.questionType.code {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--color-success);
+.questionType.leetcode {
+  background: rgba(255, 161, 22, 0.12);
+  color: #ffa116;
+}
+
+.leetcodeCard {
+    padding: 20px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    animation: fadeIn 0.4s ease;
+}
+
+.leetcodeHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.leetcodeIcon {
+    font-size: 1.3rem;
+}
+
+.leetcodeTitle {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    flex: 1;
+}
+
+.leetcodeDiff {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.leetcodeDiff.easy {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--color-success);
+}
+
+.leetcodeDiff.medium {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--color-accent);
+}
+
+.leetcodeDiff.hard {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-danger);
+}
+
+.leetcodeDesc {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    margin-bottom: 16px;
+    white-space: pre-wrap;
+}
+
+.leetcodeLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ffa116, #ff6b00);
+    color: #fff;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    box-shadow: 0 2px 12px rgba(255, 161, 22, 0.3);
+}
+
+.leetcodeLink:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(255, 161, 22, 0.4);
+}
+
+.leetcodeActions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
 }
 
 .questionContent {
@@ -444,64 +529,6 @@
 .fillTextarea:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.codeEditor {
-  width: 100%;
-  padding: 14px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: #0d1117;
-  color: #c9d1d9;
-  font-family: var(--font-mono), 'Cascadia Code', monospace;
-  font-size: 0.84rem;
-  line-height: 1.6;
-  resize: vertical;
-  min-height: 280px;
-  outline: none;
-  tab-size: 4;
-  transition: border-color var(--transition-fast);
-}
-
-.codeEditor:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-.codeEditor::placeholder {
-  color: #484f58;
-}
-
-.codeActions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.codeOutput {
-  margin-top: 10px;
-  padding: 12px;
-  background: #0d1117;
-  border: 1px solid #21262d;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono), monospace;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  color: #8b949e;
-  max-height: 150px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  animation: fadeIn 0.3s ease;
-}
-
-.codeOutput.success {
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #3fb950;
-}
-
-.codeOutput.error {
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #f85149;
 }
 
 .submitArea {
@@ -754,11 +781,6 @@
 
   .optionsGrid {
     grid-template-columns: 1fr;
-  }
-
-  .codeEditor {
-    font-size: 0.78rem;
-    min-height: 220px;
   }
 
   .comboDisplay {

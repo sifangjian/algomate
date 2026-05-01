@@ -463,12 +463,12 @@ async def generate_quiz(request: dict):
 
     try:
         generator = QuestionGenerator()
-        prompt = f"""针对"{topic}"这个算法主题，生成3道高质量的试炼，包括1道选择题、1道简答题和1道代码题。
+        prompt = f"""针对"{topic}"这个算法主题，生成3道高质量的试炼，包括1道选择题、1道简答题和1道LeetCode挑战。
 
 要求：
 - 选择题必须有4个选项（A、B、C、D），只有一个正确答案
 - 简答题考查对概念和原理的理解
-- 代码题需要编写代码实现
+- LeetCode挑战需要推荐一道LeetCode题目
 
 请返回JSON格式，包含一个questions数组：
 {{
@@ -486,10 +486,13 @@ async def generate_quiz(request: dict):
             "explanation": "解析"
         }},
         {{
-            "question_type": "代码题",
+            "question_type": "LeetCode挑战",
             "content": "试炼描述",
-            "answer": "参考代码",
-            "explanation": "解题思路"
+            "answer": "解题思路要点",
+            "explanation": "解题思路",
+            "leetcode_url": "https://leetcode.cn/problems/xxx/",
+            "leetcode_title": "LeetCode题目标题",
+            "leetcode_difficulty": "Easy/Medium/Hard"
         }}
     ]
 }}"""
@@ -615,18 +618,40 @@ async def get_boss(boss_id: int):
 @boss_router.post("/boss/{boss_id}/submit")
 async def submit_boss_answer(boss_id: int, request: dict):
     from algomate.core.flow.boss_battle import BossBattleFlow
+    from algomate.data.database import Database
+    from algomate.models.bosses import Boss
+    from algomate.models.questions import Question
 
-    code = request.get("code")
     answer = request.get("answer", "")
+    leetcode_result = request.get("leetcode_result", "")
+    is_solved = request.get("is_solved", False)
     card_id = request.get("card_id") or request.get("cardId")
 
     if not card_id:
         raise HTTPException(status_code=400, detail="card_id 不能为空")
 
-    if not code and not answer:
-        raise HTTPException(status_code=400, detail="code 或 answer 不能同时为空")
-
     try:
+        db = Database.get_instance()
+        session = db.get_session()
+        try:
+            boss = session.query(Boss).filter(Boss.id == boss_id).first()
+            if not boss:
+                raise HTTPException(status_code=404, detail=f"Boss {boss_id} 不存在")
+
+            question = None
+            if boss.question_id:
+                question = session.query(Question).filter(Question.id == boss.question_id).first()
+
+            if question and question.question_type == "LeetCode挑战":
+                user_answer = leetcode_result or ("solved" if is_solved else "give_up")
+            else:
+                user_answer = answer
+
+            if not user_answer and not is_solved:
+                raise HTTPException(status_code=400, detail="answer 或 is_solved 不能同时为空")
+        finally:
+            session.close()
+
         flow = BossBattleFlow()
         battle_session = None
         for bid, bs in flow.active_battles.items():
@@ -640,7 +665,7 @@ async def submit_boss_answer(boss_id: int, request: dict):
             battle_id = id(battle_session)
             flow.active_battles[battle_id] = battle_session
 
-        result = await flow.submit_answer(battle_id, answer, code=code)
+        result = await flow.submit_answer(battle_id, user_answer, request_data={"is_solved": is_solved})
         return {
             "is_victory": result.is_victory,
             "is_correct": result.is_victory,
@@ -656,49 +681,6 @@ async def submit_boss_answer(boss_id: int, request: dict):
         }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@boss_router.post("/boss/{boss_id}/run-code")
-async def run_boss_code(boss_id: int, request: dict):
-    from algomate.core.flow.boss_battle import BossBattleFlow
-    from algomate.data.database import Database
-    from algomate.models.bosses import Boss
-    from algomate.models.questions import Question
-    import json
-
-    code = request.get("code", "")
-
-    if not code.strip():
-        raise HTTPException(status_code=400, detail="code 不能为空")
-
-    try:
-        db = Database.get_instance()
-        session = db.get_session()
-        try:
-            boss = session.query(Boss).filter(Boss.id == boss_id).first()
-            if not boss:
-                raise HTTPException(status_code=404, detail=f"Boss {boss_id} 不存在")
-
-            test_cases = []
-            if boss.question_id:
-                question = session.query(Question).filter(Question.id == boss.question_id).first()
-                if question and question.options:
-                    try:
-                        parsed = json.loads(question.options)
-                        if isinstance(parsed, list):
-                            test_cases = parsed
-                    except (json.JSONDecodeError, TypeError):
-                        pass
-
-            flow = BossBattleFlow()
-            result = flow.run_code(code, test_cases)
-            return result
-        finally:
-            session.close()
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

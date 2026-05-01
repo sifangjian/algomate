@@ -8,7 +8,4 @@ export const bossService = {
 
   submitAnswer: (bossId, data) =>
     api.post(`/boss/${bossId}/submit`, data),
-
-  runCode: (bossId, code) =>
-    api.post(`/boss/${bossId}/run-code`, { code }),
 }

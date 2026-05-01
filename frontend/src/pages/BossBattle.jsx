@@ -16,7 +16,7 @@ const DIFFICULTY_CONFIG = {
 const QUESTION_TYPE_LABELS = {
     '选择题': '选择题',
     '简答题': '简答题',
-    '代码题': '代码题',
+    'LeetCode挑战': 'LeetCode挑战',
 }
 
 function getComboMultiplier(combo) {
@@ -47,9 +47,6 @@ export default function BossBattle() {
     const [attempts, setAttempts] = useState(0)
     const [selectedOption, setSelectedOption] = useState('')
     const [fillAnswer, setFillAnswer] = useState('')
-    const [code, setCode] = useState('')
-    const [codeOutput, setCodeOutput] = useState('')
-    const [isRunningCode, setIsRunningCode] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [battleResult, setBattleResult] = useState(null)
     const [isVictory, setIsVictory] = useState(null)
@@ -84,9 +81,6 @@ export default function BossBattle() {
                 setBossData(data.boss)
                 setQuestionData(data.question)
                 setCardData(data.card)
-                if (data.question?.template) {
-                    setCode(data.question.template)
-                }
                 setStartTime(Date.now())
             } catch (err) {
                 showToast(err.message || '加载Boss战失败', 'error')
@@ -160,12 +154,8 @@ export default function BossBattle() {
                 return
             }
             answerData = { answer: fillAnswer, card_id: parseInt(cardId), question_id: questionData.id }
-        } else if (qType === '代码题') {
-            if (!code.trim()) {
-                showToast('请编写代码', 'warning')
-                return
-            }
-            answerData = { code: code, answer: code, card_id: parseInt(cardId), question_id: questionData.id }
+        } else if (qType === 'LeetCode挑战') {
+            answerData = { is_solved: true, card_id: parseInt(cardId), question_id: questionData.id }
         }
 
         setIsSubmitting(true)
@@ -231,28 +221,8 @@ export default function BossBattle() {
         } finally {
             setIsSubmitting(false)
         }
-    }, [bossData, questionData, selectedOption, fillAnswer, code, combo, attempts, bossHP, elapsedTime, isSubmitting, addExperience, triggerHitAnimation])
+    }, [bossData, questionData, selectedOption, fillAnswer, combo, attempts, bossHP, elapsedTime, isSubmitting, addExperience, triggerHitAnimation])
 
-    const handleRunCode = useCallback(async () => {
-        if (!bossData || !code.trim()) {
-            showToast('请编写代码', 'warning')
-            return
-        }
-        setIsRunningCode(true)
-        setCodeOutput('')
-        try {
-            const result = await bossService.runCode(bossData.id, code)
-            if (result.success) {
-                setCodeOutput(result.output || '运行成功（无输出）')
-            } else {
-                setCodeOutput(result.error || '运行失败')
-            }
-        } catch (err) {
-            setCodeOutput(err.message || '运行出错')
-        } finally {
-            setIsRunningCode(false)
-        }
-    }, [bossData, code])
 
     const handleRetry = useCallback(() => {
         setBattleResult(null)
@@ -262,16 +232,36 @@ export default function BossBattle() {
         setAttempts(0)
         setSelectedOption('')
         setFillAnswer('')
-        setCodeOutput('')
         setTotalExpGained(0)
         setSpeedBonus(0)
         setComboBonus(0)
         setStartTime(Date.now())
         setElapsedTime(0)
-        if (questionData?.template) {
-            setCode(questionData.template)
-        }
     }, [questionData])
+
+    const handleLeetCodeGiveUp = useCallback(async () => {
+        if (!bossData || !questionData) return
+        if (isSubmitting) return
+
+        setIsSubmitting(true)
+        try {
+            const result = await bossService.submitAnswer(bossData.id, {
+                is_solved: false,
+                card_id: parseInt(cardId),
+                question_id: questionData.id
+            })
+            setIsVictory(false)
+            setBattleResult({
+                ...result,
+                attempts: 1,
+            })
+            clearInterval(timerRef.current)
+        } catch (err) {
+            showToast(err.message || '提交失败', 'error')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }, [bossData, questionData, isSubmitting, cardId])
 
     const difficulty = bossData?.difficulty || 'medium'
     const diffConfig = DIFFICULTY_CONFIG[difficulty]
@@ -351,7 +341,7 @@ export default function BossBattle() {
             <div className={styles.battleLayout}>
                 <div className={styles.leftPanel}>
                     <div className={styles.questionCard}>
-                        <span className={`${styles.questionType} ${styles[qType === '选择题' ? 'choice' : qType === '简答题' ? 'fill' : 'code']}`}>
+                        <span className={`${styles.questionType} ${styles[qType === '选择题' ? 'choice' : qType === '简答题' ? 'fill' : 'leetcode']}`}>
                             {QUESTION_TYPE_LABELS[qType] || qType}
                         </span>
                         <div className={styles.questionContent}>
@@ -444,40 +434,61 @@ export default function BossBattle() {
                         </>
                     )}
 
-                    {qType === '代码题' && (
+                    {qType === 'LeetCode挑战' && (
                         <>
-                            <textarea
-                                className={styles.codeEditor}
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
-                                spellCheck={false}
-                                disabled={isSubmitting}
-                            />
-                            <div className={styles.codeActions}>
-                                <Button
-                                    variant="secondary"
-                                    onClick={handleRunCode}
-                                    loading={isRunningCode}
-                                    disabled={isRunningCode || isSubmitting}
-                                    icon="▶"
-                                >
-                                    运行代码
-                                </Button>
+                            <div className={styles.leetcodeCard}>
+                                <div className={styles.leetcodeHeader}>
+                                    <span className={styles.leetcodeIcon}>🔗</span>
+                                    <span className={styles.leetcodeTitle}>
+                                        {questionData.leetcode_title || 'LeetCode 挑战'}
+                                    </span>
+                                    {questionData.leetcode_difficulty && (
+                                        <span className={`${styles.leetcodeDiff} ${styles[questionData.leetcode_difficulty]}`}>
+                                            {questionData.leetcode_difficulty === 'easy' ? '简单' :
+                                                questionData.leetcode_difficulty === 'medium' ? '中等' : '困难'}
+                                        </span>
+                                    )}
+                                </div>
+                                {questionData.leetcode_description && (
+                                    <div className={styles.leetcodeDesc}>
+                                        {questionData.leetcode_description}
+                                    </div>
+                                )}
+                                {questionData.leetcode_url && (
+                                    <a
+                                        className={styles.leetcodeLink}
+                                        href={questionData.leetcode_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        前往 LeetCode 解题 →
+                                    </a>
+                                )}
+                            </div>
+                            <div className={styles.leetcodeActions}>
                                 <Button
                                     variant="danger"
+                                    size="lg"
+                                    fullWidth
                                     onClick={handleSubmit}
                                     loading={isSubmitting}
-                                    disabled={!code.trim() || isSubmitting}
-                                    icon="⚔️"
+                                    disabled={isSubmitting}
+                                    icon="✅"
                                 >
-                                    提交挑战
+                                    我已解决
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="lg"
+                                    fullWidth
+                                    onClick={handleLeetCodeGiveUp}
+                                    loading={isSubmitting}
+                                    disabled={isSubmitting}
+                                    icon="🏳️"
+                                >
+                                    暂时放弃
                                 </Button>
                             </div>
-                            {codeOutput && (
-                                <div className={`${styles.codeOutput} ${codeOutput.includes('Error') || codeOutput.includes('失败') ? styles.error : styles.success}`}>
-                                    {codeOutput}
-                                </div>
-                            )}
                         </>
                     )}
                 </div>
