@@ -33,6 +33,7 @@ function App() {
               <Route path="/" element={<AdventureMap />} />
               <Route path="/knowledge-spring" element={<KnowledgeSpring />} />
               <Route path="/npc/:realmId" element={<NpcDialogue />} />
+              <Route path="/boss/battle" element={<BossBattle />} />
               <Route path="/boss/:bossId" element={<BossBattle />} />
               <Route path="/workshop" element={<CardWorkshop />} />
               <Route path="/settings" element={<Settings />} />

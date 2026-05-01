@@ -45,7 +45,6 @@ class Card(Base):
         last_reviewed: 最近修炼时间
         is_sealed: 是否封印（耐久度=0时为True）
         knowledge_content: 知识内容（原心得内容）
-        key_points: 要点列表（JSON数组字符串）
         summary: 摘要
         algorithm_type: 算法类型
         review_level: 修炼等级（0-6）
@@ -83,14 +82,13 @@ class Card(Base):
 class CardCreate(BaseModel):
     """创建卡牌的输入验证模型"""
     name: str = Field(..., min_length=1, max_length=200, description="卡牌名称")
-    domain: Domain = Field(..., description="所属领域")
+    domain: Optional[Domain] = Field(default=Domain.NOVICE_FOREST, description="所属领域")
     algorithm_category: Optional[str] = Field(None, description="算法分类")
     difficulty: int = Field(default=3, ge=1, le=5, description="难度等级 1-5")
     durability: int = Field(default=100, ge=0, le=100, description="耐久度")
     max_durability: int = Field(default=100, ge=0, le=100, description="最大耐久度")
     note_id: Optional[int] = Field(None, description="关联心得ID")
     knowledge_content: Optional[str] = Field(None, description="知识内容")
-    key_points: Optional[str] = Field("[]", description="要点列表（JSON数组）")
     summary: Optional[str] = Field(None, description="摘要")
     algorithm_type: Optional[str] = Field(None, description="算法类型")
     review_level: Optional[int] = Field(None, ge=0, le=6, description="修炼等级")
@@ -104,7 +102,6 @@ class CardCreate(BaseModel):
 class CardUpdate(BaseModel):
     """更新卡牌的输入验证模型"""
     name: Optional[str] = Field(None, min_length=1, max_length=200, description="卡牌名称")
-    domain: Optional[Domain] = Field(None, description="所属领域")
     algorithm_category: Optional[str] = Field(None, description="算法分类")
     difficulty: Optional[int] = Field(None, ge=1, le=5, description="难度等级 1-5")
     durability: Optional[int] = Field(None, ge=0, le=100, description="耐久度")
@@ -113,7 +110,6 @@ class CardUpdate(BaseModel):
     last_reviewed: Optional[datetime] = Field(None, description="最近修炼时间")
     is_sealed: Optional[bool] = Field(None, description="是否封印")
     knowledge_content: Optional[str] = Field(None, description="知识内容")
-    key_points: Optional[str] = Field(None, description="要点列表（JSON数组）")
     summary: Optional[str] = Field(None, description="摘要")
     algorithm_type: Optional[str] = Field(None, description="算法类型")
     review_level: Optional[int] = Field(None, ge=0, le=6, description="修炼等级")
@@ -126,7 +122,7 @@ class CardUpdate(BaseModel):
 
 class CardPolishRequest(BaseModel):
     content: str = Field(..., min_length=1, description="待润色内容")
-    type: str = Field(..., pattern=r"^(key_points|note_content)$", description="润色类型：key_points或note_content")
+    type: str = Field(..., pattern=r"^note_content$", description="润色类型：note_content")
 
 
 class CardPolishResponse(BaseModel):
@@ -151,9 +147,6 @@ class CardResponse(BaseModel):
     id: int
     name: str
     algorithmCategory: Optional[str] = None
-    realmId: str
-    realmName: str
-    realmIcon: str
     durability: int
     maxDurability: int
     status: str
@@ -161,7 +154,6 @@ class CardResponse(BaseModel):
     lastReviewed: Optional[datetime] = None
     reviewCount: int = 0
     noteCount: int = 0
-    keyPoints: List[str] = []
     relatedAlgorithms: List[str] = []
     difficulty: int = 3
     note_id: Optional[int] = None
@@ -190,30 +182,14 @@ def _compute_status(durability: int, max_durability: int, is_sealed: bool) -> st
 
 
 def _card_to_response(card: Card, review_count: int = 0, note_count: int = 0,
-                      key_points: List[str] = None, related_algorithms: List[str] = None,
+                      related_algorithms: List[str] = None,
                       note: Optional[dict] = None) -> CardResponse:
     """将 Card 模型转换为 CardResponse 格式"""
-    import json
-    
-    realm_info = REALM_INFO.get(card.domain, {"id": card.domain, "icon": "🗝️"})
-    realm_id = realm_info["id"]
-    realm_icon = realm_info["icon"]
-    realm_name = card.domain
-
-    card_key_points = key_points or []
-    if not card_key_points and card.key_points:
-        try:
-            card_key_points = json.loads(card.key_points)
-        except (json.JSONDecodeError, TypeError):
-            card_key_points = []
     
     return CardResponse(
         id=card.id,
         name=card.name,
         algorithmCategory=card.algorithm_category,
-        realmId=realm_id,
-        realmName=realm_name,
-        realmIcon=realm_icon,
         durability=card.durability,
         maxDurability=card.max_durability,
         status=_compute_status(card.durability, card.max_durability, card.is_sealed),
@@ -221,7 +197,6 @@ def _card_to_response(card: Card, review_count: int = 0, note_count: int = 0,
         lastReviewed=card.last_reviewed,
         reviewCount=review_count or card.review_count or 0,
         noteCount=note_count,
-        keyPoints=card_key_points,
         relatedAlgorithms=related_algorithms or [],
         difficulty=card.difficulty,
         note_id=card.note_id,
@@ -358,7 +333,7 @@ async def create_card(card: CardCreate):
         is_sealed = card.durability == 0
         new_card = Card(
             name=card.name,
-            domain=card.domain.value,
+            domain=card.domain.value if card.domain else Domain.NOVICE_FOREST.value,
             algorithm_category=card.algorithm_category,
             difficulty=card.difficulty,
             durability=card.durability,
@@ -366,7 +341,6 @@ async def create_card(card: CardCreate):
             note_id=card.note_id,
             is_sealed=is_sealed,
             knowledge_content=card.knowledge_content,
-            key_points=card.key_points or "[]",
             summary=card.summary,
             algorithm_type=card.algorithm_type,
             review_level=card.review_level or 0,
@@ -401,8 +375,6 @@ async def update_card(card_id: int, card: CardUpdate):
         
         if card.name is not None:
             existing.name = card.name
-        if card.domain is not None:
-            existing.domain = card.domain.value
         if card.algorithm_category is not None:
             existing.algorithm_category = card.algorithm_category
         if card.difficulty is not None:
@@ -425,8 +397,6 @@ async def update_card(card_id: int, card: CardUpdate):
             existing.is_sealed = card.is_sealed
         if card.knowledge_content is not None:
             existing.knowledge_content = card.knowledge_content
-        if card.key_points is not None:
-            existing.key_points = card.key_points
         if card.summary is not None:
             existing.summary = card.summary
         if card.algorithm_type is not None:
@@ -491,18 +461,11 @@ async def polish_card_content(request: CardPolishRequest):
     try:
         client = ChatClient(api_key=config.LLM_API_KEY)
 
-        if request.type == "key_points":
-            system_prompt = """你是一个专业的算法知识编辑，擅长优化算法关键要点的表述。
-请将用户提供的关键要点进行润色，使其更加精炼、准确、专业。
-保持每个要点简洁（不超过20字），使用专业术语。
-直接返回润色后的要点列表，每行一个，不要编号，不要其他说明。"""
-            user_prompt = f"请润色以下算法关键要点：\n{request.content}"
-        else:
-            system_prompt = """你是一个专业的算法知识编辑，擅长优化算法心得的表述。
+        system_prompt = """你是一个专业的算法知识编辑，擅长优化算法心得的表述。
 请将用户提供的心得内容进行润色，改善语言流畅性和逻辑性。
 保持原文的核心含义不变，优化表述方式，使其更清晰易懂。
 直接返回润色后的内容，不要添加额外说明。"""
-            user_prompt = f"请润色以下算法心得内容：\n{request.content}"
+        user_prompt = f"请润色以下算法心得内容：\n{request.content}"
 
         result = client.chat(
             messages=[{"role": "user", "content": user_prompt}],

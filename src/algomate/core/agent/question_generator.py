@@ -286,21 +286,13 @@ class QuestionGenerator:
 
         return base_prompt
 
-    def _extract_options(self, content: str) -> Dict[str, str]:
-        """从试炼内容中提取选项
-
-        Args:
-            content: 试炼内容
-
-        Returns:
-            选项字典，键为 A/B/C/D，值为选项内容
-        """
+    def _extract_options(self, content: str) -> List[str]:
         options = {}
         option_pattern = r'([A-D])[.、]\s*([^\n]+)'
         matches = re.findall(option_pattern, content)
         for letter, text in matches:
             options[letter] = text.strip()
-        return options
+        return [options[k] for k in sorted(options.keys())]
 
     def _convert_questions_to_dict(
         self,

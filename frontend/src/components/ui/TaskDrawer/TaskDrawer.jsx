@@ -12,11 +12,6 @@ const TYPE_CONFIG = {
     boss_challenge: { tag: '🐉 Boss', style: styles.typeTagBoss },
 }
 
-function getTaskPath(taskType) {
-    if (taskType === 'boss_challenge') return '/boss-battle'
-    return '/knowledge-spring'
-}
-
 export default function TaskDrawer() {
     const navigate = useNavigate()
     const {
@@ -60,7 +55,7 @@ export default function TaskDrawer() {
 
     const handleTaskClick = (task) => {
         handleClose()
-        navigate(getTaskPath(task.task_type))
+        navigate(`/boss/battle?cardId=${task.card_id}`)
     }
 
     return createPortal(
@@ -126,7 +121,6 @@ export default function TaskDrawer() {
                                                 </span>
                                                 <span className={styles.cardName}>{task.card_name}</span>
                                             </div>
-                                            <span className={styles.cardDomain}>{task.card_domain}</span>
                                             <div className={styles.durabilityBar}>
                                                 <div
                                                     className={`${styles.durabilityFill} ${isCritical ? styles.durabilityFillCritical : styles.durabilityFillNormal}`}
