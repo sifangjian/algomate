@@ -18,7 +18,10 @@ def _ensure_npc_exists(session, realm_name: str, npc_data: dict) -> int:
     """确保 NPC 存在于数据库中，返回 NPC ID"""
     from algomate.models.npcs import NPC
 
-    existing = session.query(NPC).filter(NPC.location == realm_name).first()
+    existing = session.query(NPC).filter(
+        NPC.location == realm_name,
+        NPC.name == npc_data["name"]
+    ).first()
     if existing:
         return existing.id
 
@@ -50,82 +53,109 @@ def _init_default_npcs():
             return
 
         default_npcs = {
-            "新手森林": {
-                "name": "引导者艾琳",
-                "domain": "基础数据结构",
-                "avatar": "🧙‍♀️",
-                "description": "基础数据结构的导师",
-                "system_prompt": "你是引导者艾琳，基础数据结构的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到新手森林！准备好开始你的算法之旅了吗？",
-                "topics": ["数组", "链表", "栈", "队列", "哈希表", "二分查找", "线性查找"]
-            },
+            "新手森林": [
+                {
+                    "name": "老夫子",
+                    "domain": "基础数据结构",
+                    "avatar": "🧓",
+                    "description": "基础数据结构的导师",
+                    "system_prompt": "你是老夫子，新手森林的导师，专长基础数据结构。你以循循善诱的方式教授数组与双指针、链表、哈希表等核心技巧。你的教学风格是先讲概念，再举例说明，最后让学生思考应用场景。",
+                    "greeting": "欢迎来到新手森林！老夫在此等候多时，让我们从基础数据结构开始，循序渐进地踏上算法修习之路吧。",
+                    "topics": ["数组与双指针", "链表", "哈希表"]
+                },
+                {
+                    "name": "栈语者",
+                    "domain": "栈队列与搜索",
+                    "avatar": "📚",
+                    "description": "栈队列与搜索基础的导师",
+                    "system_prompt": "你是栈语者，新手森林的导师，专长栈队列与搜索基础。你以严谨的逻辑教授栈与队列、二分查找、前缀和等技巧。你善于用生活比喻解释抽象概念。",
+                    "greeting": "欢迎来到新手森林！我是栈语者，让我用严谨的逻辑带你理解栈与队列的奥妙，掌握二分查找与前缀和的精髓。",
+                    "topics": ["栈与队列", "二分查找", "前缀和"]
+                },
+            ],
             "迷雾沼泽": {
-                "name": "沼泽向导卡尔",
-                "domain": "递归与回溯",
+                "name": "沼泽向导",
+                "domain": "搜索与遍历",
                 "avatar": "🐸",
-                "description": "递归与回溯的导师",
-                "system_prompt": "你是沼泽向导卡尔，递归与回溯的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到迷雾沼泽！迷雾虽浓，但我会为你指引方向。想从哪里开始？",
-                "topics": ["递归", "回溯", "树遍历", "DFS", "BFS"]
+                "description": "搜索与遍历的导师",
+                "system_prompt": "你是沼泽向导，迷雾沼泽的导师，专长搜索与遍历。你以实战导向的方式教授滑动窗口、DFS与BFS、拓扑排序等搜索进阶技巧。你善于引导学生从暴力解法优化到高效算法。",
+                "greeting": "欢迎来到迷雾沼泽！迷雾虽浓，但搜索之道自明。让我带你从暴力到高效，掌握滑动窗口与搜索遍历的进阶技巧。",
+                "topics": ["滑动窗口", "DFS", "BFS", "拓扑排序"]
+            },
+            "古树森林": [
+                {
+                    "name": "树语者",
+                    "domain": "树结构",
+                    "avatar": "🌳",
+                    "description": "树结构的导师",
+                    "system_prompt": "你是树语者，古树森林的导师，专长树结构。你以自然比喻教授二叉树遍历、二叉搜索树、堆与优先队列等树相关技巧。你善于用树的生长过程解释递归结构。",
+                    "greeting": "欢迎来到古树森林！我是树语者，让我用自然的智慧带你领悟二叉树的递归之美，掌握搜索树与优先队列的精髓。",
+                    "topics": ["二叉树遍历", "二叉搜索树", "堆与优先队列"]
+                },
+                {
+                    "name": "图灵使",
+                    "domain": "图结构",
+                    "avatar": "🕸️",
+                    "description": "图结构的导师",
+                    "system_prompt": "你是图灵使，古树森林的导师，专长图结构。你以系统化的方式教授图的遍历、最短路径、并查集等图论技巧。你善于将复杂问题建模为图论问题。",
+                    "greeting": "欢迎来到古树森林！我是图灵使，万物皆可成图，让我教你如何将复杂问题建模为图论模型，系统化地攻克遍历、最短路径与并查集。",
+                    "topics": ["图的遍历", "最短路径", "并查集"]
+                },
+            ],
+            "命运迷宫": {
+                "name": "迷宫守护者",
+                "domain": "回溯算法",
+                "avatar": "🌀",
+                "description": "回溯算法的导师",
+                "system_prompt": "你是迷宫守护者，命运迷宫的导师，专长回溯算法。你以探索迷宫的方式教授递归与回溯、剪枝技巧、组合与排列。你善于让学生理解'尝试-回退-再尝试'的搜索过程。",
+                "greeting": "欢迎来到命运迷宫！每一条路都通向新的发现，让我带你体验'尝试-回退-再尝试'的回溯之美，掌握剪枝与组合排列的精髓。",
+                "topics": ["递归与回溯", "剪枝技巧", "组合与排列"]
+            },
+            "贪婪之塔": {
+                "name": "贪婪之王",
+                "domain": "贪心算法",
+                "avatar": "👑",
+                "description": "贪心算法的导师",
+                "system_prompt": "你是贪婪之王，贪婪之塔的导师，专长贪心算法。你以果断决策的方式教授贪心选择、区间问题、构造策略。你善于让学生理解'局部最优→全局最优'的条件和反例。",
+                "greeting": "欢迎来到贪婪之塔！贪心之道，在于果断抉择。让我教你何时局部最优可推全局最优，以及如何识破贪心的陷阱。",
+                "topics": ["贪心选择", "区间问题", "构造策略"]
             },
             "智慧圣殿": {
-                "name": "智者雅典娜",
+                "name": "圣殿智者",
                 "domain": "动态规划",
                 "avatar": "🦉",
                 "description": "动态规划的导师",
-                "system_prompt": "你是智者雅典娜，动态规划的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到智慧圣殿！让我为你照亮智慧之路。",
-                "topics": ["动态规划", "贪心算法", "分治策略"]
-            },
-            "贪婪之塔": {
-                "name": "守塔人戈尔",
-                "domain": "图论与高级算法",
-                "avatar": "🏰",
-                "description": "图论与高级算法的导师",
-                "system_prompt": "你是守塔人戈尔，图论与高级算法的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到贪婪之塔！挑战就在眼前，你准备好了吗？",
-                "topics": ["图论", "最短路径", "最小生成树", "网络流"]
-            },
-            "命运迷宫": {
-                "name": "迷宫守护者墨丘利",
-                "domain": "高级数据结构",
-                "avatar": "🌀",
-                "description": "高级数据结构的导师",
-                "system_prompt": "你是迷宫守护者墨丘利，高级数据结构的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到命运迷宫！每一条路都通向新的发现。",
-                "topics": ["堆", "Trie", "并查集", "线段树", "树状数组"]
+                "system_prompt": "你是圣殿智者，智慧圣殿的导师，专长动态规划。你以循序渐进的方式教授线性DP、背包问题、子序列DP。你善于引导学生从递归暴力解→记忆化→DP表的过程。",
+                "greeting": "欢迎来到智慧圣殿！动态规划是算法的至高智慧，让我带你从递归暴力出发，经历记忆化到DP表的蜕变，领悟线性DP、背包与子序列的奥秘。",
+                "topics": ["线性DP", "背包问题", "子序列DP"]
             },
             "分裂山脉": {
-                "name": "山巨人顿",
-                "domain": "算法巅峰",
+                "name": "分裂贤者",
+                "domain": "分治与排序",
                 "avatar": "⛰️",
-                "description": "算法巅峰的导师",
-                "system_prompt": "你是山巨人顿，算法巅峰的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到分裂山脉！前方的挑战将考验你的极限。",
-                "topics": ["高级算法", "复杂算法分析", "算法优化"]
+                "description": "分治与排序的导师",
+                "system_prompt": "你是分裂贤者，分裂山脉的导师，专长分治与排序。你以分解-解决-合并的框架教授分治思想、排序算法、单调栈/队列。你善于让学生理解'大问题拆小问题'的核心思想。",
+                "greeting": "欢迎来到分裂山脉！分裂之道，在于化大为小。让我教你用'分解-解决-合并'的框架，掌握分治、排序与单调数据结构的精髓。",
+                "topics": ["分治", "排序算法", "单调栈", "单调队列"]
             },
             "数学殿堂": {
-                "name": "数学家欧几里得",
-                "domain": "数学与复杂度",
+                "name": "数学巫师",
+                "domain": "数学与位运算",
                 "avatar": "📐",
-                "description": "数学与复杂度的导师",
-                "system_prompt": "你是数学家欧几里得，数学与复杂度的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到数学殿堂！让我们一起探索数学的奥秘。",
-                "topics": ["数学证明", "时间复杂度", "空间复杂度", "组合数学"]
+                "description": "数学与位运算的导师",
+                "system_prompt": "你是数学巫师，数学殿堂的导师，专长数学与位运算。你以数学之美的方式教授位运算、数学技巧、字符串算法。你善于揭示数字和比特背后的规律。",
+                "greeting": "欢迎来到数学殿堂！数字与比特蕴含无穷奥秘，让我带你揭示位运算的魔法、数学技巧的优雅与字符串算法的精妙。",
+                "topics": ["位运算", "数学技巧", "字符串算法"]
             },
-            "试炼之地": {
-                "name": "试炼之主",
-                "domain": "终极试炼",
-                "avatar": "⚔️",
-                "description": "终极试炼的导师",
-                "system_prompt": "你是试炼之主，终极试炼的导师。你采用渐进式传授法：每次回答只聚焦一个核心要点，用1-2句话说清楚核心思想，再配一个形象易懂的例子。回答末尾用【推荐追问】格式给出2-4个追问话题，引导修习者逐步深入。不要一次性输出过多信息，让修习成为互动的渐进过程。",
-                "greeting": "欢迎来到试炼之地！终极试炼等待着你。",
-                "topics": ["综合修炼", "算法面试", "竞赛试炼"]
-            },
+            "试炼之地": [],
         }
 
         for realm_name, npc_data in default_npcs.items():
-            _ensure_npc_exists(session, realm_name, npc_data)
+            if isinstance(npc_data, list):
+                for npc_item in npc_data:
+                    _ensure_npc_exists(session, realm_name, npc_item)
+            else:
+                _ensure_npc_exists(session, realm_name, npc_data)
 
     finally:
         session.close()
@@ -817,6 +847,11 @@ async def get_realms():
                 "description": "深入递归与回溯的领域，挑战迷雾史莱姆王",
                 "bossInfo": {"id": "boss_slime_king", "name": "迷雾史莱姆王", "difficulty": 2},
             },
+            "古树森林": {
+                "icon": "🌳",
+                "description": "参天古树间隐藏着树与图的奥秘，树语者和图灵使在此等待修习者",
+                "color": "#2d5a27",
+            },
             "智慧圣殿": {
                 "icon": "💡",
                 "description": "动态规划的璀璨世界，用智慧照亮黑暗",
@@ -865,10 +900,8 @@ async def get_realms():
             config = realm_config.get(realm.value, {})
             realm_order = list(Realm).index(realm) + 1
 
-            npc = session.query(NPC).filter(NPC.location == realm.value).first()
-            npc_id = npc.id if npc else None
-            npc_name = npc.name if npc else f"{realm.value}导师"
-            npc_avatar = npc.avatar if npc else "🧙‍♀️"
+            npcs = session.query(NPC).filter(NPC.location == realm.value).all()
+            npc_list = [{"id": n.id, "name": n.name, "avatar": n.avatar} for n in npcs] if npcs else []
 
             realms_data.append({
                 "id": realm.value,
@@ -878,7 +911,7 @@ async def get_realms():
                 "status": status,
                 "order": realm_order,
                 "progress": int(progress.progress_percentage),
-                "npcInfo": {"id": npc_id, "name": npc_name, "avatar": npc_avatar},
+                "npcInfo": npc_list,
                 "bossInfo": config.get("bossInfo"),
                 "unlockCondition": {
                     "description": f"需要 {progress.required} 张卡牌才能解锁，当前 {progress.current} 张" if status == "partial" else "完成前置秘境解锁" if status == "locked" else "",
@@ -960,6 +993,7 @@ async def get_npc_by_id(npc_id: int):
     REALM_NAME_TO_ID = {
         "新手森林": "novice_forest",
         "迷雾沼泽": "mist_swamp",
+        "古树森林": "ancient_forest",
         "智慧圣殿": "wisdom_temple",
         "贪婪之塔": "greed_tower",
         "命运迷宫": "fate_maze",

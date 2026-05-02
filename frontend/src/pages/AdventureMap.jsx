@@ -187,8 +187,8 @@ export default function AdventureMap() {
                     <GameCard className={styles.statCard}>
                         <span className={styles.statIcon}>🎯</span>
                         <div className={styles.statInfo}>
-                            <span className={styles.statValue}>8</span>
-                            <span className={styles.statLabel}>已完成Boss战</span>
+                            <span className={styles.statValue}>9</span>
+                            <span className={styles.statLabel}>秘境总数</span>
                         </div>
                     </GameCard>
                     <GameCard className={styles.statCard}>

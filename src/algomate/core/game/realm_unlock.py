@@ -9,10 +9,11 @@
 解锁规则：
     - 新手森林：默认解锁
     - 迷雾沼泽：新手森林精通度≥60的卡牌 ≥ 3张
-    - 智慧圣殿：迷雾沼泽精通度≥60的卡牌 ≥ 3张
-    - 贪婪之塔：智慧圣殿精通度≥60的卡牌 ≥ 3张
-    - 命运迷宫：贪婪之塔精通度≥60的卡牌 ≥ 3张
-    - 分裂山脉：命运迷宫精通度≥60的卡牌 ≥ 3张
+    - 古树森林：迷雾沼泽精通度≥60的卡牌 ≥ 3张
+    - 命运迷宫：古树森林精通度≥60的卡牌 ≥ 3张
+    - 贪婪之塔：命运迷宫精通度≥60的卡牌 ≥ 3张
+    - 智慧圣殿：贪婪之塔精通度≥60的卡牌 ≥ 3张
+    - 分裂山脉：智慧圣殿精通度≥60的卡牌 ≥ 3张
     - 数学殿堂：分裂山脉精通度≥60的卡牌 ≥ 3张
     - 试炼之地：所有领域精通度≥60的卡牌 ≥ 5张
 
@@ -28,9 +29,10 @@ class Realm(str, Enum):
     """秘境枚举"""
     NOVICE_FOREST = "新手森林"
     MIST_SWAMP = "迷雾沼泽"
-    WISDOM_TEMPLE = "智慧圣殿"
-    GREED_TOWER = "贪婪之塔"
+    ANCIENT_FOREST = "古树森林"
     FATE_MAZE = "命运迷宫"
+    GREED_TOWER = "贪婪之塔"
+    WISDOM_TEMPLE = "智慧圣殿"
     SPLIT_MOUNTAIN = "分裂山脉"
     MATH_HALL = "数学殿堂"
     TRIAL_LAND = "试炼之地"
@@ -95,27 +97,33 @@ class RealmUnlockManager:
             required_count=3,
             mastery_threshold=60
         ),
-        Realm.WISDOM_TEMPLE: UnlockCondition(
-            realm=Realm.WISDOM_TEMPLE.value,
+        Realm.ANCIENT_FOREST: UnlockCondition(
+            realm=Realm.ANCIENT_FOREST.value,
             required_realm=Realm.MIST_SWAMP.value,
-            required_count=3,
-            mastery_threshold=60
-        ),
-        Realm.GREED_TOWER: UnlockCondition(
-            realm=Realm.GREED_TOWER.value,
-            required_realm=Realm.WISDOM_TEMPLE.value,
             required_count=3,
             mastery_threshold=60
         ),
         Realm.FATE_MAZE: UnlockCondition(
             realm=Realm.FATE_MAZE.value,
+            required_realm=Realm.ANCIENT_FOREST.value,
+            required_count=3,
+            mastery_threshold=60
+        ),
+        Realm.GREED_TOWER: UnlockCondition(
+            realm=Realm.GREED_TOWER.value,
+            required_realm=Realm.FATE_MAZE.value,
+            required_count=3,
+            mastery_threshold=60
+        ),
+        Realm.WISDOM_TEMPLE: UnlockCondition(
+            realm=Realm.WISDOM_TEMPLE.value,
             required_realm=Realm.GREED_TOWER.value,
             required_count=3,
             mastery_threshold=60
         ),
         Realm.SPLIT_MOUNTAIN: UnlockCondition(
             realm=Realm.SPLIT_MOUNTAIN.value,
-            required_realm=Realm.FATE_MAZE.value,
+            required_realm=Realm.WISDOM_TEMPLE.value,
             required_count=3,
             mastery_threshold=60
         ),

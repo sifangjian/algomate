@@ -14,6 +14,11 @@ const ALGORITHM_CATEGORIES = [
     'Tree', 'Recursion', 'Array', 'String', 'Greedy', 'Math',
 ]
 
+const REALM_DOMAINS = [
+    '新手森林', '迷雾沼泽', '古树森林', '命运迷宫',
+    '贪婪之塔', '智慧圣殿', '分裂山脉', '数学殿堂',
+]
+
 function CreateCardModal({ open, onClose, onCreated }) {
     const { addCard } = useCardStore()
 
@@ -251,6 +256,7 @@ export default function CardWorkshop() {
 
     const [searchKeyword, setSearchKeyword] = useState('')
     const [sortBy, setSortBy] = useState('name')
+    const [selectedRealm, setSelectedRealm] = useState('')
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [cardToDelete, setCardToDelete] = useState(null)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -267,6 +273,12 @@ export default function CardWorkshop() {
 
     const filteredCards = useMemo(() => {
         let result = cards
+
+        if (selectedRealm) {
+            result = result.filter(
+                (c) => c.domain === selectedRealm
+            )
+        }
 
         if (searchKeyword.trim()) {
             const kw = searchKeyword.toLowerCase()
@@ -291,7 +303,7 @@ export default function CardWorkshop() {
         })
 
         return result
-    }, [cards, searchKeyword, sortBy])
+    }, [cards, searchKeyword, sortBy, selectedRealm])
 
     const dangerCount = useMemo(
         () => cards.filter((c) => c.durability < 30).length,
@@ -383,6 +395,23 @@ export default function CardWorkshop() {
                     icon="🔍"
                     className={styles.searchInput}
                 />
+                <div className={styles.realmTabs}>
+                    <button
+                        className={`${styles.realmTab} ${!selectedRealm ? styles.activeTab : ''}`}
+                        onClick={() => setSelectedRealm('')}
+                    >
+                        全部
+                    </button>
+                    {REALM_DOMAINS.map((realm) => (
+                        <button
+                            key={realm}
+                            className={`${styles.realmTab} ${selectedRealm === realm ? styles.activeTab : ''}`}
+                            onClick={() => setSelectedRealm(realm)}
+                        >
+                            {realm}
+                        </button>
+                    ))}
+                </div>
                 <select
                     className={styles.sortSelect}
                     value={sortBy}

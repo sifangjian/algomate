@@ -9,6 +9,61 @@ import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './NpcDialogue.module.css'
 
+const TOPIC_IMPORTANCE = {
+    core: ['数组与双指针', '链表', '哈希表', '栈与队列', '二分查找', '滑动窗口', 'DFS', 'BFS', '二叉树遍历', '二叉搜索树', '递归与回溯', '线性DP'],
+    important: ['前缀和', '拓扑排序', '堆与优先队列', '图的遍历', '最短路径', '剪枝技巧', '组合与排列', '贪心选择', '区间问题', '背包问题', '子序列DP', '分治', '排序算法', '单调栈', '单调队列'],
+    extension: ['并查集', '构造策略', '位运算', '数学技巧', '字符串算法'],
+}
+
+const TOPIC_PREREQUISITES = {
+    '滑动窗口': ['双指针', '哈希表'],
+    'DFS': ['栈与队列'],
+    'BFS': ['栈与队列'],
+    '拓扑排序': ['DFS', 'BFS'],
+    '二叉搜索树': ['二叉树遍历'],
+    '堆与优先队列': ['二叉树遍历'],
+    '图的遍历': ['DFS', 'BFS'],
+    '最短路径': ['DFS', 'BFS'],
+    '并查集': ['图的遍历'],
+    '剪枝技巧': ['递归与回溯'],
+    '组合与排列': ['递归与回溯'],
+    '线性DP': ['递归与回溯'],
+    '背包问题': ['线性DP'],
+    '子序列DP': ['线性DP'],
+    '单调栈': ['栈与队列'],
+    '单调队列': ['栈与队列'],
+}
+
+function getTopicImportance(topic) {
+    const name = topic.trim()
+    if (TOPIC_IMPORTANCE.core.some(t => name.includes(t) || t.includes(name))) return 'core'
+    if (TOPIC_IMPORTANCE.important.some(t => name.includes(t) || t.includes(name))) return 'important'
+    if (TOPIC_IMPORTANCE.extension.some(t => name.includes(t) || t.includes(name))) return 'extension'
+    return null
+}
+
+function getTopicPrerequisites(topic) {
+    const name = topic.trim()
+    for (const [key, prereqs] of Object.entries(TOPIC_PREREQUISITES)) {
+        if (name.includes(key) || key.includes(name)) return prereqs
+    }
+    return null
+}
+
+function getImportanceBadge(level) {
+    if (level === 'core') return '🔴'
+    if (level === 'important') return '🟡'
+    if (level === 'extension') return '🟢'
+    return ''
+}
+
+function getImportanceLabel(level) {
+    if (level === 'core') return '核心'
+    if (level === 'important') return '重要'
+    if (level === 'extension') return '拓展'
+    return ''
+}
+
 const MOCK_NPC = {
     id: 1,
     name: '引导者艾琳',
@@ -142,6 +197,16 @@ export default function NpcDialogue() {
 
     const handleQuickQuestion = useCallback(
         (question) => {
+            const prereqs = getTopicPrerequisites(question.text)
+            if (prereqs) {
+                setMessages((prev) => [...prev, {
+                    id: `hint_${Date.now()}`,
+                    role: 'npc',
+                    content: `💡 建议先修习：${prereqs.join('、')}，再挑战「${question.text}」会更有把握哦！`,
+                    timestamp: new Date().toISOString(),
+                    displayed: true,
+                }])
+            }
             handleSend(question.text)
         },
         [handleSend]
@@ -150,6 +215,16 @@ export default function NpcDialogue() {
     const handleSuggestionClick = useCallback(
         (suggestion) => {
             setActiveSuggestions([])
+            const prereqs = getTopicPrerequisites(suggestion)
+            if (prereqs) {
+                setMessages((prev) => [...prev, {
+                    id: `hint_${Date.now()}`,
+                    role: 'npc',
+                    content: `💡 建议先修习：${prereqs.join('、')}，再挑战「${suggestion}」会更有把握哦！`,
+                    timestamp: new Date().toISOString(),
+                    displayed: true,
+                }])
+            }
             handleSend(suggestion)
         },
         [handleSend]
@@ -241,15 +316,19 @@ export default function NpcDialogue() {
                     </div>
 
                     <div className={styles.quickQuestions}>
-                        {npc.quickQuestions?.map((q) => (
-                            <button
-                                key={q.id}
-                                className={styles.quickQBtn}
-                                onClick={() => handleQuickQuestion(q)}
-                            >
-                                {q.text}
-                            </button>
-                        ))}
+                        {npc.quickQuestions?.map((q) => {
+                            const importance = getTopicImportance(q.text)
+                            const badge = getImportanceBadge(importance)
+                            return (
+                                <button
+                                    key={q.id}
+                                    className={`${styles.quickQBtn} ${importance ? styles[`quickQ_${importance}`] : ''}`}
+                                    onClick={() => handleQuickQuestion(q)}
+                                >
+                                    {badge} {q.text}
+                                </button>
+                            )
+                        })}
                     </div>
 
                     <div className={styles.inputArea}>
@@ -383,9 +462,26 @@ function NpcGreetingMessage({ text }) {
             )}
             {topicsText && parseTopics(topicsText).length > 0 && (
                 <div className={styles.greetingTopics}>
-                    {parseTopics(topicsText).map((topic, i) => (
-                        <span key={i} className={styles.greetingTopicTag}>{topic}</span>
-                    ))}
+                    {parseTopics(topicsText).map((topic, i) => {
+                        const importance = getTopicImportance(topic)
+                        const prereqs = getTopicPrerequisites(topic)
+                        const badge = getImportanceBadge(importance)
+                        return (
+                            <div key={i} className={styles.topicTagWrapper}>
+                                <span
+                                    className={`${styles.greetingTopicTag} ${importance ? styles[`topic_${importance}`] : ''}`}
+                                    title={importance ? `${getImportanceLabel(importance)}话题${prereqs ? ` | 建议先修习：${prereqs.join('、')}` : ''}` : ''}
+                                >
+                                    {badge} {topic}
+                                </span>
+                                {prereqs && (
+                                    <span className={styles.topicPrereqHint}>
+                                        建议先修习：{prereqs.join('、')}
+                                    </span>
+                                )}
+                            </div>
+                        )
+                    })}
                 </div>
             )}
             {welcomeText && (
