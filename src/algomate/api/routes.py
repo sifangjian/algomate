@@ -12,6 +12,7 @@ settings_router = APIRouter()
 learning_router = APIRouter()
 realm_router = APIRouter()
 npc_router = APIRouter()
+stats_router = APIRouter()
 
 
 def _ensure_npc_exists(session, realm_name: str, npc_data: dict) -> int:
@@ -194,6 +195,30 @@ async def get_stats():
 @progress_router.get("/mastery")
 async def get_mastery():
     return {"mastery": {}}
+
+
+@stats_router.get("/overview")
+async def get_stats_overview():
+    from algomate.data.database import Database
+    from algomate.data.repositories.progress_repo import ProgressRepository
+    from algomate.models.cards import Card
+    from algomate.core.game.realm_unlock import Realm
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        total_cards = session.query(Card).count()
+    finally:
+        session.close()
+
+    progress_repo = ProgressRepository(db)
+    consecutive_days = progress_repo.get_consecutive_days()
+
+    return {
+        "total_cards": total_cards,
+        "total_realms": len(Realm),
+        "consecutive_days": consecutive_days,
+    }
 
 
 @dashboard_router.get("/today-review")
@@ -1207,14 +1232,38 @@ user_router = APIRouter()
 
 @user_router.get("/user")
 async def get_user():
-    """获取当前用户信息（单用户系统，返回默认用户）"""
-    return {
-        "id": 1,
-        "username": "default_user",
-        "email": "user@example.com",
-        "level": 1,
-        "experience": 0
-    }
+    from algomate.data.database import Database
+    from algomate.models.user_settings import UserSetting
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        nickname_setting = session.query(UserSetting).filter(UserSetting.key == "nickname").first()
+        level_setting = session.query(UserSetting).filter(UserSetting.key == "level").first()
+        experience_setting = session.query(UserSetting).filter(UserSetting.key == "experience").first()
+
+        nickname = nickname_setting.value if nickname_setting else "冒险者"
+        level = int(level_setting.value) if level_setting else 1
+        experience = int(experience_setting.value) if experience_setting else 0
+
+        nextLevelExp = int(100 * (1.5 ** (level - 1)))
+
+        title_map = {
+            1: "新手", 2: "见习生", 3: "探索者", 4: "冒险家", 5: "精英",
+            6: "大师", 7: "宗师", 8: "传奇", 9: "神话"
+        }
+        title = title_map.get(level, "至尊")
+
+        return {
+            "id": 1,
+            "nickname": nickname,
+            "level": level,
+            "experience": experience,
+            "nextLevelExp": nextLevelExp,
+            "title": title
+        }
+    finally:
+        session.close()
 
 
 @user_router.get("/user/stats")
@@ -1244,6 +1293,7 @@ async def get_user_stats():
         session.close()
 
 
+router.include_router(stats_router, prefix="/stats")
 router.include_router(practice_router, prefix="/practice")
 router.include_router(progress_router, prefix="/progress")
 router.include_router(settings_router, prefix="/settings")

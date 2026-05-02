@@ -1,0 +1,129 @@
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.desc {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.progressSection {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.progressLabel {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+}
+
+.progressBar {
+    height: 8px;
+    background: var(--color-bg-primary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 4px;
+    transition: width var(--transition-slow);
+}
+
+.npcSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sectionTitle {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.npcList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.npcItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.npcItem:hover {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.06);
+    transform: translateX(4px);
+}
+
+.npcItem:active {
+    transform: translateX(2px) scale(0.98);
+}
+
+.npcAvatar {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.npcName {
+    flex: 1;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.npcArrow {
+    font-size: 0.85rem;
+    color: var(--color-primary);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.npcItem:hover .npcArrow {
+    opacity: 1;
+}
+
+.lockedSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lockedHint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    padding: 10px 14px;
+    background: var(--color-bg-primary);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.lockedIcon {
+    font-size: 1rem;
+    opacity: 0.6;
+}

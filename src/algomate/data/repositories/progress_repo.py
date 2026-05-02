@@ -104,3 +104,42 @@ class ProgressRepository:
             return session.query(LearningProgress).order_by(LearningProgress.date.desc()).all()
         finally:
             session.close()
+
+    def get_consecutive_days(self) -> int:
+        """计算连续修习天数
+
+        从今天开始往前逐日检查，如果某天存在 learning_progress 记录且
+        review_count > 0 或 notes_count > 0，则计入连续天数。
+        遇到第一个无记录或记录为零的天即停止计数。
+        今天没有记录时，从昨天开始计算。
+
+        Returns:
+            连续修习天数
+        """
+        from datetime import timedelta
+
+        session = self.db.get_session()
+        try:
+            today = date.today()
+            check_date = today
+            first_record = session.query(LearningProgress).filter(
+                LearningProgress.date == today
+            ).first()
+
+            if not first_record or (first_record.review_count == 0 and first_record.notes_count == 0):
+                check_date = today - timedelta(days=1)
+
+            consecutive = 0
+            current = check_date
+            while True:
+                record = session.query(LearningProgress).filter(
+                    LearningProgress.date == current
+                ).first()
+                if record and (record.review_count > 0 or record.notes_count > 0):
+                    consecutive += 1
+                    current -= timedelta(days=1)
+                else:
+                    break
+            return consecutive
+        finally:
+            session.close()

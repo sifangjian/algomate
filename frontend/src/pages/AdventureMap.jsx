@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
 import { useUserStore } from '../stores/userStore'
@@ -6,7 +6,9 @@ import { useUIStore } from '../stores/uiStore'
 import { realmService } from '../services/realmService'
 import { userService } from '../services/userService'
 import { taskService } from '../services/learningService'
+import { statsService } from '../services/statsService'
 import GameCard from '../components/ui/Card/GameCard'
+import PartialRealmPanel from '../components/realm/PartialRealmPanel'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './AdventureMap.module.css'
 
@@ -15,15 +17,18 @@ export default function AdventureMap() {
     const { realms, setRealms, setLoading, setError } = useGameStore()
     const { setUser } = useUserStore()
     const { setTasks, setTasksLoading, addToast } = useUIStore()
+    const [stats, setStats] = useState({ total_cards: 0, total_realms: 0, consecutive_days: 0 })
+    const [selectedPartialRealm, setSelectedPartialRealm] = useState(null)
 
     const fetchInitialData = useCallback(async () => {
         setLoading(true)
         setTasksLoading(true)
         try {
-            const [realmsData, userData, tasksData] = await Promise.allSettled([
+            const [realmsData, userData, tasksData, statsData] = await Promise.allSettled([
                 realmService.getAll(),
                 userService.getUser().catch(() => null),
                 taskService.getTodayTasks(),
+                statsService.getOverview(),
             ])
 
             if (realmsData.status === 'fulfilled' && Array.isArray(realmsData.value)) {
@@ -37,13 +42,9 @@ export default function AdventureMap() {
                 showToast('获取秘境数据失败', 'error')
             }
 
-            setUser({
-                nickname: '冒险者',
-                level: 5,
-                title: '探索者',
-                experience: 2500,
-                nextLevelExp: 3000,
-            })
+            if (userData.status === 'fulfilled' && userData.value) {
+                setUser(userData.value)
+            }
 
             if (tasksData.status === 'fulfilled' && tasksData.value?.tasks) {
                 setTasks(tasksData.value.tasks)
@@ -52,6 +53,15 @@ export default function AdventureMap() {
                 if (tasksData.status === 'rejected') {
                     console.error('Tasks API Error:', tasksData.reason)
                     showToast('获取今日任务失败', 'error')
+                }
+            }
+
+            if (statsData.status === 'fulfilled' && statsData.value) {
+                setStats(statsData.value)
+            } else {
+                if (statsData.status === 'rejected') {
+                    console.error('Stats API Error:', statsData.reason)
+                    showToast('获取统计数据失败', 'error')
                 }
             }
         } catch (err) {
@@ -76,17 +86,30 @@ export default function AdventureMap() {
                 return
             }
             if (realm.status === 'partial') {
-                showToast(`⚠️ ${realm.name} - 还需努力解锁此区域`, 'info')
+                setSelectedPartialRealm(realm)
                 return
             }
-            if (!realm.npcInfo?.id) {
+            const npcId = Array.isArray(realm.npcInfo) ? realm.npcInfo[0]?.id : realm.npcInfo?.id
+            if (!npcId) {
                 showToast('NPC 尚未解锁', 'warning')
                 return
             }
-            navigate(`/npc/${realm.npcInfo.id}`)
+            navigate(`/npc/${npcId}`)
         },
         [navigate]
     )
+
+    const handlePartialNpcClick = useCallback(
+        (npcId) => {
+            setSelectedPartialRealm(null)
+            navigate(`/npc/${npcId}`)
+        },
+        [navigate]
+    )
+
+    const handlePartialClose = useCallback(() => {
+        setSelectedPartialRealm(null)
+    }, [])
 
     const displayRealms = realms
 
@@ -147,11 +170,13 @@ export default function AdventureMap() {
                                 </div>
                             )}
 
-                            {realm.npcInfo && (
-                                <div className={styles.npcTag}>
-                                    <span>{realm.npcInfo.avatar}</span>
-                                    <span>导师: {realm.npcInfo.name}</span>
-                                </div>
+                            {Array.isArray(realm.npcInfo) && realm.npcInfo.length > 0 && (
+                                realm.npcInfo.map((npc) => (
+                                    <div key={npc.id} className={styles.npcTag}>
+                                        <span>{npc.avatar}</span>
+                                        <span>导师: {npc.name}</span>
+                                    </div>
+                                ))
                             )}
 
                             {realm.bossInfo && (
@@ -180,26 +205,33 @@ export default function AdventureMap() {
                     <GameCard className={styles.statCard}>
                         <span className={styles.statIcon}>📚</span>
                         <div className={styles.statInfo}>
-                            <span className={styles.statValue}>12</span>
+                            <span className={styles.statValue}>{stats.total_cards}</span>
                             <span className={styles.statLabel}>卡牌总数</span>
                         </div>
                     </GameCard>
                     <GameCard className={styles.statCard}>
                         <span className={styles.statIcon}>🎯</span>
                         <div className={styles.statInfo}>
-                            <span className={styles.statValue}>9</span>
+                            <span className={styles.statValue}>{stats.total_realms}</span>
                             <span className={styles.statLabel}>秘境总数</span>
                         </div>
                     </GameCard>
                     <GameCard className={styles.statCard}>
                         <span className={styles.statIcon}>🔥</span>
                         <div className={styles.statInfo}>
-                            <span className={styles.statValue}>7</span>
+                            <span className={styles.statValue}>{stats.consecutive_days}</span>
                             <span className={styles.statLabel}>连续修习天数</span>
                         </div>
                     </GameCard>
                 </div>
             </section>
+
+            <PartialRealmPanel
+                realm={selectedPartialRealm}
+                open={!!selectedPartialRealm}
+                onClose={handlePartialClose}
+                onNpcClick={handlePartialNpcClick}
+            />
         </div>
     )
 }
