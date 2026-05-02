@@ -3,11 +3,6 @@ import { create } from 'zustand'
 export const useCardStore = create((set) => ({
   cards: [],
   selectedCard: null,
-  filterState: {
-    searchKeyword: '',
-    sortBy: 'name',
-    sortOrder: 'asc',
-  },
   loading: false,
 
   setCards: (cards) => set({ cards }),
@@ -18,11 +13,6 @@ export const useCardStore = create((set) => ({
     })),
 
   setSelectedCard: (card) => set({ selectedCard: card }),
-
-  setFilterState: (filterState) =>
-    set((state) => ({
-      filterState: { ...state.filterState, ...filterState },
-    })),
 
   setLoading: (loading) => set({ loading }),
 
@@ -37,11 +27,6 @@ export const useCardStore = create((set) => ({
     set({
       cards: [],
       selectedCard: null,
-      filterState: {
-        searchKeyword: '',
-        sortBy: 'name',
-        sortOrder: 'asc',
-      },
       loading: false,
     }),
 }))
