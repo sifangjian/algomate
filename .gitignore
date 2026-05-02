@@ -9,6 +9,11 @@ __pycache__/
 # trae
 .trae/
 
+# doc
+docs/
+
+
+
 # Distribution / packaging
 .Python
 build/
