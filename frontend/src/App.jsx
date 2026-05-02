@@ -13,6 +13,7 @@ const KnowledgeSpring = lazy(() => import('./pages/KnowledgeSpring'))
 const BossBattle = lazy(() => import('./pages/BossBattle'))
 const CardWorkshop = lazy(() => import('./pages/CardWorkshop'))
 const Settings = lazy(() => import('./pages/Settings'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 function App() {
   const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 768)
@@ -40,6 +41,7 @@ function App() {
               <Route path="/boss/:bossId" element={<BossBattle />} />
               <Route path="/workshop" element={<CardWorkshop />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </main>
