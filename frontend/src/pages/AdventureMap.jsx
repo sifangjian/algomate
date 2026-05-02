@@ -9,6 +9,7 @@ import { taskService } from '../services/learningService'
 import { statsService } from '../services/statsService'
 import GameCard from '../components/ui/Card/GameCard'
 import PartialRealmPanel from '../components/realm/PartialRealmPanel'
+import UnlockConditionModal from '../components/realm/UnlockConditionModal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './AdventureMap.module.css'
 
@@ -19,6 +20,8 @@ export default function AdventureMap() {
     const { setTasks, setTasksLoading, addToast } = useUIStore()
     const [stats, setStats] = useState({ total_cards: 0, total_realms: 0, consecutive_days: 0 })
     const [selectedPartialRealm, setSelectedPartialRealm] = useState(null)
+    const [unlockModalData, setUnlockModalData] = useState(null)
+    const [checkingUnlock, setCheckingUnlock] = useState(false)
 
     const fetchInitialData = useCallback(async () => {
         setLoading(true)
@@ -79,10 +82,32 @@ export default function AdventureMap() {
     }, [fetchInitialData])
 
     const handleRealmClick = useCallback(
-        (realm) => {
+        async (realm) => {
             if (realm.status === 'locked') {
-                const unlockDesc = realm.unlockCondition?.description || '暂未解锁'
-                showToast(`🔒 ${realm.name} - ${unlockDesc}`, 'warning')
+                if (checkingUnlock) return
+                setCheckingUnlock(true)
+                try {
+                    const result = await realmService.checkUnlock(realm.id)
+                    if (result.unlocked) {
+                        const updatedRealms = realms.map((r) =>
+                            r.id === realm.id ? { ...r, status: 'unlocked' } : r
+                        )
+                        setRealms(updatedRealms)
+                        const npcId = Array.isArray(realm.npcInfo) ? realm.npcInfo[0]?.id : realm.npcInfo?.id
+                        if (npcId) {
+                            navigate(`/npc/${npcId}`)
+                        } else {
+                            showToast('NPC 尚未解锁', 'warning')
+                        }
+                    } else {
+                        setUnlockModalData({ realm, unlockData: result })
+                    }
+                } catch (err) {
+                    console.error('Check unlock failed:', err)
+                    showToast('验证解锁状态失败，请稍后重试', 'error')
+                } finally {
+                    setCheckingUnlock(false)
+                }
                 return
             }
             if (realm.status === 'partial') {
@@ -96,7 +121,7 @@ export default function AdventureMap() {
             }
             navigate(`/npc/${npcId}`)
         },
-        [navigate]
+        [navigate, realms, setRealms, checkingUnlock]
     )
 
     const handlePartialNpcClick = useCallback(
@@ -109,6 +134,10 @@ export default function AdventureMap() {
 
     const handlePartialClose = useCallback(() => {
         setSelectedPartialRealm(null)
+    }, [])
+
+    const handleUnlockModalClose = useCallback(() => {
+        setUnlockModalData(null)
     }, [])
 
     const displayRealms = realms
@@ -138,7 +167,7 @@ export default function AdventureMap() {
                             key={realm.id}
                             className={`${styles.realmCard} ${realm.status}`}
                             glow={realm.status === 'unlocked'}
-                            hoverable={realm.status !== 'locked'}
+                            hoverable
                             onClick={() => handleRealmClick(realm)}
                             style={{ animationDelay: `${index * 100}ms` }}
                         >
@@ -231,6 +260,13 @@ export default function AdventureMap() {
                 open={!!selectedPartialRealm}
                 onClose={handlePartialClose}
                 onNpcClick={handlePartialNpcClick}
+            />
+
+            <UnlockConditionModal
+                realm={unlockModalData?.realm}
+                unlockData={unlockModalData?.unlockData}
+                open={!!unlockModalData}
+                onClose={handleUnlockModalClose}
             />
         </div>
     )
