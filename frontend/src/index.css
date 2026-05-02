@@ -204,7 +204,7 @@ button {
 
 .app-wrapper {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     min-height: 100vh;
 }
 
@@ -213,6 +213,7 @@ button {
     width: 100%;
     margin: 0 auto;
     padding: 20px 16px;
+    padding-top: 82px;
     padding-left: 216px;
 }
 
@@ -220,6 +221,7 @@ button {
     .main-content {
         padding-left: 16px;
         padding-bottom: 70px;
+        padding-top: 72px;
     }
 }
 

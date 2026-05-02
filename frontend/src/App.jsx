@@ -1,8 +1,10 @@
 import React, { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Header from './components/layout/Header'
 import SideNav from './components/layout/SideNav'
 import BottomNav from './components/layout/BottomNav'
 import ToastContainer from './components/ui/Toast/ToastContainer'
+import TaskDrawer from './components/ui/TaskDrawer/TaskDrawer'
 import LoadingScreen from './components/ui/Loading/LoadingScreen'
 
 const AdventureMap = lazy(() => import('./pages/AdventureMap'))
@@ -26,6 +28,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app-wrapper">
+        <Header />
         {isMobile ? <BottomNav /> : <SideNav />}
         <main className="main-content">
           <Suspense fallback={<LoadingScreen />}>
@@ -41,6 +44,7 @@ function App() {
           </Suspense>
         </main>
         <ToastContainer />
+        <TaskDrawer />
       </div>
     </BrowserRouter>
   )
