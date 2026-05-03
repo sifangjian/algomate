@@ -19,6 +19,13 @@ export const cardService = {
 
   createCard: (data) => api.post('/cards/', data),
 
+  getByAlgorithmType: (algorithmType) => {
+    if (!algorithmType) return Promise.resolve([])
+    return api.get(`/cards/?algorithm_category=${encodeURIComponent(algorithmType)}`)
+  },
+
+  updateCard: (id, data) => api.put(`/cards/${id}`, data),
+
   polishCard: (data) => api.post('/cards/polish', data),
 
   startReview: (cardId) => api.post(`/review/start/${cardId}`),

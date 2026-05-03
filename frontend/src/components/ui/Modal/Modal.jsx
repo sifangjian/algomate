@@ -87,12 +87,12 @@ export default function Modal({
   )
 }
 
-export function ConfirmDialog({ open, onClose, onConfirm, title, message, confirmText = '确认', cancelText = '取消', variant = 'primary', loading = false }) {
+export function ConfirmDialog({ open, onClose, onConfirm, onCancel, title, message, confirmText = '确认', cancelText = '取消', variant = 'primary', loading = false }) {
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       <p className={styles.confirmMessage}>{message}</p>
       <div className={styles.confirmActions}>
-        <Button variant="ghost" onClick={onClose}>
+        <Button variant="ghost" onClick={onCancel || onClose}>
           {cancelText}
         </Button>
         <Button variant={variant} onClick={onConfirm} loading={loading}>
