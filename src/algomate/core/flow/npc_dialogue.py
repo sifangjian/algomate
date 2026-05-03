@@ -341,6 +341,112 @@ class NPCDialogueFlow:
         finally:
             session.close()
     
+    def continue_dialogue_stream(self, dialogue_id: int, user_message: str):
+        """流式继续对话，逐token返回NPC回复
+
+        Args:
+            dialogue_id: 对话ID
+            user_message: 用户消息
+
+        Yields:
+            SSE格式的流式数据块
+        """
+        session = self.db.get_session()
+        try:
+            dialogue_session = self.active_sessions.get(dialogue_id)
+
+            if not dialogue_session:
+                db_record = session.query(DialogueRecord).filter(
+                    DialogueRecord.id == dialogue_id
+                ).first()
+
+                if not db_record:
+                    raise ValueError(f"对话 {dialogue_id} 不存在")
+
+                npc = session.query(NPC).filter(NPC.id == db_record.npc_id).first()
+
+                dialogue_session = DialogueSession(
+                    dialogue_id=db_record.id,
+                    npc_id=db_record.npc_id,
+                    npc_name=npc.name,
+                    npc_domain=npc.domain,
+                    state=DialogueState.IN_PROGRESS
+                )
+
+                messages_data = json.loads(db_record.dialogue_content)
+                for msg in messages_data:
+                    dialogue_session.messages.append(
+                        DialogueMessage(
+                            role=msg["role"],
+                            content=msg["content"],
+                            timestamp=datetime.fromisoformat(msg["timestamp"]) if isinstance(msg["timestamp"], str) else msg["timestamp"]
+                        )
+                    )
+
+                self.active_sessions[dialogue_id] = dialogue_session
+
+            if dialogue_session.state == DialogueState.ENDED:
+                raise ValueError("对话已结束，无法继续")
+
+            dialogue_session.messages.append(
+                DialogueMessage(
+                    role="user",
+                    content=user_message,
+                    timestamp=datetime.now()
+                )
+            )
+
+            npc = session.query(NPC).filter(NPC.id == dialogue_session.npc_id).first()
+
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in dialogue_session.messages
+            ]
+
+            full_content = ""
+            for chunk in self.chat_client.stream_chat_with_suggestions(
+                messages=conversation_history,
+                system_prompt=npc.system_prompt
+            ):
+                yield chunk
+                if chunk.startswith("data: ") and not chunk.strip() == "data: [DONE]" and "'error'" not in chunk:
+                    try:
+                        data_str = chunk.replace("data: ", "").strip()
+                        if data_str and data_str != "[DONE]":
+                            data = json.loads(data_str)
+                            if "content" in data:
+                                full_content += data["content"]
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+
+            dialogue_session.messages.append(
+                DialogueMessage(
+                    role="assistant",
+                    content=full_content,
+                    timestamp=datetime.now()
+                )
+            )
+
+            dialogue_content = json.dumps([
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat()
+                }
+                for msg in dialogue_session.messages
+            ], ensure_ascii=False)
+
+            db_record = session.query(DialogueRecord).filter(
+                DialogueRecord.id == dialogue_id
+            ).first()
+            if db_record:
+                db_record.dialogue_content = dialogue_content
+                session.commit()
+
+            yield f"data: {json.dumps({'dialogue_id': dialogue_id}, ensure_ascii=False)}\n\n"
+        finally:
+            session.close()
+
     async def end_dialogue(
         self,
         dialogue_id: int,

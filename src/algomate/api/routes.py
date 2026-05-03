@@ -13,6 +13,21 @@ learning_router = APIRouter()
 realm_router = APIRouter()
 npc_router = APIRouter()
 stats_router = APIRouter()
+algorithm_info_router = APIRouter()
+
+
+@algorithm_info_router.get("/algorithm-info")
+async def get_algorithm_info():
+    from algomate.config.algorithm_types import (
+        TOPIC_PREREQUISITES,
+        TOPIC_IMPORTANCE,
+        ALGORITHM_CATEGORIES,
+    )
+    return {
+        "topic_prerequisites": TOPIC_PREREQUISITES,
+        "topic_importance": TOPIC_IMPORTANCE,
+        "algorithm_categories": ALGORITHM_CATEGORIES,
+    }
 
 
 def _ensure_npc_exists(session, realm_name: str, npc_data: dict) -> int:
@@ -1101,6 +1116,55 @@ async def npc_chat(npc_id: int, request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@npc_router.post("/{npc_id}/chat/stream")
+async def npc_chat_stream(npc_id: int, request: dict):
+    """与NPC聊天（SSE流式）"""
+    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
+
+    message = request.get("message")
+    session_id = request.get("sessionId")
+
+    if not message:
+        raise HTTPException(status_code=400, detail="message 不能为空")
+
+    try:
+        flow = NPCDialogueFlow.get_instance()
+
+        if session_id is None:
+            session_result = await flow.start_dialogue(npc_id, None)
+            new_session_id = session_result.dialogue_id
+        else:
+            new_session_id = int(session_id)
+
+        final_session_id = new_session_id
+        is_new_session = session_id is None
+
+        def generate():
+            try:
+                if is_new_session:
+                    yield f"data: {json.dumps({'dialogue_id': final_session_id}, ensure_ascii=False)}\n\n"
+                for chunk in flow.continue_dialogue_stream(final_session_id, message):
+                    yield chunk
+            except ValueError as e:
+                yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @tasks_router.get("/tasks")
 async def get_tasks(date: str = None):
     """获取修炼任务
@@ -1305,3 +1369,4 @@ router.include_router(boss_router)
 router.include_router(tasks_router)
 router.include_router(dialogue_router)
 router.include_router(user_router)
+router.include_router(algorithm_info_router)

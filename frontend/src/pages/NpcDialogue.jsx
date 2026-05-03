@@ -9,48 +9,6 @@ import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './NpcDialogue.module.css'
 
-const TOPIC_IMPORTANCE = {
-    core: ['数组与双指针', '链表', '哈希表', '栈与队列', '二分查找', '滑动窗口', 'DFS', 'BFS', '二叉树遍历', '二叉搜索树', '递归', '回溯', '线性DP'],
-    important: ['前缀和', '拓扑排序', '堆与优先队列', '图的遍历', '最短路径', '剪枝技巧', '组合与排列', '贪心选择', '区间问题', '背包问题', '子序列DP', '分治', '排序算法', '单调栈', '单调队列'],
-    extension: ['并查集', '构造策略', '位运算', '数学技巧', '字符串算法'],
-}
-
-const TOPIC_PREREQUISITES = {
-    '滑动窗口': ['双指针', '哈希表'],
-    'DFS': ['栈与队列'],
-    'BFS': ['栈与队列'],
-    '拓扑排序': ['DFS', 'BFS'],
-    '二叉搜索树': ['二叉树遍历'],
-    '堆与优先队列': ['二叉树遍历'],
-    '图的遍历': ['DFS', 'BFS'],
-    '最短路径': ['DFS', 'BFS'],
-    '并查集': ['图的遍历'],
-    '回溯': ['递归'],
-    '剪枝技巧': ['回溯'],
-    '组合与排列': ['回溯'],
-    '线性DP': ['递归'],
-    '背包问题': ['线性DP'],
-    '子序列DP': ['线性DP'],
-    '单调栈': ['栈与队列'],
-    '单调队列': ['栈与队列'],
-}
-
-function getTopicImportance(topic) {
-    const name = topic.trim()
-    if (TOPIC_IMPORTANCE.core.some(t => name.includes(t) || t.includes(name))) return 'core'
-    if (TOPIC_IMPORTANCE.important.some(t => name.includes(t) || t.includes(name))) return 'important'
-    if (TOPIC_IMPORTANCE.extension.some(t => name.includes(t) || t.includes(name))) return 'extension'
-    return null
-}
-
-function getTopicPrerequisites(topic) {
-    const name = topic.trim()
-    for (const [key, prereqs] of Object.entries(TOPIC_PREREQUISITES)) {
-        if (name.includes(key) || key.includes(name)) return prereqs
-    }
-    return null
-}
-
 function getImportanceBadge(level) {
     if (level === 'core') return '🔴'
     if (level === 'important') return '🟡'
@@ -65,27 +23,15 @@ function getImportanceLabel(level) {
     return ''
 }
 
-const MOCK_NPC = {
-    id: 1,
-    name: '引导者艾琳',
-    avatar: '🧙‍♀️',
-    realmId: 'novice_forest',
-    greeting: '欢迎来到新手森林！我是这里的守护者艾琳。算法的世界充满奥秘，你想从哪里开始探索？',
-    expertise: ['二分查找', '线性查找', '数组基础'],
-    quickQuestions: [
-        { id: 'qq_1', text: '什么是二分查找？' },
-        { id: 'qq_2', text: '如何实现线性查找？' },
-        { id: 'qq_3', text: '数组有哪些基本操作？' },
-    ],
-}
-
 export default function NpcDialogue() {
     const { realmId } = useParams()
     const navigate = useNavigate()
     const messagesEndRef = useRef(null)
     const inputRef = useRef(null)
+    const abortControllerRef = useRef(null)
 
-    const [npc, setNpc] = useState(MOCK_NPC)
+    const [npc, setNpc] = useState(null)
+    const [npcError, setNpcError] = useState(null)
     const [messages, setMessages] = useState([])
     const [inputValue, setInputValue] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -94,6 +40,10 @@ export default function NpcDialogue() {
     const [showEndDialog, setShowEndDialog] = useState(false)
     const [isNpcLoading, setIsNpcLoading] = useState(true)
     const [activeSuggestions, setActiveSuggestions] = useState([])
+    const [showOverwriteDialog, setShowOverwriteDialog] = useState(false)
+    const [existingCard, setExistingCard] = useState(null)
+    const [pendingCardData, setPendingCardData] = useState(null)
+    const [algorithmInfo, setAlgorithmInfo] = useState(null)
 
     useEffect(() => {
         if (!realmId) return
@@ -102,13 +52,13 @@ export default function NpcDialogue() {
             if (data && data.id) {
                 const mergedNpc = {
                     ...data,
-                    quickQuestions: data.quickQuestions || MOCK_NPC.quickQuestions,
+                    quickQuestions: data.quickQuestions || [],
                 }
                 setNpc(mergedNpc)
                 setMessages([{
                     id: 'greeting',
                     role: 'npc',
-                    content: data.greeting || MOCK_NPC.greeting,
+                    content: data.greeting || '你好，让我们一起探索算法的奥秘吧！',
                     timestamp: new Date().toISOString(),
                     displayed: true,
                 }])
@@ -119,20 +69,58 @@ export default function NpcDialogue() {
         }).catch((err) => {
             console.error('Failed to load NPC:', err)
             showToast(`加载NPC失败: ${err.message}`, 'error')
-            setNpc({ ...MOCK_NPC, id: 1 })
-            setMessages([{
-                id: 'greeting',
-                role: 'npc',
-                content: MOCK_NPC.greeting,
-                timestamp: new Date().toISOString(),
-                displayed: true,
-            }])
+            setNpcError(err.message || '加载NPC数据失败')
+        }).finally(() => setIsNpcLoading(false))
+    }, [realmId])
+
+    const handleRetryNpc = useCallback(() => {
+        setNpcError(null)
+        setIsNpcLoading(true)
+        npcService.getByRealmId(realmId).then((data) => {
+            if (data && data.id) {
+                const mergedNpc = {
+                    ...data,
+                    quickQuestions: data.quickQuestions || [],
+                }
+                setNpc(mergedNpc)
+                setMessages([{
+                    id: 'greeting',
+                    role: 'npc',
+                    content: data.greeting || '你好，让我们一起探索算法的奥秘吧！',
+                    timestamp: new Date().toISOString(),
+                    displayed: true,
+                }])
+            } else {
+                setNpcError('NPC数据格式无效')
+            }
+        }).catch((err) => {
+            setNpcError(err.message || '加载NPC数据失败')
         }).finally(() => setIsNpcLoading(false))
     }, [realmId])
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
+
+    useEffect(() => {
+        npcService.getAlgorithmInfo().then((data) => {
+            setAlgorithmInfo(data)
+        }).catch((err) => {
+            console.error('Failed to load algorithm info:', err)
+        })
+    }, [])
+
+    const getTopicImportanceDynamic = (topic) => {
+        if (!algorithmInfo?.topic_importance) return null
+        const name = topic.trim()
+        return algorithmInfo.topic_importance[name] || null
+    }
+
+    const getTopicPrerequisitesDynamic = (topic) => {
+        if (!algorithmInfo?.topic_prerequisites) return null
+        const name = topic.trim()
+        return algorithmInfo.topic_prerequisites[name] || null
+    }
 
     const handleSend = useCallback(async (text) => {
         const msgText = text || inputValue.trim()
@@ -150,55 +138,86 @@ export default function NpcDialogue() {
             displayed: true,
         }
 
-        setMessages((prev) => [...prev, userMsg])
+        const npcMsgId = `npc_${Date.now()}`
+        const npcMsg = {
+            id: npcMsgId,
+            role: 'npc',
+            content: '',
+            timestamp: new Date().toISOString(),
+            displayed: true,
+            isStreaming: true,
+            suggestions: [],
+        }
+
+        setMessages((prev) => [...prev, userMsg, npcMsg])
         setInputValue('')
         setIsLoading(true)
 
-        try {
-            const response = await npcService.chat(npc.id, msgText, sessionId)
-            const newSessionId = response?.dialogue_id || sessionId
+        let accumulatedContent = ''
 
-            if (newSessionId && newSessionId !== sessionId) {
-                setSessionId(newSessionId)
-            }
+        const controller = npcService.chatStream(npc.id, msgText, sessionId, {
+            onChunk: (token) => {
+                accumulatedContent += token
+                const currentContent = accumulatedContent
+                setMessages((prev) => {
+                    const updated = [...prev]
+                    const idx = updated.findIndex((m) => m.id === npcMsgId)
+                    if (idx >= 0) {
+                        updated[idx] = { ...updated[idx], content: currentContent }
+                    }
+                    return updated
+                })
+            },
+            onSuggestions: (suggestions) => {
+                setActiveSuggestions(suggestions)
+                setMessages((prev) => {
+                    const updated = [...prev]
+                    const idx = updated.findIndex((m) => m.id === npcMsgId)
+                    if (idx >= 0) {
+                        updated[idx] = { ...updated[idx], suggestions }
+                    }
+                    return updated
+                })
+            },
+            onDone: (dialogueId) => {
+                if (dialogueId && dialogueId !== sessionId) {
+                    setSessionId(dialogueId)
+                }
+                setMessages((prev) => {
+                    const updated = [...prev]
+                    const idx = updated.findIndex((m) => m.id === npcMsgId)
+                    if (idx >= 0) {
+                        updated[idx] = { ...updated[idx], isStreaming: false }
+                    }
+                    return updated
+                })
+                setIsLoading(false)
+            },
+            onError: (err) => {
+                console.error('NPC Chat SSE Error:', err)
+                setMessages((prev) => {
+                    const updated = [...prev]
+                    const idx = updated.findIndex((m) => m.id === npcMsgId)
+                    if (idx >= 0) {
+                        updated[idx] = {
+                            ...updated[idx],
+                            content: `抱歉，我遇到了一些问题：${err.message}。请稍后再试。`,
+                            isStreaming: false,
+                        }
+                    }
+                    return updated
+                })
+                showToast(`对话失败: ${err.message}`, 'error')
+                setIsLoading(false)
+            },
+        })
 
-            const replyContent = response?.npc_response || '让我想想...'
-            const suggestions = response?.suggestions || []
-
-            const npcMsg = {
-                id: `npc_${Date.now()}`,
-                role: 'npc',
-                content: typeof replyContent === 'string' ? replyContent : JSON.stringify(replyContent),
-                timestamp: new Date().toISOString(),
-                displayed: false,
-                suggestions: suggestions,
-            }
-
-            setMessages((prev) => [...prev, npcMsg])
-            setActiveSuggestions(suggestions)
-        } catch (err) {
-            console.error('NPC Chat Error:', err)
-
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: `npc_err_${Date.now()}`,
-                    role: 'npc',
-                    content: `抱歉，我遇到了一些问题：${err.message}。请稍后再试或刷新页面。`,
-                    timestamp: new Date().toISOString(),
-                    displayed: true,
-                },
-            ])
-
-            showToast(`对话失败: ${err.message}`, 'error')
-        } finally {
-            setIsLoading(false)
-        }
+        abortControllerRef.current = controller
     }, [inputValue, isLoading, npc.id, sessionId])
 
     const handleQuickQuestion = useCallback(
         (question) => {
-            const prereqs = getTopicPrerequisites(question.text)
+            const prereqs = getTopicPrerequisitesDynamic(question.text)
             if (prereqs) {
                 setMessages((prev) => [...prev, {
                     id: `hint_${Date.now()}`,
@@ -216,7 +235,7 @@ export default function NpcDialogue() {
     const handleSuggestionClick = useCallback(
         (suggestion) => {
             setActiveSuggestions([])
-            const prereqs = getTopicPrerequisites(suggestion)
+            const prereqs = getTopicPrerequisitesDynamic(suggestion)
             if (prereqs) {
                 setMessages((prev) => [...prev, {
                     id: `hint_${Date.now()}`,
@@ -235,26 +254,69 @@ export default function NpcDialogue() {
 
     const handleSaveNote = useCallback(async () => {
         if (!noteContent.trim()) {
-            showToast('请输入心得内容', 'warning')
-            return
+            showToast('请先输入修炼心得', 'warning')
+            return false
         }
         try {
             const domainName = npc.location || REALM_ID_TO_NAME[realmId] || realmId
-            console.log('Creating card with domain:', domainName, 'npc.location:', npc.location, 'realmId:', realmId)
+            const algorithmCategory = npc.expertise?.[0] || null
+
+            if (algorithmCategory) {
+                const existingCards = await cardService.getByAlgorithmType(algorithmCategory)
+                if (existingCards && existingCards.length > 0) {
+                    setExistingCard(existingCards[0])
+                    setPendingCardData({
+                        name: `${algorithmCategory}修习记录`,
+                        domain: domainName,
+                        knowledge_content: noteContent,
+                        algorithm_category: algorithmCategory,
+                    })
+                    setShowOverwriteDialog(true)
+                    return false
+                }
+            }
+
             const result = await cardService.createCard({
-                name: `${npc.expertise?.[0] || '算法'}修习记录`,
+                name: `${algorithmCategory || '算法'}修习记录`,
                 domain: domainName,
                 knowledge_content: noteContent,
-                algorithm_category: npc.expertise?.[0] || null,
+                algorithm_category: algorithmCategory,
             })
             setEarnedCard(result)
             showToast('知识已转化为卡牌 🎴', 'success')
             setNoteContent('')
+            return true
         } catch (err) {
             console.error('Create card error:', err)
             showToast(`保存失败: ${err.message}`, 'error')
+            return false
         }
     }, [noteContent, npc, realmId])
+
+    const handleOverwriteCard = useCallback(async () => {
+        if (!existingCard || !pendingCardData) return
+        try {
+            const result = await cardService.updateCard(existingCard.id, {
+                knowledge_content: pendingCardData.knowledge_content,
+                algorithm_category: pendingCardData.algorithm_category,
+            })
+            setEarnedCard(result)
+            showToast('卡牌已覆盖更新 🎴', 'success')
+            setNoteContent('')
+            setShowOverwriteDialog(false)
+            setExistingCard(null)
+            setPendingCardData(null)
+        } catch (err) {
+            console.error('Overwrite card error:', err)
+            showToast(`覆盖更新失败: ${err.message}`, 'error')
+        }
+    }, [existingCard, pendingCardData])
+
+    const handleKeepOriginal = useCallback(() => {
+        setShowOverwriteDialog(false)
+        setExistingCard(null)
+        setPendingCardData(null)
+    }, [])
 
     const handleEndSession = useCallback(() => {
         if (noteContent.trim()) {
@@ -266,11 +328,19 @@ export default function NpcDialogue() {
 
     const handleConfirmEnd = useCallback(async () => {
         if (noteContent.trim()) {
-            await handleSaveNote()
+            const saved = await handleSaveNote()
+            if (!saved) {
+                return
+            }
         }
         setShowEndDialog(false)
         setTimeout(() => navigate('/'), 500)
     }, [handleSaveNote, navigate])
+
+    const handleEndWithoutSave = useCallback(() => {
+        setShowEndDialog(false)
+        navigate('/')
+    }, [navigate])
 
     const handleKeyDown = useCallback(
         (e) => {
@@ -302,6 +372,14 @@ export default function NpcDialogue() {
                 </Button>
             </div>
 
+            {npcError && !npc && (
+                <div className={styles.errorContainer}>
+                    <p className={styles.errorText}>⚠️ 加载NPC失败：{npcError}</p>
+                    <Button variant="primary" size="sm" onClick={handleRetryNpc}>重新加载</Button>
+                </div>
+            )}
+
+            {npc && (
             <div className={styles.layout}>
                 <section className={styles.chatSection} aria-label="对话区域">
                     <div className={styles.messagesList} role="log" aria-live="polite">
@@ -312,13 +390,12 @@ export default function NpcDialogue() {
                                 <UserMessage key={msg.id} message={msg} />
                             )
                         )}
-                        {isLoading && <TypingIndicator />}
                         <div ref={messagesEndRef} />
                     </div>
 
                     <div className={styles.quickQuestions}>
                         {npc.quickQuestions?.map((q) => {
-                            const importance = getTopicImportance(q.text)
+                            const importance = getTopicImportanceDynamic(q.text)
                             const badge = getImportanceBadge(importance)
                             return (
                                 <button
@@ -401,15 +478,27 @@ export default function NpcDialogue() {
                     )}
                 </aside>
             </div>
+            )}
 
             <ConfirmDialog
                 open={showEndDialog}
                 onClose={() => setShowEndDialog(false)}
                 onConfirm={handleConfirmEnd}
+                onCancel={handleEndWithoutSave}
                 title="结束修习"
                 message="你有未保存的修习内容，是否在离开前转化为卡牌？"
                 confirmText="保存并结束"
                 cancelText="不保存直接结束"
+            />
+
+            <ConfirmDialog
+                open={showOverwriteDialog}
+                onClose={handleKeepOriginal}
+                onConfirm={handleOverwriteCard}
+                title="卡牌覆盖确认"
+                message={`已存在同类型卡牌「${existingCard?.name || ''}」，是否覆盖更新？`}
+                confirmText="覆盖更新"
+                cancelText="保留原有"
             />
         </div>
     )
@@ -493,30 +582,9 @@ function NpcGreetingMessage({ text }) {
 }
 
 function NpcMessage({ message, onSuggestionClick }) {
-    const [displayedText, setDisplayedText] = useState('')
-    const [isTyping, setIsTyping] = useState(false)
-    const [started, setStarted] = useState(false)
-
-    useEffect(() => {
-        if (message.displayed || started) return
-        setStarted(true)
-        setIsTyping(true)
-        setDisplayedText('')
-        let index = 0
-        const timer = setInterval(() => {
-            setDisplayedText(message.content.slice(0, index + 1))
-            index++
-            if (index >= message.content.length) {
-                clearInterval(timer)
-                setIsTyping(false)
-            }
-        }, 50)
-        return () => clearInterval(timer)
-    }, [message])
-
-    const textToShow = message.displayed ? message.content : displayedText
+    const isStreaming = message.isStreaming
     const suggestions = message.suggestions || []
-    const showSuggestions = suggestions.length > 0 && !isTyping
+    const showSuggestions = suggestions.length > 0 && !isStreaming
 
     return (
         <div className={styles.npcMsg}>
@@ -524,11 +592,11 @@ function NpcMessage({ message, onSuggestionClick }) {
             <div className={styles.npcMsgContent}>
                 <GameCard className={styles.msgBubble}>
                     {message.id === 'greeting' ? (
-                        <NpcGreetingMessage text={textToShow} />
+                        <NpcGreetingMessage text={message.content} />
                     ) : (
-                        <p className={styles.msgText}>{textToShow}</p>
+                        <p className={styles.msgText}>{message.content}</p>
                     )}
-                    {isTyping && <span className={styles.cursor}>|</span>}
+                    {isStreaming && <span className={styles.cursor}>|</span>}
                 </GameCard>
                 {showSuggestions && (
                     <div className={styles.suggestionsList}>
@@ -559,16 +627,4 @@ function UserMessage({ message }) {
     )
 }
 
-function TypingIndicator() {
-    return (
-        <div className={styles.npcMsg}>
-            <span className={styles.msgAvatar}>🧙</span>
-            <GameCard className={styles.typingBubble}>
-                <span className={styles.typingDot} style={{ animationDelay: '0ms' }} />
-                <span className={styles.typingDot} style={{ animationDelay: '200ms' }} />
-                <span className={styles.typingDot} style={{ animationDelay: '400ms' }} />
-                <span className={styles.typingText}>AI正在思考中...</span>
-            </GameCard>
-        </div>
-    )
-}
+
