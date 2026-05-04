@@ -301,15 +301,9 @@ export default function NpcDialogue() {
             const updatePayload = {
                 knowledge_content: pendingCardData.knowledge_content,
                 algorithm_category: pendingCardData.algorithm_category,
-            }
-            if (pendingCardData.algorithm_type) {
-                updatePayload.algorithm_type = pendingCardData.algorithm_type
-            }
-            if (pendingCardData.key_points) {
-                updatePayload.key_points = pendingCardData.key_points
-            }
-            if (pendingCardData.summary) {
-                updatePayload.summary = pendingCardData.summary
+                algorithm_type: pendingCardData.algorithm_type || null,
+                key_points: pendingCardData.key_points || null,
+                summary: pendingCardData.summary || null,
             }
             const result = await cardService.updateCard(existingCard.id, updatePayload)
             setEarnedCard(result)
