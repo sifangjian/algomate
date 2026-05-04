@@ -319,10 +319,12 @@ export default function CardWorkshop() {
         return result
     }, [cards, searchKeyword, sortBy, selectedRealm])
 
-    const dangerCount = useMemo(
-        () => cards.filter((c) => c.durability < 30).length,
+    const dangerCards = useMemo(
+        () => cards.filter((c) => c.durability < 30 && !c.is_sealed),
         [cards]
     )
+
+    const dangerCount = dangerCards.length
 
     const sealedCards = useMemo(
         () => cards.filter((c) => c.is_sealed),
@@ -491,10 +493,27 @@ export default function CardWorkshop() {
 
             {dangerCount > 0 && (
                 <div className={styles.warningBanner} role="alert">
-                    <span>⚠️</span>
-                    <span>
-                        有 <strong>{dangerCount}</strong> 张卡牌濒危（耐久度 &lt; 30%），请及时修炼！
-                    </span>
+                    <div className={styles.warningBannerHeader}>
+                        <span>⚠️</span>
+                        <span>
+                            有 <strong>{dangerCount}</strong> 张卡牌濒危（耐久度 &lt; 30%），请及时修炼！
+                        </span>
+                    </div>
+                    <div className={styles.dangerCardList}>
+                        {dangerCards.map((card) => (
+                            <button
+                                key={card.id}
+                                className={styles.dangerCardItem}
+                                onClick={() => handleReview(card)}
+                                title={`点击修炼「${card.name}」`}
+                            >
+                                <span className={styles.dangerCardIcon}>{getAlgorithmIcon(card.algorithmCategory)}</span>
+                                <span className={styles.dangerCardName}>{card.name}</span>
+                                <span className={styles.dangerCardDur}>🛡️{card.durability}</span>
+                                <span className={styles.dangerCardAction}>去修炼 →</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
 
