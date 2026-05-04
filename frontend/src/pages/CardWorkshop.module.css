@@ -835,3 +835,184 @@
     padding-top: 14px;
     border-top: 1px solid var(--border-color);
 }
+
+.sealedSection {
+    margin-top: 20px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: rgba(139, 92, 246, 0.03);
+}
+
+.sealedHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(139, 92, 246, 0.06);
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    transition: background var(--transition-fast);
+}
+
+.sealedHeader:hover {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.sealedTitle {
+    font-weight: 600;
+    color: #a78bfa;
+}
+
+.sealedToggle {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    transition: transform var(--transition-fast);
+}
+
+.sealedToggleOpen {
+    transform: rotate(180deg);
+}
+
+.sealedGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.sealedCard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    background: rgba(15, 15, 26, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-md);
+    opacity: 0.75;
+    transition: opacity var(--transition-fast);
+}
+
+.sealedCard:hover {
+    opacity: 1;
+}
+
+.sealedCardHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sealedCardIcon {
+    font-size: 1.4rem;
+}
+
+.sealedCardInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.sealedCardName {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sealedCardCategory {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+}
+
+.sealedCardMeta {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
+.unsealBtn {
+    align-self: flex-start;
+    color: #a78bfa !important;
+    border-color: rgba(139, 92, 246, 0.3) !important;
+    font-size: 0.78rem;
+}
+
+.unsealBtn:hover {
+    color: #c4b5fd !important;
+    border-color: rgba(139, 92, 246, 0.5) !important;
+    background: rgba(139, 92, 246, 0.08) !important;
+}
+
+.editNameInput {
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+}
+
+.editBtn {
+    transition: all var(--transition-fast);
+}
+
+.editBtn:hover {
+    color: var(--color-primary-light) !important;
+    border-color: var(--color-primary) !important;
+}
+
+.addKeyPointBtn {
+    padding: 3px 10px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    color: var(--color-primary-light);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.addKeyPointBtn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.keyPointsEditList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.keyPointEditItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.keyPointEditItem .fieldInput {
+    flex: 1;
+}
+
+.removeKeyPointBtn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-sm);
+    color: var(--color-danger);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.removeKeyPointBtn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+}

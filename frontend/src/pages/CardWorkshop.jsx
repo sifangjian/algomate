@@ -252,7 +252,7 @@ function CreateCardModal({ open, onClose, onCreated }) {
 
 export default function CardWorkshop() {
     const navigate = useNavigate()
-    const { cards, setCards, selectedCard, setSelectedCard, removeCard, addCard } = useCardStore()
+    const { cards, setCards, selectedCard, setSelectedCard, removeCard, addCard, updateCard } = useCardStore()
 
     const [searchKeyword, setSearchKeyword] = useState('')
     const [sortBy, setSortBy] = useState('name')
@@ -261,6 +261,13 @@ export default function CardWorkshop() {
     const [cardToDelete, setCardToDelete] = useState(null)
     const [isDeleting, setIsDeleting] = useState(false)
     const [createModalOpen, setCreateModalOpen] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editForm, setEditForm] = useState({})
+    const [isSaving, setIsSaving] = useState(false)
+    const [sealedSectionOpen, setSealedSectionOpen] = useState(true)
+    const [unsealConfirmOpen, setUnsealConfirmOpen] = useState(false)
+    const [cardToUnseal, setCardToUnseal] = useState(null)
+    const [isUnsealing, setIsUnsealing] = useState(false)
 
     const lastClickTimeRef = useRef(0)
     const DEBOUNCE_DELAY = 300
@@ -270,6 +277,13 @@ export default function CardWorkshop() {
             if (Array.isArray(data) && data.length > 0) setCards(data)
         }).catch(() => { })
     }, [setCards])
+
+    useEffect(() => {
+        if (!selectedCard) {
+            setIsEditing(false)
+            setEditForm({})
+        }
+    }, [selectedCard])
 
     const filteredCards = useMemo(() => {
         let result = cards
@@ -308,6 +322,16 @@ export default function CardWorkshop() {
     const dangerCount = useMemo(
         () => cards.filter((c) => c.durability < 30).length,
         [cards]
+    )
+
+    const sealedCards = useMemo(
+        () => cards.filter((c) => c.is_sealed),
+        [cards]
+    )
+
+    const normalCards = useMemo(
+        () => filteredCards.filter((c) => !c.is_sealed),
+        [filteredCards]
     )
 
     const handleSortChange = useCallback((e) => {
@@ -360,6 +384,93 @@ export default function CardWorkshop() {
         },
         [navigate]
     )
+
+    const handleEdit = useCallback(() => {
+        if (!selectedCard) return
+        setEditForm({
+            name: selectedCard.name || '',
+            algorithm_type: selectedCard.algorithmType || selectedCard.algorithm_type || '',
+            knowledge_content: selectedCard.knowledgeContent || selectedCard.knowledge_content || '',
+            summary: selectedCard.summary || '',
+            key_points: Array.isArray(selectedCard.keyPoints || selectedCard.key_points) ? [...(selectedCard.keyPoints || selectedCard.key_points)] : [],
+        })
+        setIsEditing(true)
+    }, [selectedCard])
+
+    const handleCancelEdit = useCallback(() => {
+        setIsEditing(false)
+        setEditForm({})
+    }, [])
+
+    const handleSaveEdit = useCallback(async () => {
+        if (!selectedCard) return
+        setIsSaving(true)
+        try {
+            const payload = {
+                name: editForm.name.trim(),
+                algorithm_type: editForm.algorithm_type.trim() || null,
+                knowledge_content: editForm.knowledge_content.trim() || null,
+                summary: editForm.summary.trim() || null,
+                key_points: JSON.stringify(editForm.key_points.filter(kp => kp.trim())),
+            }
+            const updated = await cardService.updateCard(selectedCard.id, payload)
+            updateCard(selectedCard.id, updated)
+            setSelectedCard(updated)
+            setIsEditing(false)
+            setEditForm({})
+            showToast(`卡牌「${updated.name}」已更新`, 'success')
+        } catch (err) {
+            showToast(`保存失败: ${err.message}`, 'error')
+        } finally {
+            setIsSaving(false)
+        }
+    }, [selectedCard, editForm, updateCard, setSelectedCard])
+
+    const handleEditFieldChange = useCallback((field, value) => {
+        setEditForm(prev => ({ ...prev, [field]: value }))
+    }, [])
+
+    const handleAddKeyPoint = useCallback(() => {
+        setEditForm(prev => ({
+            ...prev,
+            key_points: [...prev.key_points, ''],
+        }))
+    }, [])
+
+    const handleRemoveKeyPoint = useCallback((index) => {
+        setEditForm(prev => ({
+            ...prev,
+            key_points: prev.key_points.filter((_, i) => i !== index),
+        }))
+    }, [])
+
+    const handleKeyPointChange = useCallback((index, value) => {
+        setEditForm(prev => ({
+            ...prev,
+            key_points: prev.key_points.map((kp, i) => i === index ? value : kp),
+        }))
+    }, [])
+
+    const handleUnsealRequest = useCallback((card) => {
+        setCardToUnseal(card)
+        setUnsealConfirmOpen(true)
+    }, [])
+
+    const handleUnsealConfirm = useCallback(async () => {
+        if (!cardToUnseal) return
+        setIsUnsealing(true)
+        try {
+            const updated = await cardService.unsealCard(cardToUnseal.id)
+            updateCard(cardToUnseal.id, updated)
+            showToast(`卡牌「${updated.name}」已解封，耐久度恢复至30`, 'success')
+        } catch (err) {
+            showToast(`解封失败: ${err.message}`, 'error')
+        } finally {
+            setIsUnsealing(false)
+            setUnsealConfirmOpen(false)
+            setCardToUnseal(null)
+        }
+    }, [cardToUnseal, updateCard])
 
     return (
         <div className={`${styles.container} page-container`}>
@@ -425,13 +536,13 @@ export default function CardWorkshop() {
             </div>
 
             <div className={styles.cardGrid}>
-                {filteredCards.length === 0 ? (
+                {normalCards.length === 0 && sealedCards.length === 0 ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyIcon}>🎴</span>
                         <p>没有找到匹配的卡牌</p>
                     </div>
                 ) : (
-                    filteredCards.map((card) => (
+                    normalCards.map((card) => (
                         <GameCard
                             key={card.id}
                             className={styles.cardItem}
@@ -481,6 +592,48 @@ export default function CardWorkshop() {
                 )}
             </div>
 
+            {sealedCards.length > 0 && (
+                <div className={styles.sealedSection}>
+                    <button
+                        className={styles.sealedHeader}
+                        onClick={() => setSealedSectionOpen(!sealedSectionOpen)}
+                    >
+                        <span className={styles.sealedTitle}>🔒 封印卡牌 ({sealedCards.length})</span>
+                        <span className={`${styles.sealedToggle} ${sealedSectionOpen ? styles.sealedToggleOpen : ''}`}>
+                            ▼
+                        </span>
+                    </button>
+                    {sealedSectionOpen && (
+                        <div className={styles.sealedGrid}>
+                            {sealedCards.map((card) => (
+                                <div key={card.id} className={styles.sealedCard}>
+                                    <div className={styles.sealedCardHeader}>
+                                        <span className={styles.sealedCardIcon}>🔒</span>
+                                        <div className={styles.sealedCardInfo}>
+                                            <h4 className={styles.sealedCardName}>{card.name}</h4>
+                                            {card.algorithmCategory && (
+                                                <span className={styles.sealedCardCategory}>{card.algorithmCategory}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className={styles.sealedCardMeta}>
+                                        <span>耐久 {card.durability}/{card.maxDurability}</span>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleUnsealRequest(card)}
+                                        className={styles.unsealBtn}
+                                    >
+                                        🔓 解封
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             <Modal
                 open={!!selectedCard}
                 onClose={() => setSelectedCard(null)}
@@ -493,14 +646,42 @@ export default function CardWorkshop() {
                             <span className={`${styles.heroIcon} ${styles[selectedCard.status]}`}>
                                 {getAlgorithmIcon(selectedCard.algorithmCategory)}
                             </span>
-                            <h2 className={styles.heroName}>{selectedCard.name}</h2>
+                            {isEditing ? (
+                                <Input
+                                    value={editForm.name}
+                                    onChange={(e) => handleEditFieldChange('name', e.target.value)}
+                                    placeholder="卡牌名称"
+                                    className={styles.editNameInput}
+                                />
+                            ) : (
+                                <h2 className={styles.heroName}>{selectedCard.name}</h2>
+                            )}
                             <div className={styles.heroBadges}>
-                                {selectedCard.algorithmCategory && (
-                                    <span className={styles.heroCategoryBadge}>{selectedCard.algorithmCategory}</span>
+                                {isEditing ? (
+                                    <div className={styles.formField}>
+                                        <input
+                                            className={styles.fieldInput}
+                                            placeholder="算法类型，如：二分查找"
+                                            value={editForm.algorithm_type}
+                                            onChange={(e) => handleEditFieldChange('algorithm_type', e.target.value)}
+                                            list="edit-algorithm-type-list"
+                                        />
+                                        <datalist id="edit-algorithm-type-list">
+                                            {ALGORITHM_CATEGORIES.map((c) => (
+                                                <option key={c} value={c} />
+                                            ))}
+                                        </datalist>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {selectedCard.algorithmCategory && (
+                                            <span className={styles.heroCategoryBadge}>{selectedCard.algorithmCategory}</span>
+                                        )}
+                                        <span className={`${styles.heroStatus} ${styles[selectedCard.status]}`}>
+                                            {selectedCard.status === 'normal' ? '正常' : selectedCard.status === 'warning' ? '注意' : '濒危'}
+                                        </span>
+                                    </>
                                 )}
-                                <span className={`${styles.heroStatus} ${styles[selectedCard.status]}`}>
-                                    {selectedCard.status === 'normal' ? '正常' : selectedCard.status === 'warning' ? '注意' : '濒危'}
-                                </span>
                             </div>
                             <div className={styles.heroDivider} />
                         </div>
@@ -558,67 +739,153 @@ export default function CardWorkshop() {
                             </div>
                         </div>
 
-                        <div className={styles.infoRow}>
-                            <span className={styles.infoItem}>📅 {new Date(selectedCard.createdAt).toLocaleDateString()}</span>
-                            <span className={styles.infoDot}>·</span>
-                            <span className={styles.infoItem}>
-                                🕐 {selectedCard.lastReviewed ? new Date(selectedCard.lastReviewed).toLocaleDateString() : '从未修炼'}
-                            </span>
-                            {selectedCard.nextReviewDate && (
-                                <>
-                                    <span className={styles.infoDot}>·</span>
-                                    <span className={styles.infoItem}>⏳ {new Date(selectedCard.nextReviewDate).toLocaleDateString()}</span>
-                                </>
-                            )}
-                            {selectedCard.algorithmType && (
-                                <>
-                                    <span className={styles.infoDot}>·</span>
-                                    <span className={styles.infoItem}>
-                                        <span className={styles.runeTagInline}>{selectedCard.algorithmType}</span>
-                                    </span>
-                                </>
-                            )}
-                        </div>
-
-                        {selectedCard.keyPoints?.length > 0 && (
-                            <div className={styles.runeTagSection}>
-                                <span className={styles.runeTagTitle}>🔑 关键要点</span>
-                                <div className={styles.runeTagList}>
-                                    {selectedCard.keyPoints.map((kp, i) => (
-                                        <span key={i} className={styles.runeTagItem}>{kp}</span>
-                                    ))}
-                                </div>
+                        {!isEditing && (
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoItem}>📅 {new Date(selectedCard.createdAt).toLocaleDateString()}</span>
+                                <span className={styles.infoDot}>·</span>
+                                <span className={styles.infoItem}>
+                                    🕐 {selectedCard.lastReviewed ? new Date(selectedCard.lastReviewed).toLocaleDateString() : '从未修炼'}
+                                </span>
+                                {selectedCard.nextReviewDate && (
+                                    <>
+                                        <span className={styles.infoDot}>·</span>
+                                        <span className={styles.infoItem}>⏳ {new Date(selectedCard.nextReviewDate).toLocaleDateString()}</span>
+                                    </>
+                                )}
+                                {selectedCard.algorithmType && (
+                                    <>
+                                        <span className={styles.infoDot}>·</span>
+                                        <span className={styles.infoItem}>
+                                            <span className={styles.runeTagInline}>{selectedCard.algorithmType}</span>
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         )}
 
-                        {selectedCard.knowledgeContent && (
-                            <div className={styles.scrollSection}>
-                                <div className={styles.scrollTitle}>📖 知识内容</div>
-                                <div className={styles.scrollContent}>
-                                    {selectedCard.knowledgeContent}
+                        {isEditing ? (
+                            <>
+                                <div className={styles.runeTagSection}>
+                                    <div className={styles.fieldHeader}>
+                                        <span className={styles.runeTagTitle}>🔑 关键要点</span>
+                                        <button
+                                            type="button"
+                                            className={styles.addKeyPointBtn}
+                                            onClick={handleAddKeyPoint}
+                                        >
+                                            + 添加
+                                        </button>
+                                    </div>
+                                    <div className={styles.keyPointsEditList}>
+                                        {editForm.key_points.map((kp, i) => (
+                                            <div key={i} className={styles.keyPointEditItem}>
+                                                <input
+                                                    className={styles.fieldInput}
+                                                    value={kp}
+                                                    onChange={(e) => handleKeyPointChange(i, e.target.value)}
+                                                    placeholder="输入关键要点..."
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className={styles.removeKeyPointBtn}
+                                                    onClick={() => handleRemoveKeyPoint(i)}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
 
-                        {selectedCard.summary && (
-                            <div className={styles.quoteCard}>
-                                <span className={styles.quoteMark}>"</span>
-                                <p className={styles.quoteText}>{selectedCard.summary}</p>
-                                <span className={styles.quoteAttribution}>—— 算法心得</span>
-                            </div>
+                                <div className={styles.formField}>
+                                    <label className={styles.fieldLabel}>📖 知识内容</label>
+                                    <textarea
+                                        className={styles.fieldTextarea}
+                                        value={editForm.knowledge_content}
+                                        onChange={(e) => handleEditFieldChange('knowledge_content', e.target.value)}
+                                        placeholder="输入知识内容..."
+                                        rows={6}
+                                    />
+                                </div>
+
+                                <div className={styles.formField}>
+                                    <label className={styles.fieldLabel}>📝 心得总结</label>
+                                    <textarea
+                                        className={styles.fieldTextarea}
+                                        value={editForm.summary}
+                                        onChange={(e) => handleEditFieldChange('summary', e.target.value)}
+                                        placeholder="输入心得总结..."
+                                        rows={3}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                {selectedCard.keyPoints?.length > 0 && (
+                                    <div className={styles.runeTagSection}>
+                                        <span className={styles.runeTagTitle}>🔑 关键要点</span>
+                                        <div className={styles.runeTagList}>
+                                            {selectedCard.keyPoints.map((kp, i) => (
+                                                <span key={i} className={styles.runeTagItem}>{kp}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedCard.knowledgeContent && (
+                                    <div className={styles.scrollSection}>
+                                        <div className={styles.scrollTitle}>📖 知识内容</div>
+                                        <div className={styles.scrollContent}>
+                                            {selectedCard.knowledgeContent}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedCard.summary && (
+                                    <div className={styles.quoteCard}>
+                                        <span className={styles.quoteMark}>"</span>
+                                        <p className={styles.quoteText}>{selectedCard.summary}</p>
+                                        <span className={styles.quoteAttribution}>—— 算法心得</span>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                         <div className={styles.modalActions}>
-                            <Button variant="primary" onClick={() => handleReview(selectedCard)} className={styles.reviewBtn}>
-                                📖 修炼此卡牌
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => handleDeleteRequest(selectedCard)}
-                                className={styles.deleteBtn}
-                            >
-                                🗑️ 删除卡牌
-                            </Button>
+                            {isEditing ? (
+                                <>
+                                    <Button
+                                        variant="accent"
+                                        onClick={handleSaveEdit}
+                                        loading={isSaving}
+                                    >
+                                        💾 保存
+                                    </Button>
+                                    <Button variant="ghost" onClick={handleCancelEdit} disabled={isSaving}>
+                                        取消
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button variant="primary" onClick={() => handleReview(selectedCard)} className={styles.reviewBtn}>
+                                        📖 修炼此卡牌
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handleEdit}
+                                        className={styles.editBtn}
+                                    >
+                                        ✏️ 编辑
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => handleDeleteRequest(selectedCard)}
+                                        className={styles.deleteBtn}
+                                    >
+                                        🗑️ 删除卡牌
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}
@@ -634,6 +901,17 @@ export default function CardWorkshop() {
                 cancelText="取消"
                 variant="danger"
                 loading={isDeleting}
+            />
+
+            <ConfirmDialog
+                open={unsealConfirmOpen}
+                onClose={() => setUnsealConfirmOpen(false)}
+                onConfirm={handleUnsealConfirm}
+                title="确认解封"
+                message={`确定要解封「${cardToUnseal?.name}」吗？\n解封后耐久度将恢复至30，卡牌重新参与遗忘曲线计算。`}
+                confirmText="确认解封"
+                cancelText="取消"
+                loading={isUnsealing}
             />
 
             <CreateCardModal
