@@ -23,6 +23,13 @@ export const useCardStore = create((set) => ({
         state.selectedCard?.id === cardId ? null : state.selectedCard,
     })),
 
+  updateCard: (cardId, updatedCard) =>
+    set((state) => ({
+      cards: state.cards.map((c) => (c.id === cardId ? updatedCard : c)),
+      selectedCard:
+        state.selectedCard?.id === cardId ? updatedCard : state.selectedCard,
+    })),
+
   resetCards: () =>
     set({
       cards: [],

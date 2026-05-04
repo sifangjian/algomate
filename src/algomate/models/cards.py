@@ -459,6 +459,45 @@ async def delete_card(card_id: int):
         session.close()
 
 
+@router.post("/{card_id}/unseal", response_model=CardResponse)
+async def unseal_card(card_id: int):
+    from algomate.data.database import Database
+    from algomate.models.answer_records import AnswerRecord
+    from datetime import timedelta
+    
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        card = session.query(Card).filter(Card.id == card_id).first()
+        if not card:
+            raise HTTPException(status_code=404, detail=f"卡牌 {card_id} 不存在")
+        
+        if not card.is_sealed:
+            raise HTTPException(status_code=400, detail="该卡牌未封印，无需解封")
+        
+        card.is_sealed = False
+        card.durability = 30
+        
+        review_intervals = [1, 3, 7, 14, 30, 60, 90]
+        interval_days = review_intervals[min(card.review_level or 0, len(review_intervals) - 1)]
+        card.next_review_date = datetime.now() + timedelta(days=interval_days)
+        
+        session.commit()
+        session.refresh(card)
+        
+        review_count = session.query(AnswerRecord).filter(AnswerRecord.card_id == card.id).count()
+        note_count = 1 if card.note_id else 0
+        
+        return _card_to_response(card, review_count, note_count)
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"解封卡牌失败: {str(e)}")
+    finally:
+        session.close()
+
+
 @router.post("/polish", response_model=CardPolishResponse)
 async def polish_card_content(request: CardPolishRequest):
     """AI润色卡牌内容"""
