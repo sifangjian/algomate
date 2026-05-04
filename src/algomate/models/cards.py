@@ -7,6 +7,7 @@
 from datetime import datetime
 from typing import Optional, List
 from enum import Enum
+import json
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field
@@ -160,6 +161,7 @@ class CardResponse(BaseModel):
     note_id: Optional[int] = None
     note: Optional[dict] = None
     is_sealed: bool = False
+    keyPoints: Optional[list] = None
     knowledgeContent: Optional[str] = None
     summary: Optional[str] = None
     algorithmType: Optional[str] = None
@@ -203,6 +205,7 @@ def _card_to_response(card: Card, review_count: int = 0, note_count: int = 0,
         note_id=card.note_id,
         note=note,
         is_sealed=card.is_sealed,
+        keyPoints=json.loads(card.key_points) if card.key_points else [],
         knowledgeContent=card.knowledge_content,
         summary=card.summary,
         algorithmType=card.algorithm_type,
