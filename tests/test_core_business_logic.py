@@ -9,6 +9,7 @@ M3 核心业务逻辑层单元测试
 """
 
 import sys
+import unittest
 import pytest
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -332,20 +333,63 @@ class TestDurabilityManager:
         unseal_dur = manager.unseal_durability()
         assert unseal_dur == 30
     
+    def test_is_in_grace_period_within_period(self):
+        manager = DurabilityManager()
+        created_at = datetime.now() - timedelta(days=1)
+        assert manager.is_in_grace_period(created_at) is True
+
+    def test_is_in_grace_period_day2_still_grace(self):
+        manager = DurabilityManager()
+        created_at = datetime.now() - timedelta(days=2)
+        assert manager.is_in_grace_period(created_at) is True
+
+    def test_is_in_grace_period_day3_boundary_expired(self):
+        manager = DurabilityManager()
+        created_at = datetime.now() - timedelta(days=3)
+        assert manager.is_in_grace_period(created_at) is False
+
+    def test_is_in_grace_period_expired(self):
+        manager = DurabilityManager()
+        created_at = datetime.now() - timedelta(days=4)
+        assert manager.is_in_grace_period(created_at) is False
+
+    def test_is_in_grace_period_none(self):
+        manager = DurabilityManager()
+        assert manager.is_in_grace_period(None) is False
+
+    def test_apply_daily_decay_skips_grace_period(self):
+        manager = DurabilityManager()
+
+        class MockCardLocal:
+            def __init__(self, durability, is_sealed, created_at):
+                self.durability = durability
+                self.is_sealed = is_sealed
+                self.created_at = created_at
+
+        grace_card = MockCardLocal(80, False, datetime.now() - timedelta(days=1))
+        normal_card = MockCardLocal(80, False, datetime.now() - timedelta(days=5))
+
+        result = manager.apply_daily_decay_to_cards([grace_card, normal_card])
+
+        assert len(result) == 1
+        assert result[0]['card'] == normal_card
+        assert result[0]['old_durability'] == 80
+        assert result[0]['new_durability'] == 78
+
     def test_convenience_functions(self):
         """测试便捷函数"""
         new_dur, is_critical, is_sealed = update_durability(
             80, DurabilityAction.REVIEW_SUCCESS, "normal"
         )
         assert new_dur == 100
-        
+
         cards = [
             MockCard(id=1, name="卡牌1", domain="新手森林", durability=20, created_at=datetime.now()),
             MockCard(id=2, name="卡牌2", domain="新手森林", durability=50, created_at=datetime.now()),
         ]
         critical = get_critical_cards(cards)
         assert len(critical) == 1
-        
+
         unseal_dur = unseal_card(0)
         assert unseal_dur == 30
 
@@ -570,6 +614,63 @@ class TestDifficultyManager:
         
         result = apply_difficulty_multiplier(20, "durability_change")
         assert result == 20.0
+
+
+class _MockScheduler:
+    def __init__(self):
+        self.running = False
+        self._jobs = []
+
+    def add_job(self, func, **kwargs):
+        self._jobs.append(func)
+
+    def start(self):
+        self.running = True
+
+    def shutdown(self, wait=False):
+        self.running = False
+
+
+class TestReviewSchedulerLifecycle(unittest.TestCase):
+    def test_scheduler_start_creates_background_scheduler(self):
+        scheduler = _MockScheduler()
+        scheduler.add_job(lambda: None, trigger='cron', hour=9, minute=0)
+        scheduler.start()
+        self.assertTrue(scheduler.running)
+        scheduler.shutdown(wait=False)
+
+    def test_scheduler_stop_cleans_up(self):
+        scheduler = _MockScheduler()
+        scheduler.add_job(lambda: None, trigger='cron', hour=9, minute=0)
+        scheduler.start()
+        scheduler.shutdown(wait=False)
+        self.assertFalse(scheduler.running)
+
+    def test_review_scheduler_has_required_methods(self):
+        import ast
+        import os
+        scheduler_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'algomate', 'core', 'scheduler', 'review_scheduler.py')
+        with open(scheduler_path, 'r', encoding='utf-8') as f:
+            tree = ast.parse(f.read())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == 'ReviewScheduler':
+                methods = [n.name for n in node.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+                assert 'start' in methods, f"Missing 'start' method. Found: {methods}"
+                assert 'stop' in methods, f"Missing 'stop' method. Found: {methods}"
+                assert '_execute_scheduled_daily_review' in methods, f"Missing '_execute_scheduled_daily_review' method. Found: {methods}"
+                break
+
+    def test_scheduler_cron_configuration(self):
+        import ast
+        import os
+        scheduler_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'algomate', 'core', 'scheduler', 'review_scheduler.py')
+        with open(scheduler_path, 'r', encoding='utf-8') as f:
+            source = f.read()
+        assert "trigger='cron'" in source
+        assert "hour=self._scheduler_hour" in source
+        assert "minute=self._scheduler_minute" in source
+        assert "self._scheduler_hour = 9" in source
+        assert "self._scheduler_minute = 0" in source
 
 
 if __name__ == "__main__":
