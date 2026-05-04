@@ -109,6 +109,7 @@ class CardUpdate(BaseModel):
     note_id: Optional[int] = Field(None, description="关联心得ID")
     last_reviewed: Optional[datetime] = Field(None, description="最近修炼时间")
     is_sealed: Optional[bool] = Field(None, description="是否封印")
+    key_points: Optional[str] = Field(None, description="关键要点列表（JSON字符串）")
     knowledge_content: Optional[str] = Field(None, description="知识内容")
     summary: Optional[str] = Field(None, description="摘要")
     algorithm_type: Optional[str] = Field(None, description="算法类型")
@@ -403,6 +404,8 @@ async def update_card(card_id: int, card: CardUpdate):
             existing.last_reviewed = card.last_reviewed
         if card.is_sealed is not None:
             existing.is_sealed = card.is_sealed
+        if card.key_points is not None:
+            existing.key_points = card.key_points
         if card.knowledge_content is not None:
             existing.knowledge_content = card.knowledge_content
         if card.summary is not None:
