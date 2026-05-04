@@ -269,6 +269,8 @@ export default function CardWorkshop() {
     const [unsealConfirmOpen, setUnsealConfirmOpen] = useState(false)
     const [cardToUnseal, setCardToUnseal] = useState(null)
     const [isUnsealing, setIsUnsealing] = useState(false)
+    const [editPolishingField, setEditPolishingField] = useState(null)
+    const [editPolishPreview, setEditPolishPreview] = useState(null)
 
     const lastClickTimeRef = useRef(0)
     const searchTimerRef = useRef(null)
@@ -456,6 +458,55 @@ export default function CardWorkshop() {
             ...prev,
             key_points: prev.key_points.map((kp, i) => i === index ? value : kp),
         }))
+    }, [])
+
+    const handleEditPolish = useCallback(async (field) => {
+        let content = ''
+        if (field === 'summary') {
+            content = editForm.summary || ''
+        } else if (field === 'key_points') {
+            content = editForm.key_points.filter(kp => kp.trim()).join('\n')
+        } else {
+            content = editForm.knowledge_content || ''
+        }
+
+        if (!content.trim()) {
+            showToast('请先输入内容再进行润色', 'warning')
+            return
+        }
+
+        setEditPolishingField(field)
+        setEditPolishPreview(null)
+
+        try {
+            const result = await cardService.polishCard({ content, type: field })
+            setEditPolishPreview({ field, content: result.polished_content })
+        } catch (err) {
+            showToast(`AI润色失败: ${err.message}`, 'error')
+            setEditPolishingField(null)
+        }
+    }, [editForm])
+
+    const handleEditPolishAccept = useCallback(() => {
+        if (!editPolishPreview) return
+
+        const { field, content } = editPolishPreview
+        if (field === 'summary') {
+            setEditForm(prev => ({ ...prev, summary: content }))
+        } else if (field === 'key_points') {
+            const points = content.split('\n').filter(line => line.trim())
+            setEditForm(prev => ({ ...prev, key_points: points }))
+        } else {
+            setEditForm(prev => ({ ...prev, knowledge_content: content }))
+        }
+
+        setEditPolishPreview(null)
+        setEditPolishingField(null)
+    }, [editPolishPreview])
+
+    const handleEditPolishReject = useCallback(() => {
+        setEditPolishPreview(null)
+        setEditPolishingField(null)
     }, [])
 
     const handleUnsealRequest = useCallback((card) => {
@@ -797,13 +848,23 @@ export default function CardWorkshop() {
                                 <div className={styles.runeTagSection}>
                                     <div className={styles.fieldHeader}>
                                         <span className={styles.runeTagTitle}>🔑 关键要点</span>
-                                        <button
-                                            type="button"
-                                            className={styles.addKeyPointBtn}
-                                            onClick={handleAddKeyPoint}
-                                        >
-                                            + 添加
-                                        </button>
+                                        <div className={styles.fieldHeaderActions}>
+                                            <button
+                                                type="button"
+                                                className={styles.polishBtn}
+                                                onClick={() => handleEditPolish('key_points')}
+                                                disabled={!!editPolishingField || editForm.key_points.every(kp => !kp.trim())}
+                                            >
+                                                {editPolishingField === 'key_points' ? '⏳ 润色中...' : '✨ AI润色'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={styles.addKeyPointBtn}
+                                                onClick={handleAddKeyPoint}
+                                            >
+                                                + 添加
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className={styles.keyPointsEditList}>
                                         {editForm.key_points.map((kp, i) => (
@@ -824,10 +885,46 @@ export default function CardWorkshop() {
                                             </div>
                                         ))}
                                     </div>
+                                    {editPolishPreview && editPolishPreview.field === 'key_points' && (
+                                        <div className={styles.polishPreview}>
+                                            <div className={styles.polishPreviewHeader}>
+                                                <span>✨ AI润色结果</span>
+                                            </div>
+                                            <div className={styles.polishPreviewContent}>
+                                                {editPolishPreview.content}
+                                            </div>
+                                            <div className={styles.polishPreviewActions}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.polishAcceptBtn}
+                                                    onClick={handleEditPolishAccept}
+                                                >
+                                                    采纳
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.polishRejectBtn}
+                                                    onClick={handleEditPolishReject}
+                                                >
+                                                    放弃
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className={styles.formField}>
-                                    <label className={styles.fieldLabel}>📖 知识内容</label>
+                                    <div className={styles.fieldHeader}>
+                                        <label className={styles.fieldLabel}>📖 知识内容</label>
+                                        <button
+                                            type="button"
+                                            className={styles.polishBtn}
+                                            onClick={() => handleEditPolish('note_content')}
+                                            disabled={!!editPolishingField || !editForm.knowledge_content?.trim()}
+                                        >
+                                            {editPolishingField === 'note_content' ? '⏳ 润色中...' : '✨ AI润色'}
+                                        </button>
+                                    </div>
                                     <textarea
                                         className={styles.fieldTextarea}
                                         value={editForm.knowledge_content}
@@ -835,10 +932,46 @@ export default function CardWorkshop() {
                                         placeholder="输入知识内容..."
                                         rows={6}
                                     />
+                                    {editPolishPreview && editPolishPreview.field === 'note_content' && (
+                                        <div className={styles.polishPreview}>
+                                            <div className={styles.polishPreviewHeader}>
+                                                <span>✨ AI润色结果</span>
+                                            </div>
+                                            <div className={styles.polishPreviewContent}>
+                                                {editPolishPreview.content}
+                                            </div>
+                                            <div className={styles.polishPreviewActions}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.polishAcceptBtn}
+                                                    onClick={handleEditPolishAccept}
+                                                >
+                                                    采纳
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.polishRejectBtn}
+                                                    onClick={handleEditPolishReject}
+                                                >
+                                                    放弃
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className={styles.formField}>
-                                    <label className={styles.fieldLabel}>📝 心得总结</label>
+                                    <div className={styles.fieldHeader}>
+                                        <label className={styles.fieldLabel}>📝 心得总结</label>
+                                        <button
+                                            type="button"
+                                            className={styles.polishBtn}
+                                            onClick={() => handleEditPolish('summary')}
+                                            disabled={!!editPolishingField || !editForm.summary?.trim()}
+                                        >
+                                            {editPolishingField === 'summary' ? '⏳ 润色中...' : '✨ AI润色'}
+                                        </button>
+                                    </div>
                                     <textarea
                                         className={styles.fieldTextarea}
                                         value={editForm.summary}
@@ -846,6 +979,32 @@ export default function CardWorkshop() {
                                         placeholder="输入心得总结..."
                                         rows={3}
                                     />
+                                    {editPolishPreview && editPolishPreview.field === 'summary' && (
+                                        <div className={styles.polishPreview}>
+                                            <div className={styles.polishPreviewHeader}>
+                                                <span>✨ AI润色结果</span>
+                                            </div>
+                                            <div className={styles.polishPreviewContent}>
+                                                {editPolishPreview.content}
+                                            </div>
+                                            <div className={styles.polishPreviewActions}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.polishAcceptBtn}
+                                                    onClick={handleEditPolishAccept}
+                                                >
+                                                    采纳
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={styles.polishRejectBtn}
+                                                    onClick={handleEditPolishReject}
+                                                >
+                                                    放弃
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         ) : (

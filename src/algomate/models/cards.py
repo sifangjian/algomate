@@ -122,9 +122,15 @@ class CardUpdate(BaseModel):
         from_attributes = True
 
 
+class PolishFieldType(str, Enum):
+    note_content = "note_content"
+    summary = "summary"
+    key_points = "key_points"
+
+
 class CardPolishRequest(BaseModel):
     content: str = Field(..., min_length=1, description="待润色内容")
-    type: str = Field(..., pattern=r"^note_content$", description="润色类型：note_content")
+    type: PolishFieldType = Field(..., description="润色类型：note_content/summary/key_points")
 
 
 class CardPolishResponse(BaseModel):
@@ -543,11 +549,33 @@ async def polish_card_content(request: CardPolishRequest):
     try:
         client = ChatClient(api_key=config.LLM_API_KEY)
 
-        system_prompt = """你是一个专业的算法知识编辑，擅长优化算法心得的表述。
+        prompts = {
+            "note_content": {
+                "system": """你是一个专业的算法知识编辑，擅长优化算法心得的表述。
 请将用户提供的心得内容进行润色，改善语言流畅性和逻辑性。
 保持原文的核心含义不变，优化表述方式，使其更清晰易懂。
-直接返回润色后的内容，不要添加额外说明。"""
-        user_prompt = f"请润色以下算法心得内容：\n{request.content}"
+直接返回润色后的内容，不要添加额外说明。""",
+                "user_template": "请润色以下算法心得内容：\n{}"
+            },
+            "summary": {
+                "system": """你是一个专业的算法知识编辑，擅长撰写精炼的摘要。
+请将用户提供的摘要内容进行润色，使其更加精炼、准确、易于理解。
+摘要应当简洁明了地概括核心要点，语言流畅，逻辑清晰。
+直接返回润色后的摘要内容，不要添加额外说明。""",
+                "user_template": "请润色以下算法知识摘要：\n{}"
+            },
+            "key_points": {
+                "system": """你是一个专业的算法知识编辑，擅长提炼和优化关键要点。
+请将用户提供的关键要点进行润色，使每个要点更加清晰、准确、简洁。
+要点应当使用简短的短语或句子表达，便于快速理解和记忆。
+每个要点一行，直接返回润色后的要点列表，不要添加额外说明或编号。""",
+                "user_template": "请润色以下算法关键要点：\n{}"
+            }
+        }
+
+        prompt_config = prompts.get(request.type.value, prompts["note_content"])
+        system_prompt = prompt_config["system"]
+        user_prompt = prompt_config["user_template"].format(request.content)
 
         result = client.chat(
             messages=[{"role": "user", "content": user_prompt}],
@@ -557,7 +585,7 @@ async def polish_card_content(request: CardPolishRequest):
 
         return CardPolishResponse(
             polished_content=result.strip(),
-            type=request.type
+            type=request.type.value
         )
     except HTTPException:
         raise

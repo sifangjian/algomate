@@ -796,6 +796,12 @@
     align-items: center;
 }
 
+.fieldHeaderActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .polishBtn {
     padding: 4px 12px;
     background: rgba(139, 92, 246, 0.1);
