@@ -231,11 +231,15 @@ async def get_cards(
     domain: Optional[str] = Query(None, description="按领域筛选"),
     algorithm_type: Optional[str] = Query(None, description="按算法类型筛选"),
     algorithm_category: Optional[str] = Query(None, description="按算法分类筛选"),
+    search: Optional[str] = Query(None, description="搜索关键词（匹配名称和算法分类）"),
+    sort: Optional[str] = Query(None, description="排序字段：name/durability/last_reviewed"),
+    order: Optional[str] = Query("asc", description="排序方向：asc/desc"),
+    available: Optional[bool] = Query(None, description="仅返回未封印卡牌"),
 ):
-    """获取卡牌列表（支持按领域、算法类型和算法分类筛选）"""
+    """获取卡牌列表（支持按领域、算法类型、算法分类筛选，搜索和排序）"""
     from algomate.data.database import Database
     from algomate.models.answer_records import AnswerRecord
-    
+
     db = Database.get_instance()
     session = db.get_session()
     try:
@@ -246,7 +250,32 @@ async def get_cards(
             query = query.filter(Card.algorithm_type == algorithm_type)
         if algorithm_category:
             query = query.filter(Card.algorithm_category == algorithm_category)
-        cards = query.order_by(Card.created_at.desc()).all()
+        if available:
+            query = query.filter(Card.is_sealed == False)
+        if search:
+            search_pattern = f"%{search}%"
+            query = query.filter(
+                (Card.name.ilike(search_pattern)) |
+                (Card.algorithm_category.ilike(search_pattern))
+            )
+
+        sort_column = Card.created_at
+        if sort == "name":
+            sort_column = Card.name
+        elif sort == "durability":
+            sort_column = Card.durability
+        elif sort == "last_reviewed":
+            sort_column = Card.last_reviewed
+
+        if order == "desc":
+            query = query.order_by(sort_column.desc())
+        else:
+            if sort == "last_reviewed":
+                query = query.order_by(sort_column.desc().nulls_last())
+            else:
+                query = query.order_by(sort_column.asc())
+
+        cards = query.all()
         
         result = []
         for card in cards:

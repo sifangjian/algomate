@@ -3,7 +3,7 @@ import api from './api'
 export const cardService = {
   getAll: (params) => {
     const searchParams = new URLSearchParams()
-    if (params?.realm) searchParams.set('realm', params.realm)
+    if (params?.realm) searchParams.set('domain', params.realm)
     if (params?.search) searchParams.set('search', params.search)
     if (params?.sort) searchParams.set('sort', params.sort)
     if (params?.order) searchParams.set('order', params.order)

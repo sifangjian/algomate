@@ -255,6 +255,7 @@ export default function CardWorkshop() {
     const { cards, setCards, selectedCard, setSelectedCard, removeCard, addCard, updateCard } = useCardStore()
 
     const [searchKeyword, setSearchKeyword] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
     const [sortBy, setSortBy] = useState('name')
     const [selectedRealm, setSelectedRealm] = useState('')
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -270,13 +271,50 @@ export default function CardWorkshop() {
     const [isUnsealing, setIsUnsealing] = useState(false)
 
     const lastClickTimeRef = useRef(0)
+    const searchTimerRef = useRef(null)
     const DEBOUNCE_DELAY = 300
 
+    const [isLoading, setIsLoading] = useState(false)
+
     useEffect(() => {
-        cardService.getAll().then((data) => {
-            if (Array.isArray(data) && data.length > 0) setCards(data)
-        }).catch(() => { })
-    }, [setCards])
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+        searchTimerRef.current = setTimeout(() => {
+            setDebouncedSearch(searchKeyword)
+        }, DEBOUNCE_DELAY)
+        return () => {
+            if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+        }
+    }, [searchKeyword])
+
+    const fetchCards = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const params = {}
+            if (selectedRealm) params.realm = selectedRealm
+            if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
+            if (sortBy) {
+                if (sortBy === 'reviewedDate') {
+                    params.sort = 'last_reviewed'
+                    params.order = 'desc'
+                } else if (sortBy === 'durability') {
+                    params.sort = 'durability'
+                    params.order = 'asc'
+                } else {
+                    params.sort = 'name'
+                    params.order = 'asc'
+                }
+            }
+            const data = await cardService.getAll(params)
+            if (Array.isArray(data)) setCards(data)
+        } catch {
+        } finally {
+            setIsLoading(false)
+        }
+    }, [selectedRealm, debouncedSearch, sortBy, setCards])
+
+    useEffect(() => {
+        fetchCards()
+    }, [fetchCards])
 
     useEffect(() => {
         if (!selectedCard) {
@@ -285,39 +323,6 @@ export default function CardWorkshop() {
         }
     }, [selectedCard])
 
-    const filteredCards = useMemo(() => {
-        let result = cards
-
-        if (selectedRealm) {
-            result = result.filter(
-                (c) => c.domain === selectedRealm
-            )
-        }
-
-        if (searchKeyword.trim()) {
-            const kw = searchKeyword.toLowerCase()
-            result = result.filter(
-                (c) =>
-                    c.name.toLowerCase().includes(kw) ||
-                    c.algorithmCategory?.toLowerCase().includes(kw)
-            )
-        }
-
-        result = [...result].sort((a, b) => {
-            switch (sortBy) {
-                case 'name':
-                    return a.name.localeCompare(b.name)
-                case 'durability':
-                    return a.durability - b.durability
-                case 'reviewedDate':
-                    return new Date(b.lastReviewed || 0) - new Date(a.lastReviewed || 0)
-                default:
-                    return 0
-            }
-        })
-
-        return result
-    }, [cards, searchKeyword, sortBy, selectedRealm])
 
     const dangerCards = useMemo(
         () => cards.filter((c) => c.durability < 30 && !c.is_sealed),
@@ -332,8 +337,8 @@ export default function CardWorkshop() {
     )
 
     const normalCards = useMemo(
-        () => filteredCards.filter((c) => !c.is_sealed),
-        [filteredCards]
+        () => cards.filter((c) => !c.is_sealed),
+        [cards]
     )
 
     const handleSortChange = useCallback((e) => {
@@ -555,7 +560,12 @@ export default function CardWorkshop() {
             </div>
 
             <div className={styles.cardGrid}>
-                {normalCards.length === 0 && sealedCards.length === 0 ? (
+                {isLoading ? (
+                    <div className={styles.emptyState}>
+                        <span className={styles.emptyIcon}>⏳</span>
+                        <p>加载中...</p>
+                    </div>
+                ) : normalCards.length === 0 && sealedCards.length === 0 ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyIcon}>🎴</span>
                         <p>没有找到匹配的卡牌</p>
