@@ -16,9 +16,12 @@
     - 消散阈值：=0（卡牌封印）
 """
 
+from datetime import datetime, timedelta, date
 from enum import Enum
 from typing import Optional, Tuple
 from dataclasses import dataclass
+
+GRACE_PERIOD_DAYS = 3
 
 
 class DurabilityAction(str, Enum):
@@ -81,6 +84,12 @@ class DurabilityManager:
         """
         self.config = config or DurabilityConfig()
         self.difficulty_multipliers = difficulty_multipliers or self.DEFAULT_DIFFICULTY_MULTIPLIERS
+    
+    @staticmethod
+    def is_in_grace_period(created_at: Optional[datetime]) -> bool:
+        if created_at is None:
+            return False
+        return created_at.date() + timedelta(days=GRACE_PERIOD_DAYS) > date.today()
     
     def get_difficulty_multiplier(self, difficulty: str) -> float:
         """获取难度系数
@@ -259,6 +268,9 @@ class DurabilityManager:
         
         for card in cards:
             if hasattr(card, 'is_sealed') and card.is_sealed:
+                continue
+            
+            if hasattr(card, 'created_at') and self.is_in_grace_period(card.created_at):
                 continue
             
             current_durability = getattr(card, 'durability', 100)

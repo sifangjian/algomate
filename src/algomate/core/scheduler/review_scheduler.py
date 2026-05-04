@@ -303,6 +303,9 @@ class ReviewScheduler:
             for task in tasks:
                 card = session.query(Card).filter(Card.id == task.card_id).first()
                 if card:
+                    if hasattr(card, 'created_at') and self.durability_manager.is_in_grace_period(card.created_at):
+                        continue
+
                     new_durability, is_critical, is_sealed = self.durability_manager.update_durability(
                         current_durability=card.durability,
                         action=DurabilityAction.DAILY_DECAY,
