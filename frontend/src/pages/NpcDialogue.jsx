@@ -261,15 +261,17 @@ export default function NpcDialogue() {
             const domainName = npc.location || REALM_ID_TO_NAME[realmId] || realmId
             const algorithmCategory = npc.expertise?.[0] || null
 
-            if (algorithmCategory) {
-                const existingCards = await cardService.getByAlgorithmType(algorithmCategory)
+            const algorithmType = npc.expertise?.[0] || algorithmCategory
+            if (algorithmType) {
+                const existingCards = await cardService.getByAlgorithmTypeField(algorithmType)
                 if (existingCards && existingCards.length > 0) {
                     setExistingCard(existingCards[0])
                     setPendingCardData({
-                        name: `${algorithmCategory}修习记录`,
+                        name: `${algorithmCategory || '算法'}修习记录`,
                         domain: domainName,
                         knowledge_content: noteContent,
                         algorithm_category: algorithmCategory,
+                        algorithm_type: algorithmType,
                     })
                     setShowOverwriteDialog(true)
                     return false
@@ -296,10 +298,20 @@ export default function NpcDialogue() {
     const handleOverwriteCard = useCallback(async () => {
         if (!existingCard || !pendingCardData) return
         try {
-            const result = await cardService.updateCard(existingCard.id, {
+            const updatePayload = {
                 knowledge_content: pendingCardData.knowledge_content,
                 algorithm_category: pendingCardData.algorithm_category,
-            })
+            }
+            if (pendingCardData.algorithm_type) {
+                updatePayload.algorithm_type = pendingCardData.algorithm_type
+            }
+            if (pendingCardData.key_points) {
+                updatePayload.key_points = pendingCardData.key_points
+            }
+            if (pendingCardData.summary) {
+                updatePayload.summary = pendingCardData.summary
+            }
+            const result = await cardService.updateCard(existingCard.id, updatePayload)
             setEarnedCard(result)
             showToast('卡牌已覆盖更新 🎴', 'success')
             setNoteContent('')
