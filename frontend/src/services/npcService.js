@@ -71,6 +71,76 @@ export const npcService = {
 
     getAllNpcs: () => api.get('/npcs/'),
 
+    getAlgorithmInfo: () => api.get('/algorithm-info'),
+
     chat: (npcId, message, sessionId) =>
         apiWithRetry(() => api.post(`/npc/${npcId}/chat`, { message, sessionId })),
+
+    chatStream: (npcId, message, sessionId, { onChunk, onSuggestions, onDone, onError }) => {
+        const baseURL = '/api'
+        const url = `${baseURL}/npc/${npcId}/chat/stream`
+
+        const controller = new AbortController()
+
+        const body = JSON.stringify({ message, sessionId })
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: body,
+            signal: controller.signal,
+        }).then(async (response) => {
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: response.statusText }))
+                throw new Error(errorData.detail || `请求失败 (${response.status})`)
+            }
+
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+            let buffer = ''
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                buffer += decoder.decode(value, { stream: true })
+                const lines = buffer.split('\n')
+                buffer = lines.pop() || ''
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6).trim()
+                        if (dataStr === '[DONE]') {
+                            onDone?.()
+                            return
+                        }
+                        try {
+                            const data = JSON.parse(dataStr)
+                            if (data.error) {
+                                onError?.(new Error(data.error))
+                                return
+                            }
+                            if (data.content) {
+                                onChunk?.(data.content)
+                            }
+                            if (data.suggestions) {
+                                onSuggestions?.(data.suggestions)
+                            }
+                            if (data.dialogue_id) {
+                                onDone?.(data.dialogue_id)
+                            }
+                        } catch (e) {
+                            // Ignore parse errors for incomplete chunks
+                        }
+                    }
+                }
+            }
+        }).catch((err) => {
+            if (err.name !== 'AbortError') {
+                onError?.(err)
+            }
+        })
+
+        return controller
+    },
 }
