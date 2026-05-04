@@ -7,6 +7,7 @@ import Button from '../components/ui/Button/Button'
 import Input from '../components/ui/Input/Input'
 import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
+import DurabilityChange from '../components/ui/DurabilityChange/DurabilityChange'
 import styles from './CardWorkshop.module.css'
 
 const ALGORITHM_CATEGORIES = [
@@ -271,6 +272,7 @@ export default function CardWorkshop() {
     const [isUnsealing, setIsUnsealing] = useState(false)
     const [editPolishingField, setEditPolishingField] = useState(null)
     const [editPolishPreview, setEditPolishPreview] = useState(null)
+    const [durabilityAnimations, setDurabilityAnimations] = useState({})
 
     const lastClickTimeRef = useRef(0)
     const searchTimerRef = useRef(null)
@@ -520,6 +522,7 @@ export default function CardWorkshop() {
         try {
             const updated = await cardService.unsealCard(cardToUnseal.id)
             updateCard(cardToUnseal.id, updated)
+            setDurabilityAnimations(prev => ({ ...prev, [cardToUnseal.id]: { value: 30, key: Date.now() } }))
             showToast(`卡牌「${updated.name}」已解封，耐久度恢复至30`, 'success')
         } catch (err) {
             showToast(`解封失败: ${err.message}`, 'error')
@@ -642,7 +645,18 @@ export default function CardWorkshop() {
                                 } />
                             </div>
 
-                            <div className={styles.durabilitySection}>
+                            <div className={styles.durabilitySection} style={{ position: 'relative' }}>
+                                {durabilityAnimations[card.id] && (
+                                    <DurabilityChange
+                                        key={durabilityAnimations[card.id].key}
+                                        value={durabilityAnimations[card.id].value}
+                                        onDone={() => setDurabilityAnimations(prev => {
+                                            const next = { ...prev }
+                                            delete next[card.id]
+                                            return next
+                                        })}
+                                    />
+                                )}
                                 <div className={styles.durBar}>
                                     <div
                                         className={styles.durFill}
@@ -767,7 +781,7 @@ export default function CardWorkshop() {
                         </div>
 
                         <div className={styles.statsGrid}>
-                            <div className={styles.statCell}>
+                            <div className={styles.statCell} style={{ position: 'relative' }}>
                                 <span className={styles.statIcon}>🛡️</span>
                                 <span className={styles.statValue}>
                                     {Math.round((selectedCard.durability / selectedCard.maxDurability) * 100)}%
@@ -775,6 +789,17 @@ export default function CardWorkshop() {
                                 <span className={styles.statDesc}>
                                     {selectedCard.durability >= 60 ? '状态良好' : selectedCard.durability >= 30 ? '需要关注' : '濒危警告'}
                                 </span>
+                                {durabilityAnimations[selectedCard.id] && (
+                                    <DurabilityChange
+                                        key={durabilityAnimations[selectedCard.id].key}
+                                        value={durabilityAnimations[selectedCard.id].value}
+                                        onDone={() => setDurabilityAnimations(prev => {
+                                            const next = { ...prev }
+                                            delete next[selectedCard.id]
+                                            return next
+                                        })}
+                                    />
+                                )}
                                 <div className={styles.durProgressBar}>
                                     <div
                                         className={styles.durProgressFill}

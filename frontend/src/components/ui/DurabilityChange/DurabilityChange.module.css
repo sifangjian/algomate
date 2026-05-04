@@ -1,0 +1,33 @@
+@keyframes floatUp {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    70% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(1.2);
+    }
+}
+
+.container {
+    position: absolute;
+    top: -8px;
+    right: 8px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    pointer-events: none;
+    z-index: 10;
+    animation: floatUp 1.5s ease-out forwards;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.positive {
+    color: #10b981;
+}
+
+.negative {
+    color: #ef4444;
+}

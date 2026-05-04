@@ -7,6 +7,7 @@ import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
 import { showToast } from '../components/ui/Toast/index'
 import { ConfirmDialog } from '../components/ui/Modal/Modal'
+import DurabilityChange from '../components/ui/DurabilityChange/DurabilityChange'
 import styles from './BossBattle.module.css'
 
 const DIFFICULTY_CONFIG = {
@@ -85,6 +86,7 @@ export default function BossBattle() {
     const [changingQuestion, setChangingQuestion] = useState(false)
     const [showSolvedConfirm, setShowSolvedConfirm] = useState(false)
     const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false)
+    const [durabilityChanges, setDurabilityChanges] = useState([])
 
     const timerRef = useRef(null)
     const hasLoadedRef = useRef(false)
@@ -803,12 +805,24 @@ export default function BossBattle() {
                                             +{battleResult.totalExp} XP
                                         </span>
                                     </div>
-                                    {battleResult.reward?.durability_change != null && (
-                                        <div className={styles.resultStatRow}>
+                                    {battleResult.reward?.durability_change != null && battleResult.reward.durability_change !== 0 && (
+                                        <div className={styles.resultStatRow} style={{ position: 'relative' }}>
                                             <span className={styles.resultStatLabel}>卡牌耐久</span>
                                             <span className={`${styles.resultStatValue} ${battleResult.reward.durability_change < 0 ? styles.negative : styles.positive}`}>
                                                 {battleResult.reward.durability_change > 0 ? '+' : ''}
                                                 {battleResult.reward.durability_change}
+                                            </span>
+                                            <DurabilityChange
+                                                value={battleResult.reward.durability_change}
+                                                onDone={() => setDurabilityChanges([])}
+                                            />
+                                        </div>
+                                    )}
+                                    {battleResult.reward?.durability_change != null && battleResult.reward.durability_change === 0 && (
+                                        <div className={styles.resultStatRow}>
+                                            <span className={styles.resultStatLabel}>卡牌耐久</span>
+                                            <span className={styles.resultStatValue}>
+                                                0
                                             </span>
                                         </div>
                                     )}
