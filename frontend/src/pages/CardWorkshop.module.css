@@ -893,11 +893,13 @@
     border: 1px solid rgba(139, 92, 246, 0.15);
     border-radius: var(--radius-md);
     opacity: 0.75;
-    transition: opacity var(--transition-fast);
+    filter: grayscale(0.6);
+    transition: all var(--transition-fast);
 }
 
 .sealedCard:hover {
     opacity: 1;
+    filter: grayscale(0.2);
 }
 
 .sealedCardHeader {
