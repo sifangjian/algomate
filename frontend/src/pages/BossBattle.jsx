@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUserStore } from '../stores/userStore'
 import { bossService } from '../services/bossService'
+import { cardService } from '../services/cardService'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
 import { showToast } from '../components/ui/Toast/index'
+import { ConfirmDialog } from '../components/ui/Modal/Modal'
 import styles from './BossBattle.module.css'
 
 const DIFFICULTY_CONFIG = {
@@ -32,13 +34,32 @@ function formatTime(seconds) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+function getAlgorithmIcon(category) {
+    const map = {
+        Search: '🔍',
+        Sorting: '📊',
+        'Dynamic Programming': '🎯',
+        Graph: '🕸️',
+        Tree: '🌲',
+        Recursion: '🔄',
+        Array: '📋',
+        String: '📝',
+        Greedy: '💰',
+        Math: '🔢',
+    }
+    return map[category] || '📜'
+}
+
 export default function BossBattle() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
     const addExperience = useUserStore((s) => s.addExperience)
-    const cardId = searchParams.get('cardId')
-
-    const [loading, setLoading] = useState(true)
+    const urlCardId = searchParams.get('cardId')
+    const [phase, setPhase] = useState(urlCardId ? 'battle' : 'select')
+    const [activeCardId, setActiveCardId] = useState(urlCardId)
+    const [cards, setCards] = useState([])
+    const [cardsLoading, setCardsLoading] = useState(true)
+    const [loading, setLoading] = useState(!!urlCardId)
     const [bossData, setBossData] = useState(null)
     const [questionData, setQuestionData] = useState(null)
     const [cardData, setCardData] = useState(null)
@@ -60,38 +81,52 @@ export default function BossBattle() {
     const [totalExpGained, setTotalExpGained] = useState(0)
     const [speedBonus, setSpeedBonus] = useState(0)
     const [comboBonus, setComboBonus] = useState(0)
+    const [showWrongOptions, setShowWrongOptions] = useState(false)
+    const [changingQuestion, setChangingQuestion] = useState(false)
+    const [showSolvedConfirm, setShowSolvedConfirm] = useState(false)
+    const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false)
 
     const timerRef = useRef(null)
     const hasLoadedRef = useRef(false)
 
     useEffect(() => {
-        if (!cardId) {
-            showToast('缺少卡牌参数', 'error')
-            navigate('/')
-            return
-        }
+        if (urlCardId) {
+            if (hasLoadedRef.current) return
+            hasLoadedRef.current = true
 
-        if (hasLoadedRef.current) return
-        hasLoadedRef.current = true
-
-        const loadBattle = async () => {
-            try {
-                setLoading(true)
-                const data = await bossService.generateForCard(cardId)
-                setBossData(data.boss)
-                setQuestionData(data.question)
-                setCardData(data.card)
-                setStartTime(Date.now())
-            } catch (err) {
-                showToast(err.message || '加载Boss战失败', 'error')
-                navigate('/')
-            } finally {
-                setLoading(false)
+            const loadBattle = async () => {
+                try {
+                    setLoading(true)
+                    const data = await bossService.generateForCard(urlCardId)
+                    setBossData(data.boss)
+                    setQuestionData(data.question)
+                    setCardData(data.card)
+                    setStartTime(Date.now())
+                } catch (err) {
+                    showToast(err.message || '加载Boss战失败', 'error')
+                    navigate('/')
+                } finally {
+                    setLoading(false)
+                }
             }
-        }
 
-        loadBattle()
-    }, [cardId])
+            loadBattle()
+        } else {
+            const loadCards = async () => {
+                try {
+                    setCardsLoading(true)
+                    const data = await cardService.getAll()
+                    const availableCards = Array.isArray(data) ? data.filter(c => !c.is_sealed) : []
+                    setCards(availableCards)
+                } catch (err) {
+                    showToast(err.message || '加载卡牌失败', 'error')
+                } finally {
+                    setCardsLoading(false)
+                }
+            }
+            loadCards()
+        }
+    }, [urlCardId])
 
     useEffect(() => {
         if (!startTime) return
@@ -100,6 +135,20 @@ export default function BossBattle() {
         }, 1000)
         return () => clearInterval(timerRef.current)
     }, [startTime])
+
+    const timeLimit = DIFFICULTY_CONFIG[bossData?.difficulty || 'medium']?.timeLimit || 120
+    const remainingTime = Math.max(0, timeLimit - elapsedTime)
+
+    useEffect(() => {
+        if (remainingTime <= 0 && startTime && isVictory === null) {
+            clearInterval(timerRef.current)
+            setIsVictory(false)
+            setBattleResult({
+                feedback: '时间耗尽！Boss战超时失败',
+                improvement: '尝试提高答题速度，或选择更低难度的Boss',
+            })
+        }
+    }, [remainingTime, startTime, isVictory])
 
     useEffect(() => {
         if (showHint) {
@@ -135,6 +184,23 @@ export default function BossBattle() {
         setShowHitText(true)
     }, [])
 
+    const handleSelectCard = useCallback(async (selectedId) => {
+        try {
+            setLoading(true)
+            setActiveCardId(String(selectedId))
+            const data = await bossService.generateForCard(selectedId)
+            setBossData(data.boss)
+            setQuestionData(data.question)
+            setCardData(data.card)
+            setStartTime(Date.now())
+            setPhase('battle')
+        } catch (err) {
+            showToast(err.message || '加载Boss战失败', 'error')
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
     const handleSubmit = useCallback(async () => {
         if (!bossData || !questionData) return
         if (isSubmitting) return
@@ -147,15 +213,15 @@ export default function BossBattle() {
                 showToast('请选择一个选项', 'warning')
                 return
             }
-            answerData = { answer: selectedOption, card_id: parseInt(cardId), question_id: questionData.id }
+            answerData = { answer: selectedOption, card_id: parseInt(activeCardId), question_id: questionData.id }
         } else if (qType === '简答题') {
             if (!fillAnswer.trim()) {
                 showToast('请输入答案', 'warning')
                 return
             }
-            answerData = { answer: fillAnswer, card_id: parseInt(cardId), question_id: questionData.id }
+            answerData = { answer: fillAnswer, card_id: parseInt(activeCardId), question_id: questionData.id }
         } else if (qType === 'LeetCode挑战') {
-            answerData = { is_solved: true, card_id: parseInt(cardId), question_id: questionData.id }
+            answerData = { is_solved: true, card_id: parseInt(activeCardId), question_id: questionData.id }
         }
 
         setIsSubmitting(true)
@@ -164,6 +230,7 @@ export default function BossBattle() {
             const result = await bossService.submitAnswer(bossData.id, answerData)
 
             if (result.is_correct) {
+                setShowWrongOptions(false)
                 const newCombo = combo + 1
                 setCombo(newCombo)
 
@@ -213,6 +280,7 @@ export default function BossBattle() {
                     })
                     clearInterval(timerRef.current)
                 } else {
+                    setShowWrongOptions(true)
                     showToast(`❌ 回答错误！剩余机会 ${3 - newAttempts}/3`, 'error')
                 }
             }
@@ -224,20 +292,55 @@ export default function BossBattle() {
     }, [bossData, questionData, selectedOption, fillAnswer, combo, attempts, bossHP, elapsedTime, isSubmitting, addExperience, triggerHitAnimation])
 
 
-    const handleRetry = useCallback(() => {
-        setBattleResult(null)
-        setIsVictory(null)
-        setBossHP(100)
-        setCombo(0)
-        setAttempts(0)
+    const handleChangeQuestion = useCallback(async () => {
+        try {
+            setChangingQuestion(true)
+            const data = await bossService.generateForCard(activeCardId)
+            setBossData(data.boss)
+            setQuestionData(data.question)
+            setCardData(data.card)
+            setSelectedOption('')
+            setFillAnswer('')
+            setShowWrongOptions(false)
+        } catch (err) {
+            showToast(err.message || '换题失败', 'error')
+        } finally {
+            setChangingQuestion(false)
+        }
+    }, [activeCardId])
+
+    const handleRetryQuestion = useCallback(() => {
         setSelectedOption('')
         setFillAnswer('')
-        setTotalExpGained(0)
-        setSpeedBonus(0)
-        setComboBonus(0)
-        setStartTime(Date.now())
-        setElapsedTime(0)
-    }, [questionData])
+        setShowWrongOptions(false)
+    }, [])
+
+    const handleRetry = useCallback(async () => {
+        try {
+            setLoading(true)
+            const data = await bossService.generateForCard(activeCardId)
+            setBossData(data.boss)
+            setQuestionData(data.question)
+            setCardData(data.card)
+            setBattleResult(null)
+            setIsVictory(null)
+            setBossHP(100)
+            setCombo(0)
+            setAttempts(0)
+            setSelectedOption('')
+            setFillAnswer('')
+            setTotalExpGained(0)
+            setSpeedBonus(0)
+            setComboBonus(0)
+            setShowWrongOptions(false)
+            setStartTime(Date.now())
+            setElapsedTime(0)
+        } catch (err) {
+            showToast(err.message || '重新生成题目失败', 'error')
+        } finally {
+            setLoading(false)
+        }
+    }, [activeCardId])
 
     const handleLeetCodeGiveUp = useCallback(async () => {
         if (!bossData || !questionData) return
@@ -247,7 +350,7 @@ export default function BossBattle() {
         try {
             const result = await bossService.submitAnswer(bossData.id, {
                 is_solved: false,
-                card_id: parseInt(cardId),
+                card_id: parseInt(activeCardId),
                 question_id: questionData.id
             })
             setIsVictory(false)
@@ -261,12 +364,13 @@ export default function BossBattle() {
         } finally {
             setIsSubmitting(false)
         }
-    }, [bossData, questionData, isSubmitting, cardId])
+    }, [bossData, questionData, isSubmitting, activeCardId])
 
     const difficulty = bossData?.difficulty || 'medium'
     const diffConfig = DIFFICULTY_CONFIG[difficulty]
     const hpBarClass = bossHP > 60 ? '' : bossHP > 30 ? styles.yellow : styles.red
-    const timerWarning = diffConfig && elapsedTime > diffConfig.timeLimit * 0.8
+    const countdownPercent = timeLimit > 0 ? (remainingTime / timeLimit) * 100 : 0
+    const countdownBarClass = countdownPercent <= 20 ? styles.critical : countdownPercent <= 50 ? styles.warning : ''
 
     if (loading) {
         return (
@@ -274,6 +378,66 @@ export default function BossBattle() {
                 <div className={styles.loadingContainer}>
                     <div className={styles.loadingSpinner} />
                     <div className={styles.loadingText}>正在召唤Boss...</div>
+                </div>
+            </div>
+        )
+    }
+
+    if (phase === 'select') {
+        return (
+            <div className={`${styles.container} page-container`}>
+                <button className={styles.backBtn} onClick={() => navigate('/')} aria-label="返回地图">
+                    ← 返回地图
+                </button>
+                <div className={styles.selectPhase}>
+                    <h2 className={styles.selectTitle}>选择应战卡牌</h2>
+                    {cardsLoading ? (
+                        <div className={styles.loadingContainer}>
+                            <div className={styles.loadingSpinner} />
+                            <div className={styles.loadingText}>加载卡牌中...</div>
+                        </div>
+                    ) : cards.length === 0 ? (
+                        <div className={styles.emptyState}>
+                            <span className={styles.emptyIcon}>🎴</span>
+                            <p className={styles.emptyText}>需要至少1张卡牌才能挑战Boss</p>
+                        </div>
+                    ) : (
+                        <div className={styles.selectCardGrid}>
+                            {cards.map((card) => (
+                                <button
+                                    key={card.id}
+                                    className={styles.selectCard}
+                                    onClick={() => handleSelectCard(card.id)}
+                                >
+                                    <div className={styles.selectCardHeader}>
+                                        <span className={styles.selectCardIcon}>{getAlgorithmIcon(card.algorithmCategory)}</span>
+                                        <div className={styles.selectCardInfo}>
+                                            <div className={styles.selectCardName}>{card.name}</div>
+                                            <div className={styles.selectCardDomain}>{card.algorithmCategory || '未分类'}</div>
+                                        </div>
+                                    </div>
+                                    <div className={styles.selectCardDurability}>
+                                        <div className={styles.selectDurBar}>
+                                            <div
+                                                className={styles.selectDurFill}
+                                                style={{
+                                                    width: `${(card.durability / card.maxDurability) * 100}%`,
+                                                    background: card.durability >= 60
+                                                        ? 'linear-gradient(90deg, var(--color-success), #34d399)'
+                                                        : card.durability >= 30
+                                                            ? 'linear-gradient(90deg, var(--color-warning), #fbbf24)'
+                                                            : 'linear-gradient(90deg, var(--color-danger), #f87171)',
+                                                }}
+                                            />
+                                        </div>
+                                        <span className={styles.selectDurText}>
+                                            耐久 {card.durability}/{card.maxDurability}
+                                        </span>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         )
@@ -333,8 +497,16 @@ export default function BossBattle() {
                         />
                     </div>
                 </div>
-                <div className={`${styles.timer} ${timerWarning ? styles.warning : ''}`}>
-                    {formatTime(elapsedTime)}
+                <div className={styles.timerContainer}>
+                    <div className={`${styles.timer} ${countdownPercent <= 20 ? styles.critical : countdownPercent <= 50 ? styles.warning : ''}`}>
+                        {formatTime(remainingTime)}
+                    </div>
+                    <div className={styles.countdownBar}>
+                        <div
+                            className={`${styles.countdownBarFill} ${countdownBarClass}`}
+                            style={{ width: `${countdownPercent}%` }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -394,17 +566,44 @@ export default function BossBattle() {
                                 })}
                             </div>
                             <div className={styles.submitArea}>
-                                <Button
-                                    variant="danger"
-                                    size="lg"
-                                    fullWidth
-                                    onClick={handleSubmit}
-                                    loading={isSubmitting}
-                                    disabled={!selectedOption || isSubmitting}
-                                    icon="⚔️"
-                                >
-                                    提交挑战
-                                </Button>
+                                {showWrongOptions ? (
+                                    <div className={styles.wrongOptions}>
+                                        <div className={styles.wrongOptionsTitle}>回答错误，请选择下一步</div>
+                                        <div className={styles.wrongOptionsBtns}>
+                                            <Button
+                                                variant="secondary"
+                                                size="lg"
+                                                onClick={handleChangeQuestion}
+                                                loading={changingQuestion}
+                                                disabled={changingQuestion}
+                                                icon="🔄"
+                                            >
+                                                换一题
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="lg"
+                                                onClick={handleRetryQuestion}
+                                                disabled={changingQuestion}
+                                                icon="🔁"
+                                            >
+                                                重试
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        variant="danger"
+                                        size="lg"
+                                        fullWidth
+                                        onClick={handleSubmit}
+                                        loading={isSubmitting}
+                                        disabled={!selectedOption || isSubmitting}
+                                        icon="⚔️"
+                                    >
+                                        提交挑战
+                                    </Button>
+                                )}
                             </div>
                         </>
                     )}
@@ -419,17 +618,44 @@ export default function BossBattle() {
                                 disabled={isSubmitting}
                             />
                             <div className={styles.submitArea}>
-                                <Button
-                                    variant="danger"
-                                    size="lg"
-                                    fullWidth
-                                    onClick={handleSubmit}
-                                    loading={isSubmitting}
-                                    disabled={!fillAnswer.trim() || isSubmitting}
-                                    icon="⚔️"
-                                >
-                                    提交挑战
-                                </Button>
+                                {showWrongOptions ? (
+                                    <div className={styles.wrongOptions}>
+                                        <div className={styles.wrongOptionsTitle}>回答错误，请选择下一步</div>
+                                        <div className={styles.wrongOptionsBtns}>
+                                            <Button
+                                                variant="secondary"
+                                                size="lg"
+                                                onClick={handleChangeQuestion}
+                                                loading={changingQuestion}
+                                                disabled={changingQuestion}
+                                                icon="🔄"
+                                            >
+                                                换一题
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="lg"
+                                                onClick={handleRetryQuestion}
+                                                disabled={changingQuestion}
+                                                icon="🔁"
+                                            >
+                                                重试
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        variant="danger"
+                                        size="lg"
+                                        fullWidth
+                                        onClick={handleSubmit}
+                                        loading={isSubmitting}
+                                        disabled={!fillAnswer.trim() || isSubmitting}
+                                        icon="⚔️"
+                                    >
+                                        提交挑战
+                                    </Button>
+                                )}
                             </div>
                         </>
                     )}
@@ -466,28 +692,57 @@ export default function BossBattle() {
                                 )}
                             </div>
                             <div className={styles.leetcodeActions}>
-                                <Button
-                                    variant="danger"
-                                    size="lg"
-                                    fullWidth
-                                    onClick={handleSubmit}
-                                    loading={isSubmitting}
-                                    disabled={isSubmitting}
-                                    icon="✅"
-                                >
-                                    我已解决
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    size="lg"
-                                    fullWidth
-                                    onClick={handleLeetCodeGiveUp}
-                                    loading={isSubmitting}
-                                    disabled={isSubmitting}
-                                    icon="🏳️"
-                                >
-                                    暂时放弃
-                                </Button>
+                                {showWrongOptions ? (
+                                    <div className={styles.wrongOptions}>
+                                        <div className={styles.wrongOptionsTitle}>回答错误，请选择下一步</div>
+                                        <div className={styles.wrongOptionsBtns}>
+                                            <Button
+                                                variant="secondary"
+                                                size="lg"
+                                                onClick={handleChangeQuestion}
+                                                loading={changingQuestion}
+                                                disabled={changingQuestion}
+                                                icon="🔄"
+                                            >
+                                                换一题
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="lg"
+                                                onClick={handleRetryQuestion}
+                                                disabled={changingQuestion}
+                                                icon="🔁"
+                                            >
+                                                重试
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Button
+                                            variant="danger"
+                                            size="lg"
+                                            fullWidth
+                                            onClick={() => setShowSolvedConfirm(true)}
+                                            loading={isSubmitting}
+                                            disabled={isSubmitting}
+                                            icon="✅"
+                                        >
+                                            我已解决
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
+                                            size="lg"
+                                            fullWidth
+                                            onClick={() => setShowGiveUpConfirm(true)}
+                                            loading={isSubmitting}
+                                            disabled={isSubmitting}
+                                            icon="🏳️"
+                                        >
+                                            暂时放弃
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </>
                     )}
@@ -562,6 +817,31 @@ export default function BossBattle() {
                                     <div className={styles.droppedCard}>
                                         <div className={styles.droppedCardTitle}>🎁 掉落新卡牌!</div>
                                         <div className={styles.droppedCardName}>{battleResult.dropped_card.name}</div>
+                                        <div className={styles.droppedCardMeta}>
+                                            <span className={styles.droppedCardDomain}>
+                                                {getAlgorithmIcon(battleResult.dropped_card.domain || battleResult.dropped_card.algorithm_type)}
+                                                {' '}
+                                                {battleResult.dropped_card.domain || battleResult.dropped_card.algorithm_type || '未分类'}
+                                            </span>
+                                        </div>
+                                        <div className={styles.droppedCardDurability}>
+                                            <div className={styles.droppedDurBar}>
+                                                <div
+                                                    className={styles.droppedDurFill}
+                                                    style={{
+                                                        width: `${((battleResult.dropped_card.durability || 0) / (battleResult.dropped_card.max_durability || 80)) * 100}%`,
+                                                        background: (battleResult.dropped_card.durability || 0) >= 60
+                                                            ? 'linear-gradient(90deg, var(--color-success), #34d399)'
+                                                            : (battleResult.dropped_card.durability || 0) >= 30
+                                                                ? 'linear-gradient(90deg, var(--color-warning), #fbbf24)'
+                                                                : 'linear-gradient(90deg, var(--color-danger), #f87171)',
+                                                    }}
+                                                />
+                                            </div>
+                                            <span className={styles.droppedDurText}>
+                                                耐久 {battleResult.dropped_card.durability || 0}/{battleResult.dropped_card.max_durability || 80}
+                                            </span>
+                                        </div>
                                     </div>
                                 )}
                             </>
@@ -597,6 +877,35 @@ export default function BossBattle() {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={showSolvedConfirm}
+                onClose={() => setShowSolvedConfirm(false)}
+                onCancel={() => setShowSolvedConfirm(false)}
+                onConfirm={() => {
+                    setShowSolvedConfirm(false)
+                    handleSubmit()
+                }}
+                title="确认完成"
+                message="确认已在LeetCode完成此题目？"
+                confirmText="确认"
+                cancelText="取消"
+                variant="danger"
+            />
+            <ConfirmDialog
+                open={showGiveUpConfirm}
+                onClose={() => setShowGiveUpConfirm(false)}
+                onCancel={() => setShowGiveUpConfirm(false)}
+                onConfirm={() => {
+                    setShowGiveUpConfirm(false)
+                    handleLeetCodeGiveUp()
+                }}
+                title="确认放弃"
+                message="确认暂时放弃此挑战？"
+                confirmText="确认"
+                cancelText="取消"
+                variant="secondary"
+            />
         </div>
     )
 }
