@@ -25,15 +25,17 @@ class AnswerEvaluator:
         db: 数据库实例（可选）
     """
 
-    def __init__(self, chat_client: ChatClient, db: Optional[Database] = None):
-        """初始化评估器
-
-        Args:
-            chat_client: AI 对话客户端实例
-            db: 数据库实例（可选，用于持久化评估结果）
-        """
-        self.chat_client = chat_client
+    def __init__(self, chat_client: Optional[ChatClient] = None, db: Optional[Database] = None):
+        self._chat_client = chat_client
         self.db = db
+
+    @property
+    def chat_client(self) -> ChatClient:
+        if self._chat_client is None:
+            from algomate.config.settings import AppConfig
+            config = AppConfig.load()
+            self._chat_client = ChatClient(api_key=config.LLM_API_KEY)
+        return self._chat_client
 
     def evaluate(
         self,

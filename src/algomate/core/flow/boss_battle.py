@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import json
 import random
+import re
 
 from algomate.data.database import Database
 from algomate.models.bosses import Boss, Difficulty, BossSource
@@ -536,32 +537,61 @@ class BossBattleFlow:
         boss: Boss,
         session
     ) -> tuple[Optional[Dict[str, Any]], bool]:
-        """内部方法：计算掉落
-        
-        Args:
-            boss: Boss对象
-            session: 数据库会话
-        
-        Returns:
-            (掉落的卡牌信息, 是否掉落)
-        """
         drop_rate = boss.drop_rate
         drop_rate += self.difficulty_manager.get_boss_drop_rate_bonus()
-        
+
         if random.random() < drop_rate:
             weakness_domains = json.loads(boss.weakness_domains)
-            
+
             if weakness_domains:
-                domain = random.choice(weakness_domains)
-                
+                owned_domains = set(
+                    row[0] for row in session.query(Card.domain).distinct().all()
+                )
+                available_domains = [d for d in weakness_domains if d not in owned_domains]
+
+                if not available_domains:
+                    return None, False
+
+                domain = random.choice(available_domains)
+
+                card_name = f"{domain}精通卡"
+                knowledge_content = f"{domain}的核心概念和常见应用场景"
+                key_points = json.dumps(["基本概念", "常见应用", "注意事项"], ensure_ascii=False)
+
+                try:
+                    ai_prompt = f"""请为算法领域"{domain}"生成卡牌信息，返回JSON格式：
+{{
+    "name": "有创意的卡牌名称，风格为'XX精通卡'或更有游戏感的名称",
+    "knowledge_content": "关于{domain}的简短知识内容，100字以内",
+    "key_points": ["要点1", "要点2", "要点3"]
+}}"""
+                    ai_result = self.chat_client.chat(
+                        messages=[{"role": "user", "content": ai_prompt}],
+                        system_prompt="你是一个算法知识专家，请生成简洁准确的算法知识内容。只返回JSON，不要其他内容。",
+                        temperature=0.7
+                    )
+                    json_match = re.search(r'\{[\s\S]*\}', ai_result)
+                    if json_match:
+                        ai_data = json.loads(json_match.group())
+                        if ai_data.get("name"):
+                            card_name = ai_data["name"]
+                        if ai_data.get("knowledge_content"):
+                            knowledge_content = ai_data["knowledge_content"]
+                        if ai_data.get("key_points"):
+                            key_points = json.dumps(ai_data["key_points"], ensure_ascii=False)
+                except Exception:
+                    pass
+
                 card = Card(
-                    name=f"{domain}技巧卡",
+                    name=card_name,
                     domain=domain,
+                    algorithm_type=domain,
                     durability=80,
                     max_durability=80,
                     difficulty=3,
                     is_sealed=False,
-                    key_points="[]",
+                    knowledge_content=knowledge_content,
+                    key_points=key_points,
                     review_level=0,
                     review_count=0,
                     created_at=datetime.now()
@@ -569,14 +599,18 @@ class BossBattleFlow:
                 session.add(card)
                 session.commit()
                 session.refresh(card)
-                
+
                 return {
                     "id": card.id,
                     "name": card.name,
                     "domain": card.domain,
-                    "durability": card.durability
+                    "algorithm_type": card.algorithm_type,
+                    "durability": card.durability,
+                    "max_durability": card.max_durability,
+                    "knowledge_content": card.knowledge_content,
+                    "key_points": json.loads(card.key_points) if card.key_points else []
                 }, True
-        
+
         return None, False
     
     def _determine_difficulty(self, durability: int) -> str:

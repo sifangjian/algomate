@@ -152,13 +152,16 @@ class QuestionGenerator:
 
     QUESTION_TYPES = ["选择题", "简答题", "LeetCode挑战"]
 
-    def __init__(self, chat_client: ChatClient):
-        """初始化生成器
+    def __init__(self, chat_client: Optional[ChatClient] = None):
+        self._chat_client = chat_client
 
-        Args:
-            chat_client: AI 对话客户端实例
-        """
-        self.chat_client = chat_client
+    @property
+    def chat_client(self) -> ChatClient:
+        if self._chat_client is None:
+            from algomate.config.settings import AppConfig
+            config = AppConfig.load()
+            self._chat_client = ChatClient(api_key=config.LLM_API_KEY)
+        return self._chat_client
 
     def generate_for_note(
         self, note_content: str, count: int = 3
