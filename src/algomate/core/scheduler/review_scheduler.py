@@ -13,10 +13,14 @@
     4. 根据游戏难度设置每日任务数量
 """
 
+import asyncio
+import logging
+
 from datetime import datetime, timedelta, date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from algomate.data.database import Database
 from algomate.models.cards import Card
@@ -24,6 +28,8 @@ from algomate.core.memory.forgotten_curve import ForgottenCurveEngine
 from algomate.core.game.durability import DurabilityManager, DurabilityAction
 from algomate.core.game.difficulty import DifficultyManager, DifficultyLevel
 from algomate.config.settings import AppConfig
+
+logger = logging.getLogger(__name__)
 
 
 class TaskType(str, Enum):
@@ -90,6 +96,40 @@ class ReviewScheduler:
         self.forgotten_curve_engine = ForgottenCurveEngine()
         self.durability_manager = DurabilityManager()
         self.difficulty_manager = DifficultyManager()
+        self._scheduler = None
+        self._scheduler_hour = 9
+        self._scheduler_minute = 0
+
+    def start(self):
+        self._scheduler = BackgroundScheduler()
+        self._scheduler.add_job(
+            self._execute_scheduled_daily_review,
+            trigger='cron',
+            hour=self._scheduler_hour,
+            minute=self._scheduler_minute
+        )
+        self._scheduler.start()
+        logger.info("Review scheduler started (daily at %02d:%02d)", self._scheduler_hour, self._scheduler_minute)
+
+    def stop(self):
+        if self._scheduler:
+            self._scheduler.shutdown(wait=False)
+            self._scheduler = None
+            logger.info("Review scheduler stopped")
+
+    def _execute_scheduled_daily_review(self):
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    future = pool.submit(asyncio.run, self.execute_daily_review())
+                    count = future.result()
+            else:
+                count = loop.run_until_complete(self.execute_daily_review())
+            logger.info("Scheduled daily review completed, processed %d cards", count)
+        except Exception:
+            logger.exception("Error executing scheduled daily review")
     
     def generate_daily_tasks(
         self,

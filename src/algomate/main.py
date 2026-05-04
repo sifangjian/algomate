@@ -131,7 +131,7 @@ class AlgomateApp:
         如果配置启用了修炼提醒，则启动定时调度任务。
         """
         if self.config.REVIEW_ENABLED:
-            self.review_scheduler = ReviewScheduler(self.config, self.db)
+            self.review_scheduler = ReviewScheduler(db=self.db, config=self.config)
             self.review_scheduler.start()
             logger.info("Review scheduler started")
 
