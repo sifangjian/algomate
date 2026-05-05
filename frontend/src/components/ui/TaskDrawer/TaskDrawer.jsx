@@ -20,11 +20,18 @@ export default function TaskDrawer() {
         tasks,
         tasksLoading,
         taskSummary,
+        fetchTaskSummary,
     } = useUIStore()
 
     const handleClose = useCallback(() => {
         setTaskDrawerOpen(false)
     }, [setTaskDrawerOpen])
+
+    useEffect(() => {
+        if (taskDrawerOpen) {
+            fetchTaskSummary()
+        }
+    }, [taskDrawerOpen, fetchTaskSummary])
 
     useEffect(() => {
         if (taskDrawerOpen) {

@@ -27,10 +27,20 @@ export const useUIStore = create((set, get) => ({
 
     setTaskSummary: (summary) => set({ taskSummary: summary }),
 
+    fetchTaskSummary: async () => {
+        try {
+            const api = (await import('../services/api')).default
+            const data = await api.get('/tasks/completed-count')
+            set({ taskSummary: { completedToday: data.completed_today } })
+        } catch {
+            set({ taskSummary: { completedToday: 0 } })
+        }
+    },
+
     getTaskSummary: () => {
         const tasks = get().tasks
         const totalToday = tasks.length
-        const completedToday = 0
+        const completedToday = get().taskSummary.completedToday ?? 0
         return {
             totalToday,
             completedToday,
