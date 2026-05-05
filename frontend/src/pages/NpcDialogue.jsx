@@ -8,6 +8,8 @@ import Input from '../components/ui/Input/Input'
 import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './NpcDialogue.module.css'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 function getImportanceBadge(level) {
     if (level === 'core') return '🔴'
@@ -591,19 +593,47 @@ function NpcMessage({ message, onSuggestionClick }) {
     const isStreaming = message.isStreaming
     const suggestions = message.suggestions || []
     const showSuggestions = suggestions.length > 0 && !isStreaming
+    const [viewMode, setViewMode] = useState('rendered')
+
+    const showToggle = !isStreaming && message.id !== 'greeting' && message.content
 
     return (
         <div className={styles.npcMsg}>
             <span className={styles.msgAvatar}>🧙</span>
             <div className={styles.npcMsgContent}>
                 <GameCard className={styles.msgBubble}>
-                    {message.id === 'greeting' ? (
-                        <NpcGreetingMessage text={message.content} />
-                    ) : (
-                        <p className={styles.msgText}>{message.content}</p>
-                    )}
-                    {isStreaming && <span className={styles.cursor}>|</span>}
+                    <div className={styles.msgBubbleInner}>
+                        {message.id === 'greeting' ? (
+                            <NpcGreetingMessage text={message.content} />
+                        ) : viewMode === 'rendered' ? (
+                            <div className={styles.markdownBody}>
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        a: ({ href, children, ...props }) => (
+                                            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>
+                                        )
+                                    }}
+                                >{message.content}</ReactMarkdown>
+                            </div>
+                        ) : (
+                            <pre className={styles.rawText}>{message.content}</pre>
+                        )}
+                        {isStreaming && <span className={styles.cursor}>|</span>}
+                    </div>
                 </GameCard>
+                {showToggle && (
+                    <div className={styles.viewToggleBar}>
+                        <button
+                            className={styles.viewToggleBtn}
+                            onClick={() => setViewMode(viewMode === 'rendered' ? 'raw' : 'rendered')}
+                            title={viewMode === 'rendered' ? '查看Markdown原文' : '查看渲染视图'}
+                            aria-label={viewMode === 'rendered' ? '切换到原文视图' : '切换到渲染视图'}
+                        >
+                            {viewMode === 'rendered' ? '⟨⟩ 原文' : '✦ 渲染'}
+                        </button>
+                    </div>
+                )}
                 {showSuggestions && (
                     <div className={styles.suggestionsList}>
                         {suggestions.map((s, i) => (
