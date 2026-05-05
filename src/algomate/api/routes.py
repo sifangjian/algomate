@@ -1238,6 +1238,27 @@ async def npc_chat_stream(npc_id: int, request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@tasks_router.get("/tasks/completed-count")
+async def get_completed_count():
+    from algomate.data.database import Database
+    from algomate.models.review_records import ReviewRecord
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        target_date = date.today()
+        start = datetime.combine(target_date, datetime.min.time())
+        end = datetime.combine(target_date, datetime.max.time())
+        count = session.query(ReviewRecord).filter(
+            ReviewRecord.status == "completed",
+            ReviewRecord.review_date >= start,
+            ReviewRecord.review_date <= end,
+        ).count()
+        return {"completed_today": count}
+    finally:
+        session.close()
+
+
 @tasks_router.get("/tasks")
 async def get_tasks(date: str = None):
     """获取修炼任务

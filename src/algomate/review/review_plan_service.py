@@ -10,6 +10,7 @@
 
 from typing import List, Dict, Any, Optional
 from datetime import datetime, date, timedelta
+from sqlalchemy import func
 from ..data.database import Database
 from ..data.repositories.review_repo import ReviewRecordRepository
 from algomate.models import ReviewRecord
@@ -344,13 +345,44 @@ class ReviewPlanService:
                 .count()
             )
 
+            level_distribution_raw = (
+                session.query(Card.review_level, func.count(Card.id))
+                .filter(Card.is_sealed == False)
+                .group_by(Card.review_level)
+                .all()
+            )
+            review_level_distribution = {str(level): count for level, count in level_distribution_raw}
+
+            seven_days_ago = datetime.combine(target_date - timedelta(days=7), datetime.min.time())
+            end_of_target = datetime.combine(target_date, datetime.max.time())
+            review_days_raw = (
+                session.query(func.date(ReviewRecord.review_date))
+                .filter(
+                    ReviewRecord.review_date >= seven_days_ago,
+                    ReviewRecord.review_date <= end_of_target,
+                    ReviewRecord.status == "completed"
+                )
+                .distinct()
+                .all()
+            )
+            weekly_review_days = len(review_days_raw)
+
+            total_review_count = (
+                session.query(ReviewRecord)
+                .filter(ReviewRecord.status == "completed")
+                .count()
+            )
+
             return {
                 "date": target_date.isoformat(),
                 "total_cards": total_cards,
                 "overdue_count": overdue_cards,
                 "due_today_count": due_today_cards,
                 "completed_today": completed_today,
-                "weak_points_count": weak_count
+                "weak_points_count": weak_count,
+                "review_level_distribution": review_level_distribution,
+                "weekly_review_days": weekly_review_days,
+                "total_review_count": total_review_count,
             }
         finally:
             session.close()
