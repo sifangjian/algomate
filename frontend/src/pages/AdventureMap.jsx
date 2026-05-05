@@ -19,6 +19,7 @@ export default function AdventureMap() {
     const { setUser } = useUserStore()
     const { setTasks, setTasksLoading, addToast } = useUIStore()
     const [stats, setStats] = useState({ total_cards: 0, total_realms: 0, consecutive_days: 0 })
+    const hasCards = stats.total_cards > 0
     const [selectedPartialRealm, setSelectedPartialRealm] = useState(null)
     const [unlockModalData, setUnlockModalData] = useState(null)
     const [checkingUnlock, setCheckingUnlock] = useState(false)
@@ -163,14 +164,14 @@ export default function AdventureMap() {
 
                 <div className={styles.realmGrid}>
                     {displayRealms.map((realm, index) => (
-                        <GameCard
-                            key={realm.id}
-                            className={`${styles.realmCard} ${realm.status}`}
-                            glow={realm.status === 'unlocked'}
-                            hoverable
-                            onClick={() => handleRealmClick(realm)}
-                            style={{ animationDelay: `${index * 100}ms` }}
-                        >
+                        <div key={realm.id} style={{ position: 'relative' }}>
+                            <GameCard
+                                className={`${styles.realmCard} ${realm.status} ${index === 0 && !hasCards ? styles.noviceHighlight : ''}`}
+                                glow={realm.status === 'unlocked'}
+                                hoverable
+                                onClick={() => handleRealmClick(realm)}
+                                style={{ animationDelay: `${index * 100}ms` }}
+                            >
                             <div className={styles.cardHeader}>
                                 <span className={styles.realmIcon}>{realm.icon}</span>
                                 <div className={styles.cardHeaderInfo}>
@@ -225,6 +226,10 @@ export default function AdventureMap() {
                                 </div>
                             )}
                         </GameCard>
+                            {index === 0 && !hasCards && (
+                                <div className={styles.noviceTooltip}>👉 开始冒险</div>
+                            )}
+                        </div>
                     ))}
                 </div>
             </section>

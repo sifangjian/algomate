@@ -402,6 +402,7 @@ export default function BossBattle() {
                         <div className={styles.emptyState}>
                             <span className={styles.emptyIcon}>🎴</span>
                             <p className={styles.emptyText}>需要至少1张卡牌才能挑战Boss</p>
+                            <button className={styles.emptyGuideBtn} onClick={() => navigate('/')}>前往修习 →</button>
                         </div>
                     ) : (
                         <div className={styles.selectCardGrid}>

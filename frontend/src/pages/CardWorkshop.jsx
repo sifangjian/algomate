@@ -620,10 +620,21 @@ export default function CardWorkshop() {
                         <p>加载中...</p>
                     </div>
                 ) : normalCards.length === 0 && sealedCards.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        <span className={styles.emptyIcon}>🎴</span>
-                        <p>没有找到匹配的卡牌</p>
-                    </div>
+                    !debouncedSearch && !selectedRealm ? (
+                        <div className={styles.emptyGuide}>
+                            <span className={styles.emptyGuideIcon}>🏔️</span>
+                            <p className={styles.emptyGuideTitle}>还没有卡牌</p>
+                            <p className={styles.emptyGuideDesc}>前往秘境修习，获取你的第一张卡牌</p>
+                            <button className={styles.emptyGuideBtn} onClick={() => navigate('/')}>
+                                前往秘境 →
+                            </button>
+                        </div>
+                    ) : (
+                        <div className={styles.emptyState}>
+                            <span className={styles.emptyIcon}>🎴</span>
+                            <p>没有找到匹配的卡牌</p>
+                        </div>
+                    )
                 ) : (
                     normalCards.map((card) => (
                         <GameCard

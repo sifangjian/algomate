@@ -985,6 +985,24 @@
     color: var(--color-text-muted);
 }
 
+.emptyGuideBtn {
+    margin-top: 8px;
+    padding: 10px 24px;
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.emptyGuideBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+}
+
 @media (max-width: 1023px) {
   .mobileCardRefBtn {
     display: flex;
