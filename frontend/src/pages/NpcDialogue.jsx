@@ -125,7 +125,7 @@ export default function NpcDialogue() {
     const handleSend = useCallback(async (text) => {
         const msgText = text || inputValue.trim()
         if (!msgText || isLoading) return
-        if (!npc.id) {
+        if (!npc?.id) {
             showToast('NPC 加载中，请稍后再试', 'warning')
             return
         }
@@ -213,7 +213,7 @@ export default function NpcDialogue() {
         })
 
         abortControllerRef.current = controller
-    }, [inputValue, isLoading, npc.id, sessionId])
+    }, [inputValue, isLoading, npc?.id, sessionId])
 
     const handleQuickQuestion = useCallback(
         (question) => {
@@ -366,9 +366,9 @@ export default function NpcDialogue() {
                         ← 返回地图
                     </button>
                     <div className={styles.npcInfo}>
-                        <span className={styles.npcAvatar}>{npc.avatar}</span>
+                        <span className={styles.npcAvatar}>{npc?.avatar}</span>
                         <div>
-                            <h2 className={styles.npcName}>{npc.name}</h2>
+                            <h2 className={styles.npcName}>{npc?.name || '加载中...'}</h2>
                             <span className={styles.npcRealm}>秘境向导</span>
                         </div>
                     </div>
