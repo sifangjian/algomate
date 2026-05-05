@@ -68,6 +68,7 @@ class MockCard:
     last_reviewed: datetime = None
     review_level: int = 0
     is_sealed: bool = False
+    next_review_date: datetime = None
 
 
 class TestForgottenCurveEngine:
