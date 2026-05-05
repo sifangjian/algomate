@@ -15,6 +15,11 @@ export const navItems = [
         icon: '🎴',
         label: '卡牌工坊',
     },
+    {
+        path: '/daily-review',
+        icon: '📋',
+        label: '每日修炼',
+    },
 ]
 
 export const taskNavItem = {

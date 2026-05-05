@@ -1,0 +1,567 @@
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container {
+    padding-top: 8px;
+}
+
+.header {
+    margin-bottom: 20px;
+}
+
+.pageTitle {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--color-primary-light), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 4px 0;
+}
+
+.pageSubtitle {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.statsSection {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: var(--radius-md);
+}
+
+.statItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.statValue {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.statLabel {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+}
+
+.taskList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.taskCard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    opacity: 0;
+    animation: slideUp 300ms ease forwards;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.taskCard:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08);
+}
+
+.taskHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.taskNameArea {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.taskIcon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.taskName {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reason {
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.reasonCritical {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-danger);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.reasonForgetting {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--color-warning);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.reasonBoss {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--color-primary-light);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.durabilityBar {
+    height: 8px;
+    background: var(--color-bg-primary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.durabilityFill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width var(--transition-slow);
+}
+
+.durabilityFillCritical {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.durabilityFillWarning {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.durabilityFillNormal {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.durabilityText {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+.actionButtons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.actionBtn {
+    padding: 7px 16px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 16px;
+    color: var(--color-primary-light);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.actionBtn:hover {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+    transform: translateY(-1px);
+}
+
+.actionBtn:active {
+    transform: translateY(0);
+}
+
+.emptyState {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--color-text-muted);
+}
+
+.emptyIcon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.4;
+}
+
+.emptyText {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.completed {
+    opacity: 0.55;
+    filter: grayscale(0.5);
+}
+
+.completed .taskName {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+}
+
+.completedBadge {
+    font-size: 0.82rem;
+    color: var(--color-success);
+    margin-top: 4px;
+}
+
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 16px;
+    color: var(--color-primary-light);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-bottom: 16px;
+}
+
+.backBtn:hover {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.panelLoading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+}
+
+.reviewPanel,
+.quizPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.panelTitle {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.reviewContent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.reviewSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reviewSectionTitle {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.reviewSectionText {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 14px 16px;
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.03), rgba(99, 102, 241, 0.08));
+    border-left: 3px solid var(--color-primary);
+    border-top: 1px solid rgba(99, 102, 241, 0.1);
+    border-right: 1px solid rgba(99, 102, 241, 0.1);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    margin: 0;
+}
+
+.reviewKeyPoints {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-left: 0;
+    list-style: none;
+    margin: 0;
+}
+
+.reviewKeyPoint {
+    padding: 8px 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(79, 70, 229, 0.08));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.panelActions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.emptyPanel {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--color-text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.quizContent {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.quizQuestion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quizQuestionText {
+    font-size: 0.92rem;
+    color: var(--color-text-primary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.quizQuestionNum {
+    font-weight: 700;
+    color: var(--color-primary-light);
+}
+
+.quizOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quizOption {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.quizOption:hover:not(:disabled) {
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.quizOptionSelected {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.quizOptionCorrect {
+    border-color: var(--color-success);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.quizOptionWrong {
+    border-color: var(--color-danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.quizOption:disabled {
+    cursor: default;
+}
+
+.quizOptionLabel {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-primary-light);
+}
+
+.quizOptionText {
+    flex: 1;
+}
+
+.quizExplanation {
+    padding: 10px 14px;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.reviewStatsSection {
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.reviewStatsTitle {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 12px 0;
+}
+
+.reviewStatsGrid {
+    display: flex;
+    gap: 16px;
+}
+
+.reviewStatCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    padding: 8px;
+    background: rgba(99, 102, 241, 0.04);
+    border-radius: var(--radius-sm);
+}
+
+.reviewStatValue {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--color-primary-light);
+}
+
+.reviewStatLabel {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+.levelDistribution {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.levelDistTitle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    display: block;
+    margin-bottom: 8px;
+}
+
+.levelDistBars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.levelDistItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.levelDistLabel {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    min-width: 36px;
+}
+
+.levelDistBar {
+    flex: 1;
+    height: 6px;
+    background: var(--color-bg-primary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.levelDistFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 3px;
+    transition: width var(--transition-slow);
+}
+
+.levelDistCount {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    min-width: 20px;
+    text-align: right;
+}
+
+@media (max-width: 768px) {
+    .statsSection {
+        flex-direction: row;
+        justify-content: space-around;
+    }
+
+    .reviewStatsGrid {
+        flex-direction: row;
+        justify-content: space-around;
+    }
+
+    .actionButtons {
+        flex-direction: column;
+    }
+
+    .actionBtn {
+        text-align: center;
+    }
+}

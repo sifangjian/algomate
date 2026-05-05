@@ -124,3 +124,14 @@ class AnswerRecordRepository:
             return session.query(AnswerRecord).order_by(AnswerRecord.answered_at.desc()).all()
         finally:
             session.close()
+
+    def get_completed_leetcode_urls(self) -> List[str]:
+        session = self.db.get_session()
+        try:
+            urls = session.query(AnswerRecord.leetcode_url).filter(
+                AnswerRecord.leetcode_url != "",
+                AnswerRecord.is_correct == True
+            ).distinct().all()
+            return [url[0] for url in urls]
+        finally:
+            session.close()

@@ -165,6 +165,7 @@ class AlgomateApp:
             bosses_router,
             npcs_router,
             questions_router,
+            answers_router,
             dialogues_router,
             review_records_router,
             learning_progress_router,
@@ -174,6 +175,7 @@ class AlgomateApp:
         self.api_app.include_router(bosses_router)
         self.api_app.include_router(npcs_router)
         self.api_app.include_router(questions_router)
+        self.api_app.include_router(answers_router)
         self.api_app.include_router(dialogues_router)
         self.api_app.include_router(review_records_router)
         self.api_app.include_router(learning_progress_router)

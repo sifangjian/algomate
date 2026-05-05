@@ -6,7 +6,7 @@
 
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Column, Integer, Text, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
@@ -37,6 +37,7 @@ class AnswerRecord(Base):
     user_answer = Column(Text, nullable=False)
     is_correct = Column(Boolean, default=False, nullable=False)
     feedback = Column(Text, default="", nullable=False)
+    leetcode_url = Column(String(500), default="", nullable=False)
     answered_at = Column(DateTime, default=datetime.now, nullable=False)
     
     boss = relationship("Boss", back_populates="answer_records")
@@ -50,6 +51,7 @@ class AnswerRecordCreate(BaseModel):
     user_answer: str = Field(..., min_length=1, description="用户答案")
     is_correct: bool = Field(..., description="是否正确")
     feedback: str = Field(default="", description="AI反馈")
+    leetcode_url: Optional[str] = Field(default="", description="LeetCode题目URL")
     
     class Config:
         from_attributes = True
@@ -63,6 +65,7 @@ class AnswerRecordResponse(BaseModel):
     user_answer: str
     is_correct: bool
     feedback: str
+    leetcode_url: str = ""
     answered_at: datetime
     
     class Config:
@@ -120,7 +123,8 @@ async def create_answer_record(record: AnswerRecordCreate):
             card_id=record.card_id,
             user_answer=record.user_answer,
             is_correct=record.is_correct,
-            feedback=record.feedback
+            feedback=record.feedback,
+            leetcode_url=record.leetcode_url
         )
         session.add(new_record)
         session.commit()
@@ -170,6 +174,23 @@ async def get_answer_stats():
             accuracy_rate=accuracy_rate,
             domain_stats=domain_stats
         )
+    finally:
+        session.close()
+
+
+@router.get("/completed-leetcode", response_model=list[str])
+async def get_completed_leetcode_urls():
+    """获取已完成的LeetCode题目URL列表"""
+    from algomate.data.database import Database
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        urls = session.query(AnswerRecord.leetcode_url).filter(
+            AnswerRecord.leetcode_url != "",
+            AnswerRecord.is_correct == True
+        ).distinct().all()
+        return [url[0] for url in urls]
     finally:
         session.close()
 

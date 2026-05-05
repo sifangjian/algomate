@@ -132,6 +132,14 @@ class BossBattleFlow:
         self.difficulty_manager = DifficultyManager()
         self.active_battles: Dict[int, BattleSession] = {}
     
+    def _get_completed_leetcode_urls(self, session) -> list:
+        from algomate.models.answer_records import AnswerRecord
+        urls = session.query(AnswerRecord.leetcode_url).filter(
+            AnswerRecord.leetcode_url != "",
+            AnswerRecord.is_correct == True
+        ).distinct().all()
+        return [url[0] for url in urls]
+    
     async def generate_boss_for_card(
         self,
         card_id: int,
@@ -239,10 +247,12 @@ class BossBattleFlow:
                     count=1
                 )
             else:
+                completed_urls = self._get_completed_leetcode_urls(session)
                 question_data_list = [self.question_generator.generate_leetcode_challenge(
                     note_content=knowledge_content,
                     difficulty=boss_info["difficulty"],
-                    algorithm_type=card.domain
+                    algorithm_type=card.domain,
+                    completed_urls=completed_urls
                 )]
             
             if question_data_list:
@@ -481,12 +491,17 @@ class BossBattleFlow:
             if battle_session.state == BattleState.VICTORY:
                 dropped_card, new_card_dropped = self._calculate_drops(boss, session)
             
+            leetcode_url = ""
+            if question and question.question_type == "LeetCode挑战":
+                leetcode_url = question.leetcode_url or ""
+
             answer_record = AnswerRecord(
                 boss_id=battle_session.boss_id,
                 card_id=battle_session.card_ids[0] if battle_session.card_ids else None,
                 user_answer=user_answer,
                 is_correct=is_correct,
                 feedback=evaluation.get("feedback", ""),
+                leetcode_url=leetcode_url,
                 answered_at=datetime.now()
             )
             session.add(answer_record)
