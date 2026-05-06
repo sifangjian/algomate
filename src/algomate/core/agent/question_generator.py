@@ -208,6 +208,34 @@ class QuestionGenerator:
             self._chat_client = ChatClient(api_key=config.LLM_API_KEY)
         return self._chat_client
 
+    def generate_review_quiz(self, card_id: int, count: int = 2) -> List[Dict[str, Any]]:
+        from algomate.data.database import Database
+        from algomate.models.cards import Card
+
+        db = Database.get_instance()
+        session = db.get_session()
+        try:
+            card = session.query(Card).filter(Card.id == card_id).first()
+            if not card:
+                return []
+
+            context = card.core_concept or f"{card.name} {card.algorithm_type}"
+            count = max(1, min(2, count))
+
+            questions = self.generate_multiple_choice(
+                note_content=context,
+                difficulty="中等",
+                count=count,
+            )
+
+            for q in questions:
+                q["card_id"] = card_id
+                q["card_name"] = card.name
+
+            return questions
+        finally:
+            session.close()
+
     def generate_for_note(
         self, note_content: str, count: int = 3
     ) -> List[Dict[str, Any]]:

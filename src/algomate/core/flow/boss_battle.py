@@ -30,7 +30,7 @@ import random
 import re
 
 from algomate.data.database import Database
-from algomate.models.bosses import Boss, Difficulty, BossSource
+from algomate.models.bosses import Boss, Difficulty
 from algomate.models.cards import Card
 from algomate.models.questions import Question
 from algomate.models.answer_records import AnswerRecord
@@ -152,7 +152,7 @@ class BossBattleFlow:
                 raise ValueError(f"卡牌 {card_id} 不存在")
             
             existing_boss = session.query(Boss).filter(
-                Boss.weakness_domains.contains(card.domain)
+                Boss.weakness_type == card.algorithm_type
             ).first()
             
             if existing_boss:
@@ -160,10 +160,9 @@ class BossBattleFlow:
                     "id": existing_boss.id,
                     "name": existing_boss.name,
                     "difficulty": existing_boss.difficulty,
-                    "weakness_domains": json.loads(existing_boss.weakness_domains),
+                    "weakness_type": existing_boss.weakness_type,
+                    "npc_id": existing_boss.npc_id,
                     "description": existing_boss.description,
-                    "drop_rate": existing_boss.drop_rate,
-                    "source": existing_boss.source
                 }
             else:
                 boss_difficulty = difficulty or self._determine_difficulty(card.durability)
@@ -172,23 +171,21 @@ class BossBattleFlow:
 
 卡牌信息：
 - 名称：{card.name}
-- 领域：{card.domain}
+- 算法类型：{card.algorithm_type}
 - 耐久度：{card.durability}
 
 请生成一个Boss，要求：
 1. Boss名称要有创意，符合游戏化风格
 2. 难度：{boss_difficulty}
-3. 弱点领域包含：{card.domain}
+3. 弱点类型：{card.algorithm_type}
 4. 描述要有故事性，游戏化包装
-5. 掉宝率根据难度设定（easy=0.8, medium=0.5, hard=0.3）
 
 返回JSON格式：
 {{
     "name": "Boss名称",
     "difficulty": "{boss_difficulty}",
-    "weakness_domains": ["{card.domain}"],
-    "description": "Boss描述",
-    "drop_rate": 0.5
+    "weakness_type": "{card.algorithm_type}",
+    "description": "Boss描述"
 }}"""
                 
                 result = self.chat_client.chat([{"role": "user", "content": prompt}])
@@ -197,22 +194,20 @@ class BossBattleFlow:
                 json_match = re.search(r'\{[\s\S]*\}', result)
                 if not json_match:
                     boss_data = {
-                        "name": f"{card.domain}守护者",
+                        "name": f"{card.algorithm_type}守护者",
                         "difficulty": boss_difficulty,
-                        "weakness_domains": [card.domain],
-                        "description": f"这是{card.domain}领域的守护Boss，需要使用{card.name}技巧才能击败它。",
-                        "drop_rate": 0.5 if boss_difficulty == "medium" else (0.8 if boss_difficulty == "easy" else 0.3)
+                        "weakness_type": card.algorithm_type,
+                        "description": f"这是{card.algorithm_type}领域的守护Boss，需要使用{card.name}技巧才能击败它。",
                     }
                 else:
                     boss_data = json.loads(json_match.group())
                 
                 new_boss = Boss(
-                    name=boss_data.get("name", f"{card.domain}守护者"),
+                    name=boss_data.get("name", f"{card.algorithm_type}守护者"),
                     difficulty=boss_data.get("difficulty", boss_difficulty),
-                    weakness_domains=json.dumps(boss_data.get("weakness_domains", [card.domain]), ensure_ascii=False),
+                    weakness_type=boss_data.get("weakness_type", card.algorithm_type),
+                    npc_id=card.npc_id,
                     description=boss_data.get("description", ""),
-                    source="ai_generated",
-                    drop_rate=boss_data.get("drop_rate", 0.5)
                 )
                 session.add(new_boss)
                 session.commit()
@@ -222,17 +217,16 @@ class BossBattleFlow:
                     "id": new_boss.id,
                     "name": new_boss.name,
                     "difficulty": new_boss.difficulty,
-                    "weakness_domains": json.loads(new_boss.weakness_domains),
+                    "weakness_type": new_boss.weakness_type,
+                    "npc_id": new_boss.npc_id,
                     "description": new_boss.description,
-                    "drop_rate": new_boss.drop_rate,
-                    "source": new_boss.source
                 }
             
             boss_obj = existing_boss or session.query(Boss).filter(Boss.id == boss_info["id"]).first()
             
             question_type = random.choice(["选择题", "简答题", "LeetCode挑战"])
             
-            knowledge_content = card.knowledge_content or card.name
+            knowledge_content = card.core_concept or card.name
             
             if question_type == "选择题":
                 question_data_list = self.question_generator.generate_multiple_choice(
@@ -251,7 +245,7 @@ class BossBattleFlow:
                 question_data_list = [self.question_generator.generate_leetcode_challenge(
                     note_content=knowledge_content,
                     difficulty=boss_info["difficulty"],
-                    algorithm_type=card.domain,
+                    algorithm_type=card.algorithm_type,
                     completed_urls=completed_urls
                 )]
             
@@ -272,9 +266,6 @@ class BossBattleFlow:
                 session.add(question)
                 session.commit()
                 session.refresh(question)
-                
-                boss_obj.question_id = question.id
-                session.commit()
                 
                 raw_options = json.loads(question.options) if question.options else []
                 normalized_options = [raw_options[k] for k in sorted(raw_options.keys())] if isinstance(raw_options, dict) else raw_options
@@ -305,9 +296,8 @@ class BossBattleFlow:
             card_info = {
                 "name": card.name,
                 "key_points": json.loads(card.key_points) if card.key_points else [],
-                "knowledge_content": card.knowledge_content or "",
+                "core_concept": card.core_concept or "",
                 "durability": card.durability,
-                "max_durability": card.max_durability,
                 "icon": getattr(card, 'icon', None)
             }
             
@@ -352,7 +342,7 @@ class BossBattleFlow:
                 raise ValueError("未找到有效的卡牌")
             
             for card in cards:
-                if card.is_sealed:
+                if card.pending_retake:
                     raise ValueError(f"卡牌 {card.id} 已封印，无法使用")
             
             question_data = self.question_generator.generate_for_note(
@@ -473,7 +463,7 @@ class BossBattleFlow:
                     )
                     
                     card.durability = new_durability
-                    card.is_sealed = is_sealed
+                    card.pending_retake = is_sealed
                     card.last_reviewed = datetime.now()
                     
                     durability_changes.append({
@@ -552,79 +542,74 @@ class BossBattleFlow:
         boss: Boss,
         session
     ) -> tuple[Optional[Dict[str, Any]], bool]:
-        drop_rate = boss.drop_rate
+        drop_rate = 0.5
+        if boss.difficulty == "easy":
+            drop_rate = 0.8
+        elif boss.difficulty == "hard":
+            drop_rate = 0.3
         drop_rate += self.difficulty_manager.get_boss_drop_rate_bonus()
 
         if random.random() < drop_rate:
-            weakness_domains = json.loads(boss.weakness_domains)
+            weakness_type = boss.weakness_type
 
-            if weakness_domains:
-                owned_domains = set(
-                    row[0] for row in session.query(Card.domain).distinct().all()
+            if weakness_type:
+                owned_algorithm_types = set(
+                    row[0] for row in session.query(Card.algorithm_type).distinct().all()
                 )
-                available_domains = [d for d in weakness_domains if d not in owned_domains]
+                if weakness_type not in owned_algorithm_types:
+                    algorithm_type = weakness_type
 
-                if not available_domains:
-                    return None, False
+                    card_name = f"{algorithm_type}精通卡"
+                    core_concept = f"{algorithm_type}的核心概念和常见应用场景"
+                    key_points = json.dumps(["基本概念", "常见应用", "注意事项"], ensure_ascii=False)
 
-                domain = random.choice(available_domains)
-
-                card_name = f"{domain}精通卡"
-                knowledge_content = f"{domain}的核心概念和常见应用场景"
-                key_points = json.dumps(["基本概念", "常见应用", "注意事项"], ensure_ascii=False)
-
-                try:
-                    ai_prompt = f"""请为算法领域"{domain}"生成卡牌信息，返回JSON格式：
+                    try:
+                        ai_prompt = f"""请为算法领域"{algorithm_type}"生成卡牌信息，返回JSON格式：
 {{
     "name": "有创意的卡牌名称，风格为'XX精通卡'或更有游戏感的名称",
-    "knowledge_content": "关于{domain}的简短知识内容，100字以内",
+    "core_concept": "关于{algorithm_type}的简短知识内容，100字以内",
     "key_points": ["要点1", "要点2", "要点3"]
 }}"""
-                    ai_result = self.chat_client.chat(
-                        messages=[{"role": "user", "content": ai_prompt}],
-                        system_prompt="你是一个算法知识专家，请生成简洁准确的算法知识内容。只返回JSON，不要其他内容。",
-                        temperature=0.7
+                        ai_result = self.chat_client.chat(
+                            messages=[{"role": "user", "content": ai_prompt}],
+                            system_prompt="你是一个算法知识专家，请生成简洁准确的算法知识内容。只返回JSON，不要其他内容。",
+                            temperature=0.7
+                        )
+                        json_match = re.search(r'\{[\s\S]*\}', ai_result)
+                        if json_match:
+                            ai_data = json.loads(json_match.group())
+                            if ai_data.get("name"):
+                                card_name = ai_data["name"]
+                            if ai_data.get("core_concept"):
+                                core_concept = ai_data["core_concept"]
+                            if ai_data.get("key_points"):
+                                key_points = json.dumps(ai_data["key_points"], ensure_ascii=False)
+                    except Exception:
+                        pass
+
+                    card = Card(
+                        name=card_name,
+                        algorithm_type=algorithm_type,
+                        durability=80,
+                        pending_retake=False,
+                        core_concept=core_concept,
+                        key_points=key_points,
+                        review_level=0,
+                        review_count=0,
+                        created_at=datetime.now()
                     )
-                    json_match = re.search(r'\{[\s\S]*\}', ai_result)
-                    if json_match:
-                        ai_data = json.loads(json_match.group())
-                        if ai_data.get("name"):
-                            card_name = ai_data["name"]
-                        if ai_data.get("knowledge_content"):
-                            knowledge_content = ai_data["knowledge_content"]
-                        if ai_data.get("key_points"):
-                            key_points = json.dumps(ai_data["key_points"], ensure_ascii=False)
-                except Exception:
-                    pass
+                    session.add(card)
+                    session.commit()
+                    session.refresh(card)
 
-                card = Card(
-                    name=card_name,
-                    domain=domain,
-                    algorithm_type=domain,
-                    durability=80,
-                    max_durability=80,
-                    difficulty=3,
-                    is_sealed=False,
-                    knowledge_content=knowledge_content,
-                    key_points=key_points,
-                    review_level=0,
-                    review_count=0,
-                    created_at=datetime.now()
-                )
-                session.add(card)
-                session.commit()
-                session.refresh(card)
-
-                return {
-                    "id": card.id,
-                    "name": card.name,
-                    "domain": card.domain,
-                    "algorithm_type": card.algorithm_type,
-                    "durability": card.durability,
-                    "max_durability": card.max_durability,
-                    "knowledge_content": card.knowledge_content,
-                    "key_points": json.loads(card.key_points) if card.key_points else []
-                }, True
+                    return {
+                        "id": card.id,
+                        "name": card.name,
+                        "algorithm_type": card.algorithm_type,
+                        "durability": card.durability,
+                        "core_concept": card.core_concept,
+                        "key_points": json.loads(card.key_points) if card.key_points else []
+                    }, True
 
         return None, False
     

@@ -32,7 +32,7 @@ export const useCardStore = create((set, get) => ({
         state.selectedCard?.id === cardId ? null : state.selectedCard,
     })),
 
-  updateCard: (cardId, updatedCard) =>
+  updateCardInList: (cardId, updatedCard) =>
     set((state) => ({
       cards: state.cards.map((c) => (c.id === cardId ? updatedCard : c)),
       selectedCard:
@@ -62,19 +62,11 @@ export const useCardStore = create((set, get) => ({
       if (filters.status) params.status = filters.status
       if (filters.keyword) params.keyword = filters.keyword
       const data = await cardService.getAll(params)
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        set({
-          cards: data.cards || [],
-          endangeredCount: data.endangered_count || 0,
-          pendingRetakeCount: data.pending_retake_count || 0,
-        })
-      } else if (Array.isArray(data)) {
-        set({
-          cards: data,
-          endangeredCount: data.filter((c) => c.status === 'endangered').length,
-          pendingRetakeCount: data.filter((c) => c.status === 'pending_retake').length,
-        })
-      }
+      set({
+        cards: data.cards || [],
+        endangeredCount: data.endangered_count || 0,
+        pendingRetakeCount: data.pending_retake_count || 0,
+      })
     } catch {
     } finally {
       set({ loading: false })
@@ -89,6 +81,31 @@ export const useCardStore = create((set, get) => ({
     } catch {
       return null
     }
+  },
+
+  updateCard: async (cardId, payload) => {
+    const updatedCard = await cardService.update(cardId, payload)
+    set((state) => ({
+      cards: state.cards.map((c) => (c.id === cardId ? updatedCard : c)),
+      selectedCard:
+        state.selectedCard?.id === cardId ? updatedCard : state.selectedCard,
+    }))
+    return updatedCard
+  },
+
+  deleteCard: async (cardId) => {
+    const result = await cardService.delete(cardId)
+    set((state) => ({
+      cards: state.cards.filter((c) => c.id !== cardId),
+      selectedCard:
+        state.selectedCard?.id === cardId ? null : state.selectedCard,
+    }))
+    return result
+  },
+
+  retakeCard: async (cardId) => {
+    const result = await cardService.retakeCard(cardId)
+    return result
   },
 
   setRetakeInfo: (cardId, dialogueId, npcId) =>

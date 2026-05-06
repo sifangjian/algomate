@@ -39,31 +39,42 @@ class TaskType(str, Enum):
     BOSS_CHALLENGE = "boss_challenge"
 
 
+PRIORITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+
 @dataclass
 class ReviewTask:
-    """修炼任务数据结构"""
     task_id: str
     task_type: TaskType
     card_id: int
     card_name: str
-    card_domain: str
+    card_algorithm_type: str
     card_durability: int
     priority: str
     reason: str
     due_date: Optional[date] = None
+    algorithm_type: str = ""
+    max_durability: int = 100
+    review_level: int = 0
+    next_review_date: Optional[date] = None
+    review_types: Optional[List[str]] = None
     
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
         return {
             "task_id": self.task_id,
             "task_type": self.task_type.value,
             "card_id": self.card_id,
             "card_name": self.card_name,
-            "card_domain": self.card_domain,
+            "card_algorithm_type": self.card_algorithm_type,
             "card_durability": self.card_durability,
             "priority": self.priority,
             "reason": self.reason,
-            "due_date": self.due_date.isoformat() if self.due_date else None
+            "due_date": self.due_date.isoformat() if self.due_date else None,
+            "algorithm_type": self.algorithm_type,
+            "max_durability": self.max_durability,
+            "review_level": self.review_level,
+            "next_review_date": self.next_review_date.isoformat() if self.next_review_date else None,
+            "review_types": self.review_types or [],
         }
 
 
@@ -153,7 +164,7 @@ class ReviewScheduler:
         """
         session = self.db.get_session()
         try:
-            all_cards = session.query(Card).filter(Card.is_sealed == False).all()
+            all_cards = session.query(Card).filter(Card.pending_retake == False).all()
             
             tasks = []
             task_counter = 1
@@ -169,11 +180,16 @@ class ReviewScheduler:
                     task_type=TaskType.CRITICAL_REVIEW,
                     card_id=card.id,
                     card_name=card.name,
-                    card_domain=card.domain,
+                    card_algorithm_type=card.algorithm_type,
                     card_durability=card.durability,
                     priority="critical",
                     reason="濒危卡牌",
-                    due_date=date.today()
+                    due_date=date.today(),
+                    algorithm_type=getattr(card, 'algorithm_type', ''),
+                    max_durability=getattr(card, 'max_durability', 100),
+                    review_level=getattr(card, 'review_level', 0),
+                    next_review_date=card.next_review_date.date() if card.next_review_date else None,
+                    review_types=["content_review"],
                 ))
                 task_counter += 1
             
@@ -192,11 +208,16 @@ class ReviewScheduler:
                         task_type=TaskType.FORGETTING_CURVE_REVIEW,
                         card_id=card.id,
                         card_name=card.name,
-                        card_domain=card.domain,
+                        card_algorithm_type=card.algorithm_type,
                         card_durability=card.durability,
                         priority="high" if review_status.is_due else "medium",
                         reason="遗忘曲线修炼",
-                        due_date=review_status.next_review_date
+                        due_date=review_status.next_review_date,
+                        algorithm_type=getattr(card, 'algorithm_type', ''),
+                        max_durability=getattr(card, 'max_durability', 100),
+                        review_level=getattr(card, 'review_level', 0),
+                        next_review_date=card.next_review_date.date() if card.next_review_date else None,
+                        review_types=["content_review", "quiz_review"],
                     ))
                     task_counter += 1
             
@@ -218,16 +239,21 @@ class ReviewScheduler:
                         task_type=TaskType.BOSS_CHALLENGE,
                         card_id=card.id,
                         card_name=card.name,
-                        card_domain=card.domain,
+                        card_algorithm_type=card.algorithm_type,
                         card_durability=card.durability,
                         priority="low",
                         reason="Boss挑战",
-                        due_date=date.today()
+                        due_date=date.today(),
+                        algorithm_type=getattr(card, 'algorithm_type', ''),
+                        max_durability=getattr(card, 'max_durability', 100),
+                        review_level=getattr(card, 'review_level', 0),
+                        next_review_date=card.next_review_date.date() if card.next_review_date else None,
+                        review_types=["boss_challenge"],
                     ))
                     task_counter += 1
             
             tasks.sort(key=lambda t: (
-                0 if t.priority == "critical" else (1 if t.priority == "high" else 2),
+                PRIORITY_ORDER.get(t.priority, 3),
                 t.card_durability
             ))
             
@@ -257,7 +283,7 @@ class ReviewScheduler:
         try:
             end_date = datetime.now().date() + timedelta(days=days)
             
-            all_cards = session.query(Card).filter(Card.is_sealed == False).all()
+            all_cards = session.query(Card).filter(Card.pending_retake == False).all()
             
             upcoming_reviews = []
             
@@ -272,7 +298,7 @@ class ReviewScheduler:
                     upcoming_reviews.append({
                         "card_id": card.id,
                         "card_name": card.name,
-                        "card_domain": card.domain,
+                        "card_algorithm_type": card.algorithm_type,
                         "card_durability": card.durability,
                         "review_date": review_status.next_review_date.isoformat(),
                         "review_level": review_status.review_level,
@@ -313,7 +339,7 @@ class ReviewScheduler:
                     )
                     
                     card.durability = new_durability
-                    card.is_sealed = is_sealed
+                    card.pending_retake = is_sealed
                     card.last_reviewed = datetime.now()
             
             session.commit()
@@ -333,14 +359,14 @@ class ReviewScheduler:
             all_cards = session.query(Card).all()
             
             total_cards = len(all_cards)
-            sealed_cards = len([c for c in all_cards if c.is_sealed])
+            sealed_cards = len([c for c in all_cards if c.pending_retake])
             critical_cards = len([
                 c for c in all_cards
-                if not c.is_sealed and self.durability_manager.is_critical(c.durability)
+                if not c.pending_retake and self.durability_manager.is_critical(c.durability)
             ])
             
             due_cards = self.forgotten_curve_engine.get_daily_review_tasks([
-                c for c in all_cards if not c.is_sealed
+                c for c in all_cards if not c.pending_retake
             ])
             
             return {
@@ -354,32 +380,32 @@ class ReviewScheduler:
         finally:
             session.close()
     
-    def get_domain_review_stats(self) -> List[Dict[str, Any]]:
-        """获取各领域的修炼统计
+    def get_algorithm_type_review_stats(self) -> List[Dict[str, Any]]:
+        """获取各算法类型的修炼统计
         
         Returns:
-            各领域统计数据列表
+            各算法类型统计数据列表
         """
         session = self.db.get_session()
         try:
-            all_cards = session.query(Card).filter(Card.is_sealed == False).all()
+            all_cards = session.query(Card).filter(Card.pending_retake == False).all()
             
-            domain_stats = {}
+            algorithm_type_stats = {}
             
             for card in all_cards:
-                if card.domain not in domain_stats:
-                    domain_stats[card.domain] = {
-                        "domain": card.domain,
+                if card.algorithm_type not in algorithm_type_stats:
+                    algorithm_type_stats[card.algorithm_type] = {
+                        "algorithm_type": card.algorithm_type,
                         "total_count": 0,
                         "critical_count": 0,
                         "due_count": 0,
                         "avg_durability": 0
                     }
                 
-                domain_stats[card.domain]["total_count"] += 1
+                algorithm_type_stats[card.algorithm_type]["total_count"] += 1
                 
                 if self.durability_manager.is_critical(card.durability):
-                    domain_stats[card.domain]["critical_count"] += 1
+                    algorithm_type_stats[card.algorithm_type]["critical_count"] += 1
                 
                 review_status = self.forgotten_curve_engine.get_review_status(
                     card.created_at,
@@ -388,13 +414,13 @@ class ReviewScheduler:
                 )
                 
                 if review_status.is_due:
-                    domain_stats[card.domain]["due_count"] += 1
+                    algorithm_type_stats[card.algorithm_type]["due_count"] += 1
             
-            for domain, stats in domain_stats.items():
-                domain_cards = [c for c in all_cards if c.domain == domain]
-                if domain_cards:
-                    stats["avg_durability"] = sum(c.durability for c in domain_cards) / len(domain_cards)
+            for algorithm_type, stats in algorithm_type_stats.items():
+                type_cards = [c for c in all_cards if c.algorithm_type == algorithm_type]
+                if type_cards:
+                    stats["avg_durability"] = sum(c.durability for c in type_cards) / len(type_cards)
             
-            return list(domain_stats.values())
+            return list(algorithm_type_stats.values())
         finally:
             session.close()

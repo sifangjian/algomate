@@ -1,6 +1,5 @@
-import { useState, useCallback, useMemo, memo } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { cardService } from '../../services/cardService'
 import { useCardStore } from '../../stores/cardStore'
 import { showToast } from '../ui/Toast/index'
 import Button from '../ui/Button/Button'
@@ -8,16 +7,16 @@ import styles from './RetakeButton.module.css'
 
 function RetakeButton({ card }) {
   const navigate = useNavigate()
-  const { setRetakeInfo } = useCardStore()
+  const { retakeCard, setRetakeInfo } = useCardStore()
   const [loading, setLoading] = useState(false)
 
-  const isPendingRetake = card.status === 'pending_retake'
+  const isPendingRetake = card.status === 'pending_retake' || card.pending_retake
 
   const handleRetake = useCallback(async () => {
     if (!isPendingRetake) return
     setLoading(true)
     try {
-      const result = await cardService.retakeCard(card.id)
+      const result = await retakeCard(card.id)
       setRetakeInfo(card.id, result.dialogue_id, result.npc_id)
       showToast(`开始重修「${card.name}」`, 'success')
       if (result.npc_id) {
@@ -32,7 +31,7 @@ function RetakeButton({ card }) {
     } finally {
       setLoading(false)
     }
-  }, [card, isPendingRetake, navigate, setRetakeInfo])
+  }, [card, isPendingRetake, navigate, retakeCard, setRetakeInfo])
 
   if (!isPendingRetake) return null
 

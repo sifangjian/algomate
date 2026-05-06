@@ -1,6 +1,8 @@
 """数据迁移脚本：Note → Card 中心化重构
 
-将 Note 的知识内容和追踪属性迁移到 Card 新字段。
+.. deprecated::
+    此迁移脚本已执行完毕，仅保留供参考。
+    Domain 枚举已从 Card 模型中移除，algorithm_type 字段替代了 domain。
 """
 
 import json
@@ -9,12 +11,21 @@ from datetime import datetime
 
 from algomate.data.database import Database
 from algomate.models.notes import Note
-from algomate.models.cards import Card, Domain
+from algomate.models.cards import Card
 from algomate.models.review_records import ReviewRecord
 from algomate.models.questions import Question
 from algomate.core.memory.forgotten_curve import ForgottenCurveEngine
 
 logger = logging.getLogger(__name__)
+
+NOVICE_FOREST = "新手森林"
+MIST_SWAMP = "迷雾沼泽"
+WISDOM_TEMPLE = "智慧圣殿"
+GREED_TOWER = "贪婪之塔"
+FATE_MAZE = "命运迷宫"
+SPLIT_MOUNTAIN = "分裂山脉"
+MATH_HALL = "数学殿堂"
+TRIAL_LAND = "试炼之地"
 
 DIFFICULTY_MAP = {
     "简单": 1, "中等": 3, "困难": 5,
@@ -22,33 +33,33 @@ DIFFICULTY_MAP = {
 }
 
 ALGORITHM_TYPE_TO_DOMAIN = {
-    "基础数据结构": Domain.NOVICE_FOREST,
-    "数组": Domain.NOVICE_FOREST,
-    "链表": Domain.NOVICE_FOREST,
-    "栈": Domain.NOVICE_FOREST,
-    "队列": Domain.NOVICE_FOREST,
-    "哈希表": Domain.NOVICE_FOREST,
-    "树与图": Domain.NOVICE_FOREST,
-    "二叉树": Domain.NOVICE_FOREST,
-    "图": Domain.NOVICE_FOREST,
-    "并查集": Domain.NOVICE_FOREST,
-    "堆": Domain.NOVICE_FOREST,
-    "搜索与遍历": Domain.MIST_SWAMP,
-    "DFS": Domain.MIST_SWAMP,
-    "BFS": Domain.MIST_SWAMP,
-    "排序算法": Domain.MIST_SWAMP,
-    "排序": Domain.MIST_SWAMP,
-    "二分查找": Domain.MIST_SWAMP,
-    "动态规划": Domain.WISDOM_TEMPLE,
-    "贪心算法": Domain.GREED_TOWER,
-    "贪心": Domain.GREED_TOWER,
-    "回溯算法": Domain.FATE_MAZE,
-    "回溯": Domain.FATE_MAZE,
-    "分治算法": Domain.SPLIT_MOUNTAIN,
-    "分治": Domain.SPLIT_MOUNTAIN,
-    "数学与位运算": Domain.MATH_HALL,
-    "位运算": Domain.MATH_HALL,
-    "数学": Domain.MATH_HALL,
+    "基础数据结构": NOVICE_FOREST,
+    "数组": NOVICE_FOREST,
+    "链表": NOVICE_FOREST,
+    "栈": NOVICE_FOREST,
+    "队列": NOVICE_FOREST,
+    "哈希表": NOVICE_FOREST,
+    "树与图": NOVICE_FOREST,
+    "二叉树": NOVICE_FOREST,
+    "图": NOVICE_FOREST,
+    "并查集": NOVICE_FOREST,
+    "堆": NOVICE_FOREST,
+    "搜索与遍历": MIST_SWAMP,
+    "DFS": MIST_SWAMP,
+    "BFS": MIST_SWAMP,
+    "排序算法": MIST_SWAMP,
+    "排序": MIST_SWAMP,
+    "二分查找": MIST_SWAMP,
+    "动态规划": WISDOM_TEMPLE,
+    "贪心算法": GREED_TOWER,
+    "贪心": GREED_TOWER,
+    "回溯算法": FATE_MAZE,
+    "回溯": FATE_MAZE,
+    "分治算法": SPLIT_MOUNTAIN,
+    "分治": SPLIT_MOUNTAIN,
+    "数学与位运算": MATH_HALL,
+    "位运算": MATH_HALL,
+    "数学": MATH_HALL,
 }
 
 forgotten_curve = ForgottenCurveEngine()
@@ -60,14 +71,14 @@ def _map_difficulty(note_difficulty: str) -> int:
 
 def _map_algorithm_type_to_domain(algorithm_type: str) -> str:
     if not algorithm_type:
-        return Domain.NOVICE_FOREST.value
+        return NOVICE_FOREST
     domain = ALGORITHM_TYPE_TO_DOMAIN.get(algorithm_type)
     if domain:
-        return domain.value
+        return domain
     for key, dom in ALGORITHM_TYPE_TO_DOMAIN.items():
         if key in algorithm_type or algorithm_type in key:
-            return dom.value
-    return Domain.TRIAL_LAND.value
+            return dom
+    return TRIAL_LAND
 
 
 def migrate_notes_to_cards():
@@ -93,7 +104,7 @@ def migrate_notes_to_cards():
                     continue
 
                 if note.content:
-                    card.knowledge_content = note.content
+                    card.core_concept = note.content
                 if note.summary:
                     card.summary = note.summary
                 if note.algorithm_type:
@@ -132,20 +143,16 @@ def migrate_notes_to_cards():
             try:
                 new_card = Card(
                     name=note.title or note.algorithm_type or "未命名卡牌",
-                    domain=_map_algorithm_type_to_domain(note.algorithm_type),
-                    algorithm_category=note.algorithm_type,
-                    difficulty=_map_difficulty(note.difficulty),
+                    algorithm_type=_map_algorithm_type_to_domain(note.algorithm_type),
                     durability=note.mastery_level if note.mastery_level is not None else 100,
-                    max_durability=100,
                     note_id=note.id,
-                    knowledge_content=note.content,
+                    core_concept=note.content,
                     key_points=note.tags or "[]",
-                    summary=note.summary,
                     algorithm_type=note.algorithm_type,
                     review_count=note.review_count or 0,
                     next_review_date=note.next_review_date,
                     last_reviewed=note.last_reviewed,
-                    is_sealed=(note.mastery_level == 0) if note.mastery_level is not None else False,
+                    pending_retake=(note.mastery_level == 0) if note.mastery_level is not None else False,
                 )
                 new_card.review_level = forgotten_curve.calculate_review_level_from_history(
                     new_card.created_at, new_card.last_reviewed, new_card.review_count

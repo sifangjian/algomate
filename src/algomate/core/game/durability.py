@@ -213,9 +213,9 @@ class DurabilityManager:
         """解封卡牌时的耐久度恢复值
         
         Returns:
-            解封后的耐久度（默认恢复至30）
+            解封后的耐久度（默认恢复至80）
         """
-        return self.config.critical_threshold
+        return 80
     
     def get_durability_status(self, durability: int) -> dict:
         """获取耐久度状态详情
@@ -267,7 +267,7 @@ class DurabilityManager:
         updated_cards = []
         
         for card in cards:
-            if hasattr(card, 'is_sealed') and card.is_sealed:
+            if hasattr(card, 'pending_retake') and card.pending_retake:
                 continue
             
             if hasattr(card, 'created_at') and self.is_in_grace_period(card.created_at):
@@ -322,7 +322,7 @@ def get_critical_cards(cards: list) -> list:
     manager = DurabilityManager()
     return [
         card for card in cards
-        if not getattr(card, 'is_sealed', False)
+        if not getattr(card, 'pending_retake', False)
         and manager.is_critical(getattr(card, 'durability', 100))
     ]
 
@@ -351,7 +351,7 @@ def compute_card_status(durability: int, pending_retake: bool) -> str:
 def apply_daily_decay(card, difficulty: str = "normal") -> dict:
     manager = DurabilityManager()
     
-    if getattr(card, 'pending_retake', False) or getattr(card, 'is_sealed', False):
+    if getattr(card, 'pending_retake', False):
         return {
             "card": card,
             "old_durability": getattr(card, 'durability', 80),

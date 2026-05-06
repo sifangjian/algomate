@@ -228,7 +228,7 @@ class ForgottenCurveEngine:
         due_cards = []
         
         for card in cards:
-            if hasattr(card, 'is_sealed') and card.is_sealed:
+            if hasattr(card, 'pending_retake') and card.pending_retake:
                 continue
             
             if self.should_review(
@@ -291,7 +291,7 @@ class ForgottenCurveEngine:
         )
         
         if action == ReviewAction.SUCCESS:
-            card.durability = min(card.durability + 20, card.max_durability if hasattr(card, 'max_durability') else 100)
+            card.durability = min(card.durability + 20, 100)
         else:
             card.durability = max(card.durability - 5, 0)
         

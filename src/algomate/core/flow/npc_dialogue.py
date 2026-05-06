@@ -26,7 +26,7 @@ import json
 from algomate.data.database import Database
 from algomate.models.npcs import NPC
 from algomate.models.dialogue_records import DialogueRecord
-from algomate.models.cards import Card, Domain
+from algomate.models.cards import Card
 from algomate.core.agent.chat_client import ChatClient
 from algomate.core.agent.content_analyzer import ContentAnalyzer
 from algomate.config.settings import AppConfig
@@ -508,19 +508,15 @@ class NPCDialogueFlow:
             analysis_result = self.content_analyzer.analyze_content(user_notes)
             
             cards = []
-            domain = self._map_domain_to_enum(dialogue_session.npc_domain)
             
             card = Card(
                 name=analysis_result.algorithm_type or f"{dialogue_session.npc_domain}技巧",
-                domain=domain.value if isinstance(domain, Domain) else domain,
-                durability=80,
-                max_durability=80,
-                difficulty=3,
-                is_sealed=False,
-                key_points="[]",
-                knowledge_content=user_notes,
-                summary=analysis_result.summary,
                 algorithm_type=analysis_result.algorithm_type,
+                durability=80,
+                pending_retake=False,
+                key_points="[]",
+                core_concept=user_notes,
+                topic=dialogue_session.npc_domain,
                 review_level=0,
                 review_count=0,
                 created_at=datetime.now()
@@ -532,11 +528,9 @@ class NPCDialogueFlow:
             cards.append({
                 "id": card.id,
                 "name": card.name,
-                "domain": card.domain,
+                "algorithm_type": card.algorithm_type,
                 "durability": card.durability,
-                "knowledge_content": card.knowledge_content,
-                "summary": card.summary,
-                "algorithm_type": card.algorithm_type
+                "core_concept": card.core_concept,
             })
             
             dialogue_content = json.dumps([
@@ -632,24 +626,16 @@ class NPCDialogueFlow:
             return npc.greeting
         return f"欢迎来到{npc.location}！准备好开始探索了吗？"
 
-    def _map_domain_to_enum(self, domain_str: str) -> str:
-        """将领域字符串映射到枚举值
-        
-        Args:
-            domain_str: 领域字符串
-        
-        Returns:
-            领域枚举值
-        """
+    def _map_domain_to_algorithm_type(self, domain_str: str) -> str:
         domain_mapping = {
-            "基础数据结构": Domain.NOVICE_FOREST,
-            "树与图": Domain.NOVICE_FOREST,
-            "搜索与遍历": Domain.MIST_SWAMP,
-            "动态规划": Domain.WISDOM_TEMPLE,
-            "贪心算法": Domain.GREED_TOWER,
-            "回溯算法": Domain.FATE_MAZE,
-            "分治算法": Domain.SPLIT_MOUNTAIN,
-            "数学与位运算": Domain.MATH_HALL,
+            "基础数据结构": "basic_data_structure",
+            "树与图": "tree_graph",
+            "搜索与遍历": "search_traversal",
+            "动态规划": "dynamic_programming",
+            "贪心算法": "greedy",
+            "回溯算法": "backtracking",
+            "分治算法": "divide_conquer",
+            "数学与位运算": "math_bit",
         }
         
-        return domain_mapping.get(domain_str, Domain.NOVICE_FOREST).value
+        return domain_mapping.get(domain_str, "basic_data_structure")

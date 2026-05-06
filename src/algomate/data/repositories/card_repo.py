@@ -13,12 +13,10 @@ class CardRepository:
     def __init__(self, db: Database):
         self.db = db
 
-    def create(self, name: str, domain: str, **kwargs) -> Card:
+    def create(self, name: str, algorithm_type: str, **kwargs) -> Card:
         session = self.db.get_session()
         try:
-            if kwargs.get("durability") == 0:
-                kwargs["is_sealed"] = True
-            card = Card(name=name, domain=domain, **kwargs)
+            card = Card(name=name, algorithm_type=algorithm_type, **kwargs)
             session.add(card)
             session.commit()
             session.refresh(card)
@@ -33,17 +31,12 @@ class CardRepository:
         finally:
             session.close()
 
-    def get_all(self, domain: Optional[str] = None, algorithm_type: Optional[str] = None,
-                is_sealed: Optional[bool] = None) -> List[Card]:
+    def get_all(self, algorithm_type: Optional[str] = None) -> List[Card]:
         session = self.db.get_session()
         try:
             query = session.query(Card)
-            if domain is not None:
-                query = query.filter(Card.domain == domain)
             if algorithm_type is not None:
                 query = query.filter(Card.algorithm_type == algorithm_type)
-            if is_sealed is not None:
-                query = query.filter(Card.is_sealed == is_sealed)
             return query.order_by(Card.created_at.desc()).all()
         finally:
             session.close()
@@ -59,7 +52,7 @@ class CardRepository:
             if keyword is not None:
                 pattern = f"%{keyword}%"
                 query = query.filter(
-                    (Card.name.like(pattern)) | (Card.knowledge_content.like(pattern))
+                    (Card.name.like(pattern)) | (Card.core_concept.like(pattern))
                 )
             cards = query.order_by(Card.created_at.desc()).all()
             
@@ -67,7 +60,7 @@ class CardRepository:
             endangered_count = 0
             pending_retake_count = 0
             for card in cards:
-                card_status = compute_card_status(card.durability, card.pending_retake or card.is_sealed)
+                card_status = compute_card_status(card.durability, card.pending_retake)
                 if status is not None and card_status != status:
                     continue
                 if card_status == "endangered":
@@ -92,7 +85,7 @@ class CardRepository:
             cards = session.query(Card).all()
             counts = {"normal": 0, "endangered": 0, "pending_retake": 0}
             for card in cards:
-                status = compute_card_status(card.durability, card.pending_retake or card.is_sealed)
+                status = compute_card_status(card.durability, card.pending_retake)
                 counts[status] = counts.get(status, 0) + 1
             return counts
         finally:
@@ -107,8 +100,6 @@ class CardRepository:
             for key, value in kwargs.items():
                 if value is not None:
                     setattr(card, key, value)
-            if "durability" in kwargs and kwargs["durability"] == 0:
-                card.is_sealed = True
             session.commit()
             session.refresh(card)
             return card
@@ -140,7 +131,7 @@ class CardRepository:
             card = session.query(Card).filter(Card.id == card_id).first()
             if card is None:
                 return None
-            card.is_sealed = True
+            card.pending_retake = True
             card.durability = 0
             session.commit()
             session.refresh(card)
@@ -148,13 +139,13 @@ class CardRepository:
         finally:
             session.close()
 
-    def unseal(self, card_id: int, durability: int = 30) -> Optional[Card]:
+    def unseal(self, card_id: int, durability: int = 80) -> Optional[Card]:
         session = self.db.get_session()
         try:
             card = session.query(Card).filter(Card.id == card_id).first()
             if card is None:
                 return None
-            card.is_sealed = False
+            card.pending_retake = False
             card.durability = durability
             card.next_review_date = datetime.now() + timedelta(days=2 ** card.review_level)
             session.commit()
@@ -163,11 +154,11 @@ class CardRepository:
         finally:
             session.close()
 
-    def count_by_domain(self) -> dict:
+    def count_by_algorithm_type(self) -> dict:
         session = self.db.get_session()
         try:
-            results = session.query(Card.domain, func.count(Card.id)).group_by(Card.domain).all()
-            return {domain: count for domain, count in results}
+            results = session.query(Card.algorithm_type, func.count(Card.id)).group_by(Card.algorithm_type).all()
+            return {algorithm_type: count for algorithm_type, count in results}
         finally:
             session.close()
 
@@ -183,15 +174,15 @@ class CardRepository:
         try:
             pattern = f"%{keyword}%"
             return session.query(Card).filter(
-                (Card.name.like(pattern)) | (Card.algorithm_type.like(pattern)) | (Card.knowledge_content.like(pattern))
+                (Card.name.like(pattern)) | (Card.algorithm_type.like(pattern)) | (Card.core_concept.like(pattern))
             ).order_by(Card.created_at.desc()).limit(limit).all()
         finally:
             session.close()
 
-    def get_unsealed(self) -> List[Card]:
+    def get_active(self) -> List[Card]:
         session = self.db.get_session()
         try:
-            return session.query(Card).filter(Card.is_sealed == False).all()
+            return session.query(Card).filter(Card.pending_retake == False).all()
         finally:
             session.close()
 
@@ -202,9 +193,9 @@ class CardRepository:
         finally:
             session.close()
 
-    def count_sealed(self) -> int:
+    def count_pending_retake(self) -> int:
         session = self.db.get_session()
         try:
-            return session.query(func.count(Card.id)).filter(Card.is_sealed == True).scalar()
+            return session.query(func.count(Card.id)).filter(Card.pending_retake == True).scalar()
         finally:
             session.close()

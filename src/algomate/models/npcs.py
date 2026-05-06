@@ -163,10 +163,10 @@ async def get_unlocked_npcs():
     db = Database.get_instance()
     session = db.get_session()
     try:
-        unlocked_domains = session.query(distinct(Card.domain)).filter(Card.is_sealed == False).all()
-        unlocked_domains = [d[0] for d in unlocked_domains]
+        unlocked_algorithm_types = session.query(distinct(Card.algorithm_type)).filter(Card.pending_retake == False).all()
+        unlocked_algorithm_types = [d[0] for d in unlocked_algorithm_types]
         
-        npcs = session.query(NPC).filter(NPC.location.in_(unlocked_domains)).all()
+        npcs = session.query(NPC).filter(NPC.algorithm_type.in_(unlocked_algorithm_types)).all()
         result = []
         for npc in npcs:
             npc_dict = {

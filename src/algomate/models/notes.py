@@ -2,7 +2,7 @@
 心得模型
 
 .. deprecated::
-    心得(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
+    心得(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 core_concept 字段。
     修炼追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
     保留此文件仅为向后兼容和数据迁移参考。
 """
@@ -21,7 +21,7 @@ class Note(Base):
     """心得模型
 
     .. deprecated::
-        心得(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 knowledge_content 字段。
+        心得(Note)模型已废弃。知识内容已迁移到卡牌(Card)模型的 core_concept 字段。
         修炼追踪已统一到 Card 模型的 review_level/next_review_date/review_count 字段。
 
     存储用户的算法修炼心得，包含心得内容、关联的NPC等信息。
@@ -63,7 +63,6 @@ class Note(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     npc = relationship("NPC", back_populates="notes")
-    cards = relationship("Card", back_populates="note")
     review_records = relationship("ReviewRecord", back_populates="note")
 
 

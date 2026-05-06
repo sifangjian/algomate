@@ -160,7 +160,7 @@ async def get_answer_stats():
             if record.card_id:
                 card = session.query(Card).filter(Card.id == record.card_id).first()
                 if card:
-                    domain = card.domain
+                    domain = card.algorithm_type
                     if domain not in domain_stats:
                         domain_stats[domain] = {"total": 0, "correct": 0}
                     domain_stats[domain]["total"] += 1

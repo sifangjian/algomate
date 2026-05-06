@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, useEffect, memo } from 'react'
-import { cardService } from '../../services/cardService'
 import { useCardStore } from '../../stores/cardStore'
 import { showToast } from '../ui/Toast/index'
 import Button from '../ui/Button/Button'
@@ -31,6 +30,19 @@ function dimensionToString(value) {
   return String(value)
 }
 
+function visualLinksToString(value) {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) {
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return ''
+    }
+  }
+  return ''
+}
+
 function CardEditForm({ card, onSave, onCancel }) {
   const { updateCard, setSelectedCard } = useCardStore()
   const [form, setForm] = useState({})
@@ -42,19 +54,19 @@ function CardEditForm({ card, onSave, onCancel }) {
     EDITABLE_DIMENSIONS.forEach(({ key }) => {
       initial[key] = dimensionToString(card[key])
     })
-    initial.name = card.name || ''
-    initial.algorithm_type = card.algorithm_type || ''
+    initial.visual_links = visualLinksToString(card.visual_links)
     setForm(initial)
   }, [card])
 
   const hasChanges = useMemo(() => {
     if (!card) return false
-    return EDITABLE_DIMENSIONS.some(({ key }) => {
+    const dimensionChanged = EDITABLE_DIMENSIONS.some(({ key }) => {
       const original = dimensionToString(card[key])
       const current = (form[key] || '').trim()
       return original !== current
-    }) || (form.name || '').trim() !== (card.name || '') ||
-      (form.algorithm_type || '').trim() !== (card.algorithm_type || '')
+    })
+    const linksChanged = visualLinksToString(card.visual_links) !== (form.visual_links || '').trim()
+    return dimensionChanged || linksChanged
   }, [form, card])
 
   const handleFieldChange = useCallback((key, value) => {
@@ -66,12 +78,6 @@ function CardEditForm({ card, onSave, onCancel }) {
     setIsSaving(true)
     try {
       const payload = {}
-      if ((form.name || '').trim() !== (card.name || '')) {
-        payload.name = form.name.trim()
-      }
-      if ((form.algorithm_type || '').trim() !== (card.algorithm_type || '')) {
-        payload.algorithm_type = form.algorithm_type.trim() || null
-      }
       EDITABLE_DIMENSIONS.forEach(({ key }) => {
         const original = dimensionToString(card[key])
         const current = (form[key] || '').trim()
@@ -80,13 +86,21 @@ function CardEditForm({ card, onSave, onCancel }) {
         }
       })
 
-      const result = await cardService.updateCard(card.id, payload)
-      if (result && result.code === 40002) {
-        showToast('卡牌内容未变更', 'warning')
-        return
+      const originalLinks = visualLinksToString(card.visual_links)
+      const currentLinks = (form.visual_links || '').trim()
+      if (originalLinks !== currentLinks) {
+        if (currentLinks) {
+          try {
+            payload.visual_links = JSON.parse(currentLinks)
+          } catch {
+            payload.visual_links = currentLinks
+          }
+        } else {
+          payload.visual_links = null
+        }
       }
-      const updatedCard = result.data || result
-      updateCard(card.id, updatedCard)
+
+      const updatedCard = await updateCard(card.id, payload)
       setSelectedCard(updatedCard)
       showToast(`卡牌「${card.name}」已更新`, 'success')
       onSave?.(updatedCard)
@@ -105,27 +119,6 @@ function CardEditForm({ card, onSave, onCancel }) {
 
   return (
     <div className={styles.form}>
-      <div className={styles.nameRow}>
-        <div className={styles.fieldGroup}>
-          <label className={styles.fieldLabel}>🎴 卡牌名称</label>
-          <input
-            className={styles.fieldInput}
-            value={form.name || ''}
-            onChange={(e) => handleFieldChange('name', e.target.value)}
-            placeholder="卡牌名称"
-          />
-        </div>
-        <div className={styles.fieldGroup}>
-          <label className={styles.fieldLabel}>🏷️ 算法类型</label>
-          <input
-            className={styles.fieldInput}
-            value={form.algorithm_type || ''}
-            onChange={(e) => handleFieldChange('algorithm_type', e.target.value)}
-            placeholder="如：Dynamic Programming"
-          />
-        </div>
-      </div>
-
       <div className={styles.dimensionsGrid}>
         {EDITABLE_DIMENSIONS.map(({ key, label, rows }) => (
           <div key={key} className={styles.fieldGroup}>
@@ -139,6 +132,17 @@ function CardEditForm({ card, onSave, onCancel }) {
             />
           </div>
         ))}
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <label className={styles.fieldLabel}>🌐 可视化链接 (JSON)</label>
+        <textarea
+          className={styles.fieldTextarea}
+          value={form.visual_links || ''}
+          onChange={(e) => handleFieldChange('visual_links', e.target.value)}
+          placeholder='[{"title": "链接名", "url": "https://..."}]'
+          rows={3}
+        />
       </div>
 
       <div className={styles.actions}>

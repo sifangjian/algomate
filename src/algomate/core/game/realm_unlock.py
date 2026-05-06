@@ -155,12 +155,12 @@ class RealmUnlockManager:
         self.unlock_conditions = unlock_conditions or self.DEFAULT_UNLOCK_CONDITIONS
         self.mastery_threshold = mastery_threshold
     
-    def count_mastered_cards(self, cards: list, domain: str) -> int:
+    def count_mastered_cards(self, cards: list, algorithm_type: str) -> int:
         """统计指定领域的达标卡牌数量
         
         Args:
             cards: 卡牌列表
-            domain: 领域名称
+            algorithm_type: 算法类型名称
         
         Returns:
             达标卡牌数量
@@ -170,10 +170,10 @@ class RealmUnlockManager:
         """
         count = 0
         for card in cards:
-            if hasattr(card, 'domain') and card.domain == domain:
+            if hasattr(card, 'algorithm_type') and card.algorithm_type == algorithm_type:
                 durability = getattr(card, 'durability', 0)
-                is_sealed = getattr(card, 'is_sealed', False)
-                if durability >= self.mastery_threshold and not is_sealed:
+                pending_retake = getattr(card, 'pending_retake', False)
+                if durability >= self.mastery_threshold and not pending_retake:
                     count += 1
         return count
     
@@ -189,8 +189,8 @@ class RealmUnlockManager:
         count = 0
         for card in cards:
             durability = getattr(card, 'durability', 0)
-            is_sealed = getattr(card, 'is_sealed', False)
-            if durability >= self.mastery_threshold and not is_sealed:
+            pending_retake = getattr(card, 'pending_retake', False)
+            if durability >= self.mastery_threshold and not pending_retake:
                 count += 1
         return count
     

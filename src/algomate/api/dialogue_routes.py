@@ -475,7 +475,7 @@ async def end_dialogue(dialogue_id: int):
     from algomate.models.dialogue_messages import DialogueMessageRecord
     from algomate.models.dialogue_notes import DialogueNote
     from algomate.models.npcs import NPC
-    from algomate.models.cards import Card, Domain
+    from algomate.models.cards import Card
     from algomate.core.agent.chat_client import ChatClient
     from algomate.config.settings import AppConfig
 
@@ -569,32 +569,27 @@ async def end_dialogue(dialogue_id: int):
 
         is_update = existing_card is not None
 
-        domain_mapping = {
-            "基础数据结构": Domain.NOVICE_FOREST.value,
-            "栈队列与搜索": Domain.NOVICE_FOREST.value,
-            "搜索与遍历": Domain.MIST_SWAMP.value,
-            "树结构": "古树森林",
-            "图结构": "古树森林",
-            "动态规划": Domain.WISDOM_TEMPLE.value,
-            "贪心算法": Domain.GREED_TOWER.value,
-            "回溯算法": Domain.FATE_MAZE.value,
-            "分治与排序": Domain.SPLIT_MOUNTAIN.value,
-            "数学与位运算": Domain.MATH_HALL.value,
+        algorithm_type_mapping = {
+            "基础数据结构": "basic_data_structure",
+            "栈队列与搜索": "basic_data_structure",
+            "搜索与遍历": "search_traversal",
+            "树结构": "tree",
+            "图结构": "graph",
+            "动态规划": "dynamic_programming",
+            "贪心算法": "greedy",
+            "回溯算法": "backtracking",
+            "分治与排序": "divide_conquer",
+            "数学与位运算": "math_bit",
         }
-        card_domain = domain_mapping.get(npc_domain, Domain.NOVICE_FOREST.value)
+        card_algorithm_type = algorithm_type_mapping.get(npc_domain, "basic_data_structure")
 
         card_data = {
             "name": card_result.name,
-            "domain": card_domain,
-            "algorithm_type": card_result.algorithm_type,
-            "difficulty": card_result.difficulty,
+            "algorithm_type": card_result.algorithm_type or card_algorithm_type,
             "durability": 80,
-            "max_durability": 100,
-            "is_sealed": False,
-            "knowledge_content": card_result.core_concept,
-            "key_points": card_result.key_points,
-            "summary": card_result.core_concept[:200] if card_result.core_concept else "",
+            "pending_retake": False,
             "core_concept": card_result.core_concept,
+            "key_points": card_result.key_points,
             "code_template": card_result.code_template,
             "complexity_analysis": card_result.complexity_analysis,
             "use_cases": card_result.use_cases,
@@ -636,7 +631,6 @@ async def end_dialogue(dialogue_id: int):
                 "id": saved_card.id,
                 "name": saved_card.name,
                 "algorithm_type": saved_card.algorithm_type,
-                "domain": saved_card.domain,
                 "durability": saved_card.durability,
                 "topic": saved_card.topic,
                 "core_concept": saved_card.core_concept,

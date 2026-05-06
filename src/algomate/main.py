@@ -162,9 +162,11 @@ class AlgomateApp:
         from .api.hall_routes import router as hall_router
         self.api_app.include_router(hall_router)
 
+        from .api.v1.router import router as v1_router
+        self.api_app.include_router(v1_router, prefix="/api/v1")
+
         from .models import (
             notes_router,
-            cards_router,
             bosses_router,
             npcs_router,
             questions_router,
@@ -174,7 +176,6 @@ class AlgomateApp:
             learning_progress_router,
         )
         self.api_app.include_router(notes_router)
-        self.api_app.include_router(cards_router)
         self.api_app.include_router(bosses_router)
         self.api_app.include_router(npcs_router)
         self.api_app.include_router(questions_router)

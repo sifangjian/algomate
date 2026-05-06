@@ -61,7 +61,7 @@ class ReviewPlanService:
         try:
             cards = (
                 session.query(Card)
-                .filter(Card.next_review_date <= target_date, Card.is_sealed == False)
+                .filter(Card.next_review_date <= target_date, Card.pending_retake == False)
                 .order_by(Card.next_review_date)
                 .all()
             )
@@ -81,9 +81,8 @@ class ReviewPlanService:
                 review_plan.append({
                     "card_id": card.id,
                     "name": card.name,
-                    "domain": card.domain,
-                    "summary": card.summary or "",
                     "algorithm_type": card.algorithm_type,
+                    "core_concept": card.core_concept or "",
                     "durability": card.durability,
                     "review_level": card.review_level,
                     "review_count": card.review_count,
@@ -115,7 +114,7 @@ class ReviewPlanService:
         try:
             cards = (
                 session.query(Card)
-                .filter(Card.durability < threshold, Card.is_sealed == False)
+                .filter(Card.durability < threshold, Card.pending_retake == False)
                 .order_by(Card.durability)
                 .all()
             )
@@ -196,7 +195,7 @@ class ReviewPlanService:
                 "record_id": record.id,
                 "card_id": card_id,
                 "name": card.name,
-                "knowledge_content": card.knowledge_content,
+                "core_concept": card.core_concept,
                 "review_date": record.review_date.isoformat(),
                 "status": record.status
             }
@@ -206,19 +205,8 @@ class ReviewPlanService:
     def complete_review(
         self,
         card_id: int,
-        action: str = "success"
+        review_type: str = "content_review"
     ) -> Optional[Dict[str, Any]]:
-        """完成修炼
-
-        完成修炼后更新卡牌状态和下次修炼时间。
-
-        Args:
-            card_id: 卡牌ID
-            action: 修炼动作（success/fail）
-
-        Returns:
-            更新后的卡牌信息
-        """
         from ..core.memory.forgotten_curve import ReviewAction
 
         session = self.db.get_session()
@@ -226,6 +214,9 @@ class ReviewPlanService:
             card = session.query(Card).filter(Card.id == card_id).first()
             if not card:
                 return None
+
+            durability_before = card.durability
+            review_level_before = card.review_level
 
             pending_records = (
                 session.query(ReviewRecord)
@@ -238,22 +229,47 @@ class ReviewPlanService:
             for record in pending_records:
                 record.status = "completed"
 
-            review_action = ReviewAction.SUCCESS if action == "success" else ReviewAction.FAIL
-            new_level, next_review_date = self.forgotten_curve.complete_review_for_card(
-                card, review_action
+            self.forgotten_curve.complete_review_for_card(
+                card, ReviewAction.SUCCESS
             )
+
+            now = datetime.now()
+            new_record = ReviewRecord(
+                card_id=card_id,
+                review_date=now,
+                status="completed",
+                review_type=review_type,
+                completed_at=now,
+                durability_before=durability_before,
+                durability_after=card.durability,
+                review_level_before=review_level_before,
+                review_level_after=card.review_level,
+            )
+            session.add(new_record)
 
             session.commit()
             session.refresh(card)
 
+            durability_after = card.durability
+            review_level_after = card.review_level
+
+            remaining_endangered = (
+                session.query(Card)
+                .filter(Card.durability < 30, Card.pending_retake == False)
+                .count()
+            )
+
             return {
                 "card_id": card.id,
-                "name": card.name,
-                "durability": card.durability,
-                "review_level": card.review_level,
+                "card_name": card.name,
+                "review_type": review_type,
+                "durability_before": durability_before,
+                "durability_after": durability_after,
+                "review_level_before": review_level_before,
+                "review_level_after": review_level_after,
+                "next_review_date": card.next_review_date.isoformat() if card.next_review_date else None,
                 "review_count": card.review_count,
-                "last_reviewed": card.last_reviewed.isoformat() if card.last_reviewed else None,
-                "next_review_date": card.next_review_date.isoformat() if card.next_review_date else None
+                "remaining_endangered": remaining_endangered,
             }
         finally:
             session.close()
@@ -312,23 +328,23 @@ class ReviewPlanService:
 
         session = self.db.get_session()
         try:
-            total_cards = session.query(Card).filter(Card.is_sealed == False).count()
+            total_cards = session.query(Card).filter(Card.pending_retake == False).count()
 
             overdue_cards = (
                 session.query(Card)
-                .filter(Card.next_review_date < target_date, Card.is_sealed == False)
+                .filter(Card.next_review_date < target_date, Card.pending_retake == False)
                 .count()
             )
 
             due_today_cards = (
                 session.query(Card)
-                .filter(Card.next_review_date == target_date, Card.is_sealed == False)
+                .filter(Card.next_review_date == target_date, Card.pending_retake == False)
                 .count()
             )
 
             weak_count = (
                 session.query(Card)
-                .filter(Card.durability < 70, Card.is_sealed == False)
+                .filter(Card.durability < 70, Card.pending_retake == False)
                 .count()
             )
 
@@ -347,7 +363,7 @@ class ReviewPlanService:
 
             level_distribution_raw = (
                 session.query(Card.review_level, func.count(Card.id))
-                .filter(Card.is_sealed == False)
+                .filter(Card.pending_retake == False)
                 .group_by(Card.review_level)
                 .all()
             )
