@@ -13,6 +13,25 @@ __pycache__/
 docs/
 specs/
 
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Sensitive files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+.config.yaml
+
 
 # Distribution / packaging
 .Python
@@ -44,6 +63,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
+tests/
 htmlcov/
 .tox/
 .nox/
@@ -62,22 +82,36 @@ venv/
 ENV/
 env/
 
+# OS
+.DS_Store
+Thumbs.db
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
-# OS
-.DS_Store
-Thumbs.db
+# Jupyter Notebook
+.ipynb_checkpoints
 
-# Project specific
-*.db
-*.log
-.config.yaml
-.env
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
 
 # Frontend (Vite + React)
 frontend/node_modules/
@@ -89,13 +123,23 @@ frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
+
+# Frontend logs
 frontend/npm-debug.log*
-frontend.yarn-debug.log*
-frontend.yarn-error.log*
-frontend.pnpm-debug.log*
-frontend/lock.yaml
-frontend/package-lock.json
-frontend/yarn.lock
-frontend/pnpm-lock.yaml
+frontend/.yarn-debug.log*
+frontend/.yarn-error.log*
+frontend/.pnpm-debug.log*
+
+# Frontend build cache
 frontend/.vite/
 frontend/.turbo/
+
+# Frontend testing (Playwright)
+frontend/playwright-report/
+frontend/test-results/
+frontend/playwright/.cache/
+
+# Lock files (uncomment if you want to ignore them)
+# frontend/package-lock.json
+# frontend/yarn.lock
+# frontend/pnpm-lock.yaml
