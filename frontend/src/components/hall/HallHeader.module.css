@@ -1,0 +1,20 @@
+.hallHeader {
+  margin-bottom: var(--spacing-2xl, 32px);
+}
+
+.pageTitle {
+  font-size: var(--font-size-3xl, 28px);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-primary-700, #1d4ed8);
+  margin-bottom: var(--spacing-lg, 20px);
+}
+
+.searchRow {
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: var(--font-size-2xl, 24px);
+  }
+}

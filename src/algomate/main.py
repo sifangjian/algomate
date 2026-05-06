@@ -159,6 +159,9 @@ class AlgomateApp:
         from .api import routes
         self.api_app.include_router(routes.router, prefix="/api")
 
+        from .api.hall_routes import router as hall_router
+        self.api_app.include_router(hall_router)
+
         from .models import (
             notes_router,
             cards_router,

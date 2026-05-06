@@ -1,8 +1,8 @@
 export const navItems = [
     {
         path: '/',
-        icon: '🗺️',
-        label: '冒险地图',
+        icon: '🏛️',
+        label: '导师大厅',
         exact: true,
     },
     {

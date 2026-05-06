@@ -9,6 +9,7 @@ import LoadingScreen from './components/ui/Loading/LoadingScreen'
 import OnboardingGuide from './components/ui/OnboardingGuide/OnboardingGuide'
 
 const AdventureMap = lazy(() => import('./pages/AdventureMap'))
+const HallPage = lazy(() => import('./pages/HallPage'))
 const NpcDialogue = lazy(() => import('./pages/NpcDialogue'))
 const KnowledgeSpring = lazy(() => import('./pages/KnowledgeSpring'))
 const BossBattle = lazy(() => import('./pages/BossBattle'))
@@ -54,7 +55,8 @@ function AppContent() {
       <main className="main-content">
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
-            <Route path="/" element={<AdventureMap />} />
+            <Route path="/" element={<HallPage />} />
+            <Route path="/adventure" element={<AdventureMap />} />
             <Route path="/knowledge-spring" element={<KnowledgeSpring />} />
             <Route path="/npc/:realmId" element={<NpcDialogue />} />
             <Route path="/boss/battle" element={<BossBattle />} />

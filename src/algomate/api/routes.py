@@ -31,21 +31,33 @@ async def get_algorithm_info():
 
 
 def _ensure_npc_exists(session, realm_name: str, npc_data: dict) -> int:
-    """确保 NPC 存在于数据库中，返回 NPC ID"""
     from algomate.models.npcs import NPC
 
     existing = session.query(NPC).filter(
-        NPC.location == realm_name,
         NPC.name == npc_data["name"]
     ).first()
     if existing:
+        if not existing.algorithm_type and npc_data.get("algorithm_type"):
+            existing.algorithm_type = npc_data["algorithm_type"]
+            existing.domain = npc_data["algorithm_type"]
+        if not existing.title and npc_data.get("title"):
+            existing.title = npc_data["title"]
+        if not existing.specialties and npc_data.get("specialties"):
+            existing.specialties = json.dumps(npc_data["specialties"], ensure_ascii=False)
+        if not existing.description and npc_data.get("description"):
+            existing.description = npc_data.get("description", "")
+        session.commit()
         return existing.id
 
     new_npc = NPC(
         name=npc_data["name"],
-        domain=npc_data["domain"],
+        title=npc_data.get("title", ""),
+        algorithm_type=npc_data.get("algorithm_type", npc_data.get("domain", "")),
+        specialties=json.dumps(npc_data.get("specialties", []), ensure_ascii=False),
+        domain=npc_data.get("algorithm_type", npc_data.get("domain", "")),
         location=realm_name,
-        avatar=npc_data.get("avatar", "🧙‍♀️"),
+        avatar=npc_data.get("avatar", ""),
+        description=npc_data.get("description", ""),
         system_prompt=npc_data.get("system_prompt", f"你是{npc_data['name']}，{npc_data.get('description', '')}"),
         greeting=npc_data.get("greeting", f"欢迎来到{realm_name}！我是{npc_data['name']}。"),
         topics=json.dumps(npc_data.get("topics", []), ensure_ascii=False)
@@ -57,7 +69,6 @@ def _ensure_npc_exists(session, realm_name: str, npc_data: dict) -> int:
 
 
 def _init_default_npcs():
-    """初始化默认 NPC 数据"""
     from algomate.data.database import Database
     from algomate.models.npcs import NPC
 
@@ -72,18 +83,24 @@ def _init_default_npcs():
             "新手森林": [
                 {
                     "name": "老夫子",
+                    "title": "基础数据结构导师",
+                    "algorithm_type": "basic_data_structure",
                     "domain": "基础数据结构",
-                    "avatar": "🧓",
-                    "description": "基础数据结构的导师",
+                    "specialties": ["数组与双指针", "链表", "哈希表"],
+                    "avatar": "laofuzi",
+                    "description": "基础数据结构的导师，以循循善诱的方式教授数组与双指针、链表、哈希表等核心技巧。",
                     "system_prompt": "你是老夫子，新手森林的导师，专长基础数据结构。你以循循善诱的方式教授数组与双指针、链表、哈希表等核心技巧。你的教学风格是先讲概念，再举例说明，最后让学生思考应用场景。",
                     "greeting": "欢迎来到新手森林！老夫在此等候多时，让我们从基础数据结构开始，循序渐进地踏上算法修习之路吧。",
                     "topics": ["数组与双指针", "链表", "哈希表"]
                 },
                 {
                     "name": "栈语者",
+                    "title": "栈队列与搜索导师",
+                    "algorithm_type": "stack_queue_search",
                     "domain": "栈队列与搜索",
-                    "avatar": "📚",
-                    "description": "栈队列与搜索基础的导师",
+                    "specialties": ["栈与队列", "二分查找", "前缀和"],
+                    "avatar": "zhanzhe",
+                    "description": "栈队列与搜索基础的导师，以严谨的逻辑教授栈与队列、二分查找、前缀和等技巧。",
                     "system_prompt": "你是栈语者，新手森林的导师，专长栈队列与搜索基础。你以严谨的逻辑教授栈与队列、二分查找、前缀和等技巧。你善于用生活比喻解释抽象概念。",
                     "greeting": "欢迎来到新手森林！我是栈语者，让我用严谨的逻辑带你理解栈与队列的奥妙，掌握二分查找与前缀和的精髓。",
                     "topics": ["栈与队列", "二分查找", "前缀和"]
@@ -91,9 +108,12 @@ def _init_default_npcs():
             ],
             "迷雾沼泽": {
                 "name": "沼泽向导",
+                "title": "搜索与遍历导师",
+                "algorithm_type": "search_traversal",
                 "domain": "搜索与遍历",
-                "avatar": "🐸",
-                "description": "搜索与遍历的导师",
+                "specialties": ["滑动窗口", "DFS", "BFS", "拓扑排序"],
+                "avatar": "zhaodao",
+                "description": "搜索与遍历的导师，以实战导向的方式教授滑动窗口、DFS与BFS、拓扑排序等搜索进阶技巧。",
                 "system_prompt": "你是沼泽向导，迷雾沼泽的导师，专长搜索与遍历。你以实战导向的方式教授滑动窗口、DFS与BFS、拓扑排序等搜索进阶技巧。你善于引导学生从暴力解法优化到高效算法。",
                 "greeting": "欢迎来到迷雾沼泽！迷雾虽浓，但搜索之道自明。让我带你从暴力到高效，掌握滑动窗口与搜索遍历的进阶技巧。",
                 "topics": ["滑动窗口", "DFS", "BFS", "拓扑排序"]
@@ -101,18 +121,24 @@ def _init_default_npcs():
             "古树森林": [
                 {
                     "name": "树语者",
+                    "title": "树结构导师",
+                    "algorithm_type": "tree",
                     "domain": "树结构",
-                    "avatar": "🌳",
-                    "description": "树结构的导师",
+                    "specialties": ["二叉树遍历", "二叉搜索树", "堆与优先队列"],
+                    "avatar": "shuzhe",
+                    "description": "树结构的导师，以自然比喻教授二叉树遍历、二叉搜索树、堆与优先队列等树相关技巧。",
                     "system_prompt": "你是树语者，古树森林的导师，专长树结构。你以自然比喻教授二叉树遍历、二叉搜索树、堆与优先队列等树相关技巧。你善于用树的生长过程解释递归结构。",
                     "greeting": "欢迎来到古树森林！我是树语者，让我用自然的智慧带你领悟二叉树的递归之美，掌握搜索树与优先队列的精髓。",
                     "topics": ["二叉树遍历", "二叉搜索树", "堆与优先队列"]
                 },
                 {
                     "name": "图灵使",
+                    "title": "图结构导师",
+                    "algorithm_type": "graph",
                     "domain": "图结构",
-                    "avatar": "🕸️",
-                    "description": "图结构的导师",
+                    "specialties": ["图的遍历", "最短路径", "并查集"],
+                    "avatar": "tuling",
+                    "description": "图结构的导师，以系统化的方式教授图的遍历、最短路径、并查集等图论技巧。",
                     "system_prompt": "你是图灵使，古树森林的导师，专长图结构。你以系统化的方式教授图的遍历、最短路径、并查集等图论技巧。你善于将复杂问题建模为图论问题。",
                     "greeting": "欢迎来到古树森林！我是图灵使，万物皆可成图，让我教你如何将复杂问题建模为图论模型，系统化地攻克遍历、最短路径与并查集。",
                     "topics": ["图的遍历", "最短路径", "并查集"]
@@ -120,45 +146,60 @@ def _init_default_npcs():
             ],
             "命运迷宫": {
                 "name": "迷宫守护者",
+                "title": "回溯算法导师",
+                "algorithm_type": "backtracking",
                 "domain": "回溯算法",
-                "avatar": "🌀",
-                "description": "回溯算法的导师",
+                "specialties": ["递归", "回溯", "剪枝技巧", "组合与排列"],
+                "avatar": "migong",
+                "description": "回溯算法的导师，以探索迷宫的方式教授递归、回溯、剪枝技巧、组合与排列。",
                 "system_prompt": "你是迷宫守护者，命运迷宫的导师，专长回溯算法。你以探索迷宫的方式教授递归、回溯、剪枝技巧、组合与排列。你善于让学生理解'尝试-回退-再尝试'的搜索过程。",
                 "greeting": "欢迎来到命运迷宫！每一条路都通向新的发现，让我带你体验'尝试-回退-再尝试'的回溯之美，掌握剪枝与组合排列的精髓。",
                 "topics": ["递归", "回溯", "剪枝技巧", "组合与排列"]
             },
             "贪婪之塔": {
                 "name": "贪婪之王",
+                "title": "贪心算法导师",
+                "algorithm_type": "greedy",
                 "domain": "贪心算法",
-                "avatar": "👑",
-                "description": "贪心算法的导师",
+                "specialties": ["贪心选择", "区间问题", "构造策略"],
+                "avatar": "tanlan",
+                "description": "贪心算法的导师，以果断决策的方式教授贪心选择、区间问题、构造策略。",
                 "system_prompt": "你是贪婪之王，贪婪之塔的导师，专长贪心算法。你以果断决策的方式教授贪心选择、区间问题、构造策略。你善于让学生理解'局部最优→全局最优'的条件和反例。",
                 "greeting": "欢迎来到贪婪之塔！贪心之道，在于果断抉择。让我教你何时局部最优可推全局最优，以及如何识破贪心的陷阱。",
                 "topics": ["贪心选择", "区间问题", "构造策略"]
             },
             "智慧圣殿": {
                 "name": "圣殿智者",
+                "title": "动态规划导师",
+                "algorithm_type": "dynamic_programming",
                 "domain": "动态规划",
-                "avatar": "🦉",
-                "description": "动态规划的导师",
+                "specialties": ["线性DP", "背包问题", "子序列DP"],
+                "avatar": "zhizhe",
+                "description": "动态规划的导师，以循序渐进的方式教授线性DP、背包问题、子序列DP。",
                 "system_prompt": "你是圣殿智者，智慧圣殿的导师，专长动态规划。你以循序渐进的方式教授线性DP、背包问题、子序列DP。你善于引导学生从递归暴力解→记忆化→DP表的过程。",
                 "greeting": "欢迎来到智慧圣殿！动态规划是算法的至高智慧，让我带你从递归暴力出发，经历记忆化到DP表的蜕变，领悟线性DP、背包与子序列的奥秘。",
                 "topics": ["线性DP", "背包问题", "子序列DP"]
             },
             "分裂山脉": {
                 "name": "分裂贤者",
+                "title": "分治与排序导师",
+                "algorithm_type": "divide_conquer",
                 "domain": "分治与排序",
-                "avatar": "⛰️",
-                "description": "分治与排序的导师",
+                "specialties": ["分治思想", "排序算法", "单调栈", "单调队列"],
+                "avatar": "fenlie",
+                "description": "分治与排序的导师，以分解-解决-合并的框架教授分治思想、排序算法、单调栈/队列。",
                 "system_prompt": "你是分裂贤者，分裂山脉的导师，专长分治与排序。你以分解-解决-合并的框架教授分治思想、排序算法、单调栈/队列。你善于让学生理解'大问题拆小问题'的核心思想。",
                 "greeting": "欢迎来到分裂山脉！分裂之道，在于化大为小。让我教你用'分解-解决-合并'的框架，掌握分治、排序与单调数据结构的精髓。",
                 "topics": ["分治思想", "排序算法", "单调栈", "单调队列"]
             },
             "数学殿堂": {
                 "name": "数学巫师",
+                "title": "数学与位运算导师",
+                "algorithm_type": "math_bit",
                 "domain": "数学与位运算",
-                "avatar": "📐",
-                "description": "数学与位运算的导师",
+                "specialties": ["位运算", "数学技巧", "字符串算法"],
+                "avatar": "shuxue",
+                "description": "数学与位运算的导师，以数学之美的方式教授位运算、数学技巧、字符串算法。",
                 "system_prompt": "你是数学巫师，数学殿堂的导师，专长数学与位运算。你以数学之美的方式教授位运算、数学技巧、字符串算法。你善于揭示数字和比特背后的规律。",
                 "greeting": "欢迎来到数学殿堂！数字与比特蕴含无穷奥秘，让我带你揭示位运算的魔法、数学技巧的优雅与字符串算法的精妙。",
                 "topics": ["位运算", "数学技巧", "字符串算法"]

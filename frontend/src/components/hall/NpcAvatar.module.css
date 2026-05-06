@@ -1,0 +1,26 @@
+.npcAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-primary-100, #dbeafe);
+  flex-shrink: 0;
+}
+
+.normal {
+  width: 48px;
+  height: 48px;
+}
+
+.large {
+  width: 72px;
+  height: 72px;
+}
+
+.avatarEmoji {
+  font-size: 24px;
+}
+
+.large .avatarEmoji {
+  font-size: 36px;
+}

@@ -14,31 +14,21 @@ from algomate.data.database import Base
 
 
 class NPC(Base):
-    """NPC模型
-    
-    NPC是各领域的专家导师，引导用户修习。
-    
-    Attributes:
-        id: NPC唯一标识
-        name: NPC名称
-        domain: 专长领域
-        location: 所在秘境
-        avatar: 头像URL
-        system_prompt: 角色设定提示词
-        greeting: 问候语
-        topics: 可教话题列表（JSON数组）
-    """
     __tablename__ = "npcs"
     __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), nullable=False)
-    domain = Column(String(100), nullable=False)
-    location = Column(String(100), nullable=False)
-    avatar = Column(String(500), nullable=True)
-    system_prompt = Column(Text, nullable=False)
-    greeting = Column(Text, nullable=True)
+    name = Column(String(50), nullable=False)
+    title = Column(String(100), nullable=False, default="")
+    algorithm_type = Column(String(30), nullable=False, default="")
+    specialties = Column(String(200), nullable=False, default="[]")
+    avatar = Column(String(200), nullable=False, default="")
+    description = Column(Text, nullable=False, default="")
     topics = Column(Text, default="[]", nullable=False)
+    domain = Column(String(100), nullable=True)
+    location = Column(String(100), nullable=True)
+    system_prompt = Column(Text, nullable=False, default="")
+    greeting = Column(Text, nullable=True)
     
     notes = relationship("Note", back_populates="npc")
     dialogue_records = relationship("DialogueRecord", back_populates="npc")
@@ -46,43 +36,73 @@ class NPC(Base):
 
 
 class NPCCreate(BaseModel):
-    """创建NPC的输入验证模型"""
-    name: str = Field(..., min_length=1, max_length=100, description="NPC名称")
-    domain: str = Field(..., min_length=1, max_length=100, description="专长领域")
-    location: str = Field(..., min_length=1, max_length=100, description="所在秘境")
-    avatar: Optional[str] = Field(None, max_length=500, description="头像URL")
-    system_prompt: str = Field(..., min_length=1, description="角色设定提示词")
-    greeting: Optional[str] = Field(None, description="问候语")
-    topics: List[str] = Field(default=[], description="可教话题列表")
+    name: str = Field(..., min_length=1, max_length=50)
+    title: str = Field(..., min_length=1, max_length=100)
+    algorithm_type: str = Field(..., min_length=1, max_length=30)
+    specialties: List[str] = Field(default=[], description="专长列表")
+    avatar: str = Field(default="", max_length=200)
+    description: str = Field(default="")
+    topics: List[str] = Field(default=[])
+    system_prompt: str = Field(default="")
+    greeting: Optional[str] = Field(None)
     
     class Config:
         from_attributes = True
 
 
 class NPCUpdate(BaseModel):
-    """更新NPC的输入验证模型"""
-    name: Optional[str] = Field(None, min_length=1, max_length=100, description="NPC名称")
-    domain: Optional[str] = Field(None, min_length=1, max_length=100, description="专长领域")
-    location: Optional[str] = Field(None, min_length=1, max_length=100, description="所在秘境")
-    avatar: Optional[str] = Field(None, max_length=500, description="头像URL")
-    system_prompt: Optional[str] = Field(None, min_length=1, description="角色设定提示词")
-    greeting: Optional[str] = Field(None, description="问候语")
-    topics: Optional[List[str]] = Field(None, description="可教话题列表")
+    name: Optional[str] = Field(None, min_length=1, max_length=50)
+    title: Optional[str] = Field(None, min_length=1, max_length=100)
+    algorithm_type: Optional[str] = Field(None, min_length=1, max_length=30)
+    specialties: Optional[List[str]] = Field(None)
+    avatar: Optional[str] = Field(None, max_length=200)
+    description: Optional[str] = Field(None)
+    topics: Optional[List[str]] = Field(None)
+    system_prompt: Optional[str] = Field(None)
+    greeting: Optional[str] = Field(None)
     
     class Config:
         from_attributes = True
 
 
 class NPCResponse(BaseModel):
-    """返回给前端的NPC数据模型"""
     id: int
     name: str
-    domain: str
-    location: str
-    avatar: Optional[str]
-    system_prompt: str
-    greeting: Optional[str]
-    topics: List[str]
+    title: str
+    algorithm_type: str
+    specialties: List[str]
+    avatar: str
+    description: str = ""
+    topics: List[str] = []
+    card_count: int = 0
+    
+    class Config:
+        from_attributes = True
+
+
+class NPCListItem(BaseModel):
+    id: int
+    name: str
+    title: str
+    algorithm_type: str
+    specialties: List[str]
+    avatar: str
+    card_count: int = 0
+    
+    class Config:
+        from_attributes = True
+
+
+class NPCDetailResponse(BaseModel):
+    id: int
+    name: str
+    title: str
+    algorithm_type: str
+    specialties: List[str]
+    avatar: str
+    description: str = ""
+    topics: List[dict] = []
+    card_count: int = 0
     
     class Config:
         from_attributes = True
@@ -92,7 +112,6 @@ router = APIRouter(prefix="/api/npcs", tags=["NPC"])
 
 
 def parse_topics(topics_str: str) -> List[str]:
-    """解析 topics JSON 字符串"""
     import json
     try:
         return json.loads(topics_str) if topics_str else []
@@ -100,9 +119,16 @@ def parse_topics(topics_str: str) -> List[str]:
         return []
 
 
+def parse_specialties(specialties_str: str) -> List[str]:
+    import json
+    try:
+        return json.loads(specialties_str) if specialties_str else []
+    except:
+        return []
+
+
 @router.get("/", response_model=list[NPCResponse])
 async def get_npcs():
-    """获取NPC列表"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -114,12 +140,13 @@ async def get_npcs():
             npc_dict = {
                 "id": npc.id,
                 "name": npc.name,
-                "domain": npc.domain,
-                "location": npc.location,
-                "avatar": npc.avatar,
-                "system_prompt": npc.system_prompt,
-                "greeting": npc.greeting,
-                "topics": parse_topics(npc.topics)
+                "title": npc.title or "",
+                "algorithm_type": npc.algorithm_type or npc.domain or "",
+                "specialties": parse_specialties(npc.specialties),
+                "avatar": npc.avatar or "",
+                "description": npc.description or "",
+                "topics": parse_topics(npc.topics),
+                "card_count": 0,
             }
             result.append(NPCResponse(**npc_dict))
         return result
@@ -129,10 +156,6 @@ async def get_npcs():
 
 @router.get("/unlocked", response_model=list[NPCResponse])
 async def get_unlocked_npcs():
-    """获取已解锁的NPC列表
-    
-    根据用户拥有的卡牌领域判断哪些NPC已解锁
-    """
     from algomate.data.database import Database
     from algomate.models.cards import Card
     from sqlalchemy import distinct
@@ -149,12 +172,13 @@ async def get_unlocked_npcs():
             npc_dict = {
                 "id": npc.id,
                 "name": npc.name,
-                "domain": npc.domain,
-                "location": npc.location,
-                "avatar": npc.avatar,
-                "system_prompt": npc.system_prompt,
-                "greeting": npc.greeting,
-                "topics": parse_topics(npc.topics)
+                "title": npc.title or "",
+                "algorithm_type": npc.algorithm_type or npc.domain or "",
+                "specialties": parse_specialties(npc.specialties),
+                "avatar": npc.avatar or "",
+                "description": npc.description or "",
+                "topics": parse_topics(npc.topics),
+                "card_count": 0,
             }
             result.append(NPCResponse(**npc_dict))
         return result
@@ -164,7 +188,6 @@ async def get_unlocked_npcs():
 
 @router.get("/{npc_id}", response_model=NPCResponse)
 async def get_npc(npc_id: int):
-    """获取单个NPC详情"""
     from algomate.data.database import Database
     
     db = Database.get_instance()
@@ -177,12 +200,13 @@ async def get_npc(npc_id: int):
         npc_dict = {
             "id": npc.id,
             "name": npc.name,
-            "domain": npc.domain,
-            "location": npc.location,
-            "avatar": npc.avatar,
-            "system_prompt": npc.system_prompt,
-            "greeting": npc.greeting,
-            "topics": parse_topics(npc.topics)
+            "title": npc.title or "",
+            "algorithm_type": npc.algorithm_type or npc.domain or "",
+            "specialties": parse_specialties(npc.specialties),
+            "avatar": npc.avatar or "",
+            "description": npc.description or "",
+            "topics": parse_topics(npc.topics),
+            "card_count": 0,
         }
         return NPCResponse(**npc_dict)
     finally:
@@ -191,7 +215,6 @@ async def get_npc(npc_id: int):
 
 @router.post("/", response_model=NPCResponse, status_code=201)
 async def create_npc(npc: NPCCreate):
-    """创建NPC"""
     from algomate.data.database import Database
     import json
     
@@ -200,12 +223,15 @@ async def create_npc(npc: NPCCreate):
     try:
         new_npc = NPC(
             name=npc.name,
-            domain=npc.domain,
-            location=npc.location,
+            title=npc.title,
+            algorithm_type=npc.algorithm_type,
+            specialties=json.dumps(npc.specialties, ensure_ascii=False),
             avatar=npc.avatar,
+            description=npc.description,
+            topics=json.dumps(npc.topics, ensure_ascii=False),
             system_prompt=npc.system_prompt,
             greeting=npc.greeting,
-            topics=json.dumps(npc.topics, ensure_ascii=False)
+            domain=npc.algorithm_type,
         )
         session.add(new_npc)
         session.commit()
@@ -214,12 +240,13 @@ async def create_npc(npc: NPCCreate):
         npc_dict = {
             "id": new_npc.id,
             "name": new_npc.name,
-            "domain": new_npc.domain,
-            "location": new_npc.location,
+            "title": new_npc.title,
+            "algorithm_type": new_npc.algorithm_type,
+            "specialties": parse_specialties(new_npc.specialties),
             "avatar": new_npc.avatar,
-            "system_prompt": new_npc.system_prompt,
-            "greeting": new_npc.greeting,
-            "topics": parse_topics(new_npc.topics)
+            "description": new_npc.description,
+            "topics": parse_topics(new_npc.topics),
+            "card_count": 0,
         }
         return NPCResponse(**npc_dict)
     except Exception as e:
@@ -231,7 +258,6 @@ async def create_npc(npc: NPCCreate):
 
 @router.put("/{npc_id}", response_model=NPCResponse)
 async def update_npc(npc_id: int, npc: NPCUpdate):
-    """更新NPC"""
     from algomate.data.database import Database
     import json
     
@@ -244,18 +270,23 @@ async def update_npc(npc_id: int, npc: NPCUpdate):
         
         if npc.name is not None:
             existing.name = npc.name
-        if npc.domain is not None:
-            existing.domain = npc.domain
-        if npc.location is not None:
-            existing.location = npc.location
+        if npc.title is not None:
+            existing.title = npc.title
+        if npc.algorithm_type is not None:
+            existing.algorithm_type = npc.algorithm_type
+            existing.domain = npc.algorithm_type
+        if npc.specialties is not None:
+            existing.specialties = json.dumps(npc.specialties, ensure_ascii=False)
         if npc.avatar is not None:
             existing.avatar = npc.avatar
+        if npc.description is not None:
+            existing.description = npc.description
+        if npc.topics is not None:
+            existing.topics = json.dumps(npc.topics, ensure_ascii=False)
         if npc.system_prompt is not None:
             existing.system_prompt = npc.system_prompt
         if npc.greeting is not None:
             existing.greeting = npc.greeting
-        if npc.topics is not None:
-            existing.topics = json.dumps(npc.topics, ensure_ascii=False)
         
         session.commit()
         session.refresh(existing)
@@ -263,12 +294,13 @@ async def update_npc(npc_id: int, npc: NPCUpdate):
         npc_dict = {
             "id": existing.id,
             "name": existing.name,
-            "domain": existing.domain,
-            "location": existing.location,
+            "title": existing.title,
+            "algorithm_type": existing.algorithm_type,
+            "specialties": parse_specialties(existing.specialties),
             "avatar": existing.avatar,
-            "system_prompt": existing.system_prompt,
-            "greeting": existing.greeting,
-            "topics": parse_topics(existing.topics)
+            "description": existing.description,
+            "topics": parse_topics(existing.topics),
+            "card_count": 0,
         }
         return NPCResponse(**npc_dict)
     except HTTPException:
@@ -282,7 +314,6 @@ async def update_npc(npc_id: int, npc: NPCUpdate):
 
 @router.delete("/{npc_id}", status_code=204)
 async def delete_npc(npc_id: int):
-    """删除NPC"""
     from algomate.data.database import Database
     
     db = Database.get_instance()

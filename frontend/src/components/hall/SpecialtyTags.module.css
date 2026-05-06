@@ -1,0 +1,16 @@
+.specialtyTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs, 4px);
+  margin-top: var(--spacing-xs, 4px);
+}
+
+.specialtyTag {
+  padding: 2px var(--spacing-sm, 8px);
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-primary-50, #eff6ff);
+  border: 1px solid var(--color-primary-200, #bfdbfe);
+  color: var(--color-primary-600, #2563eb);
+  font-size: var(--font-size-xs, 12px);
+  white-space: nowrap;
+}

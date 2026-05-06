@@ -1,0 +1,25 @@
+.npcGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg, 20px);
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-3xl, 48px) var(--spacing-xl, 24px);
+  color: var(--color-neutral-500, #6b7280);
+  font-size: var(--font-size-lg, 18px);
+}
+
+@media (max-width: 768px) {
+  .npcGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md, 16px);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .npcGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
