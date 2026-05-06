@@ -182,6 +182,10 @@ class AlgomateApp:
         self.api_app.include_router(dialogues_router)
         self.api_app.include_router(review_records_router)
         self.api_app.include_router(learning_progress_router)
+
+        from .api.dialogue_routes import dialogue_router
+        self.api_app.include_router(dialogue_router, prefix="/api/dialogue")
+
         logger.info("FastAPI server initialized")
 
     def start_api_server(self):

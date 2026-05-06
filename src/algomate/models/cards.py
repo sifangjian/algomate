@@ -70,6 +70,7 @@ class Card(Base):
     answer_records = relationship("AnswerRecord", back_populates="card")
     review_records = relationship("ReviewRecord", back_populates="card")
     npc = relationship("NPC", back_populates="cards")
+    dialogue_records = relationship("DialogueRecord", back_populates="card")
 
 
 class CardCreate(BaseModel):

@@ -1,0 +1,89 @@
+import api from './api'
+
+export const dialogueService = {
+  start: (npcId, topic) =>
+    api.post('/dialogue/start', { npc_id: npcId, topic: topic || null }),
+
+  sendMessage: (dialogueId, content) =>
+    api.post(`/dialogue/${dialogueId}/message`, { content }),
+
+  sendMessageStream: (dialogueId, content, { onChunk, onSuggestions, onOutOfDomain, onDone, onError }) => {
+    const baseURL = '/api'
+    const url = `${baseURL}/dialogue/${dialogueId}/message`
+    const controller = new AbortController()
+    const token = localStorage.getItem('auth_token')
+    const headers = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ content }),
+      signal: controller.signal,
+    }).then(async (response) => {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }))
+        throw new Error(errorData.detail || errorData.message || `请求失败 (${response.status})`)
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim()
+            if (dataStr === '[DONE]') {
+              onDone?.()
+              return
+            }
+            try {
+              const data = JSON.parse(dataStr)
+              if (data.error) {
+                onError?.(new Error(data.error))
+                return
+              }
+              if (data.type === 'content' && data.content) {
+                onChunk?.(data.content)
+              }
+              if (data.type === 'suggestions' && data.suggestions) {
+                onSuggestions?.(data.suggestions)
+              }
+              if (data.type === 'out_of_domain') {
+                onOutOfDomain?.(data.message || '超出修习范围')
+              }
+            } catch (e) {
+              // ignore parse errors for incomplete chunks
+            }
+          }
+        }
+      }
+    }).catch((err) => {
+      if (err.name !== 'AbortError') {
+        onError?.(err)
+      }
+    })
+
+    return controller
+  },
+
+  saveNote: (dialogueId, content) =>
+    api.post(`/dialogue/${dialogueId}/note`, { content }),
+
+  endDialogue: (dialogueId) =>
+    api.post(`/dialogue/${dialogueId}/end`),
+
+  getHistory: (dialogueId) =>
+    api.get(`/dialogue/${dialogueId}/history`),
+
+  heartbeat: (dialogueId) =>
+    api.post(`/dialogue/${dialogueId}/heartbeat`),
+}

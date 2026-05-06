@@ -24,8 +24,8 @@ export const useHallStore = create((set, get) => ({
 
       const data = await npcService.getAll(params)
       set({
-        npcs: data.npcs,
-        learningPath: data.learning_path,
+        npcs: data.data?.npcs || [],
+        learningPath: data.data?.learning_path || [],
       })
     } catch (err) {
       console.error('Failed to fetch NPCs:', err)
@@ -37,7 +37,7 @@ export const useHallStore = create((set, get) => ({
   fetchNpcDetail: async (id) => {
     try {
       const data = await npcService.getById(id)
-      set({ selectedNpc: data })
+      set({ selectedNpc: data.data })
     } catch (err) {
       console.error('Failed to fetch NPC detail:', err)
     }
@@ -46,7 +46,7 @@ export const useHallStore = create((set, get) => ({
   fetchStats: async () => {
     try {
       const data = await statsService.getHallStats()
-      set({ stats: data })
+      set({ stats: data.data })
     } catch (err) {
       console.error('Failed to fetch stats:', err)
       set({ stats: { total_cards: 0, endangered_cards: 0, pending_retake_cards: 0, cards_by_type: {}, is_new_user: false } })

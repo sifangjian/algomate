@@ -115,26 +115,63 @@ DEFAULT_NPCS = [
 
 def init_default_npcs_v1():
     from algomate.data.database import Database
+    from algomate.models.cards import Card
+    from algomate.models.dialogue_records import DialogueRecord
 
     db = Database.get_instance()
     session = db.get_session()
     try:
-        existing_count = session.query(NPC).count()
-        if existing_count > 0:
+        existing_npcs = session.query(NPC).order_by(NPC.id.asc()).all()
+
+        if existing_npcs:
+            needs_recreate = False
+            for npc in existing_npcs:
+                if not npc.algorithm_type or not npc.title or not npc.specialties:
+                    needs_recreate = True
+                    break
+
+            if not needs_recreate:
+                return
+
+            new_npcs_list = []
             for npc_data in DEFAULT_NPCS:
-                existing = session.query(NPC).filter(NPC.name == npc_data["name"]).first()
-                if existing:
-                    existing.title = npc_data["title"]
-                    existing.algorithm_type = npc_data["algorithm_type"]
-                    existing.specialties = json.dumps(npc_data["specialties"], ensure_ascii=False)
-                    existing.avatar = npc_data["avatar"]
-                    existing.description = npc_data["description"]
-                    existing.topics = json.dumps(npc_data["topics"], ensure_ascii=False)
-                    existing.domain = npc_data["algorithm_type"]
-                    if not existing.system_prompt:
-                        existing.system_prompt = npc_data["system_prompt"]
-                    if not existing.greeting:
-                        existing.greeting = npc_data["greeting"]
+                npc = NPC(
+                    name=npc_data["name"],
+                    title=npc_data["title"],
+                    algorithm_type=npc_data["algorithm_type"],
+                    specialties=json.dumps(npc_data["specialties"], ensure_ascii=False),
+                    avatar=npc_data["avatar"],
+                    description=npc_data["description"],
+                    topics=json.dumps(npc_data["topics"], ensure_ascii=False),
+                    system_prompt=npc_data["system_prompt"],
+                    greeting=npc_data["greeting"],
+                    domain=npc_data["algorithm_type"],
+                    location=npc_data["algorithm_type"],
+                )
+                session.add(npc)
+                new_npcs_list.append(npc)
+            
+            session.flush()
+            
+            for npc in new_npcs_list:
+                session.refresh(npc)
+            
+            default_npc_id = new_npcs_list[0].id if new_npcs_list else None
+            
+            if default_npc_id:
+                all_cards = session.query(Card).all()
+                for card in all_cards:
+                    card.npc_id = default_npc_id
+                
+                all_dialogues = session.query(DialogueRecord).all()
+                for dialogue in all_dialogues:
+                    dialogue.npc_id = default_npc_id
+            
+            session.flush()
+            
+            for npc in existing_npcs:
+                session.delete(npc)
+            
             session.commit()
             return
 
@@ -150,6 +187,7 @@ def init_default_npcs_v1():
                 system_prompt=npc_data["system_prompt"],
                 greeting=npc_data["greeting"],
                 domain=npc_data["algorithm_type"],
+                location=npc_data["algorithm_type"],
             )
             session.add(npc)
         session.commit()

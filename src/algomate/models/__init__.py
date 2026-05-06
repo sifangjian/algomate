@@ -12,6 +12,8 @@ from algomate.models.bosses import Boss, BossCreate, BossUpdate, BossResponse, D
 from algomate.models.questions import Question, QuestionCreate, QuestionUpdate, QuestionResponse, QuestionType, QuestionDifficulty
 from algomate.models.answer_records import AnswerRecord, AnswerRecordCreate, AnswerRecordResponse, AnswerStats
 from algomate.models.dialogue_records import DialogueRecord, DialogueRecordCreate, DialogueRecordResponse, DialogueMessage
+from algomate.models.dialogue_messages import DialogueMessageRecord, DialogueMessageCreate, DialogueMessageResponse
+from algomate.models.dialogue_notes import DialogueNote, DialogueNoteCreate, DialogueNoteResponse
 from algomate.models.review_records import ReviewRecord, ReviewRecordCreate, ReviewRecordResponse
 from algomate.models.learning_progress import LearningProgress, LearningProgressCreate, LearningProgressResponse
 
@@ -65,6 +67,12 @@ __all__ = [
     "DialogueRecordCreate",
     "DialogueRecordResponse",
     "DialogueMessage",
+    "DialogueMessageRecord",
+    "DialogueMessageCreate",
+    "DialogueMessageResponse",
+    "DialogueNote",
+    "DialogueNoteCreate",
+    "DialogueNoteResponse",
     "ReviewRecord",
     "ReviewRecordCreate",
     "ReviewRecordResponse",
