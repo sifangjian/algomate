@@ -8,6 +8,12 @@ import Input from '../components/ui/Input/Input'
 import Modal, { ConfirmDialog } from '../components/ui/Modal/Modal'
 import { showToast } from '../components/ui/Toast/index'
 import DurabilityChange from '../components/ui/DurabilityChange/DurabilityChange'
+import EndangeredBanner from '../components/card/EndangeredBanner'
+import PendingRetakeSection from '../components/card/PendingRetakeSection'
+import DimensionSection from '../components/card/DimensionSection'
+import VisualLinksSection from '../components/card/VisualLinksSection'
+import CardEditForm from '../components/card/CardEditForm'
+import RetakeButton from '../components/card/RetakeButton'
 import styles from './CardWorkshop.module.css'
 
 const ALGORITHM_CATEGORIES = [
@@ -15,9 +21,11 @@ const ALGORITHM_CATEGORIES = [
     'Tree', 'Recursion', 'Array', 'String', 'Greedy', 'Math',
 ]
 
-const REALM_DOMAINS = [
-    '新手森林', '迷雾沼泽', '古树森林', '命运迷宫',
-    '贪婪之塔', '智慧圣殿', '分裂山脉', '数学殿堂',
+const STATUS_OPTIONS = [
+    { value: '', label: '全部状态' },
+    { value: 'normal', label: '正常' },
+    { value: 'endangered', label: '濒危' },
+    { value: 'pending_retake', label: '待重修' },
 ]
 
 function CreateCardModal({ open, onClose, onCreated }) {
@@ -253,7 +261,11 @@ function CreateCardModal({ open, onClose, onCreated }) {
 
 export default function CardWorkshop() {
     const navigate = useNavigate()
-    const { cards, setCards, selectedCard, setSelectedCard, removeCard, addCard, updateCard } = useCardStore()
+    const {
+        cards, selectedCard, setSelectedCard, removeCard, addCard, updateCard,
+        endangeredCount, pendingRetakeCount, loading, filters,
+        setFilters, fetchCards, fetchCardDetail,
+    } = useCardStore()
 
     const [searchKeyword, setSearchKeyword] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -264,7 +276,6 @@ export default function CardWorkshop() {
     const [isDeleting, setIsDeleting] = useState(false)
     const [createModalOpen, setCreateModalOpen] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const [editForm, setEditForm] = useState({})
     const [isSaving, setIsSaving] = useState(false)
     const [sealedSectionOpen, setSealedSectionOpen] = useState(true)
     const [unsealConfirmOpen, setUnsealConfirmOpen] = useState(false)
@@ -273,12 +284,11 @@ export default function CardWorkshop() {
     const [editPolishingField, setEditPolishingField] = useState(null)
     const [editPolishPreview, setEditPolishPreview] = useState(null)
     const [durabilityAnimations, setDurabilityAnimations] = useState({})
+    const [detailLoading, setDetailLoading] = useState(false)
 
     const lastClickTimeRef = useRef(0)
     const searchTimerRef = useRef(null)
     const DEBOUNCE_DELAY = 300
-
-    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
         if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
@@ -290,50 +300,29 @@ export default function CardWorkshop() {
         }
     }, [searchKeyword])
 
-    const fetchCards = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            const params = {}
-            if (selectedRealm) params.realm = selectedRealm
-            if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
-            if (sortBy) {
-                if (sortBy === 'reviewedDate') {
-                    params.sort = 'last_reviewed'
-                    params.order = 'desc'
-                } else if (sortBy === 'durability') {
-                    params.sort = 'durability'
-                    params.order = 'asc'
-                } else {
-                    params.sort = 'name'
-                    params.order = 'asc'
-                }
-            }
-            const data = await cardService.getAll(params)
-            if (Array.isArray(data)) setCards(data)
-        } catch {
-        } finally {
-            setIsLoading(false)
-        }
-    }, [selectedRealm, debouncedSearch, sortBy, setCards])
+    useEffect(() => {
+        setFilters({ keyword: debouncedSearch.trim() })
+    }, [debouncedSearch, setFilters])
 
     useEffect(() => {
         fetchCards()
-    }, [fetchCards])
+    }, [filters.algorithm_type, filters.status, filters.keyword, fetchCards])
 
     useEffect(() => {
         if (!selectedCard) {
             setIsEditing(false)
-            setEditForm({})
         }
     }, [selectedCard])
 
-
-    const dangerCards = useMemo(
-        () => cards.filter((c) => c.durability < 30 && !c.is_sealed),
+    const endangeredCards = useMemo(
+        () => cards.filter((c) => c.status === 'endangered'),
         [cards]
     )
 
-    const dangerCount = dangerCards.length
+    const pendingRetakeCards = useMemo(
+        () => cards.filter((c) => c.status === 'pending_retake'),
+        [cards]
+    )
 
     const sealedCards = useMemo(
         () => cards.filter((c) => c.is_sealed),
@@ -341,7 +330,7 @@ export default function CardWorkshop() {
     )
 
     const normalCards = useMemo(
-        () => cards.filter((c) => !c.is_sealed),
+        () => cards.filter((c) => !c.is_sealed && c.status !== 'pending_retake'),
         [cards]
     )
 
@@ -358,9 +347,26 @@ export default function CardWorkshop() {
         setSearchKeyword(e.target.value)
     }, [])
 
+    const handleStatusFilterChange = useCallback((e) => {
+        setFilters({ status: e.target.value })
+    }, [setFilters])
+
+    const handleAlgorithmTypeFilterChange = useCallback((e) => {
+        setFilters({ algorithm_type: e.target.value })
+    }, [setFilters])
+
     const handleCardClick = useCallback(
-        (card) => setSelectedCard(card),
-        [setSelectedCard]
+        async (card) => {
+            setSelectedCard(card)
+            setDetailLoading(true)
+            try {
+                await fetchCardDetail(card.id)
+            } catch {
+            } finally {
+                setDetailLoading(false)
+            }
+        },
+        [setSelectedCard, fetchCardDetail]
     )
 
     const handleDeleteRequest = useCallback((card) => {
@@ -397,118 +403,15 @@ export default function CardWorkshop() {
     )
 
     const handleEdit = useCallback(() => {
-        if (!selectedCard) return
-        setEditForm({
-            name: selectedCard.name || '',
-            algorithm_type: selectedCard.algorithmType || selectedCard.algorithm_type || '',
-            knowledge_content: selectedCard.knowledgeContent || selectedCard.knowledge_content || '',
-            summary: selectedCard.summary || '',
-            key_points: Array.isArray(selectedCard.keyPoints || selectedCard.key_points) ? [...(selectedCard.keyPoints || selectedCard.key_points)] : [],
-        })
         setIsEditing(true)
-    }, [selectedCard])
+    }, [])
 
     const handleCancelEdit = useCallback(() => {
         setIsEditing(false)
-        setEditForm({})
     }, [])
 
-    const handleSaveEdit = useCallback(async () => {
-        if (!selectedCard) return
-        setIsSaving(true)
-        try {
-            const payload = {
-                name: editForm.name.trim(),
-                algorithm_type: editForm.algorithm_type.trim() || null,
-                knowledge_content: editForm.knowledge_content.trim() || null,
-                summary: editForm.summary.trim() || null,
-                key_points: JSON.stringify(editForm.key_points.filter(kp => kp.trim())),
-            }
-            const updated = await cardService.updateCard(selectedCard.id, payload)
-            updateCard(selectedCard.id, updated)
-            setSelectedCard(updated)
-            setIsEditing(false)
-            setEditForm({})
-            showToast(`卡牌「${updated.name}」已更新`, 'success')
-        } catch (err) {
-            showToast(`保存失败: ${err.message}`, 'error')
-        } finally {
-            setIsSaving(false)
-        }
-    }, [selectedCard, editForm, updateCard, setSelectedCard])
-
-    const handleEditFieldChange = useCallback((field, value) => {
-        setEditForm(prev => ({ ...prev, [field]: value }))
-    }, [])
-
-    const handleAddKeyPoint = useCallback(() => {
-        setEditForm(prev => ({
-            ...prev,
-            key_points: [...prev.key_points, ''],
-        }))
-    }, [])
-
-    const handleRemoveKeyPoint = useCallback((index) => {
-        setEditForm(prev => ({
-            ...prev,
-            key_points: prev.key_points.filter((_, i) => i !== index),
-        }))
-    }, [])
-
-    const handleKeyPointChange = useCallback((index, value) => {
-        setEditForm(prev => ({
-            ...prev,
-            key_points: prev.key_points.map((kp, i) => i === index ? value : kp),
-        }))
-    }, [])
-
-    const handleEditPolish = useCallback(async (field) => {
-        let content = ''
-        if (field === 'summary') {
-            content = editForm.summary || ''
-        } else if (field === 'key_points') {
-            content = editForm.key_points.filter(kp => kp.trim()).join('\n')
-        } else {
-            content = editForm.knowledge_content || ''
-        }
-
-        if (!content.trim()) {
-            showToast('请先输入内容再进行润色', 'warning')
-            return
-        }
-
-        setEditPolishingField(field)
-        setEditPolishPreview(null)
-
-        try {
-            const result = await cardService.polishCard({ content, type: field })
-            setEditPolishPreview({ field, content: result.polished_content })
-        } catch (err) {
-            showToast(`AI润色失败: ${err.message}`, 'error')
-            setEditPolishingField(null)
-        }
-    }, [editForm])
-
-    const handleEditPolishAccept = useCallback(() => {
-        if (!editPolishPreview) return
-
-        const { field, content } = editPolishPreview
-        if (field === 'summary') {
-            setEditForm(prev => ({ ...prev, summary: content }))
-        } else if (field === 'key_points') {
-            const points = content.split('\n').filter(line => line.trim())
-            setEditForm(prev => ({ ...prev, key_points: points }))
-        } else {
-            setEditForm(prev => ({ ...prev, knowledge_content: content }))
-        }
-
-        setEditPolishPreview(null)
-        setEditPolishingField(null)
-    }, [editPolishPreview])
-
-    const handleEditPolishReject = useCallback(() => {
-        setEditPolishPreview(null)
-        setEditPolishingField(null)
+    const handleEditSave = useCallback(() => {
+        setIsEditing(false)
     }, [])
 
     const handleUnsealRequest = useCallback((card) => {
@@ -533,6 +436,22 @@ export default function CardWorkshop() {
         }
     }, [cardToUnseal, updateCard])
 
+    const getStatusLabel = useCallback((status) => {
+        switch (status) {
+            case 'endangered': return '濒危'
+            case 'pending_retake': return '待重修'
+            default: return '正常'
+        }
+    }, [])
+
+    const getStatusClass = useCallback((status) => {
+        switch (status) {
+            case 'endangered': return styles.statusEndangered
+            case 'pending_retake': return styles.statusPendingRetake
+            default: return styles.statusNormal
+        }
+    }, [])
+
     return (
         <div className={`${styles.container} page-container`}>
             <div className={styles.pageHeader}>
@@ -550,31 +469,11 @@ export default function CardWorkshop() {
                 </Button>
             </div>
 
-            {dangerCount > 0 && (
-                <div className={styles.warningBanner} role="alert">
-                    <div className={styles.warningBannerHeader}>
-                        <span>⚠️</span>
-                        <span>
-                            有 <strong>{dangerCount}</strong> 张卡牌濒危（耐久度 &lt; 30%），请及时修炼！
-                        </span>
-                    </div>
-                    <div className={styles.dangerCardList}>
-                        {dangerCards.map((card) => (
-                            <button
-                                key={card.id}
-                                className={styles.dangerCardItem}
-                                onClick={() => handleReview(card)}
-                                title={`点击修炼「${card.name}」`}
-                            >
-                                <span className={styles.dangerCardIcon}>{getAlgorithmIcon(card.algorithmCategory)}</span>
-                                <span className={styles.dangerCardName}>{card.name}</span>
-                                <span className={styles.dangerCardDur}>🛡️{card.durability}</span>
-                                <span className={styles.dangerCardAction}>去修炼 →</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+            <EndangeredBanner
+                count={endangeredCount}
+                endangeredCards={endangeredCards}
+                onCardClick={handleReview}
+            />
 
             <div className={styles.toolbar}>
                 <Input
@@ -584,23 +483,27 @@ export default function CardWorkshop() {
                     icon="🔍"
                     className={styles.searchInput}
                 />
-                <div className={styles.realmTabs}>
-                    <button
-                        className={`${styles.realmTab} ${!selectedRealm ? styles.activeTab : ''}`}
-                        onClick={() => setSelectedRealm('')}
-                    >
-                        全部
-                    </button>
-                    {REALM_DOMAINS.map((realm) => (
-                        <button
-                            key={realm}
-                            className={`${styles.realmTab} ${selectedRealm === realm ? styles.activeTab : ''}`}
-                            onClick={() => setSelectedRealm(realm)}
-                        >
-                            {realm}
-                        </button>
+                <select
+                    className={styles.filterSelect}
+                    value={filters.algorithm_type}
+                    onChange={handleAlgorithmTypeFilterChange}
+                    aria-label="算法类型筛选"
+                >
+                    <option value="">全部类型</option>
+                    {ALGORITHM_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
                     ))}
-                </div>
+                </select>
+                <select
+                    className={styles.filterSelect}
+                    value={filters.status}
+                    onChange={handleStatusFilterChange}
+                    aria-label="状态筛选"
+                >
+                    {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
                 <select
                     className={styles.sortSelect}
                     value={sortBy}
@@ -614,13 +517,13 @@ export default function CardWorkshop() {
             </div>
 
             <div className={styles.cardGrid}>
-                {isLoading ? (
+                {loading ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyIcon}>⏳</span>
                         <p>加载中...</p>
                     </div>
-                ) : normalCards.length === 0 && sealedCards.length === 0 ? (
-                    !debouncedSearch && !selectedRealm ? (
+                ) : normalCards.length === 0 && sealedCards.length === 0 && pendingRetakeCards.length === 0 ? (
+                    !debouncedSearch && !filters.status && !filters.algorithm_type ? (
                         <div className={styles.emptyGuide}>
                             <span className={styles.emptyGuideIcon}>🏔️</span>
                             <p className={styles.emptyGuideTitle}>还没有卡牌</p>
@@ -642,18 +545,17 @@ export default function CardWorkshop() {
                             className={styles.cardItem}
                             hoverable
                             onClick={() => handleCardClick(card)}
-                            glow={card.status === 'danger'}
+                            glow={card.status === 'endangered'}
                         >
                             <div className={styles.cardHeader}>
-                                <span className={styles.cardIcon}>{getAlgorithmIcon(card.algorithmCategory)}</span>
+                                <span className={styles.cardIcon}>{getAlgorithmIcon(card.algorithm_type || card.algorithmCategory)}</span>
                                 <div className={styles.cardTitleArea}>
                                     <h3 className={styles.cardName}>{card.name}</h3>
-                                    <span className={styles.cardCategory}>{card.algorithmCategory}</span>
+                                    <span className={styles.cardCategory}>{card.algorithm_type || card.algorithmCategory}</span>
                                 </div>
-                                <span className={`${styles.statusDot} ${styles[card.status]}`} title={
-                                    card.status === 'normal' ? '正常' :
-                                        card.status === 'warning' ? '注意' : '濒危'
-                                } />
+                                <span className={`${styles.statusTag} ${getStatusClass(card.status)}`}>
+                                    {getStatusLabel(card.status)}
+                                </span>
                             </div>
 
                             <div className={styles.durabilitySection} style={{ position: 'relative' }}>
@@ -672,30 +574,38 @@ export default function CardWorkshop() {
                                     <div
                                         className={styles.durFill}
                                         style={{
-                                            width: `${(card.durability / card.maxDurability) * 100}%`,
+                                            width: `${(card.durability / card.max_durability || card.durability / card.maxDurability) * 100}%`,
                                             background:
                                                 card.durability >= 60
                                                     ? 'var(--color-success)'
                                                     : card.durability >= 30
                                                         ? 'var(--color-warning)'
                                                         : 'var(--color-danger)',
-                                            ...(card.status === 'danger' && { animation: 'pulse-glow 2s infinite' }),
+                                            ...(card.status === 'endangered' && { animation: 'pulse-glow 2s infinite' }),
                                         }}
                                     />
                                 </div>
                                 <span className={styles.durText}>
-                                    耐久 {card.durability}/{card.maxDurability}
+                                    耐久 {card.durability}/{card.max_durability || card.maxDurability}
                                 </span>
                             </div>
 
                             <div className={styles.cardMeta}>
-                                <span>修炼 {card.reviewCount}次</span>
-                                <span>心得 {card.noteCount}</span>
+                                <span>修炼 {card.review_count || card.reviewCount || 0}次</span>
                             </div>
+
+                            {card.status === 'pending_retake' && (
+                                <RetakeButton card={card} />
+                            )}
                         </GameCard>
                     ))
                 )}
             </div>
+
+            <PendingRetakeSection
+                cards={pendingRetakeCards}
+                onCardClick={handleCardClick}
+            />
 
             {sealedCards.length > 0 && (
                 <div className={styles.sealedSection}>
@@ -716,13 +626,13 @@ export default function CardWorkshop() {
                                         <span className={styles.sealedCardIcon}>🔒</span>
                                         <div className={styles.sealedCardInfo}>
                                             <h4 className={styles.sealedCardName}>{card.name}</h4>
-                                            {card.algorithmCategory && (
-                                                <span className={styles.sealedCardCategory}>{card.algorithmCategory}</span>
+                                            {(card.algorithm_type || card.algorithmCategory) && (
+                                                <span className={styles.sealedCardCategory}>{card.algorithm_type || card.algorithmCategory}</span>
                                             )}
                                         </div>
                                     </div>
                                     <div className={styles.sealedCardMeta}>
-                                        <span>耐久 {card.durability}/{card.maxDurability}</span>
+                                        <span>耐久 {card.durability}/{card.max_durability || card.maxDurability}</span>
                                     </div>
                                     <Button
                                         variant="ghost"
@@ -741,52 +651,24 @@ export default function CardWorkshop() {
 
             <Modal
                 open={!!selectedCard}
-                onClose={() => setSelectedCard(null)}
+                onClose={() => { setSelectedCard(null); setIsEditing(false) }}
                 title={selectedCard?.name || ''}
                 size="lg"
             >
                 {selectedCard && (
                     <div className={styles.modalContent}>
                         <div className={styles.heroSection}>
-                            <span className={`${styles.heroIcon} ${styles[selectedCard.status]}`}>
-                                {getAlgorithmIcon(selectedCard.algorithmCategory)}
+                            <span className={`${styles.heroIcon} ${getStatusClass(selectedCard.status)}`}>
+                                {getAlgorithmIcon(selectedCard.algorithm_type || selectedCard.algorithmCategory)}
                             </span>
-                            {isEditing ? (
-                                <Input
-                                    value={editForm.name}
-                                    onChange={(e) => handleEditFieldChange('name', e.target.value)}
-                                    placeholder="卡牌名称"
-                                    className={styles.editNameInput}
-                                />
-                            ) : (
-                                <h2 className={styles.heroName}>{selectedCard.name}</h2>
-                            )}
+                            <h2 className={styles.heroName}>{selectedCard.name}</h2>
                             <div className={styles.heroBadges}>
-                                {isEditing ? (
-                                    <div className={styles.formField}>
-                                        <input
-                                            className={styles.fieldInput}
-                                            placeholder="算法类型，如：二分查找"
-                                            value={editForm.algorithm_type}
-                                            onChange={(e) => handleEditFieldChange('algorithm_type', e.target.value)}
-                                            list="edit-algorithm-type-list"
-                                        />
-                                        <datalist id="edit-algorithm-type-list">
-                                            {ALGORITHM_CATEGORIES.map((c) => (
-                                                <option key={c} value={c} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {selectedCard.algorithmCategory && (
-                                            <span className={styles.heroCategoryBadge}>{selectedCard.algorithmCategory}</span>
-                                        )}
-                                        <span className={`${styles.heroStatus} ${styles[selectedCard.status]}`}>
-                                            {selectedCard.status === 'normal' ? '正常' : selectedCard.status === 'warning' ? '注意' : '濒危'}
-                                        </span>
-                                    </>
+                                {(selectedCard.algorithm_type || selectedCard.algorithmCategory) && (
+                                    <span className={styles.heroCategoryBadge}>{selectedCard.algorithm_type || selectedCard.algorithmCategory}</span>
                                 )}
+                                <span className={`${styles.heroStatus} ${getStatusClass(selectedCard.status)}`}>
+                                    {getStatusLabel(selectedCard.status)}
+                                </span>
                             </div>
                             <div className={styles.heroDivider} />
                         </div>
@@ -795,7 +677,7 @@ export default function CardWorkshop() {
                             <div className={styles.statCell} style={{ position: 'relative' }}>
                                 <span className={styles.statIcon}>🛡️</span>
                                 <span className={styles.statValue}>
-                                    {Math.round((selectedCard.durability / selectedCard.maxDurability) * 100)}%
+                                    {Math.round((selectedCard.durability / (selectedCard.max_durability || selectedCard.maxDurability)) * 100)}%
                                 </span>
                                 <span className={styles.statDesc}>
                                     {selectedCard.durability >= 60 ? '状态良好' : selectedCard.durability >= 30 ? '需要关注' : '濒危警告'}
@@ -815,7 +697,7 @@ export default function CardWorkshop() {
                                     <div
                                         className={styles.durProgressFill}
                                         style={{
-                                            width: `${(selectedCard.durability / selectedCard.maxDurability) * 100}%`,
+                                            width: `${(selectedCard.durability / (selectedCard.max_durability || selectedCard.maxDurability)) * 100}%`,
                                             background: selectedCard.durability >= 60
                                                 ? 'linear-gradient(90deg, #10b981, #34d399)'
                                                 : selectedCard.durability >= 30
@@ -834,15 +716,15 @@ export default function CardWorkshop() {
                                 </span>
                             </div>
 
-                            {selectedCard.reviewLevel != null && (
+                            {selectedCard.review_level != null && (
                                 <div className={styles.statCell}>
                                     <span className={styles.statIcon}>⚔️</span>
-                                    <span className={styles.statValue}>Lv.{selectedCard.reviewLevel}</span>
+                                    <span className={styles.statValue}>Lv.{selectedCard.review_level}</span>
                                     <span className={styles.statDesc}>
-                                        {selectedCard.reviewLevel <= 1 ? '初窥门径'
-                                            : selectedCard.reviewLevel <= 3 ? '初学乍练'
-                                            : selectedCard.reviewLevel <= 5 ? '小有所成'
-                                            : selectedCard.reviewLevel <= 7 ? '融会贯通'
+                                        {selectedCard.review_level <= 1 ? '初窥门径'
+                                            : selectedCard.review_level <= 3 ? '初学乍练'
+                                            : selectedCard.review_level <= 5 ? '小有所成'
+                                            : selectedCard.review_level <= 7 ? '融会贯通'
                                             : '登峰造极'}
                                     </span>
                                 </div>
@@ -850,29 +732,23 @@ export default function CardWorkshop() {
 
                             <div className={styles.statCell}>
                                 <span className={styles.statIcon}>📖</span>
-                                <span className={styles.statValue}>{selectedCard.reviewCount ?? 0}</span>
+                                <span className={styles.statValue}>{selectedCard.review_count || selectedCard.reviewCount || 0}</span>
                                 <span className={styles.statDesc}>次修炼</span>
                             </div>
                         </div>
 
                         {!isEditing && (
                             <div className={styles.infoRow}>
-                                <span className={styles.infoItem}>📅 {new Date(selectedCard.createdAt).toLocaleDateString()}</span>
+                                <span className={styles.infoItem}>📅 {new Date(selectedCard.created_at || selectedCard.createdAt).toLocaleDateString()}</span>
                                 <span className={styles.infoDot}>·</span>
                                 <span className={styles.infoItem}>
-                                    🕐 {selectedCard.lastReviewed ? new Date(selectedCard.lastReviewed).toLocaleDateString() : '从未修炼'}
+                                    🕐 {selectedCard.last_reviewed || selectedCard.lastReviewed ? new Date(selectedCard.last_reviewed || selectedCard.lastReviewed).toLocaleDateString() : '从未修炼'}
                                 </span>
-                                {selectedCard.nextReviewDate && (
-                                    <>
-                                        <span className={styles.infoDot}>·</span>
-                                        <span className={styles.infoItem}>⏳ {new Date(selectedCard.nextReviewDate).toLocaleDateString()}</span>
-                                    </>
-                                )}
-                                {selectedCard.algorithmType && (
+                                {(selectedCard.algorithm_type || selectedCard.algorithmType) && (
                                     <>
                                         <span className={styles.infoDot}>·</span>
                                         <span className={styles.infoItem}>
-                                            <span className={styles.runeTagInline}>{selectedCard.algorithmType}</span>
+                                            <span className={styles.runeTagInline}>{selectedCard.algorithm_type || selectedCard.algorithmType}</span>
                                         </span>
                                     </>
                                 )}
@@ -880,216 +756,20 @@ export default function CardWorkshop() {
                         )}
 
                         {isEditing ? (
-                            <>
-                                <div className={styles.runeTagSection}>
-                                    <div className={styles.fieldHeader}>
-                                        <span className={styles.runeTagTitle}>🔑 关键要点</span>
-                                        <div className={styles.fieldHeaderActions}>
-                                            <button
-                                                type="button"
-                                                className={styles.polishBtn}
-                                                onClick={() => handleEditPolish('key_points')}
-                                                disabled={!!editPolishingField || editForm.key_points.every(kp => !kp.trim())}
-                                            >
-                                                {editPolishingField === 'key_points' ? '⏳ 润色中...' : '✨ AI润色'}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={styles.addKeyPointBtn}
-                                                onClick={handleAddKeyPoint}
-                                            >
-                                                + 添加
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className={styles.keyPointsEditList}>
-                                        {editForm.key_points.map((kp, i) => (
-                                            <div key={i} className={styles.keyPointEditItem}>
-                                                <input
-                                                    className={styles.fieldInput}
-                                                    value={kp}
-                                                    onChange={(e) => handleKeyPointChange(i, e.target.value)}
-                                                    placeholder="输入关键要点..."
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className={styles.removeKeyPointBtn}
-                                                    onClick={() => handleRemoveKeyPoint(i)}
-                                                >
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {editPolishPreview && editPolishPreview.field === 'key_points' && (
-                                        <div className={styles.polishPreview}>
-                                            <div className={styles.polishPreviewHeader}>
-                                                <span>✨ AI润色结果</span>
-                                            </div>
-                                            <div className={styles.polishPreviewContent}>
-                                                {editPolishPreview.content}
-                                            </div>
-                                            <div className={styles.polishPreviewActions}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.polishAcceptBtn}
-                                                    onClick={handleEditPolishAccept}
-                                                >
-                                                    采纳
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={styles.polishRejectBtn}
-                                                    onClick={handleEditPolishReject}
-                                                >
-                                                    放弃
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className={styles.formField}>
-                                    <div className={styles.fieldHeader}>
-                                        <label className={styles.fieldLabel}>📖 知识内容</label>
-                                        <button
-                                            type="button"
-                                            className={styles.polishBtn}
-                                            onClick={() => handleEditPolish('note_content')}
-                                            disabled={!!editPolishingField || !editForm.knowledge_content?.trim()}
-                                        >
-                                            {editPolishingField === 'note_content' ? '⏳ 润色中...' : '✨ AI润色'}
-                                        </button>
-                                    </div>
-                                    <textarea
-                                        className={styles.fieldTextarea}
-                                        value={editForm.knowledge_content}
-                                        onChange={(e) => handleEditFieldChange('knowledge_content', e.target.value)}
-                                        placeholder="输入知识内容..."
-                                        rows={6}
-                                    />
-                                    {editPolishPreview && editPolishPreview.field === 'note_content' && (
-                                        <div className={styles.polishPreview}>
-                                            <div className={styles.polishPreviewHeader}>
-                                                <span>✨ AI润色结果</span>
-                                            </div>
-                                            <div className={styles.polishPreviewContent}>
-                                                {editPolishPreview.content}
-                                            </div>
-                                            <div className={styles.polishPreviewActions}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.polishAcceptBtn}
-                                                    onClick={handleEditPolishAccept}
-                                                >
-                                                    采纳
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={styles.polishRejectBtn}
-                                                    onClick={handleEditPolishReject}
-                                                >
-                                                    放弃
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className={styles.formField}>
-                                    <div className={styles.fieldHeader}>
-                                        <label className={styles.fieldLabel}>📝 心得总结</label>
-                                        <button
-                                            type="button"
-                                            className={styles.polishBtn}
-                                            onClick={() => handleEditPolish('summary')}
-                                            disabled={!!editPolishingField || !editForm.summary?.trim()}
-                                        >
-                                            {editPolishingField === 'summary' ? '⏳ 润色中...' : '✨ AI润色'}
-                                        </button>
-                                    </div>
-                                    <textarea
-                                        className={styles.fieldTextarea}
-                                        value={editForm.summary}
-                                        onChange={(e) => handleEditFieldChange('summary', e.target.value)}
-                                        placeholder="输入心得总结..."
-                                        rows={3}
-                                    />
-                                    {editPolishPreview && editPolishPreview.field === 'summary' && (
-                                        <div className={styles.polishPreview}>
-                                            <div className={styles.polishPreviewHeader}>
-                                                <span>✨ AI润色结果</span>
-                                            </div>
-                                            <div className={styles.polishPreviewContent}>
-                                                {editPolishPreview.content}
-                                            </div>
-                                            <div className={styles.polishPreviewActions}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.polishAcceptBtn}
-                                                    onClick={handleEditPolishAccept}
-                                                >
-                                                    采纳
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={styles.polishRejectBtn}
-                                                    onClick={handleEditPolishReject}
-                                                >
-                                                    放弃
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
+                            <CardEditForm
+                                card={selectedCard}
+                                onSave={handleEditSave}
+                                onCancel={handleCancelEdit}
+                            />
                         ) : (
                             <>
-                                {selectedCard.keyPoints?.length > 0 && (
-                                    <div className={styles.runeTagSection}>
-                                        <span className={styles.runeTagTitle}>🔑 关键要点</span>
-                                        <div className={styles.runeTagList}>
-                                            {selectedCard.keyPoints.map((kp, i) => (
-                                                <span key={i} className={styles.runeTagItem}>{kp}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedCard.knowledgeContent && (
-                                    <div className={styles.scrollSection}>
-                                        <div className={styles.scrollTitle}>📖 知识内容</div>
-                                        <div className={styles.scrollContent}>
-                                            {selectedCard.knowledgeContent}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedCard.summary && (
-                                    <div className={styles.quoteCard}>
-                                        <span className={styles.quoteMark}>"</span>
-                                        <p className={styles.quoteText}>{selectedCard.summary}</p>
-                                        <span className={styles.quoteAttribution}>—— 算法心得</span>
-                                    </div>
-                                )}
+                                <DimensionSection card={selectedCard} />
+                                <VisualLinksSection visualLinks={selectedCard.visual_links} />
                             </>
                         )}
 
                         <div className={styles.modalActions}>
-                            {isEditing ? (
-                                <>
-                                    <Button
-                                        variant="accent"
-                                        onClick={handleSaveEdit}
-                                        loading={isSaving}
-                                    >
-                                        💾 保存
-                                    </Button>
-                                    <Button variant="ghost" onClick={handleCancelEdit} disabled={isSaving}>
-                                        取消
-                                    </Button>
-                                </>
-                            ) : (
+                            {isEditing ? null : (
                                 <>
                                     <Button variant="primary" onClick={() => handleReview(selectedCard)} className={styles.reviewBtn}>
                                         📖 修炼此卡牌
@@ -1141,7 +821,7 @@ export default function CardWorkshop() {
             <CreateCardModal
                 open={createModalOpen}
                 onClose={() => setCreateModalOpen(false)}
-                onCreated={() => setCreateModalOpen(false)}
+                onCreated={() => { setCreateModalOpen(false); fetchCards() }}
             />
         </div>
     )

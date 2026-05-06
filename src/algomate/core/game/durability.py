@@ -338,3 +338,54 @@ def unseal_card(durability: int) -> int:
     """
     manager = DurabilityManager()
     return manager.unseal_durability()
+
+
+def compute_card_status(durability: int, pending_retake: bool) -> str:
+    if pending_retake or durability == 0:
+        return "pending_retake"
+    if durability < 30:
+        return "endangered"
+    return "normal"
+
+
+def apply_daily_decay(card, difficulty: str = "normal") -> dict:
+    manager = DurabilityManager()
+    
+    if getattr(card, 'pending_retake', False) or getattr(card, 'is_sealed', False):
+        return {
+            "card": card,
+            "old_durability": getattr(card, 'durability', 80),
+            "new_durability": getattr(card, 'durability', 80),
+            "status": compute_card_status(
+                getattr(card, 'durability', 80),
+                getattr(card, 'pending_retake', False)
+            ),
+            "decayed": False,
+        }
+    
+    if hasattr(card, 'created_at') and manager.is_in_grace_period(card.created_at):
+        return {
+            "card": card,
+            "old_durability": getattr(card, 'durability', 80),
+            "new_durability": getattr(card, 'durability', 80),
+            "status": compute_card_status(
+                getattr(card, 'durability', 80),
+                getattr(card, 'pending_retake', False)
+            ),
+            "decayed": False,
+        }
+    
+    current_durability = getattr(card, 'durability', 80)
+    new_durability, is_critical, is_sealed = manager.update_durability(
+        current_durability,
+        DurabilityAction.DAILY_DECAY,
+        difficulty
+    )
+    
+    return {
+        "card": card,
+        "old_durability": current_durability,
+        "new_durability": new_durability,
+        "status": compute_card_status(new_durability, False),
+        "decayed": True,
+    }

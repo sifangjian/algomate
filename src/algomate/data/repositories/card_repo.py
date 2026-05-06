@@ -4,11 +4,11 @@ from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from algomate.models.cards import Card
+from algomate.core.game.durability import compute_card_status
 from ..database import Database
 
 
 class CardRepository:
-    """卡牌数据仓库"""
 
     def __init__(self, db: Database):
         self.db = db
@@ -33,7 +33,8 @@ class CardRepository:
         finally:
             session.close()
 
-    def get_all(self, domain: Optional[str] = None, algorithm_type: Optional[str] = None, is_sealed: Optional[bool] = None) -> List[Card]:
+    def get_all(self, domain: Optional[str] = None, algorithm_type: Optional[str] = None,
+                is_sealed: Optional[bool] = None) -> List[Card]:
         session = self.db.get_session()
         try:
             query = session.query(Card)
@@ -44,6 +45,56 @@ class CardRepository:
             if is_sealed is not None:
                 query = query.filter(Card.is_sealed == is_sealed)
             return query.order_by(Card.created_at.desc()).all()
+        finally:
+            session.close()
+
+    def get_all_with_status(self, algorithm_type: Optional[str] = None,
+                            status: Optional[str] = None,
+                            keyword: Optional[str] = None) -> Dict:
+        session = self.db.get_session()
+        try:
+            query = session.query(Card)
+            if algorithm_type is not None:
+                query = query.filter(Card.algorithm_type == algorithm_type)
+            if keyword is not None:
+                pattern = f"%{keyword}%"
+                query = query.filter(
+                    (Card.name.like(pattern)) | (Card.knowledge_content.like(pattern))
+                )
+            cards = query.order_by(Card.created_at.desc()).all()
+            
+            result_cards = []
+            endangered_count = 0
+            pending_retake_count = 0
+            for card in cards:
+                card_status = compute_card_status(card.durability, card.pending_retake or card.is_sealed)
+                if status is not None and card_status != status:
+                    continue
+                if card_status == "endangered":
+                    endangered_count += 1
+                elif card_status == "pending_retake":
+                    pending_retake_count += 1
+                result_cards.append({
+                    "card": card,
+                    "status": card_status,
+                })
+            return {
+                "cards": result_cards,
+                "endangered_count": endangered_count,
+                "pending_retake_count": pending_retake_count,
+            }
+        finally:
+            session.close()
+
+    def count_by_status(self) -> Dict[str, int]:
+        session = self.db.get_session()
+        try:
+            cards = session.query(Card).all()
+            counts = {"normal": 0, "endangered": 0, "pending_retake": 0}
+            for card in cards:
+                status = compute_card_status(card.durability, card.pending_retake or card.is_sealed)
+                counts[status] = counts.get(status, 0) + 1
+            return counts
         finally:
             session.close()
 

@@ -1,0 +1,108 @@
+@keyframes orangePulse {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+    }
+}
+
+.banner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: var(--radius-md);
+    color: var(--color-accent);
+    font-size: 0.88rem;
+    margin-bottom: 18px;
+    animation: orangePulse 3s ease-in-out infinite;
+}
+
+.bannerHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bannerIcon {
+    font-size: 1.1rem;
+}
+
+.bannerText {
+    flex: 1;
+    color: var(--color-text-primary);
+}
+
+.bannerCount {
+    color: var(--color-danger);
+    font-size: 1.1rem;
+}
+
+.endangeredTag {
+    padding: 2px 10px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-danger);
+    flex-shrink: 0;
+}
+
+.cardList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cardItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 16px;
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    position: relative;
+}
+
+.cardItem:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}
+
+.cardIcon {
+    font-size: 0.9rem;
+}
+
+.cardName {
+    font-weight: 600;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cardPulse {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-danger);
+    animation: orangePulse 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.cardAction {
+    font-size: 0.72rem;
+    color: var(--color-primary-light);
+    font-weight: 500;
+}

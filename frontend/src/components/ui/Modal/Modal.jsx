@@ -57,7 +57,11 @@ export default function Modal({
   if (!open) return null
 
   return createPortal(
-    <div className={styles.overlay} onClick={closeOnOverlay ? onClose : undefined} role="presentation">
+    <div className={styles.overlay} onClick={(e) => {
+      if (closeOnOverlay && e.target === e.currentTarget) {
+        onClose()
+      }
+    }} role="presentation">
       <div
         ref={contentRef}
         className={`${styles.modal} ${styles[size]}`}
@@ -65,7 +69,6 @@ export default function Modal({
         aria-modal="true"
         aria-label={ariaLabel}
         tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.header}>
           <h2 className={styles.title}>{title}</h2>

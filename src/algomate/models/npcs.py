@@ -42,6 +42,7 @@ class NPC(Base):
     
     notes = relationship("Note", back_populates="npc")
     dialogue_records = relationship("DialogueRecord", back_populates="npc")
+    cards = relationship("Card", back_populates="npc")
 
 
 class NPCCreate(BaseModel):
