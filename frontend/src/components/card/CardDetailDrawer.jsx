@@ -8,20 +8,8 @@ import DimensionSection from '../card/DimensionSection'
 import VisualLinksSection from '../card/VisualLinksSection'
 import CardEditForm from '../card/CardEditForm'
 import RetakeButton from '../card/RetakeButton'
+import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
 import styles from './CardDetailDrawer.module.css'
-
-const ALGORITHM_ICONS = {
-  Search: '🔍',
-  Sorting: '📊',
-  'Dynamic Programming': '🎯',
-  Graph: '🕸️',
-  Tree: '🌲',
-  Recursion: '🔄',
-  Array: '📋',
-  String: '📝',
-  Greedy: '💰',
-  Math: '🔢',
-}
 
 function getStatusLabel(status) {
   switch (status) {

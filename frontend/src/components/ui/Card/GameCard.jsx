@@ -1,17 +1,5 @@
+import { ALGORITHM_ICONS } from '../../../constants/algorithmConstants'
 import styles from './GameCard.module.css'
-
-const ALGORITHM_ICONS = {
-  Search: '🔍',
-  Sorting: '📊',
-  'Dynamic Programming': '🎯',
-  Graph: '🕸️',
-  Tree: '🌲',
-  Recursion: '🔄',
-  Array: '📋',
-  String: '📝',
-  Greedy: '💰',
-  Math: '🔢',
-}
 
 function getDurabilityColor(durability) {
   if (durability > 60) return 'var(--color-success)'

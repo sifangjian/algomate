@@ -5,13 +5,13 @@ const DIMENSION_META = {
   core_concept: { icon: '💡', label: '核心概念', defaultOpen: true },
   key_points: { icon: '🔑', label: '关键要点', defaultOpen: true },
   code_template: { icon: '💻', label: '代码模板', defaultOpen: false },
-  time_complexity: { icon: '⏱️', label: '时间复杂度', defaultOpen: false },
-  space_complexity: { icon: '📦', label: '空间复杂度', defaultOpen: false },
+  complexity_analysis: { icon: '⏱️', label: '复杂度分析', defaultOpen: false },
+  use_cases: { icon: '📋', label: '使用场景', defaultOpen: false },
+  common_variants: { icon: '🔄', label: '常见变体', defaultOpen: false },
   typical_problems: { icon: '🎯', label: '典型题目', defaultOpen: false },
-  common_mistakes: { icon: '⚠️', label: '常见错误', defaultOpen: false },
-  optimization: { icon: '🚀', label: '优化思路', defaultOpen: false },
-  extensions: { icon: '🔗', label: '扩展知识', defaultOpen: false },
-  summary: { icon: '📝', label: '总结', defaultOpen: false },
+  common_pitfalls: { icon: '⚠️', label: '常见陷阱', defaultOpen: false },
+  comparison: { icon: '🚀', label: '对比分析', defaultOpen: false },
+  my_notes: { icon: '📝', label: '个人笔记', defaultOpen: false },
 }
 
 function parseContent(key, value) {

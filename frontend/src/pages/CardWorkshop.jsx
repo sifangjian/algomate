@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCardStore } from '../stores/cardStore'
 import { cardService } from '../services/cardService'
+import useDebounce from '../hooks/useDebounce'
 import GameCard from '../components/ui/Card/GameCard'
 import Input from '../components/ui/Input/Input'
 import Button from '../components/ui/Button/Button'
@@ -10,25 +11,8 @@ import { showToast } from '../components/ui/Toast/index'
 import EndangeredBanner from '../components/card/EndangeredBanner'
 import PendingRetakeSection from '../components/card/PendingRetakeSection'
 import CardDetailDrawer from '../components/card/CardDetailDrawer'
+import { ALGORITHM_ICONS, ALGORITHM_CATEGORIES } from '../constants/algorithmConstants'
 import styles from './CardWorkshop.module.css'
-
-const ALGORITHM_CATEGORIES = [
-    'Search', 'Sorting', 'Dynamic Programming', 'Graph',
-    'Tree', 'Recursion', 'Array', 'String', 'Greedy', 'Math',
-]
-
-const ALGORITHM_ICONS = {
-    Search: '🔍',
-    Sorting: '📊',
-    'Dynamic Programming': '🎯',
-    Graph: '🕸️',
-    Tree: '🌲',
-    Recursion: '🔄',
-    Array: '📋',
-    String: '📝',
-    Greedy: '💰',
-    Math: '🔢',
-}
 
 const STATUS_OPTIONS = [
     { value: '', label: '全部状态' },
@@ -215,22 +199,9 @@ export default function CardWorkshop() {
     } = useCardStore()
 
     const [searchKeyword, setSearchKeyword] = useState('')
-    const [debouncedSearch, setDebouncedSearch] = useState('')
+    const debouncedSearch = useDebounce(searchKeyword, 300)
     const [createModalOpen, setCreateModalOpen] = useState(false)
     const [detailLoading, setDetailLoading] = useState(false)
-
-    const searchTimerRef = useRef(null)
-    const DEBOUNCE_DELAY = 300
-
-    useEffect(() => {
-        if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-        searchTimerRef.current = setTimeout(() => {
-            setDebouncedSearch(searchKeyword)
-        }, DEBOUNCE_DELAY)
-        return () => {
-            if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
-        }
-    }, [searchKeyword])
 
     useEffect(() => {
         setFilters({ keyword: debouncedSearch.trim() })

@@ -1,19 +1,7 @@
 import { memo } from 'react'
 import { useCardStore } from '../../stores/cardStore'
+import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
 import styles from './EndangeredBanner.module.css'
-
-const ALGORITHM_ICONS = {
-  Search: '🔍',
-  Sorting: '📊',
-  'Dynamic Programming': '🎯',
-  Graph: '🕸️',
-  Tree: '🌲',
-  Recursion: '🔄',
-  Array: '📋',
-  String: '📝',
-  Greedy: '💰',
-  Math: '🔢',
-}
 
 function EndangeredBanner({ onCardClick }) {
   const { endangeredCount, cards } = useCardStore()

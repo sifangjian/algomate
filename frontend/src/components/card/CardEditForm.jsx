@@ -8,13 +8,13 @@ const EDITABLE_DIMENSIONS = [
   { key: 'core_concept', label: '💡 核心概念', rows: 3 },
   { key: 'key_points', label: '🔑 关键要点', rows: 4 },
   { key: 'code_template', label: '💻 代码模板', rows: 6 },
-  { key: 'time_complexity', label: '⏱️ 时间复杂度', rows: 2 },
-  { key: 'space_complexity', label: '📦 空间复杂度', rows: 2 },
+  { key: 'complexity_analysis', label: '⏱️ 复杂度分析', rows: 3 },
+  { key: 'use_cases', label: '📋 使用场景', rows: 3 },
+  { key: 'common_variants', label: '🔄 常见变体', rows: 3 },
   { key: 'typical_problems', label: '🎯 典型题目', rows: 4 },
-  { key: 'common_mistakes', label: '⚠️ 常见错误', rows: 3 },
-  { key: 'optimization', label: '🚀 优化思路', rows: 3 },
-  { key: 'extensions', label: '🔗 扩展知识', rows: 3 },
-  { key: 'summary', label: '📝 总结', rows: 3 },
+  { key: 'common_pitfalls', label: '⚠️ 常见陷阱', rows: 3 },
+  { key: 'comparison', label: '🚀 对比分析', rows: 3 },
+  { key: 'my_notes', label: '📝 个人笔记', rows: 3 },
 ]
 
 function dimensionToString(value) {

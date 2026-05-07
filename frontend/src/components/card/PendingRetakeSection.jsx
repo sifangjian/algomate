@@ -1,20 +1,8 @@
 import { useState, useCallback, memo } from 'react'
 import { useCardStore } from '../../stores/cardStore'
 import RetakeButton from './RetakeButton'
+import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
 import styles from './PendingRetakeSection.module.css'
-
-const ALGORITHM_ICONS = {
-  Search: '🔍',
-  Sorting: '📊',
-  'Dynamic Programming': '🎯',
-  Graph: '🕸️',
-  Tree: '🌲',
-  Recursion: '🔄',
-  Array: '📋',
-  String: '📝',
-  Greedy: '💰',
-  Math: '🔢',
-}
 
 function PendingRetakeSection({ onCardClick }) {
   const [isOpen, setIsOpen] = useState(true)
