@@ -232,8 +232,123 @@ def test_submit_choice_answer(client, test_db):
     assert data["data"]["durability_change"] == 30
     assert data["data"]["is_weakness_card"] is True
     assert data["data"]["correct_answer"] == "B"
-    assert data["data"]["guide"]["continue_challenge"] is True
-    assert data["data"]["guide"]["go_review"] is False
+    guide = data["data"]["guide"]
+    continue_action = next(
+        (a for a in guide["available_actions"] if a["action"] == "continue_challenge"),
+        None,
+    )
+    assert continue_action is not None
+    assert continue_action["available"] is True
+    go_review_action = next(
+        (a for a in guide["available_actions"] if a["action"] == "go_review"),
+        None,
+    )
+    assert go_review_action is not None
+    assert go_review_action["available"] is True
+
+
+def test_submit_victory_guide_contains_continue_challenge_and_go_review(client, test_db):
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
+
+    mock_generator = MagicMock()
+    mock_generator.generate_multiple_choice.return_value = [
+        {
+            "content": "以下哪个是二分查找的时间复杂度？",
+            "options": ["O(n)", "O(log n)", "O(n log n)", "O(1)"],
+            "answer": "B",
+            "explanation": "二分查找每次将搜索范围减半",
+        }
+    ]
+
+    with patch.object(Database, 'get_instance', return_value=test_db), \
+         patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
+         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+        challenge_resp = client.post(
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": weakness_card_id},
+        )
+
+    battle_id = challenge_resp.json()["data"]["battle_id"]
+
+    with patch.object(Database, 'get_instance', return_value=test_db):
+        submit_resp = client.post(
+            f"/api/v1/bosses/{boss_id}/submit",
+            json={
+                "battle_id": battle_id,
+                "answer": "B",
+                "question_type": "choice",
+            },
+        )
+
+    data = submit_resp.json()["data"]
+    assert data["is_victory"] is True
+    guide = data["guide"]
+    assert "available_actions" in guide
+    assert "message" in guide
+    actions = guide["available_actions"]
+    action_names = [a["action"] for a in actions]
+    assert "continue_challenge" in action_names
+    assert "go_review" in action_names
+    continue_action = next(a for a in actions if a["action"] == "continue_challenge")
+    assert continue_action["label"] == "继续挑战"
+    assert continue_action["target_path"] == "/boss"
+    assert continue_action["available"] is True
+    go_review_action = next(a for a in actions if a["action"] == "go_review")
+    assert go_review_action["label"] == "去修炼巩固"
+    assert go_review_action["target_path"] == "/review"
+    assert "成功" in guide["message"]
+
+
+def test_submit_defeat_guide_contains_go_review_and_go_dialogue(client, test_db):
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
+
+    mock_generator = MagicMock()
+    mock_generator.generate_multiple_choice.return_value = [
+        {
+            "content": "以下哪个是二分查找的时间复杂度？",
+            "options": ["O(n)", "O(log n)", "O(n log n)", "O(1)"],
+            "answer": "B",
+            "explanation": "二分查找每次将搜索范围减半",
+        }
+    ]
+
+    with patch.object(Database, 'get_instance', return_value=test_db), \
+         patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
+         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+        challenge_resp = client.post(
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": weakness_card_id},
+        )
+
+    battle_id = challenge_resp.json()["data"]["battle_id"]
+
+    with patch.object(Database, 'get_instance', return_value=test_db):
+        submit_resp = client.post(
+            f"/api/v1/bosses/{boss_id}/submit",
+            json={
+                "battle_id": battle_id,
+                "answer": "A",
+                "question_type": "choice",
+            },
+        )
+
+    data = submit_resp.json()["data"]
+    assert data["is_victory"] is False
+    guide = data["guide"]
+    assert "available_actions" in guide
+    assert "message" in guide
+    actions = guide["available_actions"]
+    action_names = [a["action"] for a in actions]
+    assert "go_review" in action_names
+    assert "go_dialogue" in action_names
+    go_review_action = next(a for a in actions if a["action"] == "go_review")
+    assert go_review_action["label"] == "去修炼巩固"
+    assert go_review_action["target_path"] == "/review"
+    go_dialogue_action = next(a for a in actions if a["action"] == "go_dialogue")
+    assert go_dialogue_action["label"] == "去重新修习"
+    assert go_dialogue_action["target_path"] == "/"
+    assert go_dialogue_action["params"]["npc_id"] == npc_id
+    assert "失败" in guide["message"] or "巩固" in guide["message"]
 
 
 def test_submit_short_answer(client, test_db):
@@ -324,3 +439,48 @@ def test_submit_leetcode(client, test_db):
     assert data["data"]["is_victory"] is True
     assert data["data"]["durability_change"] == 30
     assert data["data"]["correct_answer"] is None
+
+
+def test_submit_victory_no_available_boss_removes_continue_challenge(client, test_db):
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
+
+    mock_generator = MagicMock()
+    mock_generator.generate_multiple_choice.return_value = [
+        {
+            "content": "以下哪个是二分查找的时间复杂度？",
+            "options": ["O(n)", "O(log n)", "O(n log n)", "O(1)"],
+            "answer": "B",
+            "explanation": "二分查找每次将搜索范围减半",
+        }
+    ]
+
+    with patch.object(Database, 'get_instance', return_value=test_db), \
+         patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
+         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+        challenge_resp = client.post(
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": weakness_card_id},
+        )
+
+    battle_id = challenge_resp.json()["data"]["battle_id"]
+
+    with patch.object(Database, 'get_instance', return_value=test_db), \
+         patch('algomate.api.routes._has_available_bosses', return_value=False):
+        submit_resp = client.post(
+            f"/api/v1/bosses/{boss_id}/submit",
+            json={
+                "battle_id": battle_id,
+                "answer": "B",
+                "question_type": "choice",
+            },
+        )
+
+    data = submit_resp.json()["data"]
+    assert data["is_victory"] is True
+    guide = data["guide"]
+    continue_action = next(
+        (a for a in guide["available_actions"] if a["action"] == "continue_challenge"),
+        None,
+    )
+    assert continue_action is not None
+    assert continue_action["available"] is False

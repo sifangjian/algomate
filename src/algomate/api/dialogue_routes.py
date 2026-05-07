@@ -554,12 +554,19 @@ async def end_dialogue(dialogue_id: int):
                     time.sleep(2 ** retry_count)
 
         if card_result is None:
+            from algomate.core.guide.service import GuideService
+            guide_service = GuideService()
+            guides = guide_service.generate_guides(
+                scene="after_dialogue",
+                card=None,
+            )
             return {
                 "card": None,
                 "dialogue_preserved": True,
                 "dialogue_id": dialogue_id,
                 "error": f"卡牌生成失败，对话记录已保存，可稍后重试: {last_error}",
                 "retry_available": True,
+                "guides": guides.model_dump(),
             }
 
         existing_card = session.query(Card).filter(
@@ -626,6 +633,20 @@ async def end_dialogue(dialogue_id: int):
             _active_sessions[dialogue_id].status = DialogueState.ENDED
             _active_sessions[dialogue_id].card_result = card_data
 
+        from algomate.core.guide.service import GuideService
+        from algomate.models.bosses import Boss
+
+        has_available_boss = session.query(Boss).filter(
+            Boss.npc_id == record.npc_id
+        ).first() is not None
+
+        guide_service = GuideService()
+        guides = guide_service.generate_guides(
+            scene="after_dialogue",
+            card={"id": saved_card.id, "name": saved_card.name},
+            has_available_boss=has_available_boss,
+        )
+
         return {
             "card": {
                 "id": saved_card.id,
@@ -646,10 +667,7 @@ async def end_dialogue(dialogue_id: int):
                 "visual_links": saved_card.visual_links,
             },
             "is_update": is_update,
-            "guides": {
-                "go_boss": True,
-                "go_workshop": True,
-            },
+            "guides": guides.model_dump(),
         }
     except HTTPException:
         raise

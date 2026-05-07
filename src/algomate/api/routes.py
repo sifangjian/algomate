@@ -65,6 +65,7 @@ async def complete_review_v1(card_id: int, review_data: dict):
     from algomate.review.review_plan_service import ReviewPlanService
     from algomate.models.cards import Card
     from algomate.data.database import Database
+    from algomate.core.guide.service import GuideService
 
     review_type = review_data.get("review_type", "content_review")
     valid_types = ["content_review", "quick_quiz", "boss_challenge"]
@@ -86,6 +87,26 @@ async def complete_review_v1(card_id: int, review_data: dict):
     result = review_service.complete_review(card_id, review_type)
     if result is None:
         raise HTTPException(status_code=404, detail="卡牌不存在")
+
+    remaining_endangered = result.get("remaining_endangered", 0)
+
+    session = db.get_session()
+    try:
+        due_tasks_count = session.query(Card).filter(
+            Card.next_review_date <= date.today(),
+            Card.pending_retake == False,
+        ).count()
+        has_due_tasks = due_tasks_count > 0
+    finally:
+        session.close()
+
+    guide_service = GuideService()
+    guide = guide_service.generate_guides(
+        scene="after_review",
+        remaining_endangered=remaining_endangered,
+        has_due_tasks=has_due_tasks,
+    )
+    result["guide"] = guide.model_dump()
 
     return {
         "code": 200,
@@ -966,6 +987,15 @@ _FALLBACK_SHORT_ANSWER_QUESTIONS = [
 ]
 
 
+def _has_available_bosses(db) -> bool:
+    from algomate.models.bosses import Boss
+    session = db.get_session()
+    try:
+        return session.query(Boss).count() > 0
+    finally:
+        session.close()
+
+
 def _pick_question_type():
     import random
     r = random.random()
@@ -1244,6 +1274,7 @@ async def submit_boss_answer(boss_id: int, request: dict):
     from algomate.data.repositories.card_repo import CardRepository
     from algomate.data.repositories.battle_record_repo import BattleRecordRepository
     from algomate.core.agent.answer_evaluator import AnswerEvaluator
+    from algomate.core.guide.service import GuideService
 
     battle_id = request.get("battle_id")
     answer = request.get("answer", "")
@@ -1324,10 +1355,16 @@ async def submit_boss_answer(boss_id: int, request: dict):
         explanation=explanation,
     )
 
-    guide = {
-        "continue_challenge": is_victory,
-        "go_review": not is_victory,
-    }
+    guide_service = GuideService()
+    npc_id_for_guide = boss.npc_id if boss else None
+    has_available = _has_available_bosses(db)
+    guide = guide_service.generate_guides(
+        scene="after_boss",
+        is_victory=is_victory,
+        card_id=battle.card_id,
+        npc_id=npc_id_for_guide,
+        has_available_boss=has_available,
+    )
 
     return {
         "code": 200,
@@ -1342,7 +1379,7 @@ async def submit_boss_answer(boss_id: int, request: dict):
             "score": score,
             "feedback": feedback,
             "improvement": improvement,
-            "guide": guide,
+            "guide": guide.model_dump(),
         }
     }
 
