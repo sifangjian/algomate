@@ -31,35 +31,46 @@ class ReviewRecord(Base):
     __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)  # deprecated: 请使用 card_id
+    note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
     card_id = Column(Integer, ForeignKey("cards.id"), nullable=True)
     review_date = Column(DateTime, default=datetime.now, nullable=False)
     status = Column(String(20), default="pending", nullable=False)
     score = Column(Integer, nullable=True)
+    review_type = Column(String(20), default="content_review", nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    durability_before = Column(Integer, nullable=True)
+    durability_after = Column(Integer, nullable=True)
+    review_level_before = Column(Integer, nullable=True)
+    review_level_after = Column(Integer, nullable=True)
     
     note = relationship("Note", back_populates="review_records")  # deprecated: 请使用 card
     card = relationship("Card", back_populates="review_records")
 
 
 class ReviewRecordCreate(BaseModel):
-    """创建修炼记录的输入验证模型"""
     note_id: Optional[int] = Field(None, description="关联心得ID — deprecated，请使用 card_id")
     card_id: Optional[int] = Field(None, description="关联卡牌ID")
     status: str = Field(default="pending", description="修炼状态")
     score: Optional[int] = Field(None, description="本次修炼战绩")
+    review_type: str = Field(default="content_review", description="修炼形式")
     
     class Config:
         from_attributes = True
 
 
 class ReviewRecordResponse(BaseModel):
-    """返回给前端的修炼记录数据模型"""
     id: int
-    note_id: Optional[int] = None  # deprecated: 请使用 card_id
+    note_id: Optional[int] = None
     card_id: Optional[int] = None
     review_date: datetime
     status: str
     score: Optional[int]
+    review_type: str = "content_review"
+    completed_at: Optional[datetime] = None
+    durability_before: Optional[int] = None
+    durability_after: Optional[int] = None
+    review_level_before: Optional[int] = None
+    review_level_after: Optional[int] = None
     
     class Config:
         from_attributes = True
@@ -125,7 +136,8 @@ async def create_review_record(record: ReviewRecordCreate):
             note_id=record.note_id,
             card_id=record.card_id,
             status=record.status,
-            score=record.score
+            score=record.score,
+            review_type=record.review_type
         )
         session.add(new_record)
         session.commit()
