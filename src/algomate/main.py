@@ -167,7 +167,6 @@ class AlgomateApp:
 
         from .models import (
             notes_router,
-            bosses_router,
             npcs_router,
             questions_router,
             answers_router,
@@ -176,7 +175,6 @@ class AlgomateApp:
             learning_progress_router,
         )
         self.api_app.include_router(notes_router)
-        self.api_app.include_router(bosses_router)
         self.api_app.include_router(npcs_router)
         self.api_app.include_router(questions_router)
         self.api_app.include_router(answers_router)

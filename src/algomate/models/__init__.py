@@ -21,7 +21,6 @@ from algomate.models.learning_progress import LearningProgress, LearningProgress
 from algomate.models.user_settings import router as user_settings_router
 from algomate.models.notes import router as notes_router
 from algomate.models.npcs import router as npcs_router
-from algomate.models.bosses import router as bosses_router
 from algomate.models.questions import router as questions_router
 from algomate.models.answer_records import router as answers_router
 from algomate.models.dialogue_records import router as dialogues_router
@@ -80,7 +79,6 @@ __all__ = [
     "user_settings_router",
     "notes_router",
     "npcs_router",
-    "bosses_router",
     "questions_router",
     "answers_router",
     "dialogues_router",
