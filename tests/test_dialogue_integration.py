@@ -11,7 +11,7 @@ from algomate.models.dialogue_records import DialogueRecord
 from algomate.models.dialogue_messages import DialogueMessageRecord
 from algomate.models.dialogue_notes import DialogueNote
 from algomate.models.npcs import NPC
-from algomate.models.cards import Card, Domain
+from algomate.models.cards import Card
 from algomate.api.dialogue_routes import (
     DialogueState,
     DialogueSession,

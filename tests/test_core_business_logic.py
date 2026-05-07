@@ -33,7 +33,7 @@ from algomate.core.game.durability import (
     DurabilityConfig,
     update_durability,
     get_critical_cards,
-    unseal_card,
+    retake_card,
 )
 
 from algomate.core.game.realm_unlock import (
@@ -62,12 +62,12 @@ class MockCard:
     """模拟卡牌对象"""
     id: int
     name: str
-    domain: str
+    algorithm_type: str
     durability: int
     created_at: datetime
     last_reviewed: datetime = None
     review_level: int = 0
-    is_sealed: bool = False
+    pending_retake: bool = False
     next_review_date: datetime = None
 
 
@@ -165,7 +165,7 @@ class TestForgottenCurveEngine:
             MockCard(
                 id=1,
                 name="卡牌1",
-                domain="新手森林",
+                algorithm_type="Search",
                 durability=80,
                 created_at=datetime.now() - timedelta(days=2),
                 last_reviewed=None,
@@ -174,7 +174,7 @@ class TestForgottenCurveEngine:
             MockCard(
                 id=2,
                 name="卡牌2",
-                domain="新手森林",
+                algorithm_type="Search",
                 durability=90,
                 created_at=datetime.now() - timedelta(hours=12),
                 last_reviewed=datetime.now() - timedelta(hours=6),
@@ -183,12 +183,12 @@ class TestForgottenCurveEngine:
             MockCard(
                 id=3,
                 name="卡牌3",
-                domain="新手森林",
+                algorithm_type="Search",
                 durability=20,
                 created_at=datetime.now() - timedelta(days=5),
                 last_reviewed=None,
                 review_level=0,
-                is_sealed=True,
+                pending_retake=True,
             ),
         ]
         
@@ -280,37 +280,37 @@ class TestDurabilityManager:
         """测试更新耐久度（成功）"""
         manager = DurabilityManager()
         
-        new_dur, is_critical, is_sealed = manager.update_durability(
+        new_dur, is_critical, needs_retake = manager.update_durability(
             80, DurabilityAction.REVIEW_SUCCESS, "normal"
         )
         
         assert new_dur == 100
         assert is_critical is False
-        assert is_sealed is False
+        assert needs_retake is False
     
     def test_update_durability_fail(self):
         """测试更新耐久度（失败）"""
         manager = DurabilityManager()
         
-        new_dur, is_critical, is_sealed = manager.update_durability(
+        new_dur, is_critical, needs_retake = manager.update_durability(
             30, DurabilityAction.REVIEW_FAIL, "normal"
         )
         
         assert new_dur == 25
         assert is_critical is True
-        assert is_sealed is False
+        assert needs_retake is False
     
     def test_update_durability_sealed(self):
-        """测试更新耐久度（封印）"""
+        """测试更新耐久度（待重修）"""
         manager = DurabilityManager()
         
-        new_dur, is_critical, is_sealed = manager.update_durability(
+        new_dur, is_critical, needs_retake = manager.update_durability(
             2, DurabilityAction.REVIEW_FAIL, "normal"
         )
         
         assert new_dur == 0
         assert is_critical is True
-        assert is_sealed is True
+        assert needs_retake is True
     
     def test_is_critical(self):
         """测试濒危判断"""
@@ -320,19 +320,19 @@ class TestDurabilityManager:
         assert manager.is_critical(30) is False
         assert manager.is_critical(50) is False
     
-    def test_is_sealed(self):
-        """测试封印判断"""
+    def test_needs_retake(self):
+        """测试待重修判断"""
         manager = DurabilityManager()
         
-        assert manager.is_sealed(0) is True
-        assert manager.is_sealed(1) is False
+        assert manager.needs_retake(0) is True
+        assert manager.needs_retake(1) is False
     
     def test_unseal_durability(self):
-        """测试解封耐久度"""
+        """测试重修耐久度恢复"""
         manager = DurabilityManager()
         
         unseal_dur = manager.unseal_durability()
-        assert unseal_dur == 30
+        assert unseal_dur == 80
     
     def test_is_in_grace_period_within_period(self):
         manager = DurabilityManager()
@@ -362,9 +362,9 @@ class TestDurabilityManager:
         manager = DurabilityManager()
 
         class MockCardLocal:
-            def __init__(self, durability, is_sealed, created_at):
+            def __init__(self, durability, pending_retake, created_at):
                 self.durability = durability
-                self.is_sealed = is_sealed
+                self.pending_retake = pending_retake
                 self.created_at = created_at
 
         grace_card = MockCardLocal(80, False, datetime.now() - timedelta(days=1))
@@ -379,20 +379,20 @@ class TestDurabilityManager:
 
     def test_convenience_functions(self):
         """测试便捷函数"""
-        new_dur, is_critical, is_sealed = update_durability(
+        new_dur, is_critical, needs_retake = update_durability(
             80, DurabilityAction.REVIEW_SUCCESS, "normal"
         )
         assert new_dur == 100
 
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=20, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", domain="新手森林", durability=50, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=20, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=50, created_at=datetime.now()),
         ]
         critical = get_critical_cards(cards)
         assert len(critical) == 1
 
-        unseal_dur = unseal_card(0)
-        assert unseal_dur == 30
+        unseal_dur = retake_card(0)
+        assert unseal_dur == 80
 
 
 class TestRealmUnlockManager:
@@ -403,13 +403,13 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", domain="新手森林", durability=50, created_at=datetime.now()),
-            MockCard(id=3, name="卡牌3", domain="新手森林", durability=80, created_at=datetime.now()),
-            MockCard(id=4, name="卡牌4", domain="迷雾沼泽", durability=90, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=50, created_at=datetime.now()),
+            MockCard(id=3, name="卡牌3", algorithm_type="Search", durability=80, created_at=datetime.now()),
+            MockCard(id=4, name="卡牌4", algorithm_type="Sorting", durability=90, created_at=datetime.now()),
         ]
         
-        count = manager.count_mastered_cards(cards, "新手森林")
+        count = manager.count_mastered_cards(cards, "Search")
         assert count == 2
     
     def test_count_all_mastered_cards(self):
@@ -417,9 +417,9 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", domain="迷雾沼泽", durability=80, created_at=datetime.now()),
-            MockCard(id=3, name="卡牌3", domain="智慧圣殿", durability=50, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="Sorting", durability=80, created_at=datetime.now()),
+            MockCard(id=3, name="卡牌3", algorithm_type="Graph", durability=50, created_at=datetime.now()),
         ]
         
         count = manager.count_all_mastered_cards(cards)
@@ -437,7 +437,7 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=50, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=50, created_at=datetime.now()),
         ]
         
         assert manager.check_realm_unlock(Realm.MIST_SWAMP, cards) is False
@@ -447,9 +447,9 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", domain="新手森林", durability=80, created_at=datetime.now()),
-            MockCard(id=3, name="卡牌3", domain="新手森林", durability=90, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=80, created_at=datetime.now()),
+            MockCard(id=3, name="卡牌3", algorithm_type="Search", durability=90, created_at=datetime.now()),
         ]
         
         assert manager.check_realm_unlock(Realm.MIST_SWAMP, cards) is True
@@ -459,9 +459,9 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", domain="新手森林", durability=80, created_at=datetime.now()),
-            MockCard(id=3, name="卡牌3", domain="新手森林", durability=90, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=80, created_at=datetime.now()),
+            MockCard(id=3, name="卡牌3", algorithm_type="Search", durability=90, created_at=datetime.now()),
         ]
         
         unlocked = manager.get_unlocked_realms(cards)
@@ -473,8 +473,8 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", domain="新手森林", durability=80, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=80, created_at=datetime.now()),
         ]
         
         progress = manager.get_realm_progress(Realm.MIST_SWAMP, cards)
@@ -496,7 +496,7 @@ class TestRealmUnlockManager:
     def test_convenience_functions(self):
         """测试便捷函数"""
         cards = [
-            MockCard(id=1, name="卡牌1", domain="新手森林", durability=70, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
         ]
         
         unlocked = check_realm_unlock("新手森林", cards)
