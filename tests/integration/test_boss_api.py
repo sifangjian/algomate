@@ -220,7 +220,7 @@ class TestChallengeBoss:
         body = resp.json()
         assert body["code"] == 40404
 
-    def test_challenge_no_cards_returns_40301(self, test_app):
+    def test_challenge_no_cards_returns_40404(self, test_app):
         from algomate.data.database import Database
         from algomate.models.cards import Card
 
@@ -238,7 +238,7 @@ class TestChallengeBoss:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert body["code"] == 40301
+        assert body["code"] == 40404
 
     def test_challenge_short_answer_type(self, test_app):
         with patch(QG_PATCH, return_value=_mock_question_generator()):

@@ -103,3 +103,59 @@ def test_update_result_not_exists(test_db):
         durability_change=-5,
     )
     assert result is None
+
+
+def test_get_recent_by_boss(test_db, sample_boss, sample_card):
+    # 验证 get_recent_by_boss 返回指定 Boss 下已完成的战斗记录，按创建时间倒序
+    repo = BattleRecordRepository(test_db)
+    r1 = repo.create(
+        boss_id=sample_boss.id,
+        card_id=sample_card.id,
+        question_type="choice",
+        is_weakness_card=True,
+    )
+    r2 = repo.create(
+        boss_id=sample_boss.id,
+        card_id=sample_card.id,
+        question_type="short_answer",
+        is_weakness_card=False,
+    )
+    repo.update_result(record_id=r1.id, is_victory=True, answer="A", score=100, durability_change=30)
+    repo.update_result(record_id=r2.id, is_victory=False, answer="wrong", score=40, durability_change=-5)
+
+    recent = repo.get_recent_by_boss(sample_boss.id)
+    assert len(recent) == 2
+    for record in recent:
+        assert record.boss_id == sample_boss.id
+        assert record.status == "completed"
+    assert recent[0].created_at >= recent[1].created_at
+
+
+def test_get_recent_by_boss_with_limit(test_db, sample_boss, sample_card):
+    # 验证 get_recent_by_boss 的 limit 参数生效
+    repo = BattleRecordRepository(test_db)
+    for i in range(4):
+        r = repo.create(
+            boss_id=sample_boss.id,
+            card_id=sample_card.id,
+            question_type="choice",
+            is_weakness_card=True,
+        )
+        repo.update_result(record_id=r.id, is_victory=True, answer="A", score=100, durability_change=20)
+
+    recent = repo.get_recent_by_boss(sample_boss.id, limit=2)
+    assert len(recent) == 2
+
+
+def test_get_recent_by_boss_excludes_in_progress(test_db, sample_boss, sample_card):
+    # 验证 get_recent_by_boss 不返回 in_progress 状态的记录
+    repo = BattleRecordRepository(test_db)
+    repo.create(
+        boss_id=sample_boss.id,
+        card_id=sample_card.id,
+        question_type="choice",
+        is_weakness_card=True,
+    )
+
+    recent = repo.get_recent_by_boss(sample_boss.id)
+    assert len(recent) == 0

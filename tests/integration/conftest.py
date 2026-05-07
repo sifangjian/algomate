@@ -60,19 +60,23 @@ def test_app():
     Database.get_instance = TestDatabase.get_instance
     Database._instance = TestDatabase()
 
+    from unittest.mock import patch as _patch
+    from pathlib import Path
     from algomate.config.settings import AppConfig
 
     original_appconfig_load = AppConfig.load
     original_appconfig_instance = AppConfig._instance
 
-    test_config = AppConfig()
+    with _patch.object(Path, 'mkdir'):
+        test_config = AppConfig()
     test_config.LLM_API_KEY = ""
     AppConfig._instance = test_config
     AppConfig.load = classmethod(lambda cls, *a, **kw: test_config)
 
     from algomate.main import AlgomateApp
 
-    app = AlgomateApp(config=test_config)
+    with _patch('algomate.main.setup_logging'):
+        app = AlgomateApp(config=test_config)
 
     client = TestClient(app.api_app)
 

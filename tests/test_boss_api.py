@@ -22,23 +22,25 @@ def _setup_test_data(test_db):
     session.add(npc)
     session.commit()
     session.refresh(npc)
+    npc_id = npc.id
 
     boss = Boss(
         name="数组守卫",
         difficulty="easy",
         weakness_type="basic_data_structure",
-        npc_id=npc.id,
+        npc_id=npc_id,
         description="新手森林的守门人",
     )
     session.add(boss)
     session.commit()
     session.refresh(boss)
+    boss_id = boss.id
 
     weakness_card = Card(
         name="数组双指针卡",
         algorithm_type="basic_data_structure",
         durability=80,
-        npc_id=npc.id,
+        npc_id=npc_id,
         topic="数组与双指针",
         core_concept="双指针技巧",
     )
@@ -46,7 +48,7 @@ def _setup_test_data(test_db):
         name="动态规划卡",
         algorithm_type="dynamic_programming",
         durability=60,
-        npc_id=npc.id,
+        npc_id=npc_id,
         topic="动态规划",
         core_concept="DP思想",
     )
@@ -54,13 +56,15 @@ def _setup_test_data(test_db):
     session.commit()
     session.refresh(weakness_card)
     session.refresh(other_card)
+    weakness_card_id = weakness_card.id
+    other_card_id = other_card.id
     session.close()
 
-    return npc, boss, weakness_card, other_card
+    return npc_id, boss_id, weakness_card_id, other_card_id
 
 
 def test_get_bosses(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     with patch.object(Database, 'get_instance', return_value=test_db):
         response = client.get("/api/v1/bosses")
@@ -79,14 +83,14 @@ def test_get_bosses(client, test_db):
 
 
 def test_get_bosses_filter_difficulty(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     session = test_db.get_session()
     hard_boss = Boss(
         name="DP圣殿守卫",
         difficulty="hard",
         weakness_type="dynamic_programming",
-        npc_id=npc.id,
+        npc_id=npc_id,
         description="守护DP圣殿",
     )
     session.add(hard_boss)
@@ -113,10 +117,10 @@ def test_get_bosses_filter_difficulty(client, test_db):
 
 
 def test_get_boss_detail(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     with patch.object(Database, 'get_instance', return_value=test_db):
-        response = client.get(f"/api/v1/bosses/{boss.id}")
+        response = client.get(f"/api/v1/bosses/{boss_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -124,7 +128,7 @@ def test_get_boss_detail(client, test_db):
     assert data["data"]["name"] == "数组守卫"
     assert data["data"]["difficulty"] == "easy"
     assert data["data"]["weakness_type"] == "basic_data_structure"
-    assert data["data"]["npc_id"] == npc.id
+    assert data["data"]["npc_id"] == npc_id
     assert len(data["data"]["weakness_cards"]) == 1
     assert data["data"]["weakness_cards"][0]["is_weakness"] is True
     assert len(data["data"]["other_cards"]) == 1
@@ -143,7 +147,7 @@ def test_get_boss_detail_not_found(client, test_db):
 
 
 def test_challenge_boss(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     mock_generator = MagicMock()
     mock_generator.generate_multiple_choice.return_value = [
@@ -156,11 +160,11 @@ def test_challenge_boss(client, test_db):
     ]
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
-         patch('algomate.api.routes.QuestionGenerator', return_value=mock_generator), \
+         patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
          patch('algomate.api.routes._pick_question_type', return_value='choice'):
         response = client.post(
-            f"/api/v1/bosses/{boss.id}/challenge",
-            json={"card_id": weakness_card.id},
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": weakness_card_id},
         )
 
     assert response.status_code == 200
@@ -175,28 +179,21 @@ def test_challenge_boss(client, test_db):
 
 
 def test_challenge_boss_no_card(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
-
-    session = test_db.get_session()
-    from algomate.models.cards import Card as CardModel
-    for card in session.query(CardModel).all():
-        session.delete(card)
-    session.commit()
-    session.close()
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     with patch.object(Database, 'get_instance', return_value=test_db):
         response = client.post(
-            f"/api/v1/bosses/{boss.id}/challenge",
-            json={"card_id": 1},
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": 99999},
         )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["code"] == 40301
+    assert data["code"] == 40404
 
 
 def test_submit_choice_answer(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     mock_generator = MagicMock()
     mock_generator.generate_multiple_choice.return_value = [
@@ -209,18 +206,18 @@ def test_submit_choice_answer(client, test_db):
     ]
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
-         patch('algomate.api.routes.QuestionGenerator', return_value=mock_generator), \
+         patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
          patch('algomate.api.routes._pick_question_type', return_value='choice'):
         challenge_resp = client.post(
-            f"/api/v1/bosses/{boss.id}/challenge",
-            json={"card_id": weakness_card.id},
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": weakness_card_id},
         )
 
     battle_id = challenge_resp.json()["data"]["battle_id"]
 
     with patch.object(Database, 'get_instance', return_value=test_db):
         submit_resp = client.post(
-            f"/api/v1/bosses/{boss.id}/submit",
+            f"/api/v1/bosses/{boss_id}/submit",
             json={
                 "battle_id": battle_id,
                 "answer": "B",
@@ -240,7 +237,7 @@ def test_submit_choice_answer(client, test_db):
 
 
 def test_submit_short_answer(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     mock_generator = MagicMock()
     mock_generator.generate_short_answer.return_value = [
@@ -260,19 +257,19 @@ def test_submit_short_answer(client, test_db):
     }
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
-         patch('algomate.api.routes.QuestionGenerator', return_value=mock_generator), \
+         patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
          patch('algomate.api.routes._pick_question_type', return_value='short_answer'):
         challenge_resp = client.post(
-            f"/api/v1/bosses/{boss.id}/challenge",
-            json={"card_id": weakness_card.id},
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": weakness_card_id},
         )
 
     battle_id = challenge_resp.json()["data"]["battle_id"]
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
-         patch('algomate.api.routes.AnswerEvaluator', return_value=mock_evaluator):
+         patch('algomate.core.agent.answer_evaluator.AnswerEvaluator', return_value=mock_evaluator):
         submit_resp = client.post(
-            f"/api/v1/bosses/{boss.id}/submit",
+            f"/api/v1/bosses/{boss_id}/submit",
             json={
                 "battle_id": battle_id,
                 "answer": "将问题分解为子问题",
@@ -289,7 +286,7 @@ def test_submit_short_answer(client, test_db):
 
 
 def test_submit_leetcode(client, test_db):
-    npc, boss, weakness_card, other_card = _setup_test_data(test_db)
+    npc_id, boss_id, weakness_card_id, other_card_id = _setup_test_data(test_db)
 
     mock_generator = MagicMock()
     mock_generator.generate_leetcode_challenge.return_value = {
@@ -301,18 +298,18 @@ def test_submit_leetcode(client, test_db):
     }
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
-         patch('algomate.api.routes.QuestionGenerator', return_value=mock_generator), \
+         patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
          patch('algomate.api.routes._pick_question_type', return_value='leetcode'):
         challenge_resp = client.post(
-            f"/api/v1/bosses/{boss.id}/challenge",
-            json={"card_id": weakness_card.id},
+            f"/api/v1/bosses/{boss_id}/challenge",
+            json={"card_id": weakness_card_id},
         )
 
     battle_id = challenge_resp.json()["data"]["battle_id"]
 
     with patch.object(Database, 'get_instance', return_value=test_db):
         submit_resp = client.post(
-            f"/api/v1/bosses/{boss.id}/submit",
+            f"/api/v1/bosses/{boss_id}/submit",
             json={
                 "battle_id": battle_id,
                 "answer": "已解决",
