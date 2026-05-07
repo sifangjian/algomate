@@ -137,6 +137,7 @@ frontend/.turbo/
 frontend/playwright-report/
 frontend/test-results/
 frontend/playwright/.cache/
+frontend/e2e-results/
 
 # Lock files (uncomment if you want to ignore them)
 # frontend/package-lock.json
