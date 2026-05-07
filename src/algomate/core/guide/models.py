@@ -7,6 +7,7 @@ class GuideAction(BaseModel):
     label: str
     target_path: Optional[str] = None
     params: Optional[Dict[str, Any]] = None
+    available: bool = True
 
 
 class GuideData(BaseModel):

@@ -1,6 +1,6 @@
 import pytest
 from algomate.core.guide.service import GuideService, build_dialogue_end_guide, build_boss_result_guide, build_review_complete_guide
-from algomate.core.guide.models import GuideData
+from algomate.core.guide.models import GuideData, GuideAction
 
 
 class TestBuildDialogueEndGuide:
@@ -77,28 +77,50 @@ class TestBuildBossResultGuide:
 
 
 class TestBuildReviewCompleteGuide:
-    def test_has_endangered_cards_returns_continue_review(self):
+    def test_has_endangered_cards_returns_continue_review_and_go_boss(self):
         guide = build_review_complete_guide(remaining_endangered=3)
         assert isinstance(guide, GuideData)
-        assert len(guide.available_actions) == 1
-        assert guide.available_actions[0].action == "continue_review"
-        assert guide.available_actions[0].label == "继续修炼"
-        assert guide.available_actions[0].target_path == "/review"
+        assert len(guide.available_actions) == 2
+        continue_review = next(a for a in guide.available_actions if a.action == "continue_review")
+        go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
+        assert continue_review.label == "继续修炼"
+        assert continue_review.target_path == "/review"
+        assert continue_review.available is True
+        assert go_boss.label == "去 Boss 战检验"
+        assert go_boss.target_path == "/boss"
+        assert go_boss.available is True
         assert "3" in guide.message
 
-    def test_no_endangered_cards_returns_go_boss(self):
-        guide = build_review_complete_guide(remaining_endangered=0)
+    def test_no_endangered_with_due_tasks_returns_both_available(self):
+        guide = build_review_complete_guide(remaining_endangered=0, has_due_tasks=True)
         assert isinstance(guide, GuideData)
-        assert len(guide.available_actions) == 1
-        assert guide.available_actions[0].action == "go_boss"
-        assert guide.available_actions[0].label == "去 Boss 战检验"
-        assert guide.available_actions[0].target_path == "/boss"
-        assert "Boss" in guide.message or "检验" in guide.message
+        assert len(guide.available_actions) == 2
+        continue_review = next(a for a in guide.available_actions if a.action == "continue_review")
+        go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
+        assert continue_review.available is True
+        assert go_boss.available is True
+
+    def test_no_endangered_no_due_tasks_continue_review_unavailable(self):
+        guide = build_review_complete_guide(remaining_endangered=0, has_due_tasks=False)
+        assert isinstance(guide, GuideData)
+        assert len(guide.available_actions) == 2
+        continue_review = next(a for a in guide.available_actions if a.action == "continue_review")
+        go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
+        assert continue_review.available is False
+        assert go_boss.available is True
+        assert go_boss.label == "去 Boss 战检验"
+        assert go_boss.target_path == "/boss"
 
     def test_one_endangered_card(self):
         guide = build_review_complete_guide(remaining_endangered=1)
-        assert guide.available_actions[0].action == "continue_review"
+        continue_review = next(a for a in guide.available_actions if a.action == "continue_review")
+        assert continue_review.available is True
         assert "1" in guide.message
+
+    def test_default_has_due_tasks_is_true(self):
+        guide = build_review_complete_guide(remaining_endangered=0)
+        continue_review = next(a for a in guide.available_actions if a.action == "continue_review")
+        assert continue_review.available is True
 
 
 class TestGuideService:
@@ -133,13 +155,17 @@ class TestGuideService:
         service = GuideService()
         guide = service.generate_guides(scene="after_review", remaining_endangered=2)
         assert isinstance(guide, GuideData)
-        assert guide.available_actions[0].action == "continue_review"
+        continue_review = next(a for a in guide.available_actions if a.action == "continue_review")
+        go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
+        assert continue_review.available is True
+        assert go_boss.available is True
 
     def test_generate_guides_after_review_no_endangered(self):
         service = GuideService()
         guide = service.generate_guides(scene="after_review", remaining_endangered=0)
         assert isinstance(guide, GuideData)
-        assert guide.available_actions[0].action == "go_boss"
+        go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
+        assert go_boss.available is True
 
     def test_generate_guides_unknown_scene_returns_empty(self):
         service = GuideService()
@@ -155,8 +181,8 @@ class TestGuideService:
             has_available_boss=False,
         )
         assert isinstance(guide, GuideData)
-        go_boss_action = next((a for a in guide.available_actions if a.action == "go_boss"), None)
-        assert go_boss_action is None
+        go_boss_action = next(a for a in guide.available_actions if a.action == "go_boss")
+        assert go_boss_action.available is False
 
     def test_generate_guides_after_boss_all_defeated(self):
         service = GuideService()
@@ -167,17 +193,19 @@ class TestGuideService:
             has_available_boss=False,
         )
         continue_action = next(
-            (a for a in guide.available_actions if a.action == "continue_challenge"), None
+            a for a in guide.available_actions if a.action == "continue_challenge"
         )
-        assert continue_action is None
+        assert continue_action.available is False
 
     def test_generate_guides_after_review_no_remaining_tasks(self):
         service = GuideService()
         guide = service.generate_guides(
             scene="after_review",
             remaining_endangered=0,
+            has_due_tasks=False,
         )
-        continue_action = next(
+        continue_review = next(
             (a for a in guide.available_actions if a.action == "continue_review"), None
         )
-        assert continue_action is None
+        assert continue_review is not None
+        assert continue_review.available is False

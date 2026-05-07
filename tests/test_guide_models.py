@@ -9,6 +9,7 @@ class TestGuideAction:
         assert action.label == "去 Boss 战巩固"
         assert action.target_path is None
         assert action.params is None
+        assert action.available is True
 
     def test_create_with_all_fields(self):
         action = GuideAction(
@@ -21,6 +22,16 @@ class TestGuideAction:
         assert action.label == "去 Boss 战巩固"
         assert action.target_path == "/boss"
         assert action.params == {"card_id": 1}
+        assert action.available is True
+
+    def test_create_with_available_false(self):
+        action = GuideAction(
+            action="continue_review",
+            label="继续修炼",
+            target_path="/review",
+            available=False,
+        )
+        assert action.available is False
 
     def test_create_with_target_path_and_params(self):
         action = GuideAction(
@@ -53,6 +64,7 @@ class TestGuideAction:
             "label": "去 Boss 战巩固",
             "target_path": "/boss",
             "params": {"card_id": 1},
+            "available": True,
         }
 
     def test_serialization_with_none_optional_fields(self):
@@ -63,7 +75,17 @@ class TestGuideAction:
             "label": "去修炼巩固",
             "target_path": None,
             "params": None,
+            "available": True,
         }
+
+    def test_serialization_with_available_false(self):
+        action = GuideAction(
+            action="continue_review",
+            label="继续修炼",
+            available=False,
+        )
+        data = action.model_dump()
+        assert data["available"] is False
 
     def test_from_dict(self):
         data = {
@@ -75,6 +97,17 @@ class TestGuideAction:
         action = GuideAction(**data)
         assert action.action == "go_boss"
         assert action.params == {"card_id": 1}
+        assert action.available is True
+
+    def test_from_dict_with_available(self):
+        data = {
+            "action": "continue_review",
+            "label": "继续修炼",
+            "target_path": "/review",
+            "available": False,
+        }
+        action = GuideAction(**data)
+        assert action.available is False
 
 
 class TestGuideData:
