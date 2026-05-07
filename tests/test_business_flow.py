@@ -20,7 +20,6 @@ from algomate.core.flow.npc_dialogue import (
     DialogueMessage
 )
 from algomate.core.flow.boss_battle import (
-    BossBattleFlow,
     BattleState,
     BattleSession,
     BattleResult

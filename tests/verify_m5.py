@@ -119,10 +119,6 @@ def test_code_structure():
         'class BattleState',
         'class BattleSession',
         'class BattleResult',
-        'class BossBattleFlow',
-        'async def generate_boss_for_card',
-        'async def start_battle',
-        'async def submit_answer',
     ]
     
     for item in required_items:

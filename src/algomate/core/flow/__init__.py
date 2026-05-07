@@ -5,6 +5,6 @@
 """
 
 from .npc_dialogue import NPCDialogueFlow
-from .boss_battle import BossBattleFlow
+from .boss_battle import BattleState, BattleSession, BattleResult
 
-__all__ = ["NPCDialogueFlow", "BossBattleFlow"]
+__all__ = ["NPCDialogueFlow", "BattleState", "BattleSession", "BattleResult"]
