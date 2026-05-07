@@ -20,7 +20,8 @@ def _ensure_models_imported():
         from algomate.models import (
             Note, Card, NPC, Boss, Question, AnswerRecord,
             DialogueRecord, DialogueMessageRecord, DialogueNote,
-            ReviewRecord, LearningProgress, UserSetting
+            ReviewRecord, LearningProgress, UserSetting,
+            BattleRecord
         )
         _models_imported = True
 
