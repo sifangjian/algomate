@@ -5,21 +5,9 @@ import AnswerFeedback from './AnswerFeedback'
 import PostBossGuide from './PostBossGuide'
 import styles from './BattleResultModal.module.css'
 
-export default function BattleResultModal({ result, isOpen, onClose, onContinue, onGoPractice, onGuideAction }) {
+export default function BattleResultModal({ result, isOpen, onClose }) {
   if (!result) return null
   const isVictory = result.is_victory ?? result.is_correct
-
-  const handleGuideAction = (action) => {
-    if (onGuideAction) {
-      onGuideAction(action)
-      return
-    }
-    if (action.action === 'continue_challenge') {
-      onContinue?.()
-    } else if (action.action === 'go_review' || action.action === 'go_dialogue') {
-      onGoPractice?.()
-    }
-  }
 
   return (
     <Modal
@@ -63,7 +51,7 @@ export default function BattleResultModal({ result, isOpen, onClose, onContinue,
         ) : (
           <AnswerFeedback result={result} />
         )}
-        <PostBossGuide guide={result.guide} onAction={handleGuideAction} />
+        <PostBossGuide guide={result.guide} scene="after_boss" />
       </div>
     </Modal>
   )

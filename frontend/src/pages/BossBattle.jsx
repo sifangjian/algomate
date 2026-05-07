@@ -204,8 +204,6 @@ export default function BossBattle() {
         result={battleResult}
         isOpen={battlePhase === 'result'}
         onClose={handleCloseResult}
-        onContinue={handleContinueChallenge}
-        onGoPractice={handleGoPractice}
       />
 
       <RecoveryDialog

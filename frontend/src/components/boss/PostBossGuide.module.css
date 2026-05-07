@@ -15,5 +15,20 @@
 .actions {
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.skipButton {
+  background: none;
+  border: none;
+  color: var(--color-neutral-400, #9ca3af);
+  font-size: var(--font-size-sm, 14px);
+  cursor: pointer;
+  padding: var(--spacing-sm, 8px);
+  transition: color 0.15s ease-out;
+}
+
+.skipButton:hover {
+  color: var(--color-neutral-600, #4b5563);
 }
