@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from datetime import date
 from unittest.mock import MagicMock, patch
@@ -6,7 +7,6 @@ import pytest
 from fastapi import HTTPException
 
 if sys.platform == "win32":
-    import asyncio
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from algomate.api.routes import review_v1_router
@@ -44,12 +44,7 @@ def _mock_db(card_count=0, card_first=None):
 
 
 def _run(coro):
-    try:
-        coro.send(None)
-    except StopIteration as e:
-        return e.value
-    finally:
-        coro.close()
+    return asyncio.run(coro)
 
 
 class TestReviewV1RouteRegistration:
@@ -247,3 +242,51 @@ class TestGenerateReviewQuizV1:
         with pytest.raises(HTTPException) as exc_info:
             _run(generate_review_quiz_v1(999, {"count": 2}))
         assert exc_info.value.status_code == 404
+
+    @patch("algomate.core.agent.question_generator.QuestionGenerator")
+    @patch("algomate.data.database.Database")
+    def test_generate_quiz_timeout_returns_504(self, MockDB, MockGenerator):
+        from algomate.api.routes import generate_review_quiz_v1
+
+        mock_card = MagicMock()
+        mock_db, mock_session = _mock_db(card_first=mock_card)
+        MockDB.get_instance.return_value = mock_db
+
+        mock_generator = MockGenerator.return_value
+        mock_generator.generate_review_quiz.side_effect = TimeoutError("AI timeout")
+
+        with pytest.raises(HTTPException) as exc_info:
+            _run(generate_review_quiz_v1(1, {"count": 2}))
+        assert exc_info.value.status_code == 504
+
+    @patch("algomate.core.agent.question_generator.QuestionGenerator")
+    @patch("algomate.data.database.Database")
+    def test_generate_quiz_rate_limit_returns_429(self, MockDB, MockGenerator):
+        from algomate.api.routes import generate_review_quiz_v1
+
+        mock_card = MagicMock()
+        mock_db, mock_session = _mock_db(card_first=mock_card)
+        MockDB.get_instance.return_value = mock_db
+
+        mock_generator = MockGenerator.return_value
+        mock_generator.generate_review_quiz.side_effect = Exception("rate limit exceeded 429")
+
+        with pytest.raises(HTTPException) as exc_info:
+            _run(generate_review_quiz_v1(1, {"count": 2}))
+        assert exc_info.value.status_code == 429
+
+    @patch("algomate.core.agent.question_generator.QuestionGenerator")
+    @patch("algomate.data.database.Database")
+    def test_generate_quiz_generic_error_returns_500(self, MockDB, MockGenerator):
+        from algomate.api.routes import generate_review_quiz_v1
+
+        mock_card = MagicMock()
+        mock_db, mock_session = _mock_db(card_first=mock_card)
+        MockDB.get_instance.return_value = mock_db
+
+        mock_generator = MockGenerator.return_value
+        mock_generator.generate_review_quiz.side_effect = Exception("unknown error")
+
+        with pytest.raises(HTTPException) as exc_info:
+            _run(generate_review_quiz_v1(1, {"count": 2}))
+        assert exc_info.value.status_code == 500

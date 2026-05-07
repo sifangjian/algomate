@@ -186,16 +186,9 @@ LEETCODE_FALLBACK_MAP = {
 
 
 class QuestionGenerator:
-    """试炼生成器
-
-    负责根据心得内容和薄弱点生成试炼。
-
-    Attributes:
-        chat_client: AI 对话客户端实例
-        QUESTION_TYPES: 支持的试炼类型列表
-    """
 
     QUESTION_TYPES = ["选择题", "简答题", "LeetCode挑战"]
+    MAX_QUIZ_COUNT = 5
 
     def __init__(self, chat_client: Optional[ChatClient] = None):
         self._chat_client = chat_client
@@ -220,7 +213,7 @@ class QuestionGenerator:
                 return []
 
             context = card.knowledge_content or card.summary or f"{card.name} {card.algorithm_type}"
-            count = max(1, min(2, count))
+            count = max(1, min(self.MAX_QUIZ_COUNT, count))
 
             questions = self.generate_multiple_choice(
                 note_content=context,
