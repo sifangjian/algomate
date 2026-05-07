@@ -1,0 +1,18 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 16px;
+}
+
+.icon {
+  font-size: 3rem;
+  opacity: 0.6;
+}
+
+.text {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}

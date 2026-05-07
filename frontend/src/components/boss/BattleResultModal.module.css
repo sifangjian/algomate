@@ -1,0 +1,67 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.victoryContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-sm);
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+.statLabel {
+  color: var(--color-text-muted);
+}
+
+.statValue {
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.statValue.positive {
+  color: var(--color-success);
+}
+
+.droppedCard {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.04));
+  border: 2px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-md);
+  animation: droppedCardGlow 2s ease-in-out infinite;
+}
+
+.droppedTitle {
+  font-size: 0.82rem;
+  color: var(--color-success);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.droppedName {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+@keyframes droppedCardGlow {
+  0% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 28px rgba(16, 185, 129, 0.6), 0 0 56px rgba(16, 185, 129, 0.2); }
+  100% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+}

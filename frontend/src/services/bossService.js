@@ -1,11 +1,13 @@
 import api from './api'
 
 export const bossService = {
-  getBoss: (bossId) => api.get(`/boss/${bossId}`),
-
-  generateForCard: (cardId) =>
-    api.post('/boss/generate-for-card', { card_id: cardId }),
-
-  submitAnswer: (bossId, data) =>
-    api.post(`/boss/${bossId}/submit`, data),
+  getBosses: (params) => {
+    const searchParams = new URLSearchParams()
+    if (params?.difficulty) searchParams.set('difficulty', params.difficulty)
+    const query = searchParams.toString()
+    return api.get(`/v1/bosses${query ? `?${query}` : ''}`)
+  },
+  getBossDetail: (bossId) => api.get(`/v1/bosses/${bossId}`),
+  challenge: (bossId, body) => api.post(`/v1/bosses/${bossId}/challenge`, body),
+  submit: (bossId, body) => api.post(`/v1/bosses/${bossId}/submit`, body),
 }
