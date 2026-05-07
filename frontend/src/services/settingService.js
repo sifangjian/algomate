@@ -8,6 +8,10 @@ export const settingService = {
   testApi: (apiKey) => api.post('/settings/test-api', { apiKey }),
 
   testEmail: (emailConfig) => api.post('/settings/test-email', emailConfig),
+
+  getV1Settings: () => api.get('/v1/settings'),
+
+  updateV1Settings: (data) => api.put('/v1/settings', data),
 }
 
 export const dashboardService = {
