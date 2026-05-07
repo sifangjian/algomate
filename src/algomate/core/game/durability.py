@@ -13,7 +13,7 @@
     - 修炼失败：-5 × 难度系数
     - 每日衰减：-2 × 难度系数
     - 濒危阈值：<30
-    - 消散阈值：=0（卡牌封印）
+    - 消散阈值：=0（卡牌待重修）
 """
 
 from datetime import datetime, timedelta, date
@@ -42,7 +42,7 @@ class DurabilityConfig:
         fail_base: 修炼失败基础减量
         daily_decay_base: 每日衰减基础减量
         critical_threshold: 濒危阈值
-        sealed_threshold: 封印阈值
+        sealed_threshold: 封印阈值（耐久度降至此值时卡牌进入待重修状态）
         max_durability: 最大耐久度
         min_durability: 最小耐久度
     """
@@ -160,18 +160,18 @@ class DurabilityManager:
             difficulty: 难度等级
         
         Returns:
-            (新耐久度, 是否濒危, 是否封印)
+            (新耐久度, 是否濒危, 是否需要重修)
         
         Example:
             >>> manager = DurabilityManager()
-            >>> new_dur, is_critical, is_sealed = manager.update_durability(
+            >>> new_dur, is_critical, needs_retake = manager.update_durability(
             ...     80, DurabilityAction.REVIEW_SUCCESS, "normal"
             ... )
             >>> new_dur
             100
             >>> is_critical
             False
-            >>> is_sealed
+            >>> needs_retake
             False
         """
         change = self.calculate_durability_change(action, difficulty)
@@ -183,9 +183,9 @@ class DurabilityManager:
         )
         
         is_critical = new_durability < self.config.critical_threshold
-        is_sealed = new_durability == self.config.sealed_threshold
+        needs_retake = new_durability == self.config.sealed_threshold
         
-        return new_durability, is_critical, is_sealed
+        return new_durability, is_critical, needs_retake
     
     def is_critical(self, durability: int) -> bool:
         """判断是否濒危
@@ -198,22 +198,22 @@ class DurabilityManager:
         """
         return durability < self.config.critical_threshold
     
-    def is_sealed(self, durability: int) -> bool:
-        """判断是否封印
-        
+    def needs_retake(self, durability: int) -> bool:
+        """判断是否需要重修（耐久度降为0）
+
         Args:
             durability: 耐久度
-        
+
         Returns:
-            是否封印
+            是否需要重修
         """
         return durability == self.config.sealed_threshold
     
     def unseal_durability(self) -> int:
-        """解封卡牌时的耐久度恢复值
-        
+        """重修卡牌时的耐久度恢复值
+
         Returns:
-            解封后的耐久度（默认恢复至80）
+            重修后的耐久度（默认恢复至80）
         """
         return 80
     
@@ -227,11 +227,11 @@ class DurabilityManager:
             状态字典，包含耐久度、是否濒危、是否封印、状态描述
         """
         is_critical = self.is_critical(durability)
-        is_sealed = self.is_sealed(durability)
+        needs_retake = self.needs_retake(durability)
         
-        if is_sealed:
-            status = "封印"
-            description = "卡牌已消散，需要通过修炼解封"
+        if needs_retake:
+            status = "待重修"
+            description = "卡牌已消散，需要通过重修恢复"
         elif is_critical:
             status = "濒危"
             description = "卡牌耐久度过低，建议尽快修炼"
@@ -242,7 +242,7 @@ class DurabilityManager:
         return {
             "durability": durability,
             "is_critical": is_critical,
-            "is_sealed": is_sealed,
+            "needs_retake": needs_retake,
             "status": status,
             "description": description,
         }
@@ -255,14 +255,14 @@ class DurabilityManager:
         """批量应用每日衰减
         
         Args:
-            cards: 卡牌列表（需要有 durability 和 is_sealed 属性）
+            cards: 卡牌列表（需要有 durability 和 pending_retake 属性）
             difficulty: 难度等级
         
         Returns:
             需要更新的卡牌列表（包含新的耐久度值）
         
         Note:
-            封印的卡牌不参与每日衰减
+            待重修的卡牌不参与每日衰减
         """
         updated_cards = []
         
@@ -274,7 +274,7 @@ class DurabilityManager:
                 continue
             
             current_durability = getattr(card, 'durability', 100)
-            new_durability, is_critical, is_sealed = self.update_durability(
+            new_durability, is_critical, needs_retake = self.update_durability(
                 current_durability,
                 DurabilityAction.DAILY_DECAY,
                 difficulty
@@ -285,7 +285,7 @@ class DurabilityManager:
                 "old_durability": current_durability,
                 "new_durability": new_durability,
                 "is_critical": is_critical,
-                "is_sealed": is_sealed,
+                "needs_retake": needs_retake,
             })
         
         return updated_cards
@@ -304,7 +304,7 @@ def update_durability(
         difficulty: 难度等级
     
     Returns:
-        (新耐久度, 是否濒危, 是否封印)
+        (新耐久度, 是否濒危, 是否需要重修)
     """
     manager = DurabilityManager()
     return manager.update_durability(current_durability, action, difficulty)
@@ -327,14 +327,14 @@ def get_critical_cards(cards: list) -> list:
     ]
 
 
-def unseal_card(durability: int) -> int:
-    """解封卡牌（便捷函数）
-    
+def retake_card(durability: int) -> int:
+    """重修卡牌（便捷函数）
+
     Args:
         durability: 当前耐久度
-    
+
     Returns:
-        解封后的耐久度
+        重修后的耐久度
     """
     manager = DurabilityManager()
     return manager.unseal_durability()
@@ -376,7 +376,7 @@ def apply_daily_decay(card, difficulty: str = "normal") -> dict:
         }
     
     current_durability = getattr(card, 'durability', 80)
-    new_durability, is_critical, is_sealed = manager.update_durability(
+    new_durability, is_critical, needs_retake = manager.update_durability(
         current_durability,
         DurabilityAction.DAILY_DECAY,
         difficulty

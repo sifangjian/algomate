@@ -6,16 +6,9 @@ from sqlalchemy import func
 
 from algomate.data.database import Database
 from algomate.models.cards import Card, CardUpdate, CardResponse
+from algomate.core.game.durability import compute_card_status
 
 router = APIRouter(prefix="/cards", tags=["卡牌工坊"])
-
-
-def compute_card_status(durability: int, pending_retake: bool) -> str:
-    if pending_retake or durability == 0:
-        return "pending_retake"
-    if durability < 30:
-        return "endangered"
-    return "normal"
 
 
 def success_response(data=None, message="success"):

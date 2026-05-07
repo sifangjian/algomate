@@ -332,14 +332,14 @@ class ReviewScheduler:
                     if hasattr(card, 'created_at') and self.durability_manager.is_in_grace_period(card.created_at):
                         continue
 
-                    new_durability, is_critical, is_sealed = self.durability_manager.update_durability(
+                    new_durability, is_critical, needs_retake = self.durability_manager.update_durability(
                         current_durability=card.durability,
                         action=DurabilityAction.DAILY_DECAY,
                         difficulty=self.difficulty_manager.current_difficulty.value
                     )
                     
                     card.durability = new_durability
-                    card.pending_retake = is_sealed
+                    card.pending_retake = needs_retake
                     card.last_reviewed = datetime.now()
             
             session.commit()

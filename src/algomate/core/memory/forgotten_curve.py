@@ -223,7 +223,7 @@ class ForgottenCurveEngine:
             - review_level: int
             - durability: int (用于排序)
             - next_review_date: Optional[datetime] (用于排序)
-            - is_sealed: bool (封印卡牌不参与修炼)
+            - is_sealed: bool (待重修卡牌不参与修炼，对应 Card.pending_retake)
         """
         due_cards = []
         
