@@ -46,7 +46,6 @@ class Question(Base):
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     
     card = relationship("Card", back_populates="questions")
-    bosses = relationship("Boss", back_populates="question")
 
 
 class QuestionCreate(BaseModel):

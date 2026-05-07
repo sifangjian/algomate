@@ -219,7 +219,7 @@ class QuestionGenerator:
             if not card:
                 return []
 
-            context = card.core_concept or f"{card.name} {card.algorithm_type}"
+            context = card.knowledge_content or card.summary or f"{card.name} {card.algorithm_type}"
             count = max(1, min(2, count))
 
             questions = self.generate_multiple_choice(
