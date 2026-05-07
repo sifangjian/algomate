@@ -4,6 +4,7 @@ import { cardService } from '../services/cardService'
 import LoadingScreen from '../components/ui/Loading/LoadingScreen'
 import Button from '../components/ui/Button/Button'
 import { showToast } from '../components/ui/Toast/index'
+import PostReviewGuide from '../components/guide/PostReviewGuide'
 import styles from './DailyReview.module.css'
 
 const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 }
@@ -53,6 +54,7 @@ export default function DailyReview() {
     const [endangeredCount, setEndangeredCount] = useState(0)
     const [hasCards, setHasCards] = useState(true)
     const [remainingEndangered, setRemainingEndangered] = useState(null)
+    const [guide, setGuide] = useState(null)
 
     const fetchTasks = useCallback(async () => {
         setLoading(true)
@@ -138,6 +140,9 @@ export default function DailyReview() {
                 if (resp?.remaining_endangered !== undefined) {
                     setRemainingEndangered(resp.remaining_endangered)
                 }
+                if (resp?.guide) {
+                    setGuide(resp.guide)
+                }
                 showToast('问答完成！', 'success')
             } catch {
                 showToast('完成修炼失败', 'error')
@@ -153,6 +158,9 @@ export default function DailyReview() {
             setCompletedTaskIds(prev => new Set([...prev, selectedTask.card_id]))
             if (resp?.remaining_endangered !== undefined) {
                 setRemainingEndangered(resp.remaining_endangered)
+            }
+            if (resp?.guide) {
+                setGuide(resp.guide)
             }
             showToast('知识回顾完成！', 'success')
             setReviewMode(null)
@@ -285,7 +293,10 @@ export default function DailyReview() {
                     </div>
                 ) : null}
 
-                {remainingEndangered !== null && remainingEndangered > 0 && (
+                {guide && (
+                    <PostReviewGuide guide={guide} scene="after_review" />
+                )}
+                {!guide && remainingEndangered !== null && remainingEndangered > 0 && (
                     <div className={styles.endangeredTip}>
                         ⚠️ 还有 {remainingEndangered} 张濒危卡牌需要修炼！
                     </div>

@@ -2,12 +2,24 @@ import Modal from '../ui/Modal/Modal'
 import ResultAnimation from './ResultAnimation'
 import DurabilityChangeDisplay from './DurabilityChangeDisplay'
 import AnswerFeedback from './AnswerFeedback'
-import GuideButtons from './GuideButtons'
+import PostBossGuide from './PostBossGuide'
 import styles from './BattleResultModal.module.css'
 
-export default function BattleResultModal({ result, isOpen, onClose, onContinue, onGoPractice }) {
+export default function BattleResultModal({ result, isOpen, onClose, onContinue, onGoPractice, onGuideAction }) {
   if (!result) return null
-  const isVictory = result.is_correct
+  const isVictory = result.is_victory ?? result.is_correct
+
+  const handleGuideAction = (action) => {
+    if (onGuideAction) {
+      onGuideAction(action)
+      return
+    }
+    if (action.action === 'continue_challenge') {
+      onContinue?.()
+    } else if (action.action === 'go_review' || action.action === 'go_dialogue') {
+      onGoPractice?.()
+    }
+  }
 
   return (
     <Modal
@@ -51,7 +63,7 @@ export default function BattleResultModal({ result, isOpen, onClose, onContinue,
         ) : (
           <AnswerFeedback result={result} />
         )}
-        <GuideButtons onContinue={onContinue} onGoPractice={onGoPractice} />
+        <PostBossGuide guide={result.guide} onAction={handleGuideAction} />
       </div>
     </Modal>
   )

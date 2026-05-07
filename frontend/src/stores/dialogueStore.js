@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { dialogueService } from '../services/dialogueService'
+import { useGuideStore } from './guideStore'
 
 const HEARTBEAT_INTERVAL = 120000
 
@@ -173,6 +174,9 @@ export const useDialogueStore = create((set, get) => ({
         earnedCard: endData.card || null,
         error: endData.error || null,
       })
+      if (endData.guides) {
+        useGuideStore.getState().setGuide(endData.guides)
+      }
       return endData
     } catch (err) {
       set({ status: 'error', error: err.message })

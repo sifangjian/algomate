@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { npcService, REALM_ID_TO_NAME } from '../services/npcService'
 import { useDialogueStore } from '../stores/dialogueStore'
+import PostDialogueGuide from '../components/dialogue/PostDialogueGuide'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
 import { ConfirmDialog } from '../components/ui/Modal/Modal'
@@ -221,7 +222,6 @@ export default function NpcDialogue() {
                 }
             }
             setShowEndDialog(false)
-            setTimeout(() => navigate('/'), 800)
         } catch (err) {
             showToast(`结束修习失败: ${err.message}`, 'error')
         } finally {
@@ -366,6 +366,8 @@ export default function NpcDialogue() {
                             </div>
                         </div>
                     )}
+
+                    {status === 'ended' && <PostDialogueGuide />}
                 </aside>
             </div>
             )}
