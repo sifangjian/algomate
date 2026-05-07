@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { taskService } from '../services/learningService'
 import { cardService } from '../services/cardService'
-import { learningService } from '../services/learningService'
 import LoadingScreen from '../components/ui/Loading/LoadingScreen'
 import Button from '../components/ui/Button/Button'
 import { showToast } from '../components/ui/Toast/index'
@@ -17,7 +15,7 @@ const TASK_TYPE_CONFIG = {
 }
 
 function getDurabilityClass(durability, maxDurability) {
-    const pct = (durability / maxDurability) * 100
+    const pct = maxDurability > 0 ? (durability / maxDurability) * 100 : 0
     if (pct < 30) return styles.durabilityFillCritical
     if (pct < 60) return styles.durabilityFillWarning
     return styles.durabilityFillNormal
@@ -52,12 +50,18 @@ export default function DailyReview() {
     const [reviewContent, setReviewContent] = useState(null)
     const [reviewLoading, setReviewLoading] = useState(false)
     const [reviewStats, setReviewStats] = useState(null)
+    const [endangeredCount, setEndangeredCount] = useState(0)
+    const [hasCards, setHasCards] = useState(true)
+    const [remainingEndangered, setRemainingEndangered] = useState(null)
 
     const fetchTasks = useCallback(async () => {
         setLoading(true)
         try {
-            const data = await taskService.getTodayTasks()
-            setTasks(data?.tasks || [])
+            const data = await cardService.getTodayReviewTasks()
+            const resp = data?.data || data
+            setTasks(resp?.tasks || [])
+            setEndangeredCount(resp?.endangered_count || 0)
+            setHasCards(resp?.has_cards !== false)
         } catch {
             showToast('获取今日修炼任务失败', 'error')
         } finally {
@@ -104,8 +108,9 @@ export default function DailyReview() {
         setQuizAnswers({})
         setQuizSubmitted(false)
         try {
-            const data = await learningService.generateQuiz(task.card_name || task.algorithm_type || '')
-            setQuizData(data)
+            const data = await cardService.generateReviewQuiz(task.card_id, 2)
+            const resp = data?.data || data
+            setQuizData(resp)
         } catch {
             showToast('加载快速问答失败', 'error')
             setReviewMode(null)
@@ -127,8 +132,12 @@ export default function DailyReview() {
         setQuizSubmitted(true)
         if (selectedTask) {
             try {
-                await cardService.completeReview(selectedTask.card_id, 'success')
+                const data = await cardService.completeReviewV1(selectedTask.card_id, 'quick_quiz')
+                const resp = data?.data || data
                 setCompletedTaskIds(prev => new Set([...prev, selectedTask.card_id]))
+                if (resp?.remaining_endangered !== undefined) {
+                    setRemainingEndangered(resp.remaining_endangered)
+                }
                 showToast('问答完成！', 'success')
             } catch {
                 showToast('完成修炼失败', 'error')
@@ -139,8 +148,12 @@ export default function DailyReview() {
     const handleCompleteReview = useCallback(async () => {
         if (!selectedTask) return
         try {
-            await cardService.completeReview(selectedTask.card_id, 'success')
+            const data = await cardService.completeReviewV1(selectedTask.card_id, 'content_review')
+            const resp = data?.data || data
             setCompletedTaskIds(prev => new Set([...prev, selectedTask.card_id]))
+            if (resp?.remaining_endangered !== undefined) {
+                setRemainingEndangered(resp.remaining_endangered)
+            }
             showToast('知识回顾完成！', 'success')
             setReviewMode(null)
             setSelectedTask(null)
@@ -271,6 +284,12 @@ export default function DailyReview() {
                         )}
                     </div>
                 ) : null}
+
+                {remainingEndangered !== null && remainingEndangered > 0 && (
+                    <div className={styles.endangeredTip}>
+                        ⚠️ 还有 {remainingEndangered} 张濒危卡牌需要修炼！
+                    </div>
+                )}
             </div>
         )
     }
@@ -281,6 +300,12 @@ export default function DailyReview() {
                 <h1 className={styles.pageTitle}>📋 每日修炼</h1>
                 <p className={styles.pageSubtitle}>巩固算法知识，保持卡牌耐久</p>
             </div>
+
+            {endangeredCount > 0 && (
+                <div className={styles.endangeredAlert}>
+                    🚨 {endangeredCount} 张濒危卡牌急需修炼！
+                </div>
+            )}
 
             {totalCount > 0 && (
                 <div className={styles.statsSection}>
@@ -334,7 +359,11 @@ export default function DailyReview() {
             {tasks.length === 0 ? (
                 <div className={styles.emptyState}>
                     <span className={styles.emptyIcon}>📋</span>
-                    <p className={styles.emptyText}>修习更多算法技巧后，这里会出现每日修炼任务</p>
+                    {!hasCards ? (
+                        <p className={styles.emptyText}>修习更多算法技巧后，这里会出现每日修炼任务</p>
+                    ) : (
+                        <p className={styles.emptyText}>今日没有待修炼任务，继续保持！🎉</p>
+                    )}
                 </div>
             ) : (
                 <div className={styles.taskList}>
@@ -342,8 +371,8 @@ export default function DailyReview() {
                         const isCompleted = completedTaskIds.has(task.card_id)
                         const typeConfig = TASK_TYPE_CONFIG[task.task_type] || TASK_TYPE_CONFIG.boss_challenge
                         const durability = task.card_durability ?? 0
-                        const maxDurability = 100
-                        const durabilityPct = Math.min(100, Math.max(0, durability))
+                        const maxDurability = task.max_durability || 100
+                        const durabilityPct = maxDurability > 0 ? Math.min(100, Math.max(0, (durability / maxDurability) * 100)) : 0
 
                         return (
                             <div
@@ -374,24 +403,30 @@ export default function DailyReview() {
 
                                 {!isCompleted ? (
                                     <div className={styles.actionButtons}>
-                                        <button
-                                            className={styles.actionBtn}
-                                            onClick={() => handleReview(task)}
-                                        >
-                                            📖 知识回顾
-                                        </button>
-                                        <button
-                                            className={styles.actionBtn}
-                                            onClick={() => handleQuiz(task)}
-                                        >
-                                            ✏️ 快速问答
-                                        </button>
-                                        <button
-                                            className={styles.actionBtn}
-                                            onClick={() => handleBoss(task)}
-                                        >
-                                            🐉 Boss挑战
-                                        </button>
+                                        {(task.review_types || ['content_review', 'quick_quiz', 'boss_challenge']).map((rt) => {
+                                            if (rt === 'content_review') {
+                                                return (
+                                                    <button key={rt} className={styles.actionBtn} onClick={() => handleReview(task)}>
+                                                        📖 知识回顾
+                                                    </button>
+                                                )
+                                            }
+                                            if (rt === 'quick_quiz') {
+                                                return (
+                                                    <button key={rt} className={styles.actionBtn} onClick={() => handleQuiz(task)}>
+                                                        ✏️ 快速问答
+                                                    </button>
+                                                )
+                                            }
+                                            if (rt === 'boss_challenge') {
+                                                return (
+                                                    <button key={rt} className={styles.actionBtn} onClick={() => handleBoss(task)}>
+                                                        🐉 Boss挑战
+                                                    </button>
+                                                )
+                                            }
+                                            return null
+                                        })}
                                     </div>
                                 ) : (
                                     <div className={styles.completedBadge}>✅ 今日已修炼</div>

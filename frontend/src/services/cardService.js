@@ -54,4 +54,10 @@ export const cardService = {
   getWeakPoints: (threshold) => api.get(`/review/weak-points?threshold=${threshold || 30}`),
 
   getReviewStats: () => api.get('/review/statistics'),
+
+  getTodayReviewTasks: () => api.get('/v1/reviews/today'),
+
+  completeReviewV1: (cardId, reviewType) => api.post(`/v1/reviews/${cardId}/complete`, { review_type: reviewType }),
+
+  generateReviewQuiz: (cardId, count = 2) => api.post(`/v1/reviews/${cardId}/quiz`, { count }),
 }

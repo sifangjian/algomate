@@ -221,6 +221,29 @@
     margin: 0;
 }
 
+.endangeredAlert {
+    padding: 10px 16px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: var(--radius-md);
+    color: var(--color-danger);
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    animation: slideUp 300ms ease forwards;
+}
+
+.endangeredTip {
+    padding: 10px 16px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: var(--radius-md);
+    color: var(--color-warning);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 16px;
+}
+
 .completed {
     opacity: 0.55;
     filter: grayscale(0.5);
