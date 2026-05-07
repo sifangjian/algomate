@@ -4,17 +4,6 @@ from datetime import datetime, date, timedelta
 
 from algomate.core.scheduler.review_scheduler import ReviewTask, TaskType, PRIORITY_ORDER
 from algomate.core.memory.forgotten_curve import ReviewAction
-from algomate.models.cards import Card
-
-
-@pytest.fixture(autouse=True)
-def _add_is_sealed_to_card():
-    if not hasattr(Card, 'is_sealed'):
-        Card.is_sealed = MagicMock()
-        yield
-        delattr(Card, 'is_sealed')
-    else:
-        yield
 
 
 class TestCompleteReview:
@@ -450,9 +439,9 @@ class TestGenerateReviewQuiz:
         call_args = generator.generate_multiple_choice.call_args
         assert call_args.kwargs["count"] == 1
 
-        generator.generate_review_quiz(card_id=1, count=5)
+        generator.generate_review_quiz(card_id=1, count=10)
         call_args = generator.generate_multiple_choice.call_args
-        assert call_args.kwargs["count"] == 2
+        assert call_args.kwargs["count"] == 5
 
     @patch("algomate.data.database.Database")
     def test_generate_review_quiz_uses_knowledge_content(self, MockDB):
@@ -522,3 +511,8 @@ class TestGenerateReviewQuiz:
 
         call_args = generator.generate_multiple_choice.call_args
         assert call_args.kwargs["note_content"] == "BFS 搜索"
+
+    def test_max_quiz_count_class_attribute(self):
+        from algomate.core.agent.question_generator import QuestionGenerator
+        assert hasattr(QuestionGenerator, 'MAX_QUIZ_COUNT')
+        assert QuestionGenerator.MAX_QUIZ_COUNT >= 2
