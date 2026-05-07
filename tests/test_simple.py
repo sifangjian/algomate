@@ -44,12 +44,12 @@ class MockCard:
     """模拟卡牌对象"""
     id: int
     name: str
-    domain: str
+    algorithm_type: str
     durability: int
     created_at: datetime
     last_reviewed: datetime = None
     review_level: int = 0
-    is_sealed: bool = False
+    pending_retake: bool = False
 
 
 def test_forgotten_curve():
@@ -152,9 +152,9 @@ def test_realm_unlock():
     
     print("\n2. 测试统计达标卡牌")
     cards = [
-        MockCard(id=1, name="卡牌1", domain="新手森林", durability=70, created_at=datetime.now()),
-        MockCard(id=2, name="卡牌2", domain="新手森林", durability=50, created_at=datetime.now()),
-        MockCard(id=3, name="卡牌3", domain="新手森林", durability=80, created_at=datetime.now()),
+        MockCard(id=1, name="卡牌1", algorithm_type="新手森林", durability=70, created_at=datetime.now()),
+        MockCard(id=2, name="卡牌2", algorithm_type="新手森林", durability=50, created_at=datetime.now()),
+        MockCard(id=3, name="卡牌3", algorithm_type="新手森林", durability=80, created_at=datetime.now()),
     ]
     count = manager.count_mastered_cards(cards, "新手森林")
     assert count == 2, "统计达标卡牌失败"

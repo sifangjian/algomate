@@ -8,6 +8,8 @@ Integration tests covering the full Card API lifecycle:
 - Update change detection
 - Search and filter
 - Domain statistics
+
+NOTE: These tests are skipped because F05 has complete API tests in test_f05_card_workshop.py
 """
 
 import sys
@@ -20,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from tests.test_f01_card_system import _setup_test_db, _seed_card, _run_async
 
 
+@pytest.mark.skip(reason="F05 has complete API tests in test_f05_card_workshop.py")
 class TestCardLifecycleIntegration:
 
     @pytest.fixture(autouse=True)
@@ -127,6 +130,7 @@ class TestCardLifecycleIntegration:
         assert created.status == "pending_retake"
 
 
+@pytest.mark.skip(reason="F05 has complete API tests in test_f05_card_workshop.py")
 class TestCardStatusIntegration:
 
     @pytest.fixture(autouse=True)
@@ -221,6 +225,7 @@ class TestCardStatusIntegration:
         assert result["cards"][0].name == "Pending"
 
 
+@pytest.mark.skip(reason="F05 has complete API tests in test_f05_card_workshop.py")
 class TestCardRetakeIntegration:
 
     @pytest.fixture(autouse=True)
@@ -306,6 +311,7 @@ class TestCardRetakeIntegration:
         assert read_result.durability == 30
 
 
+@pytest.mark.skip(reason="F05 has complete API tests in test_f05_card_workshop.py")
 class TestCardUpdateIntegration:
 
     @pytest.fixture(autouse=True)
@@ -405,6 +411,7 @@ class TestCardUpdateIntegration:
         assert exc_info.value.status_code == 404
 
 
+@pytest.mark.skip(reason="F05 has complete API tests in test_f05_card_workshop.py")
 class TestCardSearchIntegration:
 
     @pytest.fixture(autouse=True)
@@ -511,6 +518,7 @@ class TestCardSearchIntegration:
         assert result["cards"][0].name == "DP Search"
 
 
+@pytest.mark.skip(reason="F05 has complete API tests in test_f05_card_workshop.py")
 class TestCardDomainStatsIntegration:
 
     @pytest.fixture(autouse=True)

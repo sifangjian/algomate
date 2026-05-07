@@ -38,15 +38,17 @@ def service(mock_db):
     return ReviewPlanService(db=mock_db)
 
 
-def _add_card(session, name="test_card", domain="新手森林", review_level=0,
-              durability=100, is_sealed=False, next_review_date=None):
+def _add_card(session, name="test_card", algorithm_type="", review_level=0,
+              durability=100, pending_retake=False, next_review_date=None):
     card = Card(
         name=name,
-        domain=domain,
+        algorithm_type=algorithm_type,
         review_level=review_level,
         durability=durability,
-        is_sealed=is_sealed,
+        pending_retake=pending_retake,
         next_review_date=next_review_date,
+        npc_id=1,
+        topic="",
     )
     session.add(card)
     session.commit()
@@ -82,8 +84,8 @@ class TestReviewLevelDistribution:
         assert "2" not in dist
 
     def test_sealed_cards_excluded(self, service, db_session):
-        _add_card(db_session, name="active", review_level=2, is_sealed=False)
-        _add_card(db_session, name="sealed", review_level=2, is_sealed=True)
+        _add_card(db_session, name="active", review_level=2, pending_retake=False)
+        _add_card(db_session, name="sealed", review_level=2, pending_retake=True)
 
         result = service.get_review_statistics(target_date=date(2026, 5, 5))
         dist = result["review_level_distribution"]

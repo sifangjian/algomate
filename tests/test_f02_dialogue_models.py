@@ -44,8 +44,9 @@ def npc(session):
 def card(session, npc):
     card = Card(
         name="快速排序",
-        domain="新手森林",
+        algorithm_type="Sorting",
         npc_id=npc.id,
+        topic="",
     )
     session.add(card)
     session.commit()

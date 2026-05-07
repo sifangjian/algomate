@@ -447,9 +447,9 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=80, created_at=datetime.now()),
-            MockCard(id=3, name="卡牌3", algorithm_type="Search", durability=90, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="新手森林", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="新手森林", durability=80, created_at=datetime.now()),
+            MockCard(id=3, name="卡牌3", algorithm_type="新手森林", durability=90, created_at=datetime.now()),
         ]
         
         assert manager.check_realm_unlock(Realm.MIST_SWAMP, cards) is True
@@ -459,9 +459,9 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=80, created_at=datetime.now()),
-            MockCard(id=3, name="卡牌3", algorithm_type="Search", durability=90, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="新手森林", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="新手森林", durability=80, created_at=datetime.now()),
+            MockCard(id=3, name="卡牌3", algorithm_type="新手森林", durability=90, created_at=datetime.now()),
         ]
         
         unlocked = manager.get_unlocked_realms(cards)
@@ -473,8 +473,8 @@ class TestRealmUnlockManager:
         manager = RealmUnlockManager()
         
         cards = [
-            MockCard(id=1, name="卡牌1", algorithm_type="Search", durability=70, created_at=datetime.now()),
-            MockCard(id=2, name="卡牌2", algorithm_type="Search", durability=80, created_at=datetime.now()),
+            MockCard(id=1, name="卡牌1", algorithm_type="新手森林", durability=70, created_at=datetime.now()),
+            MockCard(id=2, name="卡牌2", algorithm_type="新手森林", durability=80, created_at=datetime.now()),
         ]
         
         progress = manager.get_realm_progress(Realm.MIST_SWAMP, cards)

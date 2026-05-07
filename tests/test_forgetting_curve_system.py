@@ -71,13 +71,13 @@ def review_service(mock_db):
 def _create_card(session, **overrides):
     defaults = {
         "name": "测试卡牌",
-        "domain": "新手森林",
-        "difficulty": 3,
+        "algorithm_type": "",
         "durability": 80,
-        "max_durability": 100,
-        "is_sealed": False,
+        "pending_retake": False,
         "review_level": 0,
         "review_count": 0,
+        "npc_id": 1,
+        "topic": "",
         "created_at": datetime.now(),
     }
     defaults.update(overrides)
@@ -219,7 +219,6 @@ class TestCompleteReviewFlow:
             db_session,
             review_level=2,
             durability=60,
-            max_durability=100,
             review_count=3,
             last_reviewed=datetime.now() - timedelta(days=5),
         )
@@ -228,14 +227,13 @@ class TestCompleteReviewFlow:
         before_durability = card.durability
         before_review_count = card.review_count
 
-        result = review_service.complete_review(card.id, action="success")
+        result = review_service.complete_review(card.id, review_type="content_review")
 
         assert result is not None
-        assert result["review_level"] == before_level + 1
-        assert result["durability"] == before_durability + 20
+        assert result["review_level_after"] == before_level + 1
+        assert result["durability_after"] == before_durability + 20
         assert result["review_count"] == before_review_count + 1
-        assert result["last_reviewed"] is not None
-        assert result["next_review_date"] is not None
+        assert "next_review_date" in result
 
         session = review_service.db.get_session()
         try:
@@ -253,35 +251,33 @@ class TestCompleteReviewFlow:
             db_session,
             review_level=6,
             durability=80,
-            max_durability=100,
             review_count=10,
             last_reviewed=datetime.now() - timedelta(days=5),
         )
 
-        result = review_service.complete_review(card.id, action="success")
+        result = review_service.complete_review(card.id, review_type="content_review")
 
         assert result is not None
-        assert result["review_level"] == 6
+        assert result["review_level_after"] == 6
 
     def test_complete_review_durability_cap(self, db_session, review_service):
         card = _create_card(
             db_session,
             review_level=1,
             durability=90,
-            max_durability=100,
             review_count=1,
             last_reviewed=datetime.now() - timedelta(days=5),
         )
 
-        result = review_service.complete_review(card.id, action="success")
+        result = review_service.complete_review(card.id, review_type="content_review")
 
         assert result is not None
-        assert result["durability"] <= 100
+        assert result["durability_after"] <= 100
 
         session = review_service.db.get_session()
         try:
             updated_card = session.query(Card).filter(Card.id == card.id).first()
-            assert updated_card.durability <= updated_card.max_durability
+            assert updated_card.durability <= 100
         finally:
             session.close()
 

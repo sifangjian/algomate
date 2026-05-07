@@ -378,31 +378,31 @@ class TestNPCDialogueFlowHelperMethods:
 
         flow = NPCDialogueFlow.__new__(NPCDialogueFlow)
 
-        result = flow._map_domain_to_enum("动态规划")
-        assert result == "智慧圣殿"
+        result = flow._map_domain_to_algorithm_type("动态规划")
+        assert result == "dynamic_programming"
 
     def test_map_domain_to_enum_unknown_domain_defaults_to_novice(self):
         from algomate.core.flow.npc_dialogue import NPCDialogueFlow
 
         flow = NPCDialogueFlow.__new__(NPCDialogueFlow)
 
-        result = flow._map_domain_to_enum("未知领域")
-        assert result == "新手森林"
+        result = flow._map_domain_to_algorithm_type("未知领域")
+        assert result == "basic_data_structure"
 
     @pytest.mark.parametrize("domain,expected", [
-        ("基础数据结构", "新手森林"),
-        ("搜索与遍历", "迷雾沼泽"),
-        ("动态规划", "智慧圣殿"),
-        ("贪心算法", "贪婪之塔"),
-        ("回溯算法", "命运迷宫"),
-        ("分治算法", "分裂山脉"),
-        ("数学与位运算", "数学殿堂"),
+        ("基础数据结构", "basic_data_structure"),
+        ("搜索与遍历", "search_traversal"),
+        ("动态规划", "dynamic_programming"),
+        ("贪心算法", "greedy"),
+        ("回溯算法", "backtracking"),
+        ("分治算法", "divide_conquer"),
+        ("数学与位运算", "math_bit"),
     ])
     def test_map_domain_all_known_mappings(self, domain, expected):
         from algomate.core.flow.npc_dialogue import NPCDialogueFlow
 
         flow = NPCDialogueFlow.__new__(NPCDialogueFlow)
-        result = flow._map_domain_to_enum(domain)
+        result = flow._map_domain_to_algorithm_type(domain)
         assert result == expected
 
 

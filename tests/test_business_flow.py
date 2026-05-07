@@ -185,7 +185,7 @@ class TestReviewScheduler:
             task_type=TaskType.CRITICAL_REVIEW,
             card_id=1,
             card_name="二分查找",
-            card_domain="新手森林",
+            card_algorithm_type="Search",
             card_durability=25,
             priority="critical",
             reason="濒危卡牌",
@@ -204,7 +204,7 @@ class TestReviewScheduler:
             task_type=TaskType.FORGETTING_CURVE_REVIEW,
             card_id=1,
             card_name="滑动窗口",
-            card_domain="迷雾沼泽",
+            card_algorithm_type="Dynamic Programming",
             card_durability=80,
             priority="high",
             reason="遗忘曲线修炼",
@@ -245,7 +245,7 @@ class TestEmailSender:
                 task_type=TaskType.CRITICAL_REVIEW,
                 card_id=1,
                 card_name="二分查找",
-                card_domain="新手森林",
+                card_algorithm_type="Search",
                 card_durability=25,
                 priority="critical",
                 reason="濒危卡牌",
@@ -279,7 +279,7 @@ class TestEmailSender:
                 task_type=TaskType.CRITICAL_REVIEW,
                 card_id=1,
                 card_name="二分查找",
-                card_domain="新手森林",
+                card_algorithm_type="Search",
                 card_durability=25,
                 priority="critical",
                 reason="濒危卡牌",
@@ -290,7 +290,7 @@ class TestEmailSender:
                 task_type=TaskType.FORGETTING_CURVE_REVIEW,
                 card_id=2,
                 card_name="滑动窗口",
-                card_domain="迷雾沼泽",
+                card_algorithm_type="Dynamic Programming",
                 card_durability=80,
                 priority="high",
                 reason="遗忘曲线修炼",
@@ -302,7 +302,7 @@ class TestEmailSender:
         
         assert "今日任务（2项）" in content["body"]
         assert "濒危卡牌" in content["body"]
-        assert "遗忘修炼" in content["body"]
+        assert "功力衰退" in content["body"]
     
     def test_validate_email_config(self, email_sender):
         """测试验证邮件配置"""
