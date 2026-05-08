@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { dialogueService } from '../services/dialogueService'
 import { useGuideStore } from './guideStore'
+import { useSettingsStore } from './settingsStore'
+import { showToast } from '../components/ui/Toast/index'
 
 const HEARTBEAT_INTERVAL = 120000
 
@@ -176,6 +178,18 @@ export const useDialogueStore = create((set, get) => ({
       })
       if (endData.guides) {
         useGuideStore.getState().setGuide(endData.guides)
+      }
+      if (endData.card) {
+        const { onboardingCompleted, completeOnboarding } = useSettingsStore.getState()
+        if (!onboardingCompleted) {
+          try {
+            await completeOnboarding()
+          } catch {
+            localStorage.setItem('algomate_onboarding_completed', 'true')
+            useSettingsStore.setState({ onboardingCompleted: true })
+          }
+          showToast('恭喜完成新手引导！', 'success')
+        }
       }
       return endData
     } catch (err) {
