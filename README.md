@@ -67,7 +67,7 @@ cd algomate
 uv sync
 
 # 3. 安装前端依赖
-cd frontend && pnpm install && cd ..
+cd frontend && npm install && cd ..
 
 # 4. 配置环境变量
 cp .env.example .env
