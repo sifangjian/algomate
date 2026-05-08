@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { ConfirmDialog } from '../Modal/Modal'
+import { useSettingsStore } from '../../../stores/settingsStore'
 import styles from './OnboardingGuide.module.css'
-
-const STORAGE_KEY = 'algomate_onboarding_completed'
 
 const STEPS = [
   {
@@ -37,6 +37,18 @@ const STEPS = [
 
 export default function OnboardingGuide({ open, onClose, onNavigate }) {
   const [step, setStep] = useState(0)
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false)
+  const { completeOnboarding } = useSettingsStore()
+
+  const handleComplete = useCallback(async () => {
+    try {
+      await completeOnboarding()
+    } catch {
+      localStorage.setItem('algomate_onboarding_completed', 'true')
+    }
+    onClose?.()
+    setStep(0)
+  }, [completeOnboarding, onClose])
 
   const handleNext = useCallback(() => {
     if (step === 1) {
@@ -47,57 +59,76 @@ export default function OnboardingGuide({ open, onClose, onNavigate }) {
 
     if (step === STEPS.length - 1) {
       onNavigate?.('/workshop')
-      localStorage.setItem(STORAGE_KEY, 'true')
-      onClose?.()
-      setStep(0)
+      handleComplete()
       return
     }
 
     setStep((s) => s + 1)
-  }, [step, onClose, onNavigate])
+  }, [step, onClose, onNavigate, handleComplete])
 
-  const handleSkip = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, 'true')
-    onClose?.()
-    setStep(0)
-  }, [onClose])
+  const handleSkipClick = useCallback((e) => {
+    e.stopPropagation()
+    setShowSkipConfirm(true)
+  }, [])
+
+  const handleSkipConfirm = useCallback(async () => {
+    setShowSkipConfirm(false)
+    await handleComplete()
+  }, [handleComplete])
+
+  const handleSkipCancel = useCallback(() => {
+    setShowSkipConfirm(false)
+  }, [])
 
   if (!open) return null
 
   const current = STEPS[step]
 
   return createPortal(
-    <div className={styles.overlay} onClick={handleSkip} role="presentation">
-      <div
-        className={styles.card}
-        role="dialog"
-        aria-modal="true"
-        aria-label="新手引导"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button className={styles.skipBtn} onClick={handleSkip}>
-          跳过
-        </button>
-
-        <div className={styles.stepContent} key={step}>
-          <span className={styles.icon}>{current.icon}</span>
-          <h2 className={styles.title}>{current.title}</h2>
-          <p className={styles.description}>{current.description}</p>
-          <button className={styles.actionBtn} onClick={handleNext}>
-            {current.button}
+    <>
+      <div className={styles.overlay} role="presentation">
+        <div
+          className={styles.card}
+          role="dialog"
+          aria-modal="true"
+          aria-label="新手引导"
+        >
+          <button className={styles.skipBtn} onClick={handleSkipClick}>
+            跳过
           </button>
-        </div>
 
-        <div className={styles.indicators}>
-          {STEPS.map((_, i) => (
-            <span
-              key={i}
-              className={`${styles.dot} ${i === step ? styles.dotActive : ''}`}
-            />
-          ))}
+          <div className={styles.stepContent} key={step}>
+            <span className={styles.icon}>{current.icon}</span>
+            <h2 className={styles.title}>{current.title}</h2>
+            <p className={styles.description}>{current.description}</p>
+            <button className={styles.actionBtn} onClick={handleNext}>
+              {current.button}
+            </button>
+          </div>
+
+          <div className={styles.indicators}>
+            {STEPS.map((_, i) => (
+              <span
+                key={i}
+                className={`${styles.dot} ${i === step ? styles.dotActive : ''}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>,
+      {showSkipConfirm && (
+        <ConfirmDialog
+          open={true}
+          onClose={handleSkipCancel}
+          onConfirm={handleSkipConfirm}
+          onCancel={handleSkipCancel}
+          title="是否跳过引导？"
+          message="跳过后将不再显示新手引导，你可以自由探索算法大陆。"
+          confirmText="确认跳过"
+          cancelText="继续引导"
+        />
+      )}
+    </>,
     document.body
   )
 }

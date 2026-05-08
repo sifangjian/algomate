@@ -1,6 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import OnboardingGuide from '../components/ui/OnboardingGuide/OnboardingGuide'
+
+const { mockGetV1Settings, mockUpdateV1Settings } = vi.hoisted(() => ({
+  mockGetV1Settings: vi.fn(),
+  mockUpdateV1Settings: vi.fn(),
+}))
+
+vi.mock('../services/settingService', () => ({
+  settingService: {
+    getV1Settings: mockGetV1Settings,
+    updateV1Settings: mockUpdateV1Settings,
+  },
+}))
+
+import { useSettingsStore } from '../stores/settingsStore'
 
 describe('OnboardingGuide', () => {
   const mockOnClose = vi.fn()
@@ -9,7 +23,18 @@ describe('OnboardingGuide', () => {
   beforeEach(() => {
     mockOnClose.mockClear()
     mockOnNavigate.mockClear()
+    vi.clearAllMocks()
     localStorage.clear()
+    useSettingsStore.setState({
+      settings: null,
+      onboardingCompleted: false,
+      loading: false,
+    })
+    mockUpdateV1Settings.mockResolvedValue({ code: 200 })
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
   })
 
   it('renders nothing when open is false', () => {
@@ -47,22 +72,24 @@ describe('OnboardingGuide', () => {
     expect(screen.getByText('前往卡牌工坊 →')).toBeInTheDocument()
   })
 
-  it('completes onboarding on step 3 action and sets localStorage', () => {
+  it('completes onboarding on step 3 action and calls completeOnboarding', async () => {
     render(<OnboardingGuide open={true} onClose={mockOnClose} onNavigate={mockOnNavigate} />)
     fireEvent.click(screen.getByText('开始冒险 →'))
     fireEvent.click(screen.getByText('前往新手森林 →'))
     fireEvent.click(screen.getByText('知道了 →'))
     fireEvent.click(screen.getByText('前往卡牌工坊 →'))
-    expect(localStorage.getItem('algomate_onboarding_completed')).toBe('true')
+
+    await waitFor(() => {
+      expect(mockUpdateV1Settings).toHaveBeenCalledWith({ onboarding_completed: true })
+    })
     expect(mockOnNavigate).toHaveBeenCalledWith('/workshop')
     expect(mockOnClose).toHaveBeenCalled()
   })
 
-  it('skips onboarding and sets localStorage', () => {
+  it('shows skip confirm dialog when clicking skip button', () => {
     render(<OnboardingGuide open={true} onClose={mockOnClose} onNavigate={mockOnNavigate} />)
     fireEvent.click(screen.getByText('跳过'))
-    expect(localStorage.getItem('algomate_onboarding_completed')).toBe('true')
-    expect(mockOnClose).toHaveBeenCalled()
+    expect(screen.getByText('是否跳过引导？')).toBeInTheDocument()
   })
 
   it('renders step indicators with correct number of dots', () => {
