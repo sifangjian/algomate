@@ -1,0 +1,24 @@
+.stepIndicator {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm, 0.5rem);
+  margin-bottom: var(--spacing-lg, 1rem);
+}
+
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-neutral-300, #d4d4d4);
+  transition: all var(--duration-fast, 150ms) var(--easing-ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+.stepDotActive {
+  background: var(--color-primary-500, #6366f1);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.stepDotDone {
+  background: var(--color-success-500, #22c55e);
+}

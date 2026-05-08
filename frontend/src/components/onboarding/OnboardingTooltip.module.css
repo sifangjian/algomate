@@ -1,0 +1,15 @@
+.tooltip {
+  text-align: center;
+}
+
+.tooltipTitle {
+  font-size: var(--font-size-lg, 1.125rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-neutral-800, #262626);
+  margin-bottom: var(--spacing-sm, 0.5rem);
+}
+
+.tooltipDesc {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--color-neutral-500, #737373);
+}

@@ -16,6 +16,7 @@ export default function NpcCard({ npc, isNewUser }) {
       role="button"
       tabIndex={0}
       aria-label={`${npc.name} - ${npc.title}`}
+      data-npc-name={npc.name}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
