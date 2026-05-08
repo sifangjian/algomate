@@ -338,5 +338,8 @@ def main():
         app.stop()
 
 
+app = AlgomateApp().api_app
+
+
 if __name__ == "__main__":
     main()
