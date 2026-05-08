@@ -84,7 +84,7 @@ describe('CardCountBadge', () => {
 describe('RecommendTip', () => {
   it('应显示推荐提示文本', () => {
     render(<RecommendTip />)
-    expect(screen.getByText('推荐从这里开始')).toBeInTheDocument()
+    expect(screen.getByText('推荐新手从这里开始')).toBeInTheDocument()
   })
 
   it('应包含星标图标', () => {
@@ -139,7 +139,7 @@ describe('NpcGrid', () => {
       { id: 1, name: '老夫子', title: '基础数据结构导师', algorithm_type: 'basic_data_structure', specialties: ['数组'], avatar: 'laofuzi', card_count: 0 },
     ]
     render(<NpcGrid npcs={npcs} isNewUser={true} />)
-    expect(screen.getByText('推荐从这里开始')).toBeInTheDocument()
+    expect(screen.getByText('推荐新手从这里开始')).toBeInTheDocument()
   })
 })
 
