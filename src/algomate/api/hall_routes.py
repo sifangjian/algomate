@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -7,6 +8,7 @@ from sqlalchemy import func
 from algomate.models.npcs import NPC, NPCListItem, NPCDetailResponse
 
 router = APIRouter(prefix="/api/v1", tags=["导师大厅"])
+logger = logging.getLogger(__name__)
 
 RECOMMENDED_LEARNING_PATH = [
     {"order": 1, "npc_name": "老夫子", "algorithm_type": "basic_data_structure", "stage": "基础入门", "goal": "掌握数组、链表、哈希表等基础数据结构"},
@@ -193,6 +195,7 @@ def init_default_npcs_v1():
         session.commit()
     except Exception as e:
         session.rollback()
+        logger.error("_ensure_default_npcs failed: %s", e, exc_info=True)
         raise e
     finally:
         session.close()

@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -7,6 +8,7 @@ from algomate.data.database import Database
 from algomate.data.repositories.settings_repo import SettingsRepository
 
 router = APIRouter(prefix="/settings", tags=["用户设置"])
+logger = logging.getLogger(__name__)
 
 
 class UpdateSettingsRequest(BaseModel):
@@ -30,6 +32,7 @@ async def get_settings():
         settings = repo.get_settings()
         return _success_response(data=settings)
     except Exception as e:
+        logger.error("get_settings failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取设置失败: {str(e)}")
     finally:
         session.close()
@@ -63,6 +66,7 @@ async def update_settings(request: UpdateSettingsRequest):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("update_settings failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"更新设置失败: {str(e)}")
     finally:
         session.close()

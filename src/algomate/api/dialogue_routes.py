@@ -6,8 +6,10 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from enum import Enum
 import json
+import logging
 
 dialogue_router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class DialogueState(str, Enum):
@@ -274,6 +276,7 @@ async def start_dialogue(request: dict):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("start_dialogue failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail={"code": 50001, "message": str(e)})
     finally:
         session.close()
@@ -390,6 +393,7 @@ async def send_message(dialogue_id: int, request: dict):
 
                 yield "data: [DONE]\n\n"
             except Exception as e:
+                logger.error("send_message stream error for dialogue %s: %s", dialogue_id, e, exc_info=True)
                 yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
 
         return StreamingResponse(
@@ -404,6 +408,7 @@ async def send_message(dialogue_id: int, request: dict):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("send_message failed for dialogue %s: %s", dialogue_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail={"code": 50001, "message": str(e)})
     finally:
         session.close()
@@ -463,6 +468,7 @@ async def save_note(dialogue_id: int, request: dict):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("save_note failed for dialogue %s: %s", dialogue_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         session.close()
@@ -548,6 +554,7 @@ async def end_dialogue(dialogue_id: int):
                     retry_count += 1
             except Exception as e:
                 last_error = str(e)
+                logger.warning("end_dialogue card generation retry %d/%d for dialogue %s: %s", retry_count, max_retries, dialogue_id, e)
                 retry_count += 1
                 import time
                 if retry_count < max_retries:
@@ -673,6 +680,7 @@ async def end_dialogue(dialogue_id: int):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("end_dialogue failed for dialogue %s: %s", dialogue_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail={"code": 50002, "message": str(e)})
     finally:
         session.close()
@@ -734,6 +742,7 @@ async def get_dialogue_history(dialogue_id: int):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error("get_dialogue_history failed for dialogue %s: %s", dialogue_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         session.close()
@@ -770,6 +779,7 @@ async def heartbeat(dialogue_id: int):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("heartbeat failed for dialogue %s: %s", dialogue_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         session.close()

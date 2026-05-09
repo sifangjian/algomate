@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import logging
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func
@@ -9,6 +10,7 @@ from algomate.models.cards import Card, CardUpdate, CardResponse
 from algomate.core.game.durability import compute_card_status
 
 router = APIRouter(prefix="/cards", tags=["卡牌工坊"])
+logger = logging.getLogger(__name__)
 
 
 def success_response(data=None, message="success"):
@@ -154,6 +156,7 @@ async def update_card(card_id: int, card_update: CardUpdate):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("update_card failed for card %s: %s", card_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"更新卡牌失败: {str(e)}")
     finally:
         session.close()
@@ -175,6 +178,7 @@ async def delete_card(card_id: int):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("delete_card failed for card %s: %s", card_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"删除卡牌失败: {str(e)}")
     finally:
         session.close()
@@ -215,6 +219,7 @@ async def retake_card(card_id: int):
         raise
     except Exception as e:
         session.rollback()
+        logger.error("retake_card failed for card %s: %s", card_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"重修卡牌失败: {str(e)}")
     finally:
         session.close()

@@ -35,12 +35,14 @@ from .core.scheduler.email_sender import EmailSender
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
     ],
 )
 logger = logging.getLogger(__name__)
+
+_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
 
 
 def setup_logging(config: AppConfig):
@@ -56,13 +58,13 @@ def setup_logging(config: AppConfig):
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        logging.Formatter(_LOG_FORMAT)
     )
     logging.getLogger().addHandler(console_handler)
 
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        logging.Formatter(_LOG_FORMAT)
     )
     logging.getLogger().addHandler(file_handler)
 
@@ -140,13 +142,44 @@ class AlgomateApp:
 
         创建 FastAPI 应用实例，并注册所有路由。
         """
-        from fastapi import FastAPI
+        from fastapi import FastAPI, HTTPException
         from fastapi.middleware.cors import CORSMiddleware
 
         self.api_app = FastAPI(
             title="算法修习助手 API",
             version="1.0.0",
         )
+
+        @self.api_app.exception_handler(Exception)
+        async def global_exception_handler(request, exc):
+            logger.error(
+                "Unhandled exception on %s %s: %s",
+                request.method, request.url.path, exc,
+                exc_info=True,
+            )
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=500,
+                content={"detail": str(exc)},
+            )
+
+        @self.api_app.exception_handler(HTTPException)
+        async def http_exception_handler(request, exc):
+            if exc.status_code >= 500:
+                logger.error(
+                    "HTTP %d on %s %s: %s",
+                    exc.status_code, request.method, request.url.path, exc.detail,
+                )
+            elif exc.status_code >= 400:
+                logger.warning(
+                    "HTTP %d on %s %s: %s",
+                    exc.status_code, request.method, request.url.path, exc.detail,
+                )
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"detail": exc.detail},
+            )
 
         self.api_app.add_middleware(
             CORSMiddleware,

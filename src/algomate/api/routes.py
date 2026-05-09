@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from datetime import date, datetime, timedelta
 import json
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 practice_router = APIRouter()
 progress_router = APIRouter()
@@ -55,6 +57,7 @@ async def get_today_review_tasks(target_date: str = None):
             }
         }
     except Exception as e:
+        logger.error("get_today_review_tasks failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         session.close()
@@ -148,6 +151,7 @@ async def generate_review_quiz_v1(card_id: int, quiz_data: dict = None):
         }
     except Exception as e:
         error_msg = str(e).lower()
+        logger.error("generate_review_quiz_v1 failed: %s", e, exc_info=True)
         if "timeout" in error_msg:
             raise HTTPException(status_code=504, detail="AI服务响应超时")
         if "rate limit" in error_msg or "429" in error_msg:
@@ -437,6 +441,7 @@ async def get_questions(question_type: str = None, count: int = 1, algorithm_typ
             )
         return {"questions": questions}
     except Exception as e:
+        logger.error("generate_questions failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -466,6 +471,7 @@ async def submit_answer(request: dict):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.error("submit_answer failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -489,6 +495,7 @@ async def get_weak_points(days: int = 30, threshold: float = 0.7):
             "recommendations": result.get("recommendations", []),
         }
     except Exception as e:
+        logger.error("get_weak_points failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -670,6 +677,7 @@ async def test_api_key(apiKey: dict):
         response = llm.invoke("Hello")
         return {"success": True, "message": "API密钥有效"}
     except Exception as e:
+        logger.warning("test_api_key failed: %s", e)
         return {"success": False, "message": f"API密钥无效: {str(e)}"}
 
 
@@ -703,6 +711,7 @@ async def test_email_config(emailConfig: dict):
         server.quit()
         return {"success": True, "message": "邮件发送成功"}
     except Exception as e:
+        logger.error("test_email failed: %s", e, exc_info=True)
         return {"success": False, "message": f"邮件发送失败: {str(e)}"}
 
 
@@ -796,6 +805,7 @@ async def learning_chat(message: dict):
                 yield chunk
             yield "data: [DONE]\n\n"
         except Exception as e:
+            logger.error("learning_chat stream error: %s", e, exc_info=True)
             yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
@@ -874,6 +884,7 @@ async def generate_quiz(request: dict):
                 return {"questions": parsed, "topic": topic}
         return {"questions": [], "topic": topic}
     except Exception as e:
+        logger.error("generate_topic_questions failed: %s", e, exc_info=True)
         return {"error": str(e)}
 
 
@@ -904,6 +915,7 @@ async def save_learning_note(note_data: dict):
         )
         return {"id": new_note.id, "message": "心得保存成功"}
     except Exception as e:
+        logger.error("save_learning_note failed: %s", e, exc_info=True)
         return {"error": str(e)}, 500
 
 
@@ -946,6 +958,7 @@ async def explain_concept(topic: str, concept: str):
         )
         return {"explanation": response, "concept": concept, "topic": topic}
     except Exception as e:
+        logger.error("explain_concept failed: %s", e, exc_info=True)
         return {"error": str(e)}
 
 
@@ -1054,6 +1067,7 @@ async def get_bosses(difficulty: str = None):
             }
         }
     except Exception as e:
+        logger.error("get_bosses failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1665,6 +1679,7 @@ async def npc_chat(npc_id: int, request: dict):
         raise HTTPException(status_code=503, detail="AI服务连接失败，请检查网络或稍后重试")
     except Exception as e:
         error_msg = str(e).lower()
+        logger.error("npc_chat failed: %s", e, exc_info=True)
         if "timeout" in error_msg or "timed out" in error_msg:
             raise HTTPException(status_code=504, detail="AI服务响应超时，请稍后重试")
         if "connection" in error_msg or "network" in error_msg:
@@ -1708,6 +1723,7 @@ async def npc_chat_stream(npc_id: int, request: dict):
             except ValueError as e:
                 yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
             except Exception as e:
+                logger.error("npc_chat_stream stream error for npc %s: %s", npc_id, e, exc_info=True)
                 yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
 
         return StreamingResponse(
@@ -1722,6 +1738,7 @@ async def npc_chat_stream(npc_id: int, request: dict):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.error("npc_chat_stream failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1767,6 +1784,7 @@ async def get_tasks(date: str = None):
                 tasks = scheduler.generate_daily_tasks()
         return {"tasks": [task.to_dict() for task in tasks]}
     except Exception as e:
+        logger.error("get_review_tasks failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1780,6 +1798,7 @@ async def get_upcoming_tasks(days: int = 7):
         reviews = scheduler.get_upcoming_reviews(days)
         return {"upcoming": reviews, "days": days}
     except Exception as e:
+        logger.error("get_upcoming_reviews failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
