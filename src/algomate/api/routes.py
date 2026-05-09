@@ -1796,82 +1796,6 @@ async def execute_daily_tasks():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-dialogue_router = APIRouter()
-
-
-@dialogue_router.post("/dialogue/start")
-async def start_dialogue(request: dict):
-    """开始新对话"""
-    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
-
-    npc_id = request.get("npc_id")
-    topic = request.get("topic")
-
-    if not npc_id:
-        raise HTTPException(status_code=400, detail="npc_id 不能为空")
-
-    try:
-        flow = NPCDialogueFlow()
-        result = await flow.start_dialogue(npc_id, topic)
-        return result.to_dict()
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@dialogue_router.post("/dialogue/{dialogue_id}/continue")
-async def continue_dialogue(dialogue_id: int, request: dict):
-    """继续对话"""
-    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
-
-    message = request.get("message", "")
-
-    if not message:
-        raise HTTPException(status_code=400, detail="message 不能为空")
-
-    try:
-        flow = NPCDialogueFlow()
-        result = await flow.continue_dialogue(dialogue_id, message)
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@dialogue_router.post("/dialogue/{dialogue_id}/end")
-async def end_dialogue(dialogue_id: int, request: dict):
-    """结束对话并提交心得"""
-    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
-
-    notes = request.get("notes", "")
-
-    try:
-        flow = NPCDialogueFlow()
-        result = await flow.end_dialogue(dialogue_id, notes)
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@dialogue_router.get("/dialogue/{dialogue_id}/history")
-async def get_dialogue_history(dialogue_id: int):
-    """获取对话历史"""
-    from algomate.core.flow.npc_dialogue import NPCDialogueFlow
-
-    try:
-        flow = NPCDialogueFlow()
-        result = flow.get_dialogue_history(dialogue_id)
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 user_router = APIRouter()
 
 
@@ -1949,6 +1873,5 @@ router.include_router(realm_router, prefix="/realms")
 router.include_router(npc_router, prefix="/npc")
 router.include_router(boss_router)
 router.include_router(tasks_router)
-router.include_router(dialogue_router)
 router.include_router(user_router)
 router.include_router(algorithm_info_router)

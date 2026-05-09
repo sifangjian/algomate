@@ -229,11 +229,6 @@ export default function NpcDialogue() {
         }
     }, [noteContent, dialogueId, saveNote, endDialogue, navigate])
 
-    const handleEndWithoutSave = useCallback(() => {
-        setShowEndDialog(false)
-        navigate('/')
-    }, [navigate])
-
     const handleKeyDown = useCallback(
         (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -376,7 +371,7 @@ export default function NpcDialogue() {
                 open={showEndDialog}
                 onClose={() => setShowEndDialog(false)}
                 onConfirm={handleConfirmEnd}
-                onCancel={handleEndWithoutSave}
+                onCancel={() => setShowEndDialog(false)}
                 title="结束修习"
                 message={noteContent.trim() ? "你有未保存的修习内容，是否在离开前保存并转化为卡牌？" : "确定要结束本次修习吗？"}
                 confirmText={noteContent.trim() ? "保存并结束" : "结束修习"}
