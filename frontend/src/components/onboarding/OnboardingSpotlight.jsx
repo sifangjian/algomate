@@ -17,6 +17,8 @@ export default function OnboardingSpotlight({ targetSelector, tooltip, onInterac
       } else {
         setTooltipPosition('bottom')
       }
+    } else {
+      setTargetRect(null)
     }
   }, [targetSelector])
 

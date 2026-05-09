@@ -36,6 +36,9 @@ export default function OnboardingController() {
               totalSteps={5}
             />
           }
+          onInteract={() => {
+            setOnboardingStep('dialogue')
+          }}
         />
       )
     case 'dialogue':
