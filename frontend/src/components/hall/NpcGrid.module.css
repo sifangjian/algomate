@@ -7,7 +7,7 @@
 .emptyState {
   text-align: center;
   padding: var(--spacing-3xl, 48px) var(--spacing-xl, 24px);
-  color: var(--color-neutral-500, #6b7280);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-lg, 18px);
 }
 

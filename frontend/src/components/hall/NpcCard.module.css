@@ -1,8 +1,8 @@
 .npcCard {
-  background: var(--color-neutral-100, #f3f4f6);
-  border: 1px solid var(--color-neutral-200, #e5e7eb);
+  background: var(--color-bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg, 8px);
-  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  box-shadow: var(--shadow-md);
   padding: var(--spacing-lg, 20px);
   cursor: pointer;
   transition: all 0.15s ease-out;
@@ -13,13 +13,13 @@
 }
 
 .npcCard:hover {
-  border-color: var(--color-primary-300, #93c5fd);
-  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }
 
 .npcCard.recommended {
-  border: 2px solid var(--color-secondary-500, #f59e0b);
+  border: 2px solid var(--color-accent);
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
   animation: recommend-glow 2s ease-in-out infinite;
 }
@@ -44,11 +44,11 @@
 .npcName {
   font-size: var(--font-size-lg, 18px);
   font-weight: var(--font-weight-bold, 700);
-  color: var(--color-neutral-800, #1f2937);
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .npcTitle {
   font-size: var(--font-size-sm, 14px);
-  color: var(--color-neutral-500, #6b7280);
+  color: var(--color-text-secondary);
 }

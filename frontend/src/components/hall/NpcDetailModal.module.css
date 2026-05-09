@@ -19,17 +19,17 @@
 .detailName {
   font-size: var(--font-size-xl, 20px);
   font-weight: var(--font-weight-bold, 700);
-  color: var(--color-neutral-800, #1f2937);
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .detailTitle {
   font-size: var(--font-size-sm, 14px);
-  color: var(--color-neutral-500, #6b7280);
+  color: var(--color-text-secondary);
 }
 
 .detailDesc {
-  color: var(--color-neutral-600, #4b5563);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm, 14px);
   line-height: 1.6;
   margin: 0;
@@ -44,7 +44,7 @@
 .detailSpecialties h4 {
   font-size: var(--font-size-sm, 14px);
   font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-neutral-700, #374151);
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -57,7 +57,7 @@
 .detailTopics h4 {
   font-size: var(--font-size-sm, 14px);
   font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-neutral-700, #374151);
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -66,9 +66,9 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-sm, 8px) 0;
-  border-bottom: 1px solid var(--color-neutral-100, #f3f4f6);
+  border-bottom: 1px solid var(--border-color);
   font-size: var(--font-size-sm, 14px);
-  color: var(--color-neutral-600, #4b5563);
+  color: var(--color-text-secondary);
 }
 
 .topicItem:last-child {
@@ -78,17 +78,17 @@
 .topicBadge {
   padding: 2px var(--spacing-sm, 8px);
   border-radius: var(--radius-full, 9999px);
-  background: var(--color-primary-50, #eff6ff);
-  color: var(--color-primary-600, #2563eb);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--color-primary-light);
   font-size: var(--font-size-xs, 12px);
   font-weight: var(--font-weight-medium, 500);
 }
 
 .detailCardCount {
   padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-  background: var(--color-primary-50, #eff6ff);
+  background: rgba(99, 102, 241, 0.1);
   border-radius: var(--radius-lg, 8px);
-  color: var(--color-primary-600, #2563eb);
+  color: var(--color-primary-light);
   font-size: var(--font-size-sm, 14px);
   font-weight: var(--font-weight-medium, 500);
   text-align: center;

@@ -1,6 +1,6 @@
 .learningPathCard {
-  background: linear-gradient(135deg, var(--color-primary-50, #eff6ff), var(--color-secondary-50, #fffbeb));
-  border: 1px solid var(--color-primary-200, #bfdbfe);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(245, 158, 11, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: var(--radius-xl, 12px);
   padding: var(--spacing-lg, 20px);
   margin-bottom: var(--spacing-2xl, 32px);
@@ -25,25 +25,25 @@
 .pathTitle {
   font-size: var(--font-size-lg, 18px);
   font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-primary-700, #1d4ed8);
+  color: var(--color-primary-light);
   flex: 1;
 }
 
 .pathToggle {
-  color: var(--color-primary-500, #3b82f6);
+  color: var(--color-primary);
   font-size: var(--font-size-sm, 14px);
 }
 
 .pathContent {
   padding-top: var(--spacing-lg, 20px);
-  border-top: 1px solid var(--color-primary-100, #dbeafe);
+  border-top: 1px solid rgba(99, 102, 241, 0.15);
 }
 
 .pathStep {
   display: flex;
   gap: var(--spacing-md, 16px);
   padding: var(--spacing-md, 16px) 0;
-  border-bottom: 1px dashed var(--color-neutral-200, #e5e7eb);
+  border-bottom: 1px dashed var(--border-color);
 }
 
 .pathStep:last-child {
@@ -54,7 +54,7 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full, 9999px);
-  background: var(--color-primary-500, #3b82f6);
+  background: var(--color-primary);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -72,17 +72,17 @@
 
 .stepStage {
   font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-primary-700, #1d4ed8);
+  color: var(--color-primary-light);
   font-size: var(--font-size-sm, 14px);
 }
 
 .stepNpc {
-  color: var(--color-neutral-700, #374151);
+  color: var(--color-text-primary);
   font-size: var(--font-size-sm, 14px);
 }
 
 .stepGoal {
-  color: var(--color-neutral-500, #6b7280);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-xs, 12px);
   margin: 0;
 }

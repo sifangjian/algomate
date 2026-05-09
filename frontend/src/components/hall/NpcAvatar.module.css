@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full, 9999px);
-  background: var(--color-primary-100, #dbeafe);
+  background: rgba(99, 102, 241, 0.15);
   flex-shrink: 0;
 }
 
