@@ -2,6 +2,7 @@ import React from 'react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import AlgorithmTypeTags from '../components/hall/AlgorithmTypeTags'
 import SpecialtyTags from '../components/hall/SpecialtyTags'
 import CardCountBadge from '../components/hall/CardCountBadge'
@@ -9,6 +10,7 @@ import RecommendTip from '../components/hall/RecommendTip'
 import NpcAvatar from '../components/hall/NpcAvatar'
 import NpcGrid from '../components/hall/NpcGrid'
 import LearningPathCard from '../components/hall/LearningPathCard'
+import NpcDetailModal from '../components/hall/NpcDetailModal'
 
 describe('AlgorithmTypeTags', () => {
   const types = [
@@ -174,5 +176,135 @@ describe('LearningPathCard', () => {
     expect(screen.getByText('基础入门')).toBeInTheDocument()
     await userEvent.click(header)
     expect(screen.queryByText('基础入门')).not.toBeInTheDocument()
+  })
+})
+
+const mockHallStore = {
+  selectedNpc: null,
+  modalOpen: false,
+  setModalOpen: vi.fn(),
+  fetchNpcDetail: vi.fn(),
+}
+
+vi.mock('../stores/hallStore', () => ({
+  useHallStore: () => mockHallStore,
+}))
+
+vi.mock('../components/ui/Modal/Modal', () => ({
+  default: ({ open, children, title }) => open ? React.createElement('div', { 'data-testid': 'modal' }, children) : null,
+}))
+
+vi.mock('../components/ui/Button/Button', () => ({
+  default: ({ children, onClick, loading, fullWidth }) =>
+    React.createElement('button', { onClick, disabled: loading, 'data-testid': 'button' }, children),
+}))
+
+vi.mock('../components/ui/Toast/index', () => ({
+  showToast: vi.fn(),
+}))
+
+describe('NpcDetailModal', () => {
+  const npcWithTopics = {
+    id: 1,
+    name: '老夫子',
+    title: '基础数据结构导师',
+    avatar: 'laofuzi',
+    description: '新手森林的守护者老夫子',
+    specialties: ['数组与双指针', '链表', '哈希表'],
+    topics: [
+      { name: '数组与双指针', has_card: false },
+      { name: '链表', has_card: true },
+      { name: '哈希表', has_card: false },
+    ],
+    card_count: 1,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('应显示专长领域标题和所有专长标签', () => {
+    mockHallStore.selectedNpc = npcWithTopics
+    mockHallStore.modalOpen = true
+
+    render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(NpcDetailModal)
+      )
+    )
+
+    expect(screen.getByText('专长领域')).toBeInTheDocument()
+    expect(screen.getByText('数组与双指针')).toBeInTheDocument()
+    expect(screen.getByText('链表')).toBeInTheDocument()
+    expect(screen.getByText('哈希表')).toBeInTheDocument()
+  })
+
+  it('不应显示修习话题区块', () => {
+    mockHallStore.selectedNpc = npcWithTopics
+    mockHallStore.modalOpen = true
+
+    render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(NpcDetailModal)
+      )
+    )
+
+    expect(screen.queryByText('修习话题')).not.toBeInTheDocument()
+  })
+
+  it('已获卡牌的专长应显示已获卡牌徽章', () => {
+    mockHallStore.selectedNpc = npcWithTopics
+    mockHallStore.modalOpen = true
+
+    render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(NpcDetailModal)
+      )
+    )
+
+    const badges = screen.getAllByText('已获卡牌')
+    expect(badges.length).toBe(1)
+  })
+
+  it('无 topics 数据时专长领域仍正常显示', () => {
+    const npcWithoutTopics = { ...npcWithTopics, topics: undefined }
+    mockHallStore.selectedNpc = npcWithoutTopics
+    mockHallStore.modalOpen = true
+
+    render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(NpcDetailModal)
+      )
+    )
+
+    expect(screen.getByText('专长领域')).toBeInTheDocument()
+    expect(screen.getByText('数组与双指针')).toBeInTheDocument()
+    expect(screen.queryByText('已获卡牌')).not.toBeInTheDocument()
+  })
+
+  it('应显示导师描述', () => {
+    mockHallStore.selectedNpc = npcWithTopics
+    mockHallStore.modalOpen = true
+
+    render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(NpcDetailModal)
+      )
+    )
+
+    expect(screen.getByText('新手森林的守护者老夫子')).toBeInTheDocument()
+  })
+
+  it('应显示卡牌数量', () => {
+    mockHallStore.selectedNpc = npcWithTopics
+    mockHallStore.modalOpen = true
+
+    render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(NpcDetailModal)
+      )
+    )
+
+    expect(screen.getByText('已获 1 张卡牌')).toBeInTheDocument()
   })
 })

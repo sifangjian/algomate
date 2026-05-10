@@ -36,7 +36,6 @@ export default function NpcDialogue() {
     const [npcError, setNpcError] = useState(null)
     const [inputValue, setInputValue] = useState('')
     const [noteContent, setNoteContent] = useState('')
-    const [showSaveNoteChoice, setShowSaveNoteChoice] = useState(false)
     const [showEndConfirm, setShowEndConfirm] = useState(false)
     const [isNpcLoading, setIsNpcLoading] = useState(true)
     const [algorithmInfo, setAlgorithmInfo] = useState(null)
@@ -186,21 +185,6 @@ export default function NpcDialogue() {
         [handleSend]
     )
 
-    const handleSaveNote = useCallback(async () => {
-        if (!noteContent.trim()) {
-            showToast('请先输入修炼心得', 'warning')
-            return
-        }
-        if (!dialogueId) return
-        try {
-            await saveNote(noteContent)
-            showToast('修炼心得已保存', 'success')
-            setShowSaveNoteChoice(true)
-        } catch (err) {
-            showToast(`保存失败: ${err.message}`, 'error')
-        }
-    }, [noteContent, dialogueId, saveNote])
-
     const handleEndDialogue = useCallback(async () => {
         setIsEnding(true)
         try {
@@ -215,7 +199,6 @@ export default function NpcDialogue() {
                     showToast(`卡牌生成失败: ${result.error}`, 'warning')
                 }
             }
-            setShowSaveNoteChoice(false)
             setShowEndConfirm(false)
         } catch (err) {
             showToast(`结束修习失败: ${err.message}`, 'error')
@@ -223,10 +206,6 @@ export default function NpcDialogue() {
             setIsEnding(false)
         }
     }, [noteContent, dialogueId, saveNote, endDialogue])
-
-    const handleEndFromNoteSection = useCallback(() => {
-        setShowEndConfirm(true)
-    }, [])
 
     const handleKeyDown = useCallback(
         (e) => {
@@ -253,6 +232,15 @@ export default function NpcDialogue() {
                         </div>
                     </div>
                 </div>
+                <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => setShowEndConfirm(true)}
+                    disabled={!dialogueId || status === 'ended'}
+                    loading={isEnding}
+                >
+                    结束修习
+                </Button>
             </div>
 
             {npcError && !npc && (
@@ -329,23 +317,6 @@ export default function NpcDialogue() {
                         rows={10}
                         aria-label="修炼日记编辑器"
                     />
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        fullWidth
-                        onClick={handleSaveNote}
-                        disabled={!noteContent.trim() || !dialogueId}
-                    >
-                        💾 保存心得
-                    </Button>
-
-                    <button
-                        className={styles.endSessionLink}
-                        onClick={handleEndFromNoteSection}
-                    >
-                        结束修习
-                    </button>
-
                     {earnedCard && (
                         <div className={styles.earnedCardSection}>
                             <h4 className={styles.earnedCardTitle}>🎴 获得卡牌</h4>
@@ -369,18 +340,6 @@ export default function NpcDialogue() {
                 </aside>
             </div>
             )}
-
-            <ConfirmDialog
-                open={showSaveNoteChoice}
-                onClose={() => setShowSaveNoteChoice(false)}
-                onConfirm={handleEndDialogue}
-                onCancel={() => setShowSaveNoteChoice(false)}
-                title="心得已保存"
-                message="是否结束修习生成卡牌？选择继续修习可以完善卡牌内容。"
-                confirmText="结束修习生成卡牌"
-                cancelText="继续修习完善卡牌"
-                loading={isEnding}
-            />
 
             <ConfirmDialog
                 open={showEndConfirm}

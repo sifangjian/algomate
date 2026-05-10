@@ -63,6 +63,9 @@ test.describe('F06 导师大厅 - E2E 测试', () => {
     await npcCard.click()
 
     await expect(page.getByText('开始修习')).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('专长领域')).toBeVisible()
+    await expect(page.getByText('数组与双指针')).toBeVisible()
+    await expect(page.locator('text=修习话题')).not.toBeVisible()
   })
 
   test('HALL-AC-003: 点击开始修习应跳转到 NPC 对话页面', async ({ page }) => {

@@ -365,24 +365,6 @@
     color: var(--color-text-muted);
 }
 
-.endSessionLink {
-    background: none;
-    border: none;
-    color: var(--color-text-muted);
-    font-size: 0.78rem;
-    cursor: pointer;
-    padding: 4px 0;
-    text-align: center;
-    font-family: inherit;
-    transition: color var(--transition-fast);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-
-.endSessionLink:hover {
-    color: var(--color-error, #ef4444);
-}
-
 .npcMsgContent {
     display: flex;
     flex-direction: column;
