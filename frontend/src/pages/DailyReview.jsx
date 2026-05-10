@@ -200,26 +200,22 @@ export default function DailyReview() {
                         <h2 className={styles.panelTitle}>📖 知识回顾 - {selectedTask.card_name}</h2>
                         {reviewContent ? (
                             <div className={styles.reviewContent}>
-                                {reviewContent.knowledge_content && (
+                                {reviewContent.core_concept && (
                                     <div className={styles.reviewSection}>
-                                        <h3 className={styles.reviewSectionTitle}>知识内容</h3>
-                                        <p className={styles.reviewSectionText}>{reviewContent.knowledge_content}</p>
+                                        <h3 className={styles.reviewSectionTitle}>核心概念</h3>
+                                        <p className={styles.reviewSectionText}>{reviewContent.core_concept}</p>
                                     </div>
                                 )}
-                                {reviewContent.key_points?.length > 0 && (
+                                {reviewContent.key_points && (
                                     <div className={styles.reviewSection}>
                                         <h3 className={styles.reviewSectionTitle}>关键要点</h3>
-                                        <ul className={styles.reviewKeyPoints}>
-                                            {reviewContent.key_points.map((kp, i) => (
-                                                <li key={i} className={styles.reviewKeyPoint}>{kp}</li>
-                                            ))}
-                                        </ul>
+                                        <p className={styles.reviewSectionText}>{reviewContent.key_points}</p>
                                     </div>
                                 )}
-                                {reviewContent.summary && (
+                                {reviewContent.my_notes && (
                                     <div className={styles.reviewSection}>
-                                        <h3 className={styles.reviewSectionTitle}>心得总结</h3>
-                                        <p className={styles.reviewSectionText}>{reviewContent.summary}</p>
+                                        <h3 className={styles.reviewSectionTitle}>我的心得</h3>
+                                        <p className={styles.reviewSectionText}>{reviewContent.my_notes}</p>
                                     </div>
                                 )}
                                 <div className={styles.panelActions}>

@@ -212,7 +212,18 @@ class QuestionGenerator:
             if not card:
                 return []
 
-            context = card.knowledge_content or card.summary or f"{card.name} {card.algorithm_type}"
+            context_parts = []
+            if card.core_concept:
+                context_parts.append(f"核心概念：{card.core_concept}")
+            if card.key_points:
+                context_parts.append(f"关键要点：{card.key_points}")
+            if card.my_notes:
+                context_parts.append(f"我的心得：{card.my_notes}")
+            
+            if context_parts:
+                context = "\n".join(context_parts)
+            else:
+                context = f"{card.name} {card.algorithm_type}"
             count = max(1, min(self.MAX_QUIZ_COUNT, count))
 
             questions = self.generate_multiple_choice(

@@ -209,9 +209,9 @@ describe('DailyReview', () => {
   describe('知识回顾', () => {
     it('点击知识回顾应进入回顾模式', async () => {
       cardService.getById.mockResolvedValue({
-        knowledge_content: '二分查找是一种搜索算法',
-        key_points: ['确定左右边界', '计算中间值'],
-        summary: '二分查找总结',
+        core_concept: '二分查找是一种搜索算法',
+        key_points: '确定左右边界\n计算中间值',
+        my_notes: '二分查找总结',
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -225,9 +225,9 @@ describe('DailyReview', () => {
 
     it('知识回顾应显示卡牌内容', async () => {
       cardService.getById.mockResolvedValue({
-        knowledge_content: '二分查找是一种搜索算法',
-        key_points: ['确定左右边界', '计算中间值'],
-        summary: '二分查找总结',
+        core_concept: '二分查找是一种搜索算法',
+        key_points: '确定左右边界\n计算中间值',
+        my_notes: '二分查找总结',
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -236,16 +236,16 @@ describe('DailyReview', () => {
       await userEvent.click(screen.getAllByText('📖 知识回顾')[0])
       await waitFor(() => {
         expect(screen.getByText('二分查找是一种搜索算法')).toBeInTheDocument()
-        expect(screen.getByText('确定左右边界')).toBeInTheDocument()
+        expect(screen.getByText(/确定左右边界/)).toBeInTheDocument()
         expect(screen.getByText('二分查找总结')).toBeInTheDocument()
       })
     })
 
     it('完成回顾应调用 completeReviewV1', async () => {
       cardService.getById.mockResolvedValue({
-        knowledge_content: '二分查找内容',
-        key_points: [],
-        summary: '',
+        core_concept: '二分查找内容',
+        key_points: '',
+        my_notes: '',
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -263,9 +263,9 @@ describe('DailyReview', () => {
 
     it('完成回顾后应回到任务列表', async () => {
       cardService.getById.mockResolvedValue({
-        knowledge_content: '二分查找内容',
-        key_points: [],
-        summary: '',
+        core_concept: '二分查找内容',
+        key_points: '',
+        my_notes: '',
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -382,9 +382,9 @@ describe('DailyReview', () => {
   describe('返回按钮', () => {
     it('回顾模式下点击返回应回到任务列表', async () => {
       cardService.getById.mockResolvedValue({
-        knowledge_content: '二分查找内容',
-        key_points: [],
-        summary: '',
+        core_concept: '二分查找内容',
+        key_points: '',
+        my_notes: '',
       })
       render(<DailyReview />)
       await waitFor(() => {
