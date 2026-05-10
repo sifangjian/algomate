@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test'
 
 test.describe('F06 导师大厅 - E2E 测试', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: '导师大厅' })).toBeVisible({ timeout: 30000 })
 
     const skipBtn = page.locator('button:has-text("跳过")')
     if (await skipBtn.isVisible({ timeout: 3000 }).catch(() => false)) {

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000'
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
 
 const results = {}
 
@@ -10,13 +10,12 @@ test.describe('NPC Dialogue E2E Test', () => {
 
         // Step 1: Navigate to Hall page (with onboarding dismissed)
         console.log('\n=== Step 1: Navigate to Hall page ===')
-        await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 30000 })
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 })
 
-        // Dismiss onboarding guide by setting localStorage
         await page.evaluate(() => {
             localStorage.setItem('algomate_onboarding_completed', 'true')
         })
-        await page.reload({ waitUntil: 'networkidle', timeout: 30000 })
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 })
         await page.waitForTimeout(2000)
 
         // Also try clicking "跳过" button if onboarding still visible

@@ -7,7 +7,15 @@ function getDurabilityColor(durability) {
   return 'var(--color-danger)'
 }
 
-export default function GameCard({ card, onClick, className = '' }) {
+export default function GameCard({ card, onClick, className = '', children }) {
+  if (children && !card) {
+    return (
+      <div className={`${styles.card} ${className}`} onClick={onClick}>
+        {children}
+      </div>
+    )
+  }
+
   if (!card) return null
 
   const isEndangered = card.status === 'endangered'
