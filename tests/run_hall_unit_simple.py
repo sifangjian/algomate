@@ -1,4 +1,4 @@
-from algomate.api.hall_routes import _parse_json_field, RECOMMENDED_LEARNING_PATH, VALID_ALGORITHM_TYPES, DEFAULT_NPCS
+from algomate.api.v1.npcs import _parse_json_field, RECOMMENDED_LEARNING_PATH, VALID_ALGORITHM_TYPES, DEFAULT_NPCS
 
 assert _parse_json_field('["a","b"]') == ["a", "b"], "parse valid json"
 assert _parse_json_field("") == [], "parse empty string"

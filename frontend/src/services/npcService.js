@@ -14,21 +14,21 @@ export const npcService = {
   getById: (id) => api.get(`/v1/npcs/${id}`),
 
   getByRealmId: (realmId) => {
-    return api.get(`/npc/${realmId}`)
+    return api.get(`/v1/npcs/${realmId}`)
   },
 
-  getUnlockedNpcs: () => api.get('/npcs/unlocked'),
+  getUnlockedNpcs: () => api.get('/v1/npcs'),
 
-  getAllNpcs: () => api.get('/npcs/'),
+  getAllNpcs: () => api.get('/v1/npcs'),
 
-  getAlgorithmInfo: () => api.get('/algorithm-info'),
+  getAlgorithmInfo: () => api.get('/v1/algorithm-info'),
 
   chat: (npcId, message, sessionId) =>
-    api.post(`/npc/${npcId}/chat`, { message, sessionId }),
+    api.post(`/v1/npcs/${npcId}/chat`, { message, sessionId }),
 
   chatStream: (npcId, message, sessionId, { onChunk, onSuggestions, onDone, onError }) => {
     const baseURL = '/api'
-    const url = `${baseURL}/npc/${npcId}/chat/stream`
+    const url = `${baseURL}/v1/npcs/${npcId}/chat/stream`
 
     const controller = new AbortController()
 

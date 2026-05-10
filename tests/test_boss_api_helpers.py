@@ -1,7 +1,7 @@
 import random
 from unittest.mock import patch
 
-from algomate.api.routes import (
+from algomate.api.v1.bosses import (
     _pick_question_type,
     _extract_options_from_content,
     _get_fallback_choice,

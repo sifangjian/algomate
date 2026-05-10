@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+import json
+import logging
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from enum import Enum
-import json
-import logging
 
-dialogue_router = APIRouter()
+router = APIRouter(prefix="/dialogues", tags=["对话"])
 logger = logging.getLogger(__name__)
 
 
@@ -91,7 +92,7 @@ def _get_session(dialogue_id: int):
             dialogue_id=record.id,
             npc_id=record.npc_id,
             npc_name=npc.name,
-            npc_domain=npc.domain or "",
+            npc_domain=npc.algorithm_type or npc.domain or "",
             npc_system_prompt=npc.system_prompt or "",
             topic=record.topic or "",
             status=DialogueState(record.status) if record.status else DialogueState.ACTIVE,
@@ -186,7 +187,7 @@ def _build_card_generation_prompt(
     return system_prompt, user_prompt
 
 
-@dialogue_router.post("/start")
+@router.post("/start")
 async def start_dialogue(request: dict):
     from algomate.data.database import Database
     from algomate.models.dialogue_records import DialogueRecord
@@ -282,7 +283,7 @@ async def start_dialogue(request: dict):
         session.close()
 
 
-@dialogue_router.post("/{dialogue_id}/message")
+@router.post("/{dialogue_id}/message")
 async def send_message(dialogue_id: int, request: dict):
     from algomate.data.database import Database
     from algomate.models.dialogue_records import DialogueRecord
@@ -414,7 +415,7 @@ async def send_message(dialogue_id: int, request: dict):
         session.close()
 
 
-@dialogue_router.post("/{dialogue_id}/note")
+@router.post("/{dialogue_id}/note")
 async def save_note(dialogue_id: int, request: dict):
     from algomate.data.database import Database
     from algomate.models.dialogue_records import DialogueRecord
@@ -474,7 +475,7 @@ async def save_note(dialogue_id: int, request: dict):
         session.close()
 
 
-@dialogue_router.post("/{dialogue_id}/end")
+@router.post("/{dialogue_id}/end")
 async def end_dialogue(dialogue_id: int):
     from algomate.data.database import Database
     from algomate.models.dialogue_records import DialogueRecord
@@ -686,7 +687,7 @@ async def end_dialogue(dialogue_id: int):
         session.close()
 
 
-@dialogue_router.get("/{dialogue_id}/history")
+@router.get("/{dialogue_id}/history")
 async def get_dialogue_history(dialogue_id: int):
     from algomate.data.database import Database
     from algomate.models.dialogue_records import DialogueRecord
@@ -748,7 +749,7 @@ async def get_dialogue_history(dialogue_id: int):
         session.close()
 
 
-@dialogue_router.post("/{dialogue_id}/heartbeat")
+@router.post("/{dialogue_id}/heartbeat")
 async def heartbeat(dialogue_id: int):
     from algomate.data.database import Database
     from algomate.models.dialogue_records import DialogueRecord

@@ -8,7 +8,7 @@ class TestBuildEnhancedSystemPrompt:
     """测试 _build_enhanced_system_prompt 函数"""
 
     def test_should_append_domain_boundary_rules(self):
-        from algomate.api.dialogue_routes import _build_enhanced_system_prompt
+        from algomate.api.v1.dialogues import _build_enhanced_system_prompt
 
         result = _build_enhanced_system_prompt(
             npc_system_prompt="你是一个算法导师。",
@@ -22,7 +22,7 @@ class TestBuildEnhancedSystemPrompt:
         assert "背包问题、最长子序列" in result
 
     def test_should_use_npc_domain_when_topics_empty(self):
-        from algomate.api.dialogue_routes import _build_enhanced_system_prompt
+        from algomate.api.v1.dialogues import _build_enhanced_system_prompt
 
         result = _build_enhanced_system_prompt(
             npc_system_prompt="Hello",
@@ -34,7 +34,7 @@ class TestBuildEnhancedSystemPrompt:
         assert "专长边界规则" in result
 
     def test_should_join_multiple_topics_with_chinese_comma(self):
-        from algomate.api.dialogue_routes import _build_enhanced_system_prompt
+        from algomate.api.v1.dialogues import _build_enhanced_system_prompt
 
         result = _build_enhanced_system_prompt(
             npc_system_prompt="Test",
@@ -45,7 +45,7 @@ class TestBuildEnhancedSystemPrompt:
         assert "BFS、DFS、回溯" in result
 
     def test_should_preserve_original_prompt(self):
-        from algomate.api.dialogue_routes import _build_enhanced_system_prompt
+        from algomate.api.v1.dialogues import _build_enhanced_system_prompt
 
         original = "你是一个专业的算法导师，擅长动态规划。"
         result = _build_enhanced_system_prompt(
@@ -61,7 +61,7 @@ class TestBuildCardGenerationPrompt:
     """测试 _build_card_generation_prompt 函数"""
 
     def test_should_return_system_and_user_prompt(self):
-        from algomate.api.dialogue_routes import _build_card_generation_prompt
+        from algomate.api.v1.dialogues import _build_card_generation_prompt
 
         system_prompt, user_prompt = _build_card_generation_prompt(
             topic="二分查找",
@@ -81,7 +81,7 @@ class TestBuildCardGenerationPrompt:
         assert "二分查找的核心是折半" in user_prompt
 
     def test_should_handle_empty_note(self):
-        from algomate.api.dialogue_routes import _build_card_generation_prompt
+        from algomate.api.v1.dialogues import _build_card_generation_prompt
 
         _, user_prompt = _build_card_generation_prompt(
             topic="排序",
@@ -93,7 +93,7 @@ class TestBuildCardGenerationPrompt:
         assert "用户未记录笔记" in user_prompt
 
     def test_should_format_user_and_npc_messages(self):
-        from algomate.api.dialogue_routes import _build_card_generation_prompt
+        from algomate.api.v1.dialogues import _build_card_generation_prompt
 
         _, user_prompt = _build_card_generation_prompt(
             topic="DP",
@@ -167,7 +167,7 @@ class TestCardGenerationResult:
     """测试 CardGenerationResult Pydantic 模型"""
 
     def test_should_create_valid_instance(self):
-        from algomate.api.dialogue_routes import CardGenerationResult
+        from algomate.api.v1.dialogues import CardGenerationResult
 
         card = CardGenerationResult(
             name="二分查找",
@@ -190,7 +190,7 @@ class TestCardGenerationResult:
         assert card.algorithm_type == "搜索"
 
     def test_should_reject_difficulty_below_1(self):
-        from algomate.api.dialogue_routes import CardGenerationResult
+        from algomate.api.v1.dialogues import CardGenerationResult
 
         with pytest.raises(Exception):
             CardGenerationResult(
@@ -210,7 +210,7 @@ class TestCardGenerationResult:
             )
 
     def test_should_reject_difficulty_above_5(self):
-        from algomate.api.dialogue_routes import CardGenerationResult
+        from algomate.api.v1.dialogues import CardGenerationResult
 
         with pytest.raises(Exception):
             CardGenerationResult(
@@ -234,17 +234,17 @@ class TestDialogueState:
     """测试 DialogueState 枚举"""
 
     def test_should_have_active_state(self):
-        from algomate.api.dialogue_routes import DialogueState
+        from algomate.api.v1.dialogues import DialogueState
 
         assert DialogueState.ACTIVE == "active"
 
     def test_should_have_ended_state(self):
-        from algomate.api.dialogue_routes import DialogueState
+        from algomate.api.v1.dialogues import DialogueState
 
         assert DialogueState.ENDED == "ended"
 
     def test_should_have_timed_out_state(self):
-        from algomate.api.dialogue_routes import DialogueState
+        from algomate.api.v1.dialogues import DialogueState
 
         assert DialogueState.TIMED_OUT == "timed_out"
 
@@ -253,7 +253,7 @@ class TestDialogueSessionDataclass:
     """测试 DialogueSession 数据类"""
 
     def test_should_create_with_defaults(self):
-        from algomate.api.dialogue_routes import DialogueSession, DialogueState
+        from algomate.api.v1.dialogues import DialogueSession, DialogueState
 
         session = DialogueSession(
             dialogue_id=1,
@@ -274,7 +274,7 @@ class TestDialogueSessionDataclass:
         assert session.error is None
 
     def test_should_allow_setting_optional_fields(self):
-        from algomate.api.dialogue_routes import DialogueSession, DialogueState
+        from algomate.api.v1.dialogues import DialogueSession, DialogueState
 
         session = DialogueSession(
             dialogue_id=1,

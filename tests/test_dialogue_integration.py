@@ -12,7 +12,8 @@ from algomate.models.dialogue_messages import DialogueMessageRecord
 from algomate.models.dialogue_notes import DialogueNote
 from algomate.models.npcs import NPC
 from algomate.models.cards import Card
-from algomate.api.dialogue_routes import (
+from algomate.core.game.realm_unlock import Realm as Domain
+from algomate.api.v1.dialogues import (
     DialogueState,
     DialogueSession,
     CardGenerationResult,
@@ -59,7 +60,6 @@ def _create_test_npc(session, **overrides):
         "avatar": "/avatars/test.png",
         "description": "测试用NPC",
         "topics": json.dumps(["背包问题", "最长子序列"], ensure_ascii=False),
-        "domain": "动态规划",
         "location": "智慧圣殿",
         "system_prompt": "你是动态规划领域的专家导师。",
         "greeting": "欢迎来到智慧圣殿！我是测试导师。",
@@ -169,11 +169,9 @@ class TestStartDialogueDBIntegration:
 
         card = Card(
             name="背包问题卡牌",
-            domain=Domain.WISDOM_TEMPLE.value,
+            
             algorithm_type="动态规划",
-            difficulty=3,
             durability=80,
-            max_durability=100,
             npc_id=npc.id,
             topic="背包问题",
         )
@@ -565,15 +563,9 @@ class TestEndDialogueDBIntegration:
 
         card_data = {
             "name": "背包问题",
-            "domain": Domain.WISDOM_TEMPLE.value,
             "algorithm_type": "动态规划",
-            "difficulty": 3,
             "durability": 80,
-            "max_durability": 100,
-            "is_sealed": False,
-            "knowledge_content": "0-1背包是经典DP问题",
             "key_points": "1. 定义状态\n2. 状态转移",
-            "summary": "0-1背包是经典DP问题"[:200],
             "core_concept": "0-1背包是经典DP问题",
             "code_template": "def knapsack(): pass",
             "complexity_analysis": "O(n*W)",
@@ -597,11 +589,10 @@ class TestEndDialogueDBIntegration:
 
         assert new_card.id is not None
         assert new_card.name == "背包问题"
-        assert new_card.domain == Domain.WISDOM_TEMPLE.value
+        assert new_card.algorithm_type == "动态规划"
 
         saved = session.query(Card).filter(Card.id == new_card.id).first()
         assert saved is not None
-        assert saved.knowledge_content == "0-1背包是经典DP问题"
         session.close()
 
     def test_end_updates_existing_card(self):
@@ -614,11 +605,9 @@ class TestEndDialogueDBIntegration:
 
         existing_card = Card(
             name="旧卡牌",
-            domain=Domain.WISDOM_TEMPLE.value,
+            
             algorithm_type="动态规划",
-            difficulty=2,
             durability=60,
-            max_durability=100,
             npc_id=npc_id,
             topic="背包问题",
         )
@@ -656,11 +645,9 @@ class TestEndDialogueDBIntegration:
 
         card = Card(
             name="背包问题",
-            domain=Domain.WISDOM_TEMPLE.value,
+            
             algorithm_type="动态规划",
-            difficulty=3,
             durability=80,
-            max_durability=100,
             npc_id=npc_id,
             topic="背包问题",
         )
@@ -723,11 +710,9 @@ class TestEndDialogueDBIntegration:
 
         card = Card(
             name="背包问题",
-            domain=Domain.WISDOM_TEMPLE.value,
+            
             algorithm_type="动态规划",
-            difficulty=3,
             durability=80,
-            max_durability=100,
             npc_id=npc_id,
             topic="背包问题",
             my_notes="我的学习心得",
@@ -1014,11 +999,9 @@ class TestCrossTableIntegrity:
 
         card = Card(
             name="背包问题",
-            domain=Domain.WISDOM_TEMPLE.value,
+            
             algorithm_type="动态规划",
-            difficulty=3,
             durability=80,
-            max_durability=100,
             npc_id=npc_id,
             topic="背包问题",
         )

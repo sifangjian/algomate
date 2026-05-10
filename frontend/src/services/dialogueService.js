@@ -2,14 +2,14 @@ import api from './api'
 
 export const dialogueService = {
   start: (npcId, topic) =>
-    api.post('/dialogue/start', { npc_id: npcId, topic: topic || null }),
+    api.post('/v1/dialogues/start', { npc_id: npcId, topic: topic || null }),
 
   sendMessage: (dialogueId, content) =>
-    api.post(`/dialogue/${dialogueId}/message`, { content }),
+    api.post(`/v1/dialogues/${dialogueId}/message`, { content }),
 
   sendMessageStream: (dialogueId, content, { onChunk, onSuggestions, onOutOfDomain, onDone, onError }) => {
     const baseURL = '/api'
-    const url = `${baseURL}/dialogue/${dialogueId}/message`
+    const url = `${baseURL}/v1/dialogues/${dialogueId}/message`
     const controller = new AbortController()
     const token = localStorage.getItem('auth_token')
     const headers = { 'Content-Type': 'application/json' }
@@ -76,14 +76,14 @@ export const dialogueService = {
   },
 
   saveNote: (dialogueId, content) =>
-    api.post(`/dialogue/${dialogueId}/note`, { content }),
+    api.post(`/v1/dialogues/${dialogueId}/note`, { content }),
 
   endDialogue: (dialogueId) =>
-    api.post(`/dialogue/${dialogueId}/end`),
+    api.post(`/v1/dialogues/${dialogueId}/end`),
 
   getHistory: (dialogueId) =>
-    api.get(`/dialogue/${dialogueId}/history`),
+    api.get(`/v1/dialogues/${dialogueId}/history`),
 
   heartbeat: (dialogueId) =>
-    api.post(`/dialogue/${dialogueId}/heartbeat`),
+    api.post(`/v1/dialogues/${dialogueId}/heartbeat`),
 }

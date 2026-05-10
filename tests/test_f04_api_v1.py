@@ -9,7 +9,7 @@ from fastapi import HTTPException
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from algomate.api.routes import review_v1_router
+from algomate.api.v1.reviews import router as review_v1_router
 from algomate.core.scheduler.review_scheduler import ReviewTask, TaskType
 
 
@@ -50,7 +50,7 @@ def _run(coro):
 class TestReviewV1RouteRegistration:
 
     def test_router_has_correct_prefix(self):
-        assert review_v1_router.prefix == "/v1/reviews"
+        assert review_v1_router.prefix == "/reviews"
 
     def test_router_has_today_endpoint(self):
         route_paths = [r.path for r in review_v1_router.routes]
@@ -88,7 +88,7 @@ class TestGetTodayReviewTasks:
     @patch("algomate.core.scheduler.review_scheduler.ReviewScheduler")
     @patch("algomate.data.database.Database")
     def test_returns_tasks_with_priority(self, MockDB, MockScheduler):
-        from algomate.api.routes import get_today_review_tasks
+        from algomate.api.v1.reviews import get_today_review_tasks
 
         mock_db, mock_session = _mock_db(card_count=3)
         MockDB.get_instance.return_value = mock_db
@@ -117,7 +117,7 @@ class TestGetTodayReviewTasks:
     @patch("algomate.core.scheduler.review_scheduler.ReviewScheduler")
     @patch("algomate.data.database.Database")
     def test_has_cards_false_when_no_cards(self, MockDB, MockScheduler):
-        from algomate.api.routes import get_today_review_tasks
+        from algomate.api.v1.reviews import get_today_review_tasks
 
         mock_db, mock_session = _mock_db(card_count=0)
         MockDB.get_instance.return_value = mock_db
@@ -133,7 +133,7 @@ class TestGetTodayReviewTasks:
     @patch("algomate.core.scheduler.review_scheduler.ReviewScheduler")
     @patch("algomate.data.database.Database")
     def test_empty_when_no_due(self, MockDB, MockScheduler):
-        from algomate.api.routes import get_today_review_tasks
+        from algomate.api.v1.reviews import get_today_review_tasks
 
         mock_db, mock_session = _mock_db(card_count=5)
         MockDB.get_instance.return_value = mock_db
@@ -155,12 +155,13 @@ class TestCompleteReviewV1:
     @patch("algomate.review.review_plan_service.ReviewPlanService")
     @patch("algomate.data.database.Database")
     def test_complete_review_with_valid_type(self, MockDB, MockService):
-        from algomate.api.routes import complete_review_v1
+        from algomate.api.v1.reviews import complete_review_v1
 
         mock_card = MagicMock()
         mock_card.pending_retake = False
         mock_db, mock_session = _mock_db(card_first=mock_card)
         MockDB.get_instance.return_value = mock_db
+        mock_session.query.return_value.filter.return_value.count.return_value = 0
 
         complete_result = {
             "card_id": 1,
@@ -168,6 +169,7 @@ class TestCompleteReviewV1:
             "review_type": "content_review",
             "durability_before": 50,
             "durability_after": 80,
+            "remaining_endangered": 0,
         }
         mock_service = MockService.return_value
         mock_service.complete_review.return_value = complete_result
@@ -178,7 +180,7 @@ class TestCompleteReviewV1:
         assert result["data"]["review_type"] == "content_review"
 
     def test_complete_review_invalid_review_type(self):
-        from algomate.api.routes import complete_review_v1
+        from algomate.api.v1.reviews import complete_review_v1
 
         with pytest.raises(HTTPException) as exc_info:
             _run(complete_review_v1(1, {"review_type": "invalid_type"}))
@@ -186,7 +188,7 @@ class TestCompleteReviewV1:
 
     @patch("algomate.data.database.Database")
     def test_complete_review_card_not_found(self, MockDB):
-        from algomate.api.routes import complete_review_v1
+        from algomate.api.v1.reviews import complete_review_v1
 
         mock_db, mock_session = _mock_db(card_first=None)
         MockDB.get_instance.return_value = mock_db
@@ -197,7 +199,7 @@ class TestCompleteReviewV1:
 
     @patch("algomate.data.database.Database")
     def test_complete_review_sealed_card(self, MockDB):
-        from algomate.api.routes import complete_review_v1
+        from algomate.api.v1.reviews import complete_review_v1
 
         mock_card = MagicMock()
         mock_card.pending_retake = True
@@ -214,7 +216,7 @@ class TestGenerateReviewQuizV1:
     @patch("algomate.core.agent.question_generator.QuestionGenerator")
     @patch("algomate.data.database.Database")
     def test_generate_quiz_success(self, MockDB, MockGenerator):
-        from algomate.api.routes import generate_review_quiz_v1
+        from algomate.api.v1.reviews import generate_review_quiz_v1
 
         mock_card = MagicMock()
         mock_db, mock_session = _mock_db(card_first=mock_card)
@@ -234,7 +236,7 @@ class TestGenerateReviewQuizV1:
 
     @patch("algomate.data.database.Database")
     def test_generate_quiz_card_not_found(self, MockDB):
-        from algomate.api.routes import generate_review_quiz_v1
+        from algomate.api.v1.reviews import generate_review_quiz_v1
 
         mock_db, mock_session = _mock_db(card_first=None)
         MockDB.get_instance.return_value = mock_db
@@ -246,7 +248,7 @@ class TestGenerateReviewQuizV1:
     @patch("algomate.core.agent.question_generator.QuestionGenerator")
     @patch("algomate.data.database.Database")
     def test_generate_quiz_timeout_returns_504(self, MockDB, MockGenerator):
-        from algomate.api.routes import generate_review_quiz_v1
+        from algomate.api.v1.reviews import generate_review_quiz_v1
 
         mock_card = MagicMock()
         mock_db, mock_session = _mock_db(card_first=mock_card)
@@ -262,7 +264,7 @@ class TestGenerateReviewQuizV1:
     @patch("algomate.core.agent.question_generator.QuestionGenerator")
     @patch("algomate.data.database.Database")
     def test_generate_quiz_rate_limit_returns_429(self, MockDB, MockGenerator):
-        from algomate.api.routes import generate_review_quiz_v1
+        from algomate.api.v1.reviews import generate_review_quiz_v1
 
         mock_card = MagicMock()
         mock_db, mock_session = _mock_db(card_first=mock_card)
@@ -278,7 +280,7 @@ class TestGenerateReviewQuizV1:
     @patch("algomate.core.agent.question_generator.QuestionGenerator")
     @patch("algomate.data.database.Database")
     def test_generate_quiz_generic_error_returns_500(self, MockDB, MockGenerator):
-        from algomate.api.routes import generate_review_quiz_v1
+        from algomate.api.v1.reviews import generate_review_quiz_v1
 
         mock_card = MagicMock()
         mock_db, mock_session = _mock_db(card_first=mock_card)

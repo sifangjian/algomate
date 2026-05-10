@@ -29,7 +29,7 @@ def _create_client():
 def test_stats_overview_no_cards():
     client, db_path = _create_client()
     try:
-        response = client.get("/api/stats/overview")
+        response = client.get("/api/v1/stats/overview")
         assert response.status_code == 200
         data = response.json()
         assert "total_cards" in data
@@ -46,14 +46,14 @@ def test_stats_overview_no_cards():
 def test_npc_novice_forest():
     client, db_path = _create_client()
     try:
-        from algomate.api.routes import _init_default_npcs
+        from algomate.api.v1.realms import _init_default_npcs
         _init_default_npcs()
-        response = client.get("/api/npc/1")
+        response = client.get("/api/v1/npcs/1")
         assert response.status_code == 200
         data = response.json()
-        assert data["name"] == "老夫子"
-        assert data["domain"] == "基础数据结构"
-        assert "topics" in data
+        assert data["data"]["name"] == "老夫子"
+        assert data["data"]["domain"] == "basic_data_structure"
+        assert "topics" in data["data"]
     finally:
         try:
             os.unlink(db_path)
@@ -64,11 +64,12 @@ def test_npc_novice_forest():
 def test_cards_empty_list():
     client, db_path = _create_client()
     try:
-        response = client.get("/api/cards/")
+        response = client.get("/api/v1/cards/")
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, list)
-        assert len(data) == 0
+        assert isinstance(data, dict)
+        assert "data" in data
+        assert isinstance(data["data"].get("cards", []), list)
     finally:
         try:
             os.unlink(db_path)
@@ -79,7 +80,7 @@ def test_cards_empty_list():
 def test_algorithm_info():
     client, db_path = _create_client()
     try:
-        response = client.get("/api/algorithm-info")
+        response = client.get("/api/v1/algorithm-info")
         assert response.status_code == 200
         data = response.json()
         assert "topic_prerequisites" in data

@@ -13,7 +13,7 @@ from algomate.models.dialogue_notes import DialogueNote
 from algomate.models.npcs import NPC
 from algomate.models.cards import Card
 from algomate.models.bosses import Boss
-from algomate.api.dialogue_routes import _active_sessions
+from algomate.api.v1.dialogues import _active_sessions
 from algomate.core.guide.service import GuideService
 from algomate.core.guide.models import GuideData
 

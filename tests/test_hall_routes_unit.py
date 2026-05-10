@@ -2,7 +2,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 
-from algomate.api.hall_routes import (
+from algomate.api.v1.npcs import (
     _parse_json_field,
     RECOMMENDED_LEARNING_PATH,
     VALID_ALGORITHM_TYPES,
@@ -141,46 +141,46 @@ class TestDefaultNpcs:
 class TestInitDefaultNpcsV1:
     """init_default_npcs_v1 函数测试"""
 
-    @patch("algomate.api.hall_routes.Database")
+    @patch("algomate.data.database.Database")
     def test_should_create_npcs_when_db_empty(self, mock_db_cls):
         """正向测试：数据库为空时应创建 8 个 NPC"""
         mock_db = MagicMock()
         mock_db_cls.get_instance.return_value = mock_db
         mock_session = MagicMock()
         mock_db.get_session.return_value = mock_session
-        mock_session.query(NPC).count.return_value = 0
+        mock_session.query(NPC).order_by(NPC.id.asc()).all.return_value = []
 
         init_default_npcs_v1()
 
         assert mock_session.add.call_count == 8
-        mock_session.commit.assert_called_once()
+        mock_session.commit.assert_called()
 
-    @patch("algomate.api.hall_routes.Database")
+    @patch("algomate.data.database.Database")
     def test_should_update_existing_npcs(self, mock_db_cls):
         """正向测试：数据库已有 NPC 时应更新字段"""
         mock_db = MagicMock()
         mock_db_cls.get_instance.return_value = mock_db
         mock_session = MagicMock()
         mock_db.get_session.return_value = mock_session
-        mock_session.query(NPC).count.return_value = 8
 
         mock_existing = MagicMock()
-        mock_existing.system_prompt = "existing"
-        mock_existing.greeting = "existing greeting"
-        mock_session.query(NPC).filter.return_value.first.return_value = mock_existing
+        mock_existing.algorithm_type = None
+        mock_existing.title = None
+        mock_existing.specialties = None
+        mock_session.query(NPC).order_by(NPC.id.asc()).all.return_value = [mock_existing]
 
         init_default_npcs_v1()
 
-        mock_session.commit.assert_called_once()
+        mock_session.commit.assert_called()
 
-    @patch("algomate.api.hall_routes.Database")
+    @patch("algomate.data.database.Database")
     def test_should_rollback_on_error(self, mock_db_cls):
         """异常测试：出错时应回滚"""
         mock_db = MagicMock()
         mock_db_cls.get_instance.return_value = mock_db
         mock_session = MagicMock()
         mock_db.get_session.return_value = mock_session
-        mock_session.query(NPC).count.side_effect = Exception("DB error")
+        mock_session.query.side_effect = Exception("DB error")
 
         with pytest.raises(Exception, match="DB error"):
             init_default_npcs_v1()

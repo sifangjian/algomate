@@ -161,7 +161,7 @@ def test_challenge_boss(client, test_db):
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
          patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
-         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+         patch('algomate.api.v1.bosses._pick_question_type', return_value='choice'):
         response = client.post(
             f"/api/v1/bosses/{boss_id}/challenge",
             json={"card_id": weakness_card_id},
@@ -207,7 +207,7 @@ def test_submit_choice_answer(client, test_db):
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
          patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
-         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+         patch('algomate.api.v1.bosses._pick_question_type', return_value='choice'):
         challenge_resp = client.post(
             f"/api/v1/bosses/{boss_id}/challenge",
             json={"card_id": weakness_card_id},
@@ -262,7 +262,7 @@ def test_submit_victory_guide_contains_continue_challenge_and_go_review(client, 
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
          patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
-         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+         patch('algomate.api.v1.bosses._pick_question_type', return_value='choice'):
         challenge_resp = client.post(
             f"/api/v1/bosses/{boss_id}/challenge",
             json={"card_id": weakness_card_id},
@@ -314,7 +314,7 @@ def test_submit_defeat_guide_contains_go_review_and_go_dialogue(client, test_db)
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
          patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
-         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+         patch('algomate.api.v1.bosses._pick_question_type', return_value='choice'):
         challenge_resp = client.post(
             f"/api/v1/bosses/{boss_id}/challenge",
             json={"card_id": weakness_card_id},
@@ -373,7 +373,7 @@ def test_submit_short_answer(client, test_db):
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
          patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
-         patch('algomate.api.routes._pick_question_type', return_value='short_answer'):
+         patch('algomate.api.v1.bosses._pick_question_type', return_value='short_answer'):
         challenge_resp = client.post(
             f"/api/v1/bosses/{boss_id}/challenge",
             json={"card_id": weakness_card_id},
@@ -414,7 +414,7 @@ def test_submit_leetcode(client, test_db):
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
          patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
-         patch('algomate.api.routes._pick_question_type', return_value='leetcode'):
+         patch('algomate.api.v1.bosses._pick_question_type', return_value='leetcode'):
         challenge_resp = client.post(
             f"/api/v1/bosses/{boss_id}/challenge",
             json={"card_id": weakness_card_id},
@@ -456,7 +456,7 @@ def test_submit_victory_no_available_boss_removes_continue_challenge(client, tes
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
          patch('algomate.core.agent.question_generator.QuestionGenerator', return_value=mock_generator), \
-         patch('algomate.api.routes._pick_question_type', return_value='choice'):
+         patch('algomate.api.v1.bosses._pick_question_type', return_value='choice'):
         challenge_resp = client.post(
             f"/api/v1/bosses/{boss_id}/challenge",
             json={"card_id": weakness_card_id},
@@ -465,7 +465,7 @@ def test_submit_victory_no_available_boss_removes_continue_challenge(client, tes
     battle_id = challenge_resp.json()["data"]["battle_id"]
 
     with patch.object(Database, 'get_instance', return_value=test_db), \
-         patch('algomate.api.routes._has_available_bosses', return_value=False):
+         patch('algomate.api.v1.bosses._has_available_bosses', return_value=False):
         submit_resp = client.post(
             f"/api/v1/bosses/{boss_id}/submit",
             json={

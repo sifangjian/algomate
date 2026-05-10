@@ -41,19 +41,19 @@ export const cardService = {
     return result.data
   },
 
-  startReview: (cardId) => api.post(`/review/start/${cardId}`),
+  startReview: (cardId) => api.post(`/v1/dashboard/review/start/${cardId}`),
 
-  completeReview: (cardId, action) => api.post(`/review/complete/${cardId}`, { action }),
+  completeReview: (cardId, action) => api.post(`/v1/dashboard/review/complete/${cardId}`, { action }),
 
-  skipReview: (cardId) => api.post(`/review/skip/${cardId}`),
+  skipReview: (cardId) => api.post(`/v1/dashboard/review/skip/${cardId}`),
 
-  getReviewSchedule: (cardId) => api.get(`/review/schedule/${cardId}`),
+  getReviewSchedule: (cardId) => api.get(`/v1/dashboard/review/schedule/${cardId}`),
 
-  getTodayReviewPlan: () => api.get('/review/plan'),
+  getTodayReviewPlan: () => api.get('/v1/dashboard/today-review'),
 
-  getWeakPoints: (threshold) => api.get(`/review/weak-points?threshold=${threshold || 30}`),
+  getWeakPoints: (threshold) => api.get(`/v1/dashboard/weak-points?threshold=${threshold || 30}`),
 
-  getReviewStats: () => api.get('/review/statistics'),
+  getReviewStats: () => api.get('/v1/dashboard/review/statistics'),
 
   getTodayReviewTasks: () => api.get('/v1/reviews/today'),
 

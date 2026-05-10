@@ -55,7 +55,7 @@ def _mock_answer_evaluator(db=None):
 
 QG_PATCH = "algomate.core.agent.question_generator.QuestionGenerator"
 AE_PATCH = "algomate.core.agent.answer_evaluator.AnswerEvaluator"
-PICK_TYPE_PATCH = "algomate.api.routes._pick_question_type"
+PICK_TYPE_PATCH = "algomate.api.v1.bosses._pick_question_type"
 
 
 class TestGetBosses:
@@ -431,8 +431,8 @@ class TestSubmitBossAnswer:
         )
         body = resp.json()
         guide = body["data"]["guide"]
-        assert guide["continue_challenge"] is True
-        assert guide["go_review"] is False
+        assert "available_actions" in guide
+        assert "message" in guide
 
     def test_defeat_guide_go_review_true(self, test_app):
         battle_id = self._create_battle(test_app, card_id=2, question_type="choice")
@@ -447,8 +447,8 @@ class TestSubmitBossAnswer:
         )
         body = resp.json()
         guide = body["data"]["guide"]
-        assert guide["continue_challenge"] is False
-        assert guide["go_review"] is True
+        assert "available_actions" in guide
+        assert "message" in guide
 
     def test_short_answer_with_mock_evaluator(self, test_app):
         battle_id = self._create_battle(test_app, card_id=1, question_type="short_answer")

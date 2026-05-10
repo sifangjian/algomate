@@ -189,12 +189,6 @@ class AlgomateApp:
             allow_headers=["*"],
         )
 
-        from .api import routes
-        self.api_app.include_router(routes.router, prefix="/api")
-
-        from .api.hall_routes import router as hall_router
-        self.api_app.include_router(hall_router)
-
         from .api.v1.router import router as v1_router
         self.api_app.include_router(v1_router, prefix="/api/v1")
 
@@ -214,9 +208,6 @@ class AlgomateApp:
         self.api_app.include_router(dialogues_router)
         self.api_app.include_router(review_records_router)
         self.api_app.include_router(learning_progress_router)
-
-        from .api.dialogue_routes import dialogue_router
-        self.api_app.include_router(dialogue_router, prefix="/api/dialogue")
 
         logger.info("FastAPI server initialized")
 

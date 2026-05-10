@@ -1,9 +1,9 @@
 import api from './api'
 
 export const realmService = {
-  getAll: () => api.get('/realms'),
+  getAll: () => api.get('/v1/realms'),
 
-  getById: (id) => api.get(`/realms/${id}`),
+  getById: (id) => api.get(`/v1/realms/${id}`),
 
-  checkUnlock: (id) => api.post(`/realms/${id}/check-unlock`),
+  checkUnlock: (id) => api.post(`/v1/realms/${id}/check-unlock`),
 }
