@@ -291,7 +291,8 @@ class QuestionGenerator:
 请返回JSON格式：
 {{
     "question_type": "选择题",
-    "content": "试炼内容（包含选项A、B、C、D）",
+    "content": "题目内容（不要包含选项）",
+    "options": ["选项A内容", "选项B内容", "选项C内容", "选项D内容"],
     "answer": "正确答案（如：A）",
     "explanation": "解析"
 }}"""
@@ -299,7 +300,8 @@ class QuestionGenerator:
             result = self.chat_client.chat(messages)
             parsed = self._parse_json_response(result)
             if parsed and "question_type" in parsed:
-                parsed["options"] = self._extract_options(parsed.get("content", ""))
+                if "options" not in parsed or not parsed["options"]:
+                    parsed["options"] = self._extract_options(parsed.get("content", ""))
                 questions.append(parsed)
         return questions
 
