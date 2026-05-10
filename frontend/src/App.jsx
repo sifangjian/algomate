@@ -44,7 +44,7 @@ function AppContent() {
             <Route path="/" element={<HallPage />} />
             <Route path="/adventure" element={<AdventureMap />} />
             <Route path="/npc/:realmId" element={<NpcDialogue />} />
-            <Route path="/boss" element={<BossBattle />} />
+            <Route path="/boss/battle" element={<BossBattle />} />
             <Route path="/workshop" element={<CardWorkshop />} />
             <Route path="/daily-review" element={<DailyReview />} />
             <Route path="/settings" element={<Settings />} />

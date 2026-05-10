@@ -22,23 +22,23 @@ import { useGuideStore } from '../../../stores/guideStore'
 
 const GUIDE_BOTH_AVAILABLE = {
   available_actions: [
-    { action: 'continue_review', label: '继续修炼', target_path: '/review', available: true },
-    { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss', available: true },
+    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: true },
+    { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss/battle', available: true },
   ],
   message: '还有 1 张卡牌濒危，是否继续修炼？',
 }
 
 const GUIDE_CONTINUE_UNAVAILABLE = {
   available_actions: [
-    { action: 'continue_review', label: '继续修炼', target_path: '/review', available: false },
-    { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss', available: true },
+    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: false },
+    { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss/battle', available: true },
   ],
   message: '所有卡牌状态良好，去 Boss 战检验学习成果吧！',
 }
 
 const GUIDE_WITH_PARAMS = {
   available_actions: [
-    { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss', params: { card_id: 3 }, available: true },
+    { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss/battle', params: { cardId: 3 }, available: true },
   ],
   message: '所有卡牌状态良好，去 Boss 战检验学习成果吧！',
 }
@@ -73,25 +73,25 @@ describe('PostReviewGuide', () => {
     expect(screen.getByRole('button', { name: /去 Boss 战检验/ })).not.toBeNull()
   })
 
-  it('点击继续修炼应导航到 /review', async () => {
+  it('点击继续修炼应导航到 /daily-review', async () => {
     const user = userEvent.setup()
     render(<PostReviewGuide guide={GUIDE_BOTH_AVAILABLE} scene="after_review" />)
     await user.click(screen.getByRole('button', { name: /继续修炼/ }))
-    expect(mockNavigate).toHaveBeenCalledWith('/review')
+    expect(mockNavigate).toHaveBeenCalledWith('/daily-review')
   })
 
-  it('点击去 Boss 战检验应导航到 /boss', async () => {
+  it('点击去 Boss 战检验应导航到 /boss/battle', async () => {
     const user = userEvent.setup()
     render(<PostReviewGuide guide={GUIDE_BOTH_AVAILABLE} scene="after_review" />)
     await user.click(screen.getByRole('button', { name: /去 Boss 战检验/ }))
-    expect(mockNavigate).toHaveBeenCalledWith('/boss')
+    expect(mockNavigate).toHaveBeenCalledWith('/boss/battle')
   })
 
   it('点击带params的引导按钮应携带查询参数导航', async () => {
     const user = userEvent.setup()
     render(<PostReviewGuide guide={GUIDE_WITH_PARAMS} scene="after_review" />)
     await user.click(screen.getByRole('button', { name: /去 Boss 战检验/ }))
-    expect(mockNavigate).toHaveBeenCalledWith('/boss?card_id=3')
+    expect(mockNavigate).toHaveBeenCalledWith('/boss/battle?cardId=3')
   })
 
   it('应渲染跳过按钮', () => {

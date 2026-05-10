@@ -11,12 +11,12 @@ class TestBuildDialogueEndGuide:
         assert len(guide.available_actions) == 2
         assert guide.available_actions[0].action == "go_boss"
         assert guide.available_actions[0].label == "去 Boss 战巩固"
-        assert guide.available_actions[0].target_path == "/boss"
-        assert guide.available_actions[0].params == {"card_id": 1}
+        assert guide.available_actions[0].target_path == "/boss/battle"
+        assert guide.available_actions[0].params == {"cardId": 1}
         assert guide.available_actions[1].action == "go_workshop"
         assert guide.available_actions[1].label == "去卡牌工坊完善"
         assert guide.available_actions[1].target_path == "/workshop"
-        assert guide.available_actions[1].params == {"card_id": 1, "expand": True}
+        assert guide.available_actions[1].params == {"cardId": 1, "expand": True}
         assert "数组与双指针" in guide.message
 
     def test_card_none_returns_only_go_workshop(self):
@@ -32,8 +32,8 @@ class TestBuildDialogueEndGuide:
     def test_card_with_different_id(self):
         card = {"id": 42, "name": "二分查找"}
         guide = build_dialogue_end_guide(card=card)
-        assert guide.available_actions[0].params == {"card_id": 42}
-        assert guide.available_actions[1].params == {"card_id": 42, "expand": True}
+        assert guide.available_actions[0].params == {"cardId": 42}
+        assert guide.available_actions[1].params == {"cardId": 42, "expand": True}
         assert "二分查找" in guide.message
 
 
@@ -44,10 +44,10 @@ class TestBuildBossResultGuide:
         assert len(guide.available_actions) == 2
         assert guide.available_actions[0].action == "continue_challenge"
         assert guide.available_actions[0].label == "继续挑战"
-        assert guide.available_actions[0].target_path == "/boss"
+        assert guide.available_actions[0].target_path == "/boss/battle"
         assert guide.available_actions[1].action == "go_review"
         assert guide.available_actions[1].label == "去修炼巩固"
-        assert guide.available_actions[1].target_path == "/review"
+        assert guide.available_actions[1].target_path == "/daily-review"
         assert "成功" in guide.message
 
     def test_defeat_returns_go_review_and_go_dialogue(self):
@@ -56,7 +56,7 @@ class TestBuildBossResultGuide:
         assert len(guide.available_actions) == 2
         assert guide.available_actions[0].action == "go_review"
         assert guide.available_actions[0].label == "去修炼巩固"
-        assert guide.available_actions[0].target_path == "/review"
+        assert guide.available_actions[0].target_path == "/daily-review"
         assert guide.available_actions[1].action == "go_dialogue"
         assert guide.available_actions[1].label == "去重新修习"
         assert guide.available_actions[1].target_path == "/"
@@ -84,10 +84,10 @@ class TestBuildReviewCompleteGuide:
         continue_review = next(a for a in guide.available_actions if a.action == "continue_review")
         go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
         assert continue_review.label == "继续修炼"
-        assert continue_review.target_path == "/review"
+        assert continue_review.target_path == "/daily-review"
         assert continue_review.available is True
         assert go_boss.label == "去 Boss 战检验"
-        assert go_boss.target_path == "/boss"
+        assert go_boss.target_path == "/boss/battle"
         assert go_boss.available is True
         assert "3" in guide.message
 
@@ -109,7 +109,7 @@ class TestBuildReviewCompleteGuide:
         assert continue_review.available is False
         assert go_boss.available is True
         assert go_boss.label == "去 Boss 战检验"
-        assert go_boss.target_path == "/boss"
+        assert go_boss.target_path == "/boss/battle"
 
     def test_one_endangered_card(self):
         guide = build_review_complete_guide(remaining_endangered=1)

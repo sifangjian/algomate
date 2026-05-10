@@ -114,8 +114,8 @@ class TestDialogueEndGuidesFieldFormat:
         go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
         assert go_boss.action == "go_boss"
         assert go_boss.label == "去 Boss 战巩固"
-        assert go_boss.target_path == "/boss"
-        assert go_boss.params == {"card_id": 1}
+        assert go_boss.target_path == "/boss/battle"
+        assert go_boss.params == {"cardId": 1}
 
     def test_guides_go_workshop_action_structure(self):
         guide = GuideService().generate_guides(
@@ -126,7 +126,7 @@ class TestDialogueEndGuidesFieldFormat:
         assert go_workshop.action == "go_workshop"
         assert go_workshop.label == "去卡牌工坊完善"
         assert go_workshop.target_path == "/workshop"
-        assert go_workshop.params == {"card_id": 1, "expand": True}
+        assert go_workshop.params == {"cardId": 1, "expand": True}
 
     def test_guides_message_contains_card_name(self):
         guide = GuideService().generate_guides(
@@ -163,15 +163,15 @@ class TestDialogueEndGuidesFieldFormat:
                 {
                     "action": "go_boss",
                     "label": "去 Boss 战巩固",
-                    "target_path": "/boss",
-                    "params": {"card_id": 42},
+                    "target_path": "/boss/battle",
+                    "params": {"cardId": 42},
                     "available": True,
                 },
                 {
                     "action": "go_workshop",
                     "label": "去卡牌工坊完善",
                     "target_path": "/workshop",
-                    "params": {"card_id": 42, "expand": True},
+                    "params": {"cardId": 42, "expand": True},
                     "available": True,
                 },
             ],
@@ -211,7 +211,7 @@ class TestDialogueEndGuideDataBuild:
         assert result["available_actions"][0]["action"] == "go_workshop"
 
     def test_end_dialogue_guide_includes_card_id_in_params(self):
-        """引导动作的 params 应包含 card_id"""
+        """引导动作的 params 应包含 cardId"""
         card_dict = {"id": 99, "name": "测试卡牌"}
         guide = GuideService().generate_guides(
             scene="after_dialogue",
@@ -219,10 +219,10 @@ class TestDialogueEndGuideDataBuild:
         )
 
         go_boss = next(a for a in guide.available_actions if a.action == "go_boss")
-        assert go_boss.params["card_id"] == 99
+        assert go_boss.params["cardId"] == 99
 
         go_workshop = next(a for a in guide.available_actions if a.action == "go_workshop")
-        assert go_workshop.params["card_id"] == 99
+        assert go_workshop.params["cardId"] == 99
         assert go_workshop.params["expand"] is True
 
 

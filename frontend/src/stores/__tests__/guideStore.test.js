@@ -19,8 +19,8 @@ import { useGuideStore } from '../../stores/guideStore'
 
 const SAMPLE_GUIDE = {
   available_actions: [
-    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss', params: { card_id: 1 } },
-    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { card_id: 1, expand: true } },
+    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss/battle', params: { cardId: 1 } },
+    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { cardId: 1, expand: true } },
   ],
   message: '恭喜获得卡牌！',
 }

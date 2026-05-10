@@ -22,24 +22,24 @@ import { useGuideStore } from '../../../stores/guideStore'
 
 const GUIDE_TWO_AVAILABLE = {
   available_actions: [
-    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss', params: { card_id: 1 }, available: true },
-    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { card_id: 1, expand: true }, available: true },
+    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss/battle', params: { cardId: 1 }, available: true },
+    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { cardId: 1, expand: true }, available: true },
   ],
   message: '恭喜获得卡牌！',
 }
 
 const GUIDE_ONE_AVAILABLE_ONE_UNAVAILABLE = {
   available_actions: [
-    { action: 'go_boss', label: '去 Boss 战', target_path: '/boss', available: true },
-    { action: 'continue_review', label: '继续修炼', target_path: '/review', available: false },
+    { action: 'go_boss', label: '去 Boss 战', target_path: '/boss/battle', available: true },
+    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: false },
   ],
   message: '请选择下一步',
 }
 
 const GUIDE_ALL_UNAVAILABLE = {
   available_actions: [
-    { action: 'go_boss', label: '去 Boss 战', target_path: '/boss', available: false },
-    { action: 'continue_review', label: '继续修炼', target_path: '/review', available: false },
+    { action: 'go_boss', label: '去 Boss 战', target_path: '/boss/battle', available: false },
+    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: false },
   ],
   message: '请选择下一步',
 }
@@ -117,7 +117,7 @@ describe('GuideCard', () => {
 
     await user.click(screen.getByRole('button', { name: /去 Boss 战巩固/ }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/boss?card_id=1')
+    expect(mockNavigate).toHaveBeenCalledWith('/boss/battle?cardId=1')
   })
 
   it('点击带多参数的引导按钮应正确拼接查询参数', async () => {
@@ -126,7 +126,7 @@ describe('GuideCard', () => {
 
     await user.click(screen.getByRole('button', { name: /去卡牌工坊完善/ }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/workshop?card_id=1&expand=true')
+    expect(mockNavigate).toHaveBeenCalledWith('/workshop?cardId=1&expand=true')
   })
 
   it('shouldShowGuide返回false时不渲染', () => {

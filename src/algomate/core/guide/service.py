@@ -10,15 +10,15 @@ def build_dialogue_end_guide(card: Optional[Dict[str, Any]] = None, has_availabl
                 GuideAction(
                     action="go_boss",
                     label="去 Boss 战巩固",
-                    target_path="/boss",
-                    params={"card_id": card["id"]},
+                    target_path="/boss/battle",
+                    params={"cardId": card["id"]},
                     available=has_available_boss,
                 ),
                 GuideAction(
                     action="go_workshop",
                     label="去卡牌工坊完善",
                     target_path="/workshop",
-                    params={"card_id": card["id"], "expand": True},
+                    params={"cardId": card["id"], "expand": True},
                 ),
             ],
             message=f"恭喜获得卡牌「{card['name']}」！",
@@ -46,13 +46,13 @@ def build_boss_result_guide(
             GuideAction(
                 action="continue_challenge",
                 label="继续挑战",
-                target_path="/boss",
+                target_path="/boss/battle",
                 available=has_available_boss,
             ),
             GuideAction(
                 action="go_review",
                 label="去修炼巩固",
-                target_path="/review",
+                target_path="/daily-review",
             ),
         ]
         message = "挑战成功！"
@@ -61,7 +61,7 @@ def build_boss_result_guide(
             GuideAction(
                 action="go_review",
                 label="去修炼巩固",
-                target_path="/review",
+                target_path="/daily-review",
             ),
         ]
         if npc_id:
@@ -92,13 +92,13 @@ def build_review_complete_guide(remaining_endangered: int, has_due_tasks: bool =
             GuideAction(
                 action="continue_review",
                 label="继续修炼",
-                target_path="/review",
+                target_path="/daily-review",
                 available=continue_available,
             ),
             GuideAction(
                 action="go_boss",
                 label="去 Boss 战检验",
-                target_path="/boss",
+                target_path="/boss/battle",
                 available=True,
             ),
         ],

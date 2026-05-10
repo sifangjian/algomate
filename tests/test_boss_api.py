@@ -291,11 +291,11 @@ def test_submit_victory_guide_contains_continue_challenge_and_go_review(client, 
     assert "go_review" in action_names
     continue_action = next(a for a in actions if a["action"] == "continue_challenge")
     assert continue_action["label"] == "继续挑战"
-    assert continue_action["target_path"] == "/boss"
+    assert continue_action["target_path"] == "/boss/battle"
     assert continue_action["available"] is True
     go_review_action = next(a for a in actions if a["action"] == "go_review")
     assert go_review_action["label"] == "去修炼巩固"
-    assert go_review_action["target_path"] == "/review"
+    assert go_review_action["target_path"] == "/daily-review"
     assert "成功" in guide["message"]
 
 

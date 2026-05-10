@@ -22,16 +22,16 @@ import { useGuideStore } from '../../../stores/guideStore'
 
 const GUIDE_WITH_TWO_ACTIONS = {
   available_actions: [
-    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss', params: { card_id: 1 }, available: true },
-    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { card_id: 1, expand: true }, available: true },
+    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss/battle', params: { cardId: 1 }, available: true },
+    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { cardId: 1, expand: true }, available: true },
   ],
   message: '恭喜获得卡牌「背包问题」！',
 }
 
 const GUIDE_WITH_BOSS_UNAVAILABLE = {
   available_actions: [
-    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss', params: { card_id: 1 }, available: false },
-    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { card_id: 1, expand: true }, available: true },
+    { action: 'go_boss', label: '去 Boss 战巩固', target_path: '/boss/battle', params: { cardId: 1 }, available: false },
+    { action: 'go_workshop', label: '去卡牌工坊完善', target_path: '/workshop', params: { cardId: 1, expand: true }, available: true },
   ],
   message: '恭喜获得卡牌「背包问题」！',
 }
@@ -169,10 +169,10 @@ describe('PostDialogueGuide', () => {
 
     await user.click(screen.getByRole('button', { name: /去 Boss 战巩固/ }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/boss?card_id=1')
+    expect(mockNavigate).toHaveBeenCalledWith('/boss/battle?cardId=1')
   })
 
-  it('点击 go_workshop 按钮跳转并携带 card_id 和 expand 参数', async () => {
+  it('点击 go_workshop 按钮跳转并携带 cardId 和 expand 参数', async () => {
     useGuideStore.mockReturnValue({
       currentGuide: GUIDE_WITH_TWO_ACTIONS,
       visible: true,
@@ -185,7 +185,7 @@ describe('PostDialogueGuide', () => {
 
     await user.click(screen.getByRole('button', { name: /去卡牌工坊完善/ }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/workshop?card_id=1&expand=true')
+    expect(mockNavigate).toHaveBeenCalledWith('/workshop?cardId=1&expand=true')
   })
 
   it('渲染引导消息文本', () => {

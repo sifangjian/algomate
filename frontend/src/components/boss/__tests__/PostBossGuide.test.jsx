@@ -22,15 +22,15 @@ import { useGuideStore } from '../../../stores/guideStore'
 
 const victoryGuide = {
   available_actions: [
-    { action: 'continue_challenge', label: '继续挑战', target_path: '/boss', params: null, available: true },
-    { action: 'go_review', label: '去修炼巩固', target_path: '/review', params: null, available: true },
+    { action: 'continue_challenge', label: '继续挑战', target_path: '/boss/battle', params: null, available: true },
+    { action: 'go_review', label: '去修炼巩固', target_path: '/daily-review', params: null, available: true },
   ],
   message: '挑战成功！',
 }
 
 const defeatGuide = {
   available_actions: [
-    { action: 'go_review', label: '去修炼巩固', target_path: '/review', params: null, available: true },
+    { action: 'go_review', label: '去修炼巩固', target_path: '/daily-review', params: null, available: true },
     { action: 'go_dialogue', label: '去重新修习', target_path: '/', params: { npc_id: 2 }, available: true },
   ],
   message: '挑战失败，建议修炼巩固',
@@ -69,16 +69,16 @@ describe('PostBossGuide', () => {
 
     await user.click(screen.getByRole('button', { name: /继续挑战/ }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/boss')
+    expect(mockNavigate).toHaveBeenCalledWith('/boss/battle')
   })
 
-  it('点击"去修炼巩固"按钮应导航到/review', async () => {
+  it('点击"去修炼巩固"按钮应导航到/daily-review', async () => {
     const user = userEvent.setup()
     render(<PostBossGuide guide={victoryGuide} scene="after_boss" />)
 
     await user.click(screen.getByRole('button', { name: /去修炼巩固/ }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/review')
+    expect(mockNavigate).toHaveBeenCalledWith('/daily-review')
   })
 
   it('点击带params的引导按钮应携带查询参数导航', async () => {
@@ -93,8 +93,8 @@ describe('PostBossGuide', () => {
   it('available为false的按钮不渲染', () => {
     const guideWithDisabled = {
       available_actions: [
-        { action: 'continue_challenge', label: '继续挑战', target_path: '/boss', params: null, available: false },
-        { action: 'go_review', label: '去修炼巩固', target_path: '/review', params: null, available: true },
+        { action: 'continue_challenge', label: '继续挑战', target_path: '/boss/battle', params: null, available: false },
+        { action: 'go_review', label: '去修炼巩固', target_path: '/daily-review', params: null, available: true },
       ],
       message: '挑战成功！',
     }
@@ -149,8 +149,8 @@ describe('PostBossGuide', () => {
   it('无可引导目标时（所有available为false）不渲染引导按钮', () => {
     const guideAllUnavailable = {
       available_actions: [
-        { action: 'continue_challenge', label: '继续挑战', target_path: '/boss', params: null, available: false },
-        { action: 'go_review', label: '去修炼巩固', target_path: '/review', params: null, available: false },
+        { action: 'continue_challenge', label: '继续挑战', target_path: '/boss/battle', params: null, available: false },
+        { action: 'go_review', label: '去修炼巩固', target_path: '/daily-review', params: null, available: false },
       ],
       message: '挑战成功！',
     }
