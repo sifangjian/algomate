@@ -24,7 +24,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from algomate.data.database import Database
 from algomate.models.cards import Card
-from algomate.core.memory.forgotten_curve import ForgottenCurveEngine
+from algomate.core.memory.forgetting_curve import ForgettingCurveEngine
 from algomate.core.game.durability import DurabilityManager, DurabilityAction
 from algomate.core.game.difficulty import DifficultyManager, DifficultyLevel
 from algomate.config.settings import AppConfig
@@ -85,7 +85,7 @@ class ReviewScheduler:
     
     Attributes:
         db: 数据库实例
-        forgotten_curve_engine: 遗忘曲线引擎
+        forgetting_curve_engine: 遗忘曲线引擎
         durability_manager: 耐久度管理器
         difficulty_manager: 难度管理器
         config: 应用配置
@@ -104,7 +104,7 @@ class ReviewScheduler:
         """
         self.db = db or Database.get_instance()
         self.config = config or AppConfig.load()
-        self.forgotten_curve_engine = ForgottenCurveEngine()
+        self.forgetting_curve_engine = ForgettingCurveEngine()
         self.durability_manager = DurabilityManager()
         self.difficulty_manager = DifficultyManager()
         self._scheduler = None
@@ -193,11 +193,11 @@ class ReviewScheduler:
                 ))
                 task_counter += 1
             
-            due_cards = self.forgotten_curve_engine.get_daily_review_tasks(all_cards)
+            due_cards = self.forgetting_curve_engine.get_daily_review_tasks(all_cards)
             
             for card in due_cards:
                 if card not in critical_cards:
-                    review_status = self.forgotten_curve_engine.get_review_status(
+                    review_status = self.forgetting_curve_engine.get_review_status(
                         card.created_at,
                         card.last_reviewed,
                         getattr(card, 'review_level', 0)
@@ -288,7 +288,7 @@ class ReviewScheduler:
             upcoming_reviews = []
             
             for card in all_cards:
-                review_status = self.forgotten_curve_engine.get_review_status(
+                review_status = self.forgetting_curve_engine.get_review_status(
                     card.created_at,
                     card.last_reviewed,
                     getattr(card, 'review_level', 0)
@@ -365,7 +365,7 @@ class ReviewScheduler:
                 if not c.pending_retake and self.durability_manager.is_critical(c.durability)
             ])
             
-            due_cards = self.forgotten_curve_engine.get_daily_review_tasks([
+            due_cards = self.forgetting_curve_engine.get_daily_review_tasks([
                 c for c in all_cards if not c.pending_retake
             ])
             
@@ -407,7 +407,7 @@ class ReviewScheduler:
                 if self.durability_manager.is_critical(card.durability):
                     algorithm_type_stats[card.algorithm_type]["critical_count"] += 1
                 
-                review_status = self.forgotten_curve_engine.get_review_status(
+                review_status = self.forgetting_curve_engine.get_review_status(
                     card.created_at,
                     card.last_reviewed,
                     getattr(card, 'review_level', 0)

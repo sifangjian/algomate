@@ -14,7 +14,7 @@ from algomate.models.notes import Note
 from algomate.models.cards import Card
 from algomate.models.review_records import ReviewRecord
 from algomate.models.questions import Question
-from algomate.core.memory.forgotten_curve import ForgottenCurveEngine
+from algomate.core.memory.forgetting_curve import ForgettingCurveEngine
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ ALGORITHM_TYPE_TO_DOMAIN = {
     "数学": MATH_HALL,
 }
 
-forgotten_curve = ForgottenCurveEngine()
+forgetting_curve = ForgettingCurveEngine()
 
 
 def _map_difficulty(note_difficulty: str) -> int:
@@ -122,7 +122,7 @@ def migrate_notes_to_cards():
                 if note.last_reviewed:
                     card.last_reviewed = note.last_reviewed
 
-                card.review_level = forgotten_curve.calculate_review_level_from_history(
+                card.review_level = forgetting_curve.calculate_review_level_from_history(
                     card.created_at, card.last_reviewed, card.review_count
                 )
 
@@ -154,7 +154,7 @@ def migrate_notes_to_cards():
                     last_reviewed=note.last_reviewed,
                     pending_retake=(note.mastery_level == 0) if note.mastery_level is not None else False,
                 )
-                new_card.review_level = forgotten_curve.calculate_review_level_from_history(
+                new_card.review_level = forgetting_curve.calculate_review_level_from_history(
                     new_card.created_at, new_card.last_reviewed, new_card.review_count
                 )
                 session.add(new_card)

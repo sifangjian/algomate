@@ -15,7 +15,7 @@ from ..data.database import Database
 from ..data.repositories.review_repo import ReviewRecordRepository
 from algomate.models import ReviewRecord
 from algomate.models.cards import Card
-from ..core.memory.forgotten_curve import ForgottenCurveEngine
+from ..core.memory.forgetting_curve import ForgettingCurveEngine
 
 
 class ReviewPlanService:
@@ -30,7 +30,7 @@ class ReviewPlanService:
     Attributes:
         db: 数据库实例
         review_repo: 修炼记录仓库
-        forgotten_curve: 遗忘曲线算法
+        forgetting_curve: 遗忘曲线算法
     """
 
     def __init__(self, db: Database = None):
@@ -41,7 +41,7 @@ class ReviewPlanService:
         """
         self.db = db or Database.get_instance()
         self.review_repo = ReviewRecordRepository(self.db)
-        self.forgotten_curve = ForgottenCurveEngine()
+        self.forgetting_curve = ForgettingCurveEngine()
 
     def get_today_review_plan(self, target_date: date = None) -> List[Dict[str, Any]]:
         """获取今日修炼计划
@@ -207,7 +207,7 @@ class ReviewPlanService:
         card_id: int,
         review_type: str = "content_review"
     ) -> Optional[Dict[str, Any]]:
-        from ..core.memory.forgotten_curve import ReviewAction
+        from ..core.memory.forgetting_curve import ReviewAction
 
         session = self.db.get_session()
         try:
@@ -229,7 +229,7 @@ class ReviewPlanService:
             for record in pending_records:
                 record.status = "completed"
 
-            self.forgotten_curve.complete_review_for_card(
+            self.forgetting_curve.complete_review_for_card(
                 card, ReviewAction.SUCCESS
             )
 
@@ -303,7 +303,7 @@ class ReviewPlanService:
             for record in pending_records:
                 record.status = "skipped"
 
-            short_interval = self.forgotten_curve.intervals[0]
+            short_interval = self.forgetting_curve.intervals[0]
             next_review = datetime.now() + timedelta(days=short_interval)
             card.next_review_date = next_review
 
@@ -424,7 +424,7 @@ class ReviewPlanService:
             now = datetime.now()
             current_level = card.review_level
 
-            for i, interval in enumerate(self.forgotten_curve.intervals):
+            for i, interval in enumerate(self.forgetting_curve.intervals):
                 level = i + 1
                 if level <= current_level:
                     continue

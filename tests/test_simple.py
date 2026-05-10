@@ -13,8 +13,8 @@ sys.path.insert(0, "f:\\workspace\\python\\algomate\\src")
 
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 
-from algomate.core.memory.forgotten_curve import (
-    ForgottenCurveEngine,
+from algomate.core.memory.forgetting_curve import (
+    ForgettingCurveEngine,
     ReviewAction,
     calculate_next_review,
     get_review_interval,
@@ -52,13 +52,13 @@ class MockCard:
     pending_retake: bool = False
 
 
-def test_forgotten_curve():
+def test_forgetting_curve():
     """测试遗忘曲线引擎"""
     print("=" * 60)
     print("测试 M3.1 遗忘曲线引擎")
     print("=" * 60)
     
-    engine = ForgottenCurveEngine()
+    engine = ForgettingCurveEngine()
     
     print("\n1. 测试获取修炼间隔")
     assert engine.get_review_interval(0) == 0, "修炼等级0失败"
@@ -233,7 +233,7 @@ def main():
     print("=" * 60)
     
     try:
-        test_forgotten_curve()
+        test_forgetting_curve()
         test_durability()
         test_realm_unlock()
         test_difficulty()

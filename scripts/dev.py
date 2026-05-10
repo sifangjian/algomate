@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Algomate 统一启动脚本
+Algomate 开发环境统一启动脚本
 
-同时启动前端（Vite）和后端（FastAPI）服务。
+同时启动前端（Vite）和后端（FastAPI）服务，供开发调试使用。
 
 Usage:
-    python main.py              # 启动全部服务（前端 + 后端）
-    python main.py --backend    # 仅启动后端
-    python main.py --frontend    # 仅启动前端
+    python scripts/dev.py              # 启动全部服务（前端 + 后端）
+    python scripts/dev.py --backend    # 仅启动后端
+    python scripts/dev.py --frontend   # 仅启动前端
 """
 
 import argparse
@@ -46,7 +46,7 @@ def start_backend():
     print("启动后端服务 (FastAPI)...")
     print("=" * 50)
 
-    backend_dir = os.path.join(os.path.dirname(__file__), "src")
+    backend_dir = os.path.join(os.path.dirname(__file__), "..", "src")
 
     startupinfo = None
     if sys.platform == "win32":
@@ -74,7 +74,7 @@ def start_frontend():
     print("启动前端服务 (Vite)...")
     print("=" * 50)
 
-    frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
+    frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
     if not os.path.exists(os.path.join(frontend_dir, "node_modules")):
         print("正在安装前端依赖...")
@@ -110,7 +110,7 @@ def start_frontend():
 def main():
     global processes
 
-    parser = argparse.ArgumentParser(description="Algomate 统一启动脚本")
+    parser = argparse.ArgumentParser(description="Algomate 开发环境启动脚本")
     parser.add_argument(
         "--backend",
         action="store_true",

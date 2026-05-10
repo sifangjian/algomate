@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from datetime import datetime, date, timedelta
 
 from algomate.core.scheduler.review_scheduler import ReviewTask, TaskType, PRIORITY_ORDER
-from algomate.core.memory.forgotten_curve import ReviewAction
+from algomate.core.memory.forgetting_curve import ReviewAction
 
 
 class TestCompleteReview:
@@ -13,7 +13,7 @@ class TestCompleteReview:
         self.mock_db.get_session.return_value = self.mock_session
 
     @patch("algomate.review.review_plan_service.ReviewRecord")
-    @patch("algomate.review.review_plan_service.ForgottenCurveEngine")
+    @patch("algomate.review.review_plan_service.ForgettingCurveEngine")
     @patch("algomate.review.review_plan_service.ReviewRecordRepository")
     def test_complete_review_accepts_review_type(self, MockRepo, MockCurve, MockRecord):
         from algomate.review.review_plan_service import ReviewPlanService
@@ -37,7 +37,7 @@ class TestCompleteReview:
         assert result["review_type"] == "content_review"
 
     @patch("algomate.review.review_plan_service.ReviewRecord")
-    @patch("algomate.review.review_plan_service.ForgottenCurveEngine")
+    @patch("algomate.review.review_plan_service.ForgettingCurveEngine")
     @patch("algomate.review.review_plan_service.ReviewRecordRepository")
     def test_complete_review_records_durability_and_review_level(self, MockRepo, MockCurve, MockRecord):
         from algomate.review.review_plan_service import ReviewPlanService
@@ -75,7 +75,7 @@ class TestCompleteReview:
         assert result["review_level_after"] == 3
 
     @patch("algomate.review.review_plan_service.ReviewRecord")
-    @patch("algomate.review.review_plan_service.ForgottenCurveEngine")
+    @patch("algomate.review.review_plan_service.ForgettingCurveEngine")
     @patch("algomate.review.review_plan_service.ReviewRecordRepository")
     def test_complete_review_calculates_remaining_endangered(self, MockRepo, MockCurve, MockRecord):
         from algomate.review.review_plan_service import ReviewPlanService
@@ -98,7 +98,7 @@ class TestCompleteReview:
         assert result["remaining_endangered"] == 7
 
     @patch("algomate.review.review_plan_service.ReviewRecord")
-    @patch("algomate.review.review_plan_service.ForgottenCurveEngine")
+    @patch("algomate.review.review_plan_service.ForgettingCurveEngine")
     @patch("algomate.review.review_plan_service.ReviewRecordRepository")
     def test_complete_review_returns_none_for_missing_card(self, MockRepo, MockCurve, MockRecord):
         from algomate.review.review_plan_service import ReviewPlanService
@@ -111,7 +111,7 @@ class TestCompleteReview:
         assert result is None
 
     @patch("algomate.review.review_plan_service.ReviewRecord")
-    @patch("algomate.review.review_plan_service.ForgottenCurveEngine")
+    @patch("algomate.review.review_plan_service.ForgettingCurveEngine")
     @patch("algomate.review.review_plan_service.ReviewRecordRepository")
     def test_complete_review_always_uses_success_action(self, MockRepo, MockCurve, MockRecord):
         from algomate.review.review_plan_service import ReviewPlanService
@@ -139,7 +139,7 @@ class TestCompleteReview:
         )
 
     @patch("algomate.review.review_plan_service.ReviewRecord")
-    @patch("algomate.review.review_plan_service.ForgottenCurveEngine")
+    @patch("algomate.review.review_plan_service.ForgettingCurveEngine")
     @patch("algomate.review.review_plan_service.ReviewRecordRepository")
     def test_complete_review_creates_review_record_with_new_fields(self, MockRepo, MockCurve, MockRecord):
         from algomate.review.review_plan_service import ReviewPlanService
@@ -181,7 +181,7 @@ class TestCompleteReview:
         assert call_kwargs["review_level_after"] == 2
 
     @patch("algomate.review.review_plan_service.ReviewRecord")
-    @patch("algomate.review.review_plan_service.ForgottenCurveEngine")
+    @patch("algomate.review.review_plan_service.ForgettingCurveEngine")
     @patch("algomate.review.review_plan_service.ReviewRecordRepository")
     def test_complete_review_default_review_type(self, MockRepo, MockCurve, MockRecord):
         from algomate.review.review_plan_service import ReviewPlanService

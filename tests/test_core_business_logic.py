@@ -17,8 +17,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from algomate.core.memory.forgotten_curve import (
-    ForgottenCurveEngine,
+from algomate.core.memory.forgetting_curve import (
+    ForgettingCurveEngine,
     ReviewAction,
     ReviewResult,
     calculate_next_review,
@@ -71,12 +71,12 @@ class MockCard:
     next_review_date: datetime = None
 
 
-class TestForgottenCurveEngine:
+class TestForgettingCurveEngine:
     """遗忘曲线引擎测试"""
     
     def test_get_review_interval(self):
         """测试获取修炼间隔"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         
         assert engine.get_review_interval(0) == 0
         assert engine.get_review_interval(1) == 1
@@ -88,7 +88,7 @@ class TestForgottenCurveEngine:
     
     def test_get_review_interval_invalid_level(self):
         """测试无效修炼等级"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         
         with pytest.raises(ValueError):
             engine.get_review_interval(-1)
@@ -98,7 +98,7 @@ class TestForgottenCurveEngine:
     
     def test_calculate_next_review_success(self):
         """测试修炼成功后的下次修炼时间"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
         next_review, new_level = engine.calculate_next_review(
@@ -110,7 +110,7 @@ class TestForgottenCurveEngine:
     
     def test_calculate_next_review_fail(self):
         """测试修炼失败后的下次修炼时间"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
         next_review, new_level = engine.calculate_next_review(
@@ -122,7 +122,7 @@ class TestForgottenCurveEngine:
     
     def test_calculate_next_review_max_level(self):
         """测试最高等级修炼成功"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
         next_review, new_level = engine.calculate_next_review(
@@ -133,7 +133,7 @@ class TestForgottenCurveEngine:
     
     def test_calculate_next_review_min_level(self):
         """测试最低等级修炼失败"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         last_reviewed = datetime(2024, 1, 1, 10, 0)
         
         next_review, new_level = engine.calculate_next_review(
@@ -144,14 +144,14 @@ class TestForgottenCurveEngine:
     
     def test_should_review_never_reviewed(self):
         """测试从未修炼的卡牌"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         created_at = datetime.now() - timedelta(days=2)
         
         assert engine.should_review(created_at, None, 0) is True
     
     def test_should_review_recently_reviewed(self):
         """测试刚修炼过的卡牌"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         created_at = datetime(2024, 1, 1, 10, 0)
         last_reviewed = datetime.now() - timedelta(hours=12)
         
@@ -159,7 +159,7 @@ class TestForgottenCurveEngine:
     
     def test_get_daily_review_tasks(self):
         """测试获取今日修炼任务"""
-        engine = ForgottenCurveEngine()
+        engine = ForgettingCurveEngine()
         
         cards = [
             MockCard(

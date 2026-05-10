@@ -29,7 +29,7 @@ from .core.agent.chat_client import ChatClient
 from .core.agent.content_analyzer import ContentAnalyzer
 from .core.agent.question_generator import QuestionGenerator
 from .core.agent.weak_point_analyzer import WeakPointAnalyzer
-from .core.memory.forgotten_curve import ForgottenCurveEngine
+from .core.memory.forgetting_curve import ForgettingCurveEngine
 from .core.scheduler.review_scheduler import ReviewScheduler
 from .core.scheduler.email_sender import EmailSender
 
@@ -81,7 +81,7 @@ class AlgomateApp:
         content_analyzer: 内容分析器
         question_generator: 试炼生成器
         weak_point_analyzer: 薄弱点分析器
-        forgotten_curve: 遗忘曲线算法
+        forgetting_curve: 遗忘曲线算法
         review_scheduler: 修炼调度器
     """
 
@@ -98,7 +98,7 @@ class AlgomateApp:
         self.content_analyzer = None
         self.question_generator = None
         self.weak_point_analyzer = None
-        self.forgotten_curve = None
+        self.forgetting_curve = None
         self.review_scheduler = None
         self.api_server = None
         self.api_server_thread = None
@@ -124,7 +124,7 @@ class AlgomateApp:
         self.content_analyzer = ContentAnalyzer(self.chat_client)
         self.question_generator = QuestionGenerator(self.chat_client)
         self.weak_point_analyzer = WeakPointAnalyzer(self.db)
-        self.forgotten_curve = ForgottenCurveEngine()
+        self.forgetting_curve = ForgettingCurveEngine()
         logger.info("AI components initialized")
 
     def start_review_scheduler(self):
