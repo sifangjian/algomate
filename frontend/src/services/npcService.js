@@ -17,10 +17,6 @@ export const npcService = {
     return api.get(`/v1/npcs/${realmId}`)
   },
 
-  getUnlockedNpcs: () => api.get('/v1/npcs'),
-
-  getAllNpcs: () => api.get('/v1/npcs'),
-
   getAlgorithmInfo: () => api.get('/v1/algorithm-info'),
 
   chat: (npcId, message, sessionId) =>

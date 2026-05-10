@@ -12,7 +12,6 @@ import { useSettingsStore } from './stores/settingsStore'
 const AdventureMap = lazy(() => import('./pages/AdventureMap'))
 const HallPage = lazy(() => import('./pages/HallPage'))
 const NpcDialogue = lazy(() => import('./pages/NpcDialogue'))
-const KnowledgeSpring = lazy(() => import('./pages/KnowledgeSpring'))
 const BossBattle = lazy(() => import('./pages/BossBattle'))
 const CardWorkshop = lazy(() => import('./pages/CardWorkshop'))
 const DailyReview = lazy(() => import('./pages/DailyReview'))
@@ -44,7 +43,6 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<HallPage />} />
             <Route path="/adventure" element={<AdventureMap />} />
-            <Route path="/knowledge-spring" element={<KnowledgeSpring />} />
             <Route path="/npc/:realmId" element={<NpcDialogue />} />
             <Route path="/boss" element={<BossBattle />} />
             <Route path="/workshop" element={<CardWorkshop />} />

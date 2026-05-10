@@ -154,38 +154,6 @@ async def get_npcs():
         session.close()
 
 
-@router.get("/unlocked", response_model=list[NPCResponse])
-async def get_unlocked_npcs():
-    from algomate.data.database import Database
-    from algomate.models.cards import Card
-    from sqlalchemy import distinct
-    
-    db = Database.get_instance()
-    session = db.get_session()
-    try:
-        unlocked_algorithm_types = session.query(distinct(Card.algorithm_type)).filter(Card.pending_retake == False).all()
-        unlocked_algorithm_types = [d[0] for d in unlocked_algorithm_types]
-        
-        npcs = session.query(NPC).filter(NPC.algorithm_type.in_(unlocked_algorithm_types)).all()
-        result = []
-        for npc in npcs:
-            npc_dict = {
-                "id": npc.id,
-                "name": npc.name,
-                "title": npc.title or "",
-                "algorithm_type": npc.algorithm_type or npc.domain or "",
-                "specialties": parse_specialties(npc.specialties),
-                "avatar": npc.avatar or "",
-                "description": npc.description or "",
-                "topics": parse_topics(npc.topics),
-                "card_count": 0,
-            }
-            result.append(NPCResponse(**npc_dict))
-        return result
-    finally:
-        session.close()
-
-
 @router.get("/{npc_id}", response_model=NPCResponse)
 async def get_npc(npc_id: int):
     from algomate.data.database import Database
