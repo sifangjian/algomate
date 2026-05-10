@@ -48,34 +48,34 @@
   margin: 0;
 }
 
-.detailTopics {
+.specialtyList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm, 8px);
+  gap: var(--spacing-xs, 4px);
 }
 
-.detailTopics h4 {
-  font-size: var(--font-size-sm, 14px);
-  font-weight: var(--font-weight-semibold, 600);
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-.topicItem {
+.specialtyItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-sm, 8px) 0;
   border-bottom: 1px solid var(--border-color);
   font-size: var(--font-size-sm, 14px);
-  color: var(--color-text-secondary);
 }
 
-.topicItem:last-child {
+.specialtyItem:last-child {
   border-bottom: none;
 }
 
-.topicBadge {
+.specialtyTag {
+  color: var(--color-text-secondary);
+  background: rgba(99, 102, 241, 0.08);
+  padding: 2px var(--spacing-sm, 8px);
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--font-size-xs, 12px);
+}
+
+.specialtyBadge {
   padding: 2px var(--spacing-sm, 8px);
   border-radius: var(--radius-full, 9999px);
   background: rgba(99, 102, 241, 0.1);

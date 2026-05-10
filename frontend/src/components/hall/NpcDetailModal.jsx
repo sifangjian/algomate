@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useHallStore } from '../../stores/hallStore'
 import Modal from '../ui/Modal/Modal'
 import NpcAvatar from './NpcAvatar'
-import SpecialtyTags from './SpecialtyTags'
 import Button from '../ui/Button/Button'
 import { showToast } from '../ui/Toast/index'
 import styles from './NpcDetailModal.module.css'
@@ -53,19 +52,19 @@ export default function NpcDetailModal() {
           )}
           <div className={styles.detailSpecialties}>
             <h4>专长领域</h4>
-            <SpecialtyTags specialties={selectedNpc.specialties} />
-          </div>
-          {selectedNpc.topics && selectedNpc.topics.length > 0 && (
-            <div className={styles.detailTopics}>
-              <h4>修习话题</h4>
-              {selectedNpc.topics.map(topic => (
-                <div key={topic.name || topic} className={styles.topicItem}>
-                  <span>{topic.name || topic}</span>
-                  {topic.has_card && <span className={styles.topicBadge}>已获卡牌</span>}
-                </div>
-              ))}
+            <div className={styles.specialtyList}>
+              {selectedNpc.specialties.map((spec, index) => {
+                const topicInfo = selectedNpc.topics?.find(t => (t.name || t) === spec)
+                const hasCard = topicInfo?.has_card
+                return (
+                  <div key={spec || index} className={styles.specialtyItem}>
+                    <span className={styles.specialtyTag}>{spec}</span>
+                    {hasCard && <span className={styles.specialtyBadge}>已获卡牌</span>}
+                  </div>
+                )
+              })}
             </div>
-          )}
+          </div>
           {selectedNpc.card_count > 0 && (
             <div className={styles.detailCardCount}>
               已获 {selectedNpc.card_count} 张卡牌
