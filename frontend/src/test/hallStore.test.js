@@ -115,13 +115,15 @@ describe('hallStore', () => {
   describe('fetchNpcs', () => {
     it('应成功获取 NPC 列表和学习路径', async () => {
       const mockData = {
-        npcs: [
-          { id: 1, name: '老夫子', algorithm_type: 'basic_data_structure' },
-          { id: 2, name: '栈语者', algorithm_type: 'stack_queue_search' },
-        ],
-        learning_path: [
-          { order: 1, npc_name: '老夫子', stage: '基础入门' },
-        ],
+        data: {
+          npcs: [
+            { id: 1, name: '老夫子', algorithm_type: 'basic_data_structure' },
+            { id: 2, name: '栈语者', algorithm_type: 'stack_queue_search' },
+          ],
+          learning_path: [
+            { order: 1, npc_name: '老夫子', stage: '基础入门' },
+          ],
+        },
       }
       mockGetAll.mockResolvedValue(mockData)
 
@@ -136,7 +138,7 @@ describe('hallStore', () => {
     })
 
     it('应传递筛选参数给 API', async () => {
-      mockGetAll.mockResolvedValue({ npcs: [], learning_path: [] })
+      mockGetAll.mockResolvedValue({ data: { npcs: [], learning_path: [] } })
       useHallStore.setState({ filters: { algorithm_type: 'tree', keyword: '树' } })
 
       const { fetchNpcs } = useHallStore.getState()
@@ -161,11 +163,13 @@ describe('hallStore', () => {
   describe('fetchNpcDetail', () => {
     it('应成功获取 NPC 详情', async () => {
       const mockDetail = {
-        id: 1,
-        name: '老夫子',
-        title: '基础数据结构导师',
-        specialties: ['数组与双指针', '链表', '哈希表'],
-        card_count: 2,
+        data: {
+          id: 1,
+          name: '老夫子',
+          title: '基础数据结构导师',
+          specialties: ['数组与双指针', '链表', '哈希表'],
+          card_count: 2,
+        },
       }
       mockGetById.mockResolvedValue(mockDetail)
 
@@ -181,11 +185,13 @@ describe('hallStore', () => {
   describe('fetchStats', () => {
     it('应成功获取统计数据', async () => {
       const mockStats = {
-        total_cards: 5,
-        endangered_cards: 1,
-        pending_retake_cards: 0,
-        cards_by_type: { basic_data_structure: 3 },
-        is_new_user: false,
+        data: {
+          total_cards: 5,
+          endangered_cards: 1,
+          pending_retake_cards: 0,
+          cards_by_type: { basic_data_structure: 3 },
+          is_new_user: false,
+        },
       }
       mockGetHallStats.mockResolvedValue(mockStats)
 

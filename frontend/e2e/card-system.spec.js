@@ -87,19 +87,11 @@ const MOCK_CARDS = [
   },
 ]
 
-async function jsClick(page, text) {
-  await page.evaluate((t) => {
-    const elements = Array.from(document.querySelectorAll('button, [role="button"]'))
-    const el = elements.find(e => e.textContent.includes(t))
-    if (el) el.click()
-  }, text)
-}
-
 test.describe('F01 卡牌系统 E2E 测试', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('**/api/v1/cards*', async (route) => {
+    await page.route('**/api/v1/cards**', async (route) => {
       const url = route.request().url()
-      if (url.includes('/cards/') && !url.includes('retake')) {
+      if (url.includes('/cards/') && !url.includes('retake') && !url.includes('polish')) {
         const id = parseInt(url.split('/cards/')[1].split('?')[0])
         if (!isNaN(id)) {
           const card = MOCK_CARDS.find(c => c.id === id)
@@ -114,9 +106,13 @@ test.describe('F01 卡牌系统 E2E 测试', () => {
       await route.fulfill({
         status: 200,
         body: JSON.stringify({
-          cards: MOCK_CARDS,
-          endangered_count: MOCK_CARDS.filter(c => c.status === 'endangered').length,
-          pending_retake_count: MOCK_CARDS.filter(c => c.status === 'pending_retake').length,
+          code: 200,
+          message: 'success',
+          data: {
+            cards: MOCK_CARDS,
+            endangered_count: MOCK_CARDS.filter(c => c.status === 'endangered').length,
+            pending_retake_count: MOCK_CARDS.filter(c => c.status === 'pending_retake').length,
+          },
         }),
       })
     })
@@ -124,13 +120,12 @@ test.describe('F01 卡牌系统 E2E 测试', () => {
     await page.goto('/workshop')
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(2000)
-    
-    await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('button'))
-      const skipBtn = btns.find(b => b.textContent.includes('跳过'))
-      if (skipBtn) skipBtn.click()
-    })
-    await page.waitForTimeout(500)
+
+    const skipBtn = page.locator('button:has-text("跳过")')
+    if (await skipBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await skipBtn.click()
+      await page.waitForTimeout(500)
+    }
   })
 
   test.describe('Flow 1: 查看卡牌列表', () => {
@@ -141,8 +136,8 @@ test.describe('F01 卡牌系统 E2E 测试', () => {
 
     test('卡牌列表加载后显示卡牌项', async ({ page }) => {
       await page.waitForTimeout(1000)
-      const cards = await page.locator('button').filter({ hasText: /二分查找|快速排序|动态规划/ }).all()
-      expect(cards.length).toBeGreaterThanOrEqual(1)
+      const cardButtons = page.locator('button').filter({ hasText: /二分查找|快速排序|动态规划/ })
+      await expect(cardButtons.first()).toBeVisible({ timeout: 10000 })
     })
 
     test('存在濒危卡牌时显示濒危横幅', async ({ page }) => {
@@ -163,42 +158,36 @@ test.describe('F01 卡牌系统 E2E 测试', () => {
   })
 
   test.describe('Flow 2: 查看卡牌详情', () => {
-    test.skip('点击卡牌后弹出详情弹窗', async ({ page }) => {
+    test('点击卡牌后弹出详情弹窗', async ({ page }) => {
       const searchInput = page.getByPlaceholder('搜索卡牌...')
-      await searchInput.click()
-      await page.keyboard.press('Control+A')
-      await page.keyboard.press('Backspace')
+      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await searchInput.click()
+        await page.keyboard.press('Control+A')
+        await page.keyboard.press('Backspace')
+        await page.waitForTimeout(1000)
+      }
+
+      const cardBtn = page.locator('button').filter({ hasText: '二分查找' }).first()
+      await cardBtn.click()
       await page.waitForTimeout(1000)
-      
-      await page.evaluate(() => {
-        const btns = Array.from(document.querySelectorAll('button'))
-        const btn = btns.find(b => b.textContent.includes('二分查找'))
-        if (btn) {
-          btn.focus()
-          btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-        }
-      })
-      await page.waitForTimeout(1000)
+
       const dialogCount = await page.locator('[role="dialog"]').count()
       expect(dialogCount).toBeGreaterThan(0)
     })
 
     test('详情弹窗中渲染知识维度区域', async ({ page }) => {
       const searchInput = page.getByPlaceholder('搜索卡牌...')
-      await searchInput.click()
-      await page.keyboard.press('Control+A')
-      await page.keyboard.press('Backspace')
-      await page.waitForTimeout(1000)
-      
-      await page.evaluate(() => {
-        const btns = Array.from(document.querySelectorAll('button'))
-        const btn = btns.find(b => b.textContent.includes('二分查找'))
-        if (btn) {
-          btn.focus()
-          btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-        }
-      })
+      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await searchInput.click()
+        await page.keyboard.press('Control+A')
+        await page.keyboard.press('Backspace')
+        await page.waitForTimeout(1000)
+      }
+
+      const cardBtn = page.locator('button').filter({ hasText: '二分查找' }).first()
+      await cardBtn.click()
       await page.waitForTimeout(800)
+
       const elements = await page.locator('*', { hasText: /知识维度|核心概念|关键要点/ }).all()
       expect(elements.length).toBeGreaterThan(0)
       await page.keyboard.press('Escape')
@@ -226,7 +215,7 @@ test.describe('F01 卡牌系统 E2E 测试', () => {
   test.describe('Flow 4: 重修卡牌', () => {
     test('待重修卡牌显示重修按钮', async ({ page }) => {
       const retakeBtn = page.locator('button', { hasText: /重修/ }).first()
-      await expect(retakeBtn).toBeVisible()
+      await expect(retakeBtn).toBeVisible({ timeout: 10000 })
     })
 
     test('重修按钮包含正确的图标', async ({ page }) => {

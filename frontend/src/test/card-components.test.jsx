@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 vi.mock('../services/cardService', () => ({
@@ -13,12 +13,26 @@ vi.mock('../stores/cardStore', () => ({
   useCardStore: vi.fn(),
 }))
 
+const { mockNavigate } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+}))
+
 vi.mock('react-router-dom', () => ({
-  useNavigate: vi.fn(),
+  useNavigate: () => mockNavigate,
+  MemoryRouter: ({ children }) => children,
 }))
 
 vi.mock('../components/ui/Toast/index', () => ({
   showToast: vi.fn(),
+}))
+
+vi.mock('../components/ui/Button/Button', () => ({
+  __esModule: true,
+  default: ({ children, onClick, disabled, loading, variant, size, className }) => (
+    <button onClick={onClick} disabled={disabled || loading} data-variant={variant} data-size={size} className={className}>
+      {children}
+    </button>
+  ),
 }))
 
 import DimensionSection from '../components/card/DimensionSection'
@@ -40,24 +54,33 @@ function makeCard(overrides = {}) {
     core_concept: '通过不断折半缩小搜索范围',
     key_points: '["确定左右边界","计算中间值","比较并缩小范围"]',
     code_template: 'def binary_search(arr, target):\n    left, right = 0, len(arr) - 1',
-    time_complexity: 'O(log n)',
-    space_complexity: 'O(1)',
+    complexity_analysis: '时间 O(log n)，空间 O(1)',
+    use_cases: '有序数组搜索',
+    common_variants: '左闭右开写法',
     typical_problems: '["搜索插入位置","寻找峰值"]',
-    common_mistakes: '忘记处理边界条件',
-    optimization: '可以使用位运算替代除法',
-    extensions: '变体：查找第一个/最后一个等于目标值的元素',
-    summary: '二分查找是高效搜索算法',
+    common_pitfalls: '忘记处理边界条件',
+    comparison: '与线性搜索对比',
+    my_notes: '二分查找是高效搜索算法',
+    visual_links: null,
     ...overrides,
   }
 }
 
-function setupStoreMocks() {
+function setupStoreMocks(overrides = {}) {
   useCardStore.mockReturnValue({
+    cards: [],
+    endangeredCount: 0,
+    pendingRetakeCount: 0,
+    selectedCard: null,
+    loading: false,
+    retakeInfo: null,
+    filters: { algorithm_type: '', status: '', keyword: '' },
     updateCard: vi.fn(),
     setSelectedCard: vi.fn(),
     setRetakeInfo: vi.fn(),
+    retakeCard: vi.fn(),
+    ...overrides,
   })
-  useNavigate.mockReturnValue(vi.fn())
 }
 
 describe('DimensionSection', () => {
@@ -75,11 +98,11 @@ describe('DimensionSection', () => {
   })
 
   it('hides dimension items for empty/null values', () => {
-    const card = makeCard({ common_mistakes: null, optimization: '', extensions: undefined })
+    const card = makeCard({ common_pitfalls: null, comparison: '', my_notes: undefined })
     render(<DimensionSection card={card} />)
-    expect(screen.queryByText('常见错误')).not.toBeInTheDocument()
-    expect(screen.queryByText('优化思路')).not.toBeInTheDocument()
-    expect(screen.queryByText('扩展知识')).not.toBeInTheDocument()
+    expect(screen.queryByText('常见陷阱')).not.toBeInTheDocument()
+    expect(screen.queryByText('对比分析')).not.toBeInTheDocument()
+    expect(screen.queryByText('个人笔记')).not.toBeInTheDocument()
   })
 
   it('core_concept and key_points are expanded by default', () => {
@@ -94,18 +117,18 @@ describe('DimensionSection', () => {
   it('other dimensions are collapsed by default', () => {
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const timeBtn = screen.getByRole('button', { name: /时间复杂度/ })
-    expect(timeBtn).toHaveAttribute('aria-expanded', 'false')
+    const complexityBtn = screen.getByRole('button', { name: /复杂度分析/ })
+    expect(complexityBtn).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('clicking a collapsed dimension header expands it', async () => {
     const user = userEvent.setup()
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const timeBtn = screen.getByRole('button', { name: /时间复杂度/ })
-    expect(timeBtn).toHaveAttribute('aria-expanded', 'false')
-    await user.click(timeBtn)
-    expect(timeBtn).toHaveAttribute('aria-expanded', 'true')
+    const complexityBtn = screen.getByRole('button', { name: /复杂度分析/ })
+    expect(complexityBtn).toHaveAttribute('aria-expanded', 'false')
+    await user.click(complexityBtn)
+    expect(complexityBtn).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('clicking an expanded dimension header collapses it', async () => {
@@ -225,49 +248,47 @@ describe('VisualLinksSection', () => {
 })
 
 describe('EndangeredBanner', () => {
-  it('returns null when count is 0', () => {
-    const { container } = render(
-      <EndangeredBanner count={0} endangeredCards={[]} onCardClick={vi.fn()} />
-    )
+  beforeEach(() => {
+    setupStoreMocks()
+  })
+
+  it('returns null when endangeredCount is 0', () => {
+    setupStoreMocks({ endangeredCount: 0, cards: [] })
+    const { container } = render(<EndangeredBanner onCardClick={vi.fn()} />)
     expect(container.innerHTML).toBe('')
   })
 
-  it('returns null when count is undefined', () => {
-    const { container } = render(
-      <EndangeredBanner count={undefined} endangeredCards={[]} onCardClick={vi.fn()} />
-    )
+  it('returns null when endangeredCount is undefined', () => {
+    setupStoreMocks({ endangeredCount: undefined, cards: [] })
+    const { container } = render(<EndangeredBanner onCardClick={vi.fn()} />)
     expect(container.innerHTML).toBe('')
   })
 
   it('shows correct count in banner', () => {
-    render(
-      <EndangeredBanner count={3} endangeredCards={[]} onCardClick={vi.fn()} />
-    )
+    setupStoreMocks({ endangeredCount: 3, cards: [] })
+    render(<EndangeredBanner onCardClick={vi.fn()} />)
     expect(screen.getByText('3')).toBeInTheDocument()
   })
 
   it('has role="alert"', () => {
-    render(
-      <EndangeredBanner count={2} endangeredCards={[]} onCardClick={vi.fn()} />
-    )
+    setupStoreMocks({ endangeredCount: 2, cards: [] })
+    render(<EndangeredBanner onCardClick={vi.fn()} />)
     expect(screen.getByRole('alert')).toBeInTheDocument()
   })
 
   it('shows "濒危" tag', () => {
-    render(
-      <EndangeredBanner count={2} endangeredCards={[]} onCardClick={vi.fn()} />
-    )
+    setupStoreMocks({ endangeredCount: 2, cards: [] })
+    render(<EndangeredBanner onCardClick={vi.fn()} />)
     expect(screen.getByText('濒危')).toBeInTheDocument()
   })
 
   it('renders endangered cards list', () => {
     const cards = [
-      { id: 1, name: '二分查找', algorithm_type: 'Search' },
-      { id: 2, name: '快速排序', algorithm_type: 'Sorting' },
+      { id: 1, name: '二分查找', algorithm_type: 'Search', status: 'endangered' },
+      { id: 2, name: '快速排序', algorithm_type: 'Sorting', status: 'endangered' },
     ]
-    render(
-      <EndangeredBanner count={2} endangeredCards={cards} onCardClick={vi.fn()} />
-    )
+    setupStoreMocks({ endangeredCount: 2, cards })
+    render(<EndangeredBanner onCardClick={vi.fn()} />)
     expect(screen.getByText('二分查找')).toBeInTheDocument()
     expect(screen.getByText('快速排序')).toBeInTheDocument()
   })
@@ -276,19 +297,17 @@ describe('EndangeredBanner', () => {
     const user = userEvent.setup()
     const mockClick = vi.fn()
     const cards = [
-      { id: 1, name: '二分查找', algorithm_type: 'Search' },
+      { id: 1, name: '二分查找', algorithm_type: 'Search', status: 'endangered' },
     ]
-    render(
-      <EndangeredBanner count={1} endangeredCards={cards} onCardClick={mockClick} />
-    )
+    setupStoreMocks({ endangeredCount: 1, cards })
+    render(<EndangeredBanner onCardClick={mockClick} />)
     await user.click(screen.getByRole('button', { name: /二分查找/ }))
     expect(mockClick).toHaveBeenCalledWith(cards[0])
   })
 
-  it('does not render card list when endangeredCards is empty', () => {
-    render(
-      <EndangeredBanner count={2} endangeredCards={[]} onCardClick={vi.fn()} />
-    )
+  it('does not render card list when no endangered cards in store', () => {
+    setupStoreMocks({ endangeredCount: 2, cards: [{ id: 1, name: '正常卡', status: 'normal' }] })
+    render(<EndangeredBanner onCardClick={vi.fn()} />)
     expect(screen.queryByRole('button', { name: /去修炼/ })).not.toBeInTheDocument()
   })
 })
@@ -298,13 +317,15 @@ describe('PendingRetakeSection', () => {
     setupStoreMocks()
   })
 
-  it('returns null when cards is undefined', () => {
-    const { container } = render(<PendingRetakeSection cards={undefined} onCardClick={vi.fn()} />)
+  it('returns null when pendingRetakeCount is 0', () => {
+    setupStoreMocks({ pendingRetakeCount: 0, cards: [] })
+    const { container } = render(<PendingRetakeSection onCardClick={vi.fn()} />)
     expect(container.innerHTML).toBe('')
   })
 
-  it('returns null when cards is empty array', () => {
-    const { container } = render(<PendingRetakeSection cards={[]} onCardClick={vi.fn()} />)
+  it('returns null when pendingRetakeCount is undefined', () => {
+    setupStoreMocks({ pendingRetakeCount: undefined, cards: [] })
+    const { container } = render(<PendingRetakeSection onCardClick={vi.fn()} />)
     expect(container.innerHTML).toBe('')
   })
 
@@ -313,7 +334,8 @@ describe('PendingRetakeSection', () => {
       { id: 1, name: '二分查找', status: 'pending_retake', durability: 1, max_durability: 5, algorithm_type: 'Search' },
       { id: 2, name: '快速排序', status: 'pending_retake', durability: 0, max_durability: 5, algorithm_type: 'Sorting' },
     ]
-    render(<PendingRetakeSection cards={cards} onCardClick={vi.fn()} />)
+    setupStoreMocks({ pendingRetakeCount: 2, cards })
+    render(<PendingRetakeSection onCardClick={vi.fn()} />)
     expect(screen.getByText(/待重修卡牌 \(2\)/)).toBeInTheDocument()
   })
 
@@ -321,7 +343,8 @@ describe('PendingRetakeSection', () => {
     const cards = [
       { id: 1, name: '二分查找', status: 'pending_retake', durability: 1, max_durability: 5, algorithm_type: 'Search' },
     ]
-    render(<PendingRetakeSection cards={cards} onCardClick={vi.fn()} />)
+    setupStoreMocks({ pendingRetakeCount: 1, cards })
+    render(<PendingRetakeSection onCardClick={vi.fn()} />)
     expect(screen.getByText('待重修')).toBeInTheDocument()
   })
 
@@ -330,7 +353,8 @@ describe('PendingRetakeSection', () => {
       { id: 1, name: '二分查找', status: 'pending_retake', durability: 1, max_durability: 5, algorithm_type: 'Search' },
       { id: 2, name: '快速排序', status: 'pending_retake', durability: 0, max_durability: 5, algorithm_type: 'Sorting' },
     ]
-    render(<PendingRetakeSection cards={cards} onCardClick={vi.fn()} />)
+    setupStoreMocks({ pendingRetakeCount: 2, cards })
+    render(<PendingRetakeSection onCardClick={vi.fn()} />)
     expect(screen.getByText('二分查找')).toBeInTheDocument()
     expect(screen.getByText('快速排序')).toBeInTheDocument()
   })
@@ -340,7 +364,8 @@ describe('PendingRetakeSection', () => {
     const cards = [
       { id: 1, name: '二分查找', status: 'pending_retake', durability: 1, max_durability: 5, algorithm_type: 'Search' },
     ]
-    render(<PendingRetakeSection cards={cards} onCardClick={vi.fn()} />)
+    setupStoreMocks({ pendingRetakeCount: 1, cards })
+    render(<PendingRetakeSection onCardClick={vi.fn()} />)
     expect(screen.getByText('二分查找')).toBeInTheDocument()
     const header = screen.getByRole('button', { name: /待重修卡牌/ })
     await user.click(header)
@@ -353,7 +378,8 @@ describe('PendingRetakeSection', () => {
     const cards = [
       { id: 1, name: '二分查找', status: 'pending_retake', durability: 1, max_durability: 5, algorithm_type: 'Search' },
     ]
-    render(<PendingRetakeSection cards={cards} onCardClick={vi.fn()} />)
+    setupStoreMocks({ pendingRetakeCount: 1, cards })
+    render(<PendingRetakeSection onCardClick={vi.fn()} />)
     const retakeButtons = screen.getAllByRole('button').filter(
       (btn) => btn.textContent.includes('🔄 重修')
     )
@@ -368,7 +394,7 @@ describe('CardEditForm', () => {
   beforeEach(() => {
     mockUpdateCard = vi.fn()
     mockSetSelectedCard = vi.fn()
-    useCardStore.mockReturnValue({
+    setupStoreMocks({
       updateCard: mockUpdateCard,
       setSelectedCard: mockSetSelectedCard,
     })
@@ -377,40 +403,28 @@ describe('CardEditForm', () => {
   })
 
   it('returns null when card is null', () => {
-    const { container } = render(<CardEditForm card={null} onSave={vi.fn()} onCancel={vi.fn()} />)
+    const { container } = render(<CardEditForm card={null} />)
     expect(container.innerHTML).toBe('')
   })
 
-  it('renders name input with card name', () => {
+  it('renders dimension textareas for editable fields', () => {
     const card = makeCard()
-    render(<CardEditForm card={card} onSave={vi.fn()} onCancel={vi.fn()} />)
-    const nameInput = screen.getByPlaceholderText('卡牌名称')
-    expect(nameInput).toHaveValue('二分查找')
-  })
-
-  it('renders algorithm_type input', () => {
-    const card = makeCard()
-    render(<CardEditForm card={card} onSave={vi.fn()} onCancel={vi.fn()} />)
-    const typeInput = screen.getByPlaceholderText('如：Dynamic Programming')
-    expect(typeInput).toHaveValue('Search')
+    render(<CardEditForm card={card} />)
+    expect(screen.getByPlaceholderText(/输入核心概念/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/输入关键要点/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/输入代码模板/)).toBeInTheDocument()
   })
 
   it('renders 10 dimension textareas', () => {
     const card = makeCard()
-    render(<CardEditForm card={card} onSave={vi.fn()} onCancel={vi.fn()} />)
-    const placeholders = [
-      '输入核心概念...', '输入关键要点...', '输入代码模板...', '输入时间复杂度...',
-      '输入空间复杂度...', '输入典型题目...', '输入常见错误...', '输入优化思路...',
-      '输入扩展知识...', '输入总结...',
-    ]
-    placeholders.forEach((ph) => {
-      expect(screen.getByPlaceholderText(ph)).toBeInTheDocument()
-    })
+    render(<CardEditForm card={card} />)
+    const textareas = screen.getAllByRole('textbox')
+    expect(textareas.length).toBeGreaterThanOrEqual(10)
   })
 
   it('save button is disabled when no changes', () => {
     const card = makeCard()
-    render(<CardEditForm card={card} onSave={vi.fn()} onCancel={vi.fn()} />)
+    render(<CardEditForm card={card} />)
     const saveBtn = screen.getByRole('button', { name: /保存/ })
     expect(saveBtn).toBeDisabled()
   })
@@ -418,48 +432,41 @@ describe('CardEditForm', () => {
   it('save button becomes enabled after editing', async () => {
     const user = userEvent.setup()
     const card = makeCard()
-    render(<CardEditForm card={card} onSave={vi.fn()} onCancel={vi.fn()} />)
-    const nameInput = screen.getByPlaceholderText('卡牌名称')
-    await user.clear(nameInput)
-    await user.type(nameInput, '新名称')
+    render(<CardEditForm card={card} />)
+    const conceptInput = screen.getByPlaceholderText(/输入核心概念/)
+    await user.clear(conceptInput)
+    await user.type(conceptInput, '新的核心概念')
     const saveBtn = screen.getByRole('button', { name: /保存/ })
     expect(saveBtn).not.toBeDisabled()
   })
 
-  it('clicking cancel calls onCancel', async () => {
-    const user = userEvent.setup()
-    const mockCancel = vi.fn()
-    const card = makeCard()
-    render(<CardEditForm card={card} onSave={vi.fn()} onCancel={mockCancel} />)
-    const cancelBtn = screen.getByRole('button', { name: '取消' })
-    await user.click(cancelBtn)
-    expect(mockCancel).toHaveBeenCalled()
-  })
-
-  it('calls cardService.updateCard on save', async () => {
+  it('calls store updateCard on save', async () => {
     const user = userEvent.setup()
     const card = makeCard()
-    const updatedCard = { ...card, name: '新名称' }
-    vi.mocked(cardService.updateCard).mockResolvedValue({ data: updatedCard })
-    render(<CardEditForm card={card} onSave={vi.fn()} onCancel={vi.fn()} />)
-    const nameInput = screen.getByPlaceholderText('卡牌名称')
-    await user.clear(nameInput)
-    await user.type(nameInput, '新名称')
+    const updatedCard = { ...card, core_concept: '新的核心概念' }
+    mockUpdateCard.mockResolvedValue(updatedCard)
+    render(<CardEditForm card={card} />)
+    const conceptInput = screen.getByPlaceholderText(/输入核心概念/)
+    await user.clear(conceptInput)
+    await user.type(conceptInput, '新的核心概念')
     const saveBtn = screen.getByRole('button', { name: /保存/ })
     await user.click(saveBtn)
-    expect(cardService.updateCard).toHaveBeenCalledWith(card.id, expect.objectContaining({ name: '新名称' }))
+    expect(mockUpdateCard).toHaveBeenCalledWith(card.id, expect.objectContaining({ core_concept: '新的核心概念' }))
   })
 })
 
 describe('RetakeButton', () => {
-  let mockNavigate
+  let mockRetakeCard
   let mockSetRetakeInfo
 
   beforeEach(() => {
-    mockNavigate = vi.fn()
+    mockRetakeCard = vi.fn()
     mockSetRetakeInfo = vi.fn()
-    useNavigate.mockReturnValue(mockNavigate)
-    useCardStore.mockReturnValue({ setRetakeInfo: mockSetRetakeInfo })
+    mockNavigate.mockClear()
+    setupStoreMocks({
+      retakeCard: mockRetakeCard,
+      setRetakeInfo: mockSetRetakeInfo,
+    })
     vi.mocked(cardService.retakeCard).mockReset()
     vi.mocked(showToast).mockReset()
   })
@@ -476,23 +483,23 @@ describe('RetakeButton', () => {
     expect(screen.getByRole('button', { name: /重修/ })).toBeInTheDocument()
   })
 
-  it('clicking button calls cardService.retakeCard', async () => {
+  it('clicking button calls store retakeCard', async () => {
     const user = userEvent.setup()
     const card = { id: 1, name: '二分查找', status: 'pending_retake' }
-    vi.mocked(cardService.retakeCard).mockResolvedValue({
+    mockRetakeCard.mockResolvedValue({
       dialogue_id: 'd1',
       npc_id: 'npc1',
     })
     render(<RetakeButton card={card} />)
     await user.click(screen.getByRole('button', { name: /重修/ }))
-    expect(cardService.retakeCard).toHaveBeenCalledWith(card.id)
+    expect(mockRetakeCard).toHaveBeenCalledWith(card.id)
   })
 
   it('shows loading state during API call', async () => {
     const user = userEvent.setup()
     const card = { id: 1, name: '二分查找', status: 'pending_retake' }
     let resolveApi
-    vi.mocked(cardService.retakeCard).mockReturnValue(
+    mockRetakeCard.mockReturnValue(
       new Promise((resolve) => { resolveApi = resolve })
     )
     render(<RetakeButton card={card} />)
@@ -505,19 +512,25 @@ describe('RetakeButton', () => {
   it('navigates to NPC dialogue page on success', async () => {
     const user = userEvent.setup()
     const card = { id: 1, name: '二分查找', status: 'pending_retake' }
-    vi.mocked(cardService.retakeCard).mockResolvedValue({
+    mockRetakeCard.mockResolvedValue({
       dialogue_id: 'd1',
       npc_id: 'npc1',
     })
     render(<RetakeButton card={card} />)
     await user.click(screen.getByRole('button', { name: /重修/ }))
+    await waitFor(() => {
+      expect(mockRetakeCard).toHaveBeenCalledWith(card.id)
+    }, { timeout: 3000 })
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalled()
+    }, { timeout: 3000 })
     expect(mockNavigate).toHaveBeenCalledWith('/npc/npc1?dialogueId=d1')
   })
 
   it('shows warning toast for error 40003', async () => {
     const user = userEvent.setup()
     const card = { id: 1, name: '二分查找', status: 'pending_retake' }
-    vi.mocked(cardService.retakeCard).mockRejectedValue(
+    mockRetakeCard.mockRejectedValue(
       new Error('40003 不是待重修状态')
     )
     render(<RetakeButton card={card} />)

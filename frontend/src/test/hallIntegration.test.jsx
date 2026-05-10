@@ -1,5 +1,5 @@
 import React from 'react'
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -38,6 +38,11 @@ vi.mock('../components/ui/Button/Button', () => ({
 
 vi.mock('../components/ui/Toast/index', () => ({
   showToast: vi.fn(),
+}))
+
+vi.mock('../components/hall/NpcDetailModal', () => ({
+  __esModule: true,
+  default: () => React.createElement('div', { 'data-testid': 'npc-detail-modal' }, 'NpcDetailModal'),
 }))
 
 import HallPage from '../pages/HallPage'
@@ -102,8 +107,8 @@ describe('HallPage 集成测试', () => {
 
   describe('页面加载流程', () => {
     it('应加载 NPC 列表和统计数据', async () => {
-      mockGetAll.mockResolvedValue({ npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH })
-      mockGetHallStats.mockResolvedValue(MOCK_STATS)
+      mockGetAll.mockResolvedValue({ data: { npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH } })
+      mockGetHallStats.mockResolvedValue({ data: MOCK_STATS })
 
       renderHallPage()
 
@@ -117,8 +122,8 @@ describe('HallPage 集成测试', () => {
     })
 
     it('应显示学习路径卡片', async () => {
-      mockGetAll.mockResolvedValue({ npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH })
-      mockGetHallStats.mockResolvedValue(MOCK_STATS)
+      mockGetAll.mockResolvedValue({ data: { npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH } })
+      mockGetHallStats.mockResolvedValue({ data: MOCK_STATS })
 
       renderHallPage()
 
@@ -128,8 +133,8 @@ describe('HallPage 集成测试', () => {
     })
 
     it('应显示有卡牌的 NPC 的卡牌数量', async () => {
-      mockGetAll.mockResolvedValue({ npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH })
-      mockGetHallStats.mockResolvedValue(MOCK_STATS)
+      mockGetAll.mockResolvedValue({ data: { npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH } })
+      mockGetHallStats.mockResolvedValue({ data: MOCK_STATS })
 
       renderHallPage()
 
@@ -140,10 +145,9 @@ describe('HallPage 集成测试', () => {
   })
 
   describe('NPC 详情交互流程', () => {
-    it('点击 NPC 卡片应打开详情弹窗', async () => {
-      mockGetAll.mockResolvedValue({ npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH })
-      mockGetHallStats.mockResolvedValue(MOCK_STATS)
-      mockGetById.mockResolvedValue(MOCK_NPC_DETAIL)
+    it('点击 NPC 卡片应设置选中 NPC', async () => {
+      mockGetAll.mockResolvedValue({ data: { npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH } })
+      mockGetHallStats.mockResolvedValue({ data: MOCK_STATS })
 
       renderHallPage()
 
@@ -154,15 +158,18 @@ describe('HallPage 集成测试', () => {
       await userEvent.click(screen.getByText('老夫子'))
 
       await waitFor(() => {
-        expect(mockGetById).toHaveBeenCalledWith(1)
+        const { selectedNpc, modalOpen } = useHallStore.getState()
+        expect(selectedNpc).not.toBeNull()
+        expect(selectedNpc.name).toBe('老夫子')
+        expect(modalOpen).toBe(true)
       })
     })
   })
 
   describe('筛选交互流程', () => {
     it('选择算法类型应触发新的 API 请求', async () => {
-      mockGetAll.mockResolvedValue({ npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH })
-      mockGetHallStats.mockResolvedValue(MOCK_STATS)
+      mockGetAll.mockResolvedValue({ data: { npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH } })
+      mockGetHallStats.mockResolvedValue({ data: MOCK_STATS })
 
       renderHallPage()
 
@@ -179,21 +186,21 @@ describe('HallPage 集成测试', () => {
 
   describe('新用户体验流程', () => {
     it('新用户应看到老夫子的推荐提示', async () => {
-      mockGetAll.mockResolvedValue({ npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH })
-      mockGetHallStats.mockResolvedValue({ ...MOCK_STATS, is_new_user: true })
+      mockGetAll.mockResolvedValue({ data: { npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH } })
+      mockGetHallStats.mockResolvedValue({ data: { ...MOCK_STATS, is_new_user: true } })
 
       renderHallPage()
 
       await waitFor(() => {
-        expect(screen.getByText('推荐从这里开始')).toBeInTheDocument()
+        expect(screen.getByText('推荐新手从这里开始')).toBeInTheDocument()
       })
     })
   })
 
   describe('学习路径交互流程', () => {
     it('展开学习路径应显示步骤详情', async () => {
-      mockGetAll.mockResolvedValue({ npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH })
-      mockGetHallStats.mockResolvedValue(MOCK_STATS)
+      mockGetAll.mockResolvedValue({ data: { npcs: MOCK_NPCS, learning_path: MOCK_LEARNING_PATH } })
+      mockGetHallStats.mockResolvedValue({ data: MOCK_STATS })
 
       renderHallPage()
 
