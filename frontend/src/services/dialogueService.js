@@ -51,17 +51,16 @@ export const dialogueService = {
                 onError?.(new Error(data.error))
                 return
               }
-              if (data.type === 'content' && data.content) {
+              if (data.content) {
                 onChunk?.(data.content)
               }
-              if (data.type === 'suggestions' && data.suggestions) {
+              if (data.suggestions) {
                 onSuggestions?.(data.suggestions)
               }
-              if (data.type === 'out_of_domain') {
-                onOutOfDomain?.(data.message || '超出修习范围')
+              if (data.out_of_domain) {
+                onOutOfDomain?.(data.out_of_domain.message || data.out_of_domain || '超出修习范围')
               }
             } catch (e) {
-              // ignore parse errors for incomplete chunks
             }
           }
         }
