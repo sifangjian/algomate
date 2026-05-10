@@ -161,6 +161,8 @@ async def get_boss_detail(boss_id: int):
     weakness_cards = []
     other_cards = []
     for card in all_cards:
+        if card.pending_retake:
+            continue
         is_weakness = card.algorithm_type == boss.weakness_type
         card_info = {
             "id": card.id,
@@ -173,6 +175,8 @@ async def get_boss_detail(boss_id: int):
             weakness_cards.append(card_info)
         else:
             other_cards.append(card_info)
+
+    has_any_card = len(weakness_cards) > 0 or len(other_cards) > 0
 
     recent_battles = battle_repo.get_recent_by_boss(boss_id, limit=5)
     recent_list = []
@@ -199,6 +203,7 @@ async def get_boss_detail(boss_id: int):
             "weakness_cards": weakness_cards,
             "other_cards": other_cards,
             "has_weakness_card": len(weakness_cards) > 0,
+            "has_any_card": has_any_card,
             "recent_battles": recent_list,
         }
     }
