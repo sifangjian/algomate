@@ -236,6 +236,7 @@ class ReviewPlanService:
             now = datetime.now()
             new_record = ReviewRecord(
                 card_id=card_id,
+                note_id=None,
                 review_date=now,
                 status="completed",
                 review_type=review_type,

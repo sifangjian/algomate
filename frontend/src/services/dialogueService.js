@@ -30,6 +30,34 @@ export const dialogueService = {
       const decoder = new TextDecoder()
       let buffer = ''
 
+      const processLine = (line) => {
+        if (!line.startsWith('data: ')) return false
+        const dataStr = line.slice(6).trim()
+        if (dataStr === '[DONE]') {
+          onDone?.()
+          return true
+        }
+        try {
+          const data = JSON.parse(dataStr)
+          if (data.error) {
+            onError?.(new Error(data.error))
+            return true
+          }
+          if (data.content) {
+            onChunk?.(data.content)
+          }
+          if (data.suggestions) {
+            onSuggestions?.(data.suggestions)
+          }
+          if (data.out_of_domain) {
+            onOutOfDomain?.(data.out_of_domain.message || data.out_of_domain || '超出修习范围')
+          }
+        } catch (e) {
+          console.warn('[SSE] Failed to parse data:', dataStr, e)
+        }
+        return false
+      }
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -39,32 +67,15 @@ export const dialogueService = {
         buffer = lines.pop() || ''
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6).trim()
-            if (dataStr === '[DONE]') {
-              onDone?.()
-              return
-            }
-            try {
-              const data = JSON.parse(dataStr)
-              if (data.error) {
-                onError?.(new Error(data.error))
-                return
-              }
-              if (data.content) {
-                onChunk?.(data.content)
-              }
-              if (data.suggestions) {
-                onSuggestions?.(data.suggestions)
-              }
-              if (data.out_of_domain) {
-                onOutOfDomain?.(data.out_of_domain.message || data.out_of_domain || '超出修习范围')
-              }
-            } catch (e) {
-            }
-          }
+          if (processLine(line)) return
         }
       }
+
+      if (buffer.trim()) {
+        processLine(buffer)
+      }
+
+      onDone?.()
     }).catch((err) => {
       if (err.name !== 'AbortError') {
         onError?.(err)
