@@ -18,6 +18,9 @@ export const npcService = {
     if (npcId) {
       return api.get(`/v1/npcs/${npcId}`)
     }
+    if (typeof realmId === 'number' || !isNaN(Number(realmId))) {
+      return api.get(`/v1/npcs/${realmId}`)
+    }
     return Promise.reject(new Error(`未找到秘境 ${realmId} 的导师`))
   },
 

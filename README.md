@@ -54,7 +54,7 @@ AlgoMate 包含 **4 大功能模块**，形成完整的学习闭环：
 
 - Node.js 18+
 - uv（Python 包管理器）
-- pnpm（Node.js 包管理器）
+- npm（Node.js 包管理器）
 
 ### 安装步骤
 
@@ -96,23 +96,31 @@ cp .env.example .env
 
 ### 启动应用
 
-**开发环境**：
+**开发环境**（推荐，一键启动前后端）：
 
 ```bash
-# 终端 1：启动后端
-uv run uvicorn algomate.main:app --reload
-
-# 终端 2：启动前端
-cd frontend && pnpm dev
+python scripts/dev.py
 ```
 
 访问：<http://localhost:3000>
+
+**仅启动后端**：
+
+```bash
+python scripts/dev.py --backend
+```
+
+**仅启动前端**：
+
+```bash
+python scripts/dev.py --frontend
+```
 
 **生产环境**：
 
 ```bash
 # 构建前端
-cd frontend && pnpm build && cd ..
+cd frontend && npm run build && cd ..
 
 # 启动后端
 export APP_ENV=production
