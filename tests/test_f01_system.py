@@ -513,7 +513,6 @@ class TestHealthCheck:
             "/api/v1/stats",
             "/api/v1/settings",
             "/api/v1/realms",
-            "/api/notes",
         ]
 
         # Act

@@ -35,11 +35,8 @@ from algomate.models.cards import (
     CardCreate,
     CardUpdate,
     CardResponse,
-    CardPolishRequest,
-    PolishFieldType,
-    _compute_status,
-    _card_to_response,
 )
+from algomate.api.v1.cards import _card_to_response
 
 
 # ============================================================
@@ -857,21 +854,6 @@ class TestCardPydanticModels:
         assert resp.durability == 80
         assert resp.status == "normal"
 
-    def test_card_polish_request_valid_type(self):
-        # CardPolishRequest 合法类型应通过校验
-        model = CardPolishRequest(content="测试内容", type=PolishFieldType.note_content)
-        assert model.type == PolishFieldType.note_content
-
-    def test_card_polish_request_invalid_type(self):
-        # CardPolishRequest 非法类型应校验失败
-        with pytest.raises(Exception):
-            CardPolishRequest(content="测试内容", type="invalid_type")
-
-    def test_card_polish_request_content_min_length(self):
-        # content 最小长度为1，空字符串应校验失败
-        with pytest.raises(Exception):
-            CardPolishRequest(content="", type=PolishFieldType.summary)
-
     def test_card_create_default_values(self):
         # CardCreate 各字段默认值验证
         model = CardCreate(name="Test")
@@ -889,64 +871,6 @@ class TestCardPydanticModels:
 # ============================================================
 # 7. TestComputeStatusInternal
 # ============================================================
-
-class TestComputeStatusInternal:
-    """_compute_status 内部函数的综合测试"""
-
-    def test_sealed_true_returns_pending_retake(self):
-        # is_sealed=True 时无论耐久度多少都返回 pending_retake
-        result = _compute_status(80, 100, is_sealed=True)
-        assert result == "pending_retake"
-
-    def test_sealed_true_with_zero_durability(self):
-        # is_sealed=True + durability=0 → pending_retake
-        result = _compute_status(0, 100, is_sealed=True)
-        assert result == "pending_retake"
-
-    def test_durability_zero_not_sealed_returns_pending_retake(self):
-        # durability=0 且未封印 → pending_retake
-        result = _compute_status(0, 100, is_sealed=False)
-        assert result == "pending_retake"
-
-    def test_durability_below_30_not_sealed_returns_endangered(self):
-        # durability<30 且未封印 → endangered
-        result = _compute_status(15, 100, is_sealed=False)
-        assert result == "endangered"
-
-    def test_durability_29_not_sealed_returns_endangered(self):
-        # durability=29（濒危阈值以下）→ endangered
-        result = _compute_status(29, 100, is_sealed=False)
-        assert result == "endangered"
-
-    def test_durability_30_not_sealed_returns_normal(self):
-        # durability=30（濒危阈值）→ normal
-        result = _compute_status(30, 100, is_sealed=False)
-        assert result == "normal"
-
-    def test_durability_above_30_not_sealed_returns_normal(self):
-        # durability>30 且未封印 → normal
-        result = _compute_status(80, 100, is_sealed=False)
-        assert result == "normal"
-
-    def test_sealed_overrides_high_durability(self):
-        # is_sealed=True 覆盖高耐久度
-        result = _compute_status(100, 100, is_sealed=True)
-        assert result == "pending_retake"
-
-    @pytest.mark.parametrize("durability,expected", [
-        (0, "pending_retake"),
-        (1, "endangered"),
-        (15, "endangered"),
-        (29, "endangered"),
-        (30, "normal"),
-        (50, "normal"),
-        (100, "normal"),
-    ])
-    def test_compute_status_not_sealed_parameterized(self, durability, expected):
-        # 未封印时各耐久度对应的状态
-        result = _compute_status(durability, 100, is_sealed=False)
-        assert result == expected
-
 
 # ============================================================
 # 8. TestCardToResponse

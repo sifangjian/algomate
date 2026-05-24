@@ -4,84 +4,34 @@
 包含所有业务实体的数据模型定义
 """
 
-from algomate.models.user_settings import UserSetting, UserSettingCreate, UserSettingUpdate, UserSettingResponse
-from algomate.models.notes import Note, NoteCreate, NoteUpdate, NoteResponse
-from algomate.models.cards import Card, CardCreate, CardUpdate, CardResponse
-from algomate.models.npcs import NPC, NPCCreate, NPCUpdate, NPCResponse
-from algomate.models.bosses import Boss, BossCreate, BossUpdate, BossResponse, Difficulty
-from algomate.models.questions import Question, QuestionCreate, QuestionUpdate, QuestionResponse, QuestionType, QuestionDifficulty
-from algomate.models.answer_records import AnswerRecord, AnswerRecordCreate, AnswerRecordResponse, AnswerStats
+from algomate.models.user_settings import UserSetting
+from algomate.models.notes import Note
+from algomate.models.cards import Card, CardUpdate, CardResponse
+from algomate.models.npcs import NPC
+from algomate.models.bosses import Boss
+from algomate.models.questions import Question
+from algomate.models.answer_records import AnswerRecord
 from algomate.models.battle_records import BattleRecord
-from algomate.models.dialogue_records import DialogueRecord, DialogueRecordCreate, DialogueRecordResponse, DialogueMessage
-from algomate.models.dialogue_messages import DialogueMessageRecord, DialogueMessageCreate, DialogueMessageResponse
-from algomate.models.dialogue_notes import DialogueNote, DialogueNoteCreate, DialogueNoteResponse
-from algomate.models.review_records import ReviewRecord, ReviewRecordCreate, ReviewRecordResponse
-from algomate.models.learning_progress import LearningProgress, LearningProgressCreate, LearningProgressResponse
-
-from algomate.models.user_settings import router as user_settings_router
-from algomate.models.notes import router as notes_router
-from algomate.models.npcs import router as npcs_router
-from algomate.models.questions import router as questions_router
-from algomate.models.answer_records import router as answers_router
-from algomate.models.dialogue_records import router as dialogues_router
-from algomate.models.review_records import router as review_records_router
-from algomate.models.learning_progress import router as learning_progress_router
+from algomate.models.dialogue_records import DialogueRecord
+from algomate.models.dialogue_messages import DialogueMessageRecord
+from algomate.models.dialogue_notes import DialogueNote
+from algomate.models.review_records import ReviewRecord
+from algomate.models.learning_progress import LearningProgress
 
 __all__ = [
     "UserSetting",
-    "UserSettingCreate",
-    "UserSettingUpdate",
-    "UserSettingResponse",
     "Note",
-    "NoteCreate",
-    "NoteUpdate",
-    "NoteResponse",
     "Card",
-    "CardCreate",
     "CardUpdate",
     "CardResponse",
     "NPC",
-    "NPCCreate",
-    "NPCUpdate",
-    "NPCResponse",
     "Boss",
-    "BossCreate",
-    "BossUpdate",
-    "BossResponse",
-    "Difficulty",
-    "BattleRecord",
     "Question",
-    "QuestionCreate",
-    "QuestionUpdate",
-    "QuestionResponse",
-    "QuestionType",
-    "QuestionDifficulty",
     "AnswerRecord",
-    "AnswerRecordCreate",
-    "AnswerRecordResponse",
-    "AnswerStats",
+    "BattleRecord",
     "DialogueRecord",
-    "DialogueRecordCreate",
-    "DialogueRecordResponse",
-    "DialogueMessage",
     "DialogueMessageRecord",
-    "DialogueMessageCreate",
-    "DialogueMessageResponse",
     "DialogueNote",
-    "DialogueNoteCreate",
-    "DialogueNoteResponse",
     "ReviewRecord",
-    "ReviewRecordCreate",
-    "ReviewRecordResponse",
     "LearningProgress",
-    "LearningProgressCreate",
-    "LearningProgressResponse",
-    "user_settings_router",
-    "notes_router",
-    "npcs_router",
-    "questions_router",
-    "answers_router",
-    "dialogues_router",
-    "review_records_router",
-    "learning_progress_router",
 ]

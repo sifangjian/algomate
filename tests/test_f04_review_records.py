@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.pool import StaticPool
 
-from algomate.models.review_records import ReviewRecord, ReviewRecordCreate, ReviewRecordResponse
+from algomate.models.review_records import ReviewRecord
 
 TestBase = declarative_base()
 
@@ -154,59 +154,3 @@ class TestReviewRecordModelColumns:
         assert isinstance(col.type, Integer)
         assert col.nullable is True
 
-
-class TestReviewRecordCreate:
-    def test_create_model_includes_review_type(self):
-        data = ReviewRecordCreate(card_id=1, status="pending")
-        assert data.review_type == "content_review"
-
-    def test_create_model_custom_review_type(self):
-        data = ReviewRecordCreate(card_id=1, status="pending", review_type="boss_battle")
-        assert data.review_type == "boss_battle"
-
-    def test_create_model_existing_fields(self):
-        data = ReviewRecordCreate(card_id=1, note_id=2, status="completed", score=95)
-        assert data.card_id == 1
-        assert data.note_id == 2
-        assert data.status == "completed"
-        assert data.score == 95
-
-
-class TestReviewRecordResponse:
-    def test_response_model_includes_new_fields(self):
-        now = datetime.now()
-        resp = ReviewRecordResponse(
-            id=1,
-            card_id=1,
-            review_date=now,
-            status="completed",
-            score=90,
-            review_type="boss_battle",
-            completed_at=now,
-            durability_before=80,
-            durability_after=100,
-            review_level_before=2,
-            review_level_after=3,
-        )
-        assert resp.review_type == "boss_battle"
-        assert resp.completed_at == now
-        assert resp.durability_before == 80
-        assert resp.durability_after == 100
-        assert resp.review_level_before == 2
-        assert resp.review_level_after == 3
-
-    def test_response_model_new_fields_default_to_none(self):
-        now = datetime.now()
-        resp = ReviewRecordResponse(
-            id=1,
-            card_id=1,
-            review_date=now,
-            status="pending",
-            score=None,
-        )
-        assert resp.review_type == "content_review"
-        assert resp.completed_at is None
-        assert resp.durability_before is None
-        assert resp.durability_after is None
-        assert resp.review_level_before is None
-        assert resp.review_level_after is None

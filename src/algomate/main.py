@@ -192,23 +192,6 @@ class AlgomateApp:
         from .api.v1.router import router as v1_router
         self.api_app.include_router(v1_router, prefix="/api/v1")
 
-        from .models import (
-            notes_router,
-            npcs_router,
-            questions_router,
-            answers_router,
-            dialogues_router,
-            review_records_router,
-            learning_progress_router,
-        )
-        self.api_app.include_router(notes_router)
-        self.api_app.include_router(npcs_router)
-        self.api_app.include_router(questions_router)
-        self.api_app.include_router(answers_router)
-        self.api_app.include_router(dialogues_router)
-        self.api_app.include_router(review_records_router)
-        self.api_app.include_router(learning_progress_router)
-
         logger.info("FastAPI server initialized")
 
     def start_api_server(self):

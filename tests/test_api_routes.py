@@ -30,10 +30,6 @@ def test_api_registration():
         "/api/v1/reviews",
         "/api/v1/stats",
         "/api/v1/algorithm-info",
-        "/api/notes",
-        "/api/questions",
-        "/api/review-records",
-        "/api/learning-progress",
     ]
 
     missing_routes = []

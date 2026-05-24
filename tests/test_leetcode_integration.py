@@ -310,49 +310,6 @@ class TestAnswerRecordLeetCodeUrl(unittest.TestCase):
         columns = {c.name for c in AnswerRecord.__table__.columns}
         self.assertIn("leetcode_url", columns)
 
-    def test_create_schema_has_leetcode_url(self):
-        """AnswerRecordCreate应包含leetcode_url字段"""
-        from algomate.models.answer_records import AnswerRecordCreate
-        fields = AnswerRecordCreate.model_fields
-        self.assertIn("leetcode_url", fields)
-
-    def test_response_schema_has_leetcode_url(self):
-        """AnswerRecordResponse应包含leetcode_url字段"""
-        from algomate.models.answer_records import AnswerRecordResponse
-        fields = AnswerRecordResponse.model_fields
-        self.assertIn("leetcode_url", fields)
-
-    def test_create_schema_default_empty(self):
-        """leetcode_url默认值应为空字符串"""
-        from algomate.models.answer_records import AnswerRecordCreate
-        record = AnswerRecordCreate(
-            user_answer="test",
-            is_correct=True
-        )
-        self.assertEqual(record.leetcode_url, "")
-
-
-class TestCompletedLeetCodeUrlsAPI(unittest.TestCase):
-    """测试已完成LeetCode URL查询"""
-
-    def test_completed_leetcode_endpoint_exists(self):
-        """completed-leetcode端点应存在"""
-        from algomate.models.answer_records import router
-        routes = [r.path for r in router.routes]
-        self.assertTrue(
-            any("completed-leetcode" in r for r in routes),
-            f"completed-leetcode not found in routes: {routes}"
-        )
-
-    def test_completed_leetcode_method_is_get(self):
-        """completed-leetcode端点应为GET方法"""
-        from algomate.models.answer_records import router
-        for route in router.routes:
-            if hasattr(route, 'path') and 'completed-leetcode' in route.path:
-                self.assertIn("GET", route.methods)
-                return
-        self.fail("未找到 completed-leetcode 路由")
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -109,60 +109,6 @@ class TestBuildCardGenerationPrompt:
         assert "**NPC**：DP is..." in user_prompt
 
 
-class TestParseDialogueContent:
-    """测试 parse_dialogue_content 函数"""
-
-    def test_should_parse_valid_json(self):
-        from algomate.models.dialogue_records import parse_dialogue_content
-
-        content = '[{"role": "user", "content": "hello"}]'
-        result = parse_dialogue_content(content)
-
-        assert len(result) == 1
-        assert result[0]["role"] == "user"
-        assert result[0]["content"] == "hello"
-
-    def test_should_return_empty_list_for_empty_string(self):
-        from algomate.models.dialogue_records import parse_dialogue_content
-
-        result = parse_dialogue_content("")
-        assert result == []
-
-    def test_should_return_empty_list_for_invalid_json(self):
-        from algomate.models.dialogue_records import parse_dialogue_content
-
-        result = parse_dialogue_content("not json{{{")
-        assert result == []
-
-    def test_should_return_empty_list_for_none(self):
-        from algomate.models.dialogue_records import parse_dialogue_content
-
-        result = parse_dialogue_content(None)
-        assert result == []
-
-
-class TestParseGeneratedCards:
-    """测试 parse_generated_cards 函数"""
-
-    def test_should_parse_valid_card_ids(self):
-        from algomate.models.dialogue_records import parse_generated_cards
-
-        result = parse_generated_cards("[1, 2, 3]")
-        assert result == [1, 2, 3]
-
-    def test_should_return_empty_list_for_empty_string(self):
-        from algomate.models.dialogue_records import parse_generated_cards
-
-        result = parse_generated_cards("")
-        assert result == []
-
-    def test_should_return_empty_list_for_invalid_json(self):
-        from algomate.models.dialogue_records import parse_generated_cards
-
-        result = parse_generated_cards("invalid")
-        assert result == []
-
-
 class TestCardGenerationResult:
     """测试 CardGenerationResult Pydantic 模型"""
 
@@ -436,21 +382,3 @@ class TestDialogueSessionToDict:
         assert result["messages"][0]["role"] == "assistant"
         assert result["messages"][0]["content"] == "你好"
 
-
-class TestDialogueMessageModel:
-    """测试 DialogueMessage Pydantic 模型"""
-
-    def test_should_create_valid_message(self):
-        from algomate.models.dialogue_records import DialogueMessage
-
-        msg = DialogueMessage(role="user", content="hello")
-        assert msg.role == "user"
-        assert msg.content == "hello"
-        assert msg.timestamp is None
-
-    def test_should_create_message_with_timestamp(self):
-        from algomate.models.dialogue_records import DialogueMessage
-
-        now = datetime(2026, 1, 1)
-        msg = DialogueMessage(role="assistant", content="hi", timestamp=now)
-        assert msg.timestamp == now
