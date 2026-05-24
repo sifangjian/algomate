@@ -74,7 +74,7 @@ config/          → 配置管理（AppConfig dataclass，支持 YAML + .env）
 
 **入口**: `main.py` 中的 `AlgomateApp` 类初始化所有组件，`app` 变量（模块级）暴露 FastAPI 实例供 uvicorn 使用。
 
-**两套路由并存**: `api/v1/router.py`（新版，前缀 `/api/v1`）和 `models/__init__.py` 导出的旧版路由（无前缀）。新功能应加在 `api/v1/`。
+**路由统一**: 所有 API 路由统一使用 `/api/v1` 前缀，定义在 `api/v1/router.py` 中。
 
 ### 前端结构 (`frontend/src/`)
 
