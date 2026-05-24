@@ -62,7 +62,7 @@ async def learning_chat(message: dict):
     conversation_history = message.get("history", [])
 
     if not question:
-        return {"error": "问题不能为空"}
+        raise HTTPException(status_code=400, detail="问题不能为空")
 
     system_prompt = f"""你是一个专业的算法修习导师，擅长用简洁清晰的方式讲解算法知识。
 
@@ -106,7 +106,7 @@ async def generate_quiz(request: dict):
     topic = request.get("topic", "")
 
     if not topic:
-        return {"error": "主题不能为空"}
+        raise HTTPException(status_code=400, detail="主题不能为空")
 
     try:
         generator = QuestionGenerator()
@@ -157,7 +157,7 @@ async def generate_quiz(request: dict):
         return {"questions": [], "topic": topic}
     except Exception as e:
         logger.error("generate_topic_questions failed: %s", e, exc_info=True)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/save-note")
@@ -180,7 +180,7 @@ async def save_learning_note(note_data: dict):
         return {"id": new_note.id, "message": "心得保存成功"}
     except Exception as e:
         logger.error("save_learning_note failed: %s", e, exc_info=True)
-        return {"error": str(e)}, 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/explain-concept")
@@ -188,7 +188,7 @@ async def explain_concept(topic: str, concept: str):
     from algomate.core.agent.chat_client import ChatClient
 
     if not concept:
-        return {"error": "概念名称不能为空"}
+        raise HTTPException(status_code=400, detail="概念名称不能为空")
 
     system_prompt = f"""你是一个专业的算法修习导师，擅长解释算法概念。
 
@@ -214,4 +214,4 @@ async def explain_concept(topic: str, concept: str):
         return {"explanation": response, "concept": concept, "topic": topic}
     except Exception as e:
         logger.error("explain_concept failed: %s", e, exc_info=True)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))

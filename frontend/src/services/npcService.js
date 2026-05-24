@@ -14,7 +14,11 @@ export const npcService = {
   getById: (id) => api.get(`/v1/npcs/${id}`),
 
   getByRealmId: (realmId) => {
-    return api.get(`/v1/npcs/${realmId}`)
+    const npcId = REALM_TO_NPC_ID[realmId]
+    if (npcId) {
+      return api.get(`/v1/npcs/${npcId}`)
+    }
+    return Promise.reject(new Error(`未找到秘境 ${realmId} 的导师`))
   },
 
   getAlgorithmInfo: () => api.get('/v1/algorithm-info'),

@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func
 
 from algomate.data.database import Database
-from algomate.models.cards import Card, CardUpdate, CardResponse
+from algomate.models.cards import Card, CardCreate, CardUpdate, CardResponse
 from algomate.core.game.durability import compute_card_status
 
 router = APIRouter(prefix="/cards", tags=["卡牌工坊"])
@@ -223,3 +223,85 @@ async def retake_card(card_id: int):
         raise HTTPException(status_code=500, detail=f"重修卡牌失败: {str(e)}")
     finally:
         session.close()
+
+
+@router.post("")
+async def create_card(card_data: CardCreate):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        card = Card(
+            name=card_data.name,
+            algorithm_type=card_data.algorithm_type or "",
+            durability=card_data.durability,
+            npc_id=card_data.npc_id,
+            topic=card_data.topic or "",
+            core_concept=card_data.core_concept or "",
+            key_points=card_data.key_points or "[]",
+            code_template=card_data.code_template or "",
+            complexity_analysis=card_data.complexity_analysis or "",
+            use_cases=card_data.use_cases or "",
+            common_variants=card_data.common_variants or "",
+            typical_problems=card_data.typical_problems or "",
+            common_pitfalls=card_data.common_pitfalls or "",
+            comparison=card_data.comparison or "",
+            my_notes=card_data.my_notes or "",
+            visual_links=card_data.visual_links,
+        )
+        session.add(card)
+        session.commit()
+        session.refresh(card)
+        return success_response(data=_card_to_response(card))
+    except Exception as e:
+        session.rollback()
+        logger.error("create_card failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"创建卡牌失败: {str(e)}")
+    finally:
+        session.close()
+
+
+@router.post("/polish")
+async def polish_card(request: dict):
+    from algomate.core.agent.chat_client import ChatClient
+    from algomate.config.settings import AppConfig
+
+    content = request.get("content", "")
+    field_type = request.get("type", "")
+
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="内容不能为空")
+
+    try:
+        config = AppConfig.load()
+        client = ChatClient(api_key=config.LLM_API_KEY)
+
+        FIELD_LABELS = {
+            "core_concept": "核心概念",
+            "key_points": "关键要点",
+            "code_template": "代码模板",
+            "complexity_analysis": "复杂度分析",
+            "use_cases": "使用场景",
+            "common_variants": "常见变体",
+            "typical_problems": "典型题目",
+            "common_pitfalls": "常见陷阱",
+            "comparison": "对比分析",
+            "my_notes": "个人笔记",
+        }
+        label = FIELD_LABELS.get(field_type, field_type)
+
+        system_prompt = f"""你是算法知识整理师。请润色以下算法卡牌的「{label}」内容。
+要求：
+1. 保持技术准确性
+2. 使表述更清晰、结构化
+3. 保留原文的核心信息
+4. 直接返回润色后的内容，不要额外解释"""
+
+        result = client.chat(
+            messages=[{"role": "user", "content": content}],
+            system_prompt=system_prompt,
+        )
+
+        return success_response(data={"polished_content": result.strip()})
+    except Exception as e:
+        logger.error("polish_card failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"AI润色失败: {str(e)}")
