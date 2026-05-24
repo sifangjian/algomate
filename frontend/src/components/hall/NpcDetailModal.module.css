@@ -48,42 +48,6 @@
   margin: 0;
 }
 
-.specialtyList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs, 4px);
-}
-
-.specialtyItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm, 8px) 0;
-  border-bottom: 1px solid var(--border-color);
-  font-size: var(--font-size-sm, 14px);
-}
-
-.specialtyItem:last-child {
-  border-bottom: none;
-}
-
-.specialtyTag {
-  color: var(--color-text-secondary);
-  background: rgba(99, 102, 241, 0.08);
-  padding: 2px var(--spacing-sm, 8px);
-  border-radius: var(--radius-sm, 4px);
-  font-size: var(--font-size-xs, 12px);
-}
-
-.specialtyBadge {
-  padding: 2px var(--spacing-sm, 8px);
-  border-radius: var(--radius-full, 9999px);
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--color-primary-light);
-  font-size: var(--font-size-xs, 12px);
-  font-weight: var(--font-weight-medium, 500);
-}
-
 .detailCardCount {
   padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
   background: rgba(99, 102, 241, 0.1);

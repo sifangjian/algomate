@@ -42,6 +42,7 @@ function AppContent() {
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<HallPage />} />
+            <Route path="/hall" element={<HallPage />} />
             <Route path="/adventure" element={<AdventureMap />} />
             <Route path="/npc/:realmId" element={<NpcDialogue />} />
             <Route path="/boss/battle" element={<BossBattle />} />

@@ -221,8 +221,14 @@ async def start_dialogue(request: dict):
         session.refresh(dialogue_record)
 
         topics = json.loads(npc.topics) if npc.topics else []
+        specialties = json.loads(npc.specialties) if npc.specialties else []
 
-        greeting = npc.greeting or f"欢迎来到{npc.location or '这里'}！我是{npc.name}。"
+        specialties_str = ""
+        if specialties:
+            specialties_str = f"\n\n🎯 **我的专长**：{'、'.join(specialties[:4])}"
+
+        base_greeting = npc.greeting or f"欢迎来到{npc.location or '这里'}！我是{npc.name}，{npc.title or npc.domain or '导师'}。"
+        greeting = base_greeting + specialties_str
         if topic:
             greeting = f"欢迎回来！让我们继续修习「{topic}」吧。" if greeting else f"让我们开始修习「{topic}」吧！"
 

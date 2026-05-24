@@ -29,4 +29,4 @@ class BattleRecord(Base):
     completed_at = Column(DateTime, nullable=True)
 
     boss = relationship("Boss", backref="battle_records")
-    card = relationship("Card", backref="battle_records")
+    card = relationship("Card", back_populates="battle_records")

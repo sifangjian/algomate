@@ -36,11 +36,12 @@ class Card(Base):
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
-    questions = relationship("Question", back_populates="card")
-    answer_records = relationship("AnswerRecord", back_populates="card")
-    review_records = relationship("ReviewRecord", back_populates="card")
+    questions = relationship("Question", back_populates="card", cascade="all, delete-orphan")
+    answer_records = relationship("AnswerRecord", back_populates="card", cascade="all, delete-orphan")
+    review_records = relationship("ReviewRecord", back_populates="card", cascade="all, delete-orphan")
     npc = relationship("NPC", back_populates="cards")
-    dialogue_records = relationship("DialogueRecord", back_populates="card")
+    dialogue_records = relationship("DialogueRecord", back_populates="card", cascade="all, delete-orphan")
+    battle_records = relationship("BattleRecord", back_populates="card", cascade="all, delete-orphan")
 
 
 class CardCreate(BaseModel):

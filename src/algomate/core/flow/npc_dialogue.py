@@ -609,17 +609,29 @@ class NPCDialogueFlow:
     
     def _build_capabilities_section(self, npc: NPC) -> str:
         topics = json.loads(npc.topics) if npc.topics else []
+        specialties = json.loads(npc.specialties) if npc.specialties else []
+        
+        specialties_str = ""
+        if specialties:
+            specialties_str = f"（擅长：{'、'.join(specialties[:4])}）"
+        
         if topics:
             capabilities = "、".join(topics[:4])
-            return f"**我是{npc.name}，专精{npc.domain}。**\n我可以帮你：{capabilities}"
-        return f"**我是{npc.name}，专精{npc.domain}。**\n我可以帮你探索这个领域的知识。"
+            return f"**我是{npc.name}，{npc.title or npc.domain}导师{specialties_str}。**\n我可以帮你：{capabilities}"
+        return f"**我是{npc.name}，{npc.title or npc.domain}导师{specialties_str}。**\n我可以帮你探索这个领域的知识。"
 
     def _build_topics_section(self, npc: NPC) -> str:
         topics = json.loads(npc.topics) if npc.topics else []
+        specialties = json.loads(npc.specialties) if npc.specialties else []
+        
+        sections = []
         if topics:
             topics_str = " · ".join(topics)
-            return f"📖 可修习话题：{topics_str}"
-        return "📖 暂无可修习话题"
+            sections.append(f"📖 可修习话题：{topics_str}")
+        if specialties:
+            sections.append(f"🎯 我的专长：{'、'.join(specialties[:4])}")
+        
+        return "\n".join(sections) if sections else "📖 暂无可修习话题"
 
     def _build_welcome_section(self, npc: NPC) -> str:
         if npc.greeting:
