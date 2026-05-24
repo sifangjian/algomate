@@ -386,8 +386,9 @@ class TestGenerateReviewQuiz:
         mock_card = MagicMock()
         mock_card.id = 1
         mock_card.name = "快速排序"
-        mock_card.knowledge_content = "快速排序是一种分治算法"
-        mock_card.summary = None
+        mock_card.core_concept = "快速排序是一种分治算法"
+        mock_card.key_points = ""
+        mock_card.my_notes = ""
         mock_card.algorithm_type = "排序算法"
         mock_session.query.return_value.filter.return_value.first.return_value = mock_card
 
@@ -425,8 +426,9 @@ class TestGenerateReviewQuiz:
         mock_card = MagicMock()
         mock_card.id = 1
         mock_card.name = "归并排序"
-        mock_card.knowledge_content = "归并排序是稳定排序"
-        mock_card.summary = None
+        mock_card.core_concept = "归并排序是稳定排序"
+        mock_card.key_points = ""
+        mock_card.my_notes = ""
         mock_card.algorithm_type = "排序算法"
         mock_session.query.return_value.filter.return_value.first.return_value = mock_card
 
@@ -453,8 +455,9 @@ class TestGenerateReviewQuiz:
         mock_card = MagicMock()
         mock_card.id = 2
         mock_card.name = "堆排序"
-        mock_card.knowledge_content = "堆排序利用堆数据结构"
-        mock_card.summary = "堆排序摘要"
+        mock_card.core_concept = "堆排序利用堆数据结构"
+        mock_card.key_points = ""
+        mock_card.my_notes = ""
         mock_card.algorithm_type = "排序算法"
         mock_session.query.return_value.filter.return_value.first.return_value = mock_card
 
@@ -464,10 +467,10 @@ class TestGenerateReviewQuiz:
         generator.generate_review_quiz(card_id=2, count=1)
 
         call_args = generator.generate_multiple_choice.call_args
-        assert call_args.kwargs["note_content"] == "堆排序利用堆数据结构"
+        assert call_args.kwargs["note_content"] == "核心概念：堆排序利用堆数据结构"
 
     @patch("algomate.data.database.Database")
-    def test_generate_review_quiz_falls_back_to_summary(self, MockDB):
+    def test_generate_review_quiz_falls_back_to_my_notes(self, MockDB):
         from algomate.core.agent.question_generator import QuestionGenerator
 
         mock_session = MagicMock()
@@ -476,8 +479,9 @@ class TestGenerateReviewQuiz:
         mock_card = MagicMock()
         mock_card.id = 3
         mock_card.name = "DFS"
-        mock_card.knowledge_content = None
-        mock_card.summary = "深度优先搜索摘要"
+        mock_card.core_concept = ""
+        mock_card.key_points = ""
+        mock_card.my_notes = "深度优先搜索心得"
         mock_card.algorithm_type = "搜索"
         mock_session.query.return_value.filter.return_value.first.return_value = mock_card
 
@@ -487,7 +491,7 @@ class TestGenerateReviewQuiz:
         generator.generate_review_quiz(card_id=3, count=1)
 
         call_args = generator.generate_multiple_choice.call_args
-        assert call_args.kwargs["note_content"] == "深度优先搜索摘要"
+        assert call_args.kwargs["note_content"] == "我的心得：深度优先搜索心得"
 
     @patch("algomate.data.database.Database")
     def test_generate_review_quiz_falls_back_to_name_and_type(self, MockDB):
@@ -499,8 +503,9 @@ class TestGenerateReviewQuiz:
         mock_card = MagicMock()
         mock_card.id = 4
         mock_card.name = "BFS"
-        mock_card.knowledge_content = None
-        mock_card.summary = None
+        mock_card.core_concept = None
+        mock_card.key_points = None
+        mock_card.my_notes = None
         mock_card.algorithm_type = "搜索"
         mock_session.query.return_value.filter.return_value.first.return_value = mock_card
 

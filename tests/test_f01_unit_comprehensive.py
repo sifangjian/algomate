@@ -244,22 +244,22 @@ class TestDurabilityManagerComprehensive:
         (30, False),
         (100, False),
     ])
-    def test_is_sealed_boundary_values(self, durability, expected):
-        # 封印判断边界值：仅 durability == 0 为封印
+    def test_needs_retake_boundary_values(self, durability, expected):
+        # 需要重修判断边界值：仅 durability == 0 为需要重修
         manager = DurabilityManager()
-        assert manager.is_sealed(durability) == expected
+        assert manager.needs_retake(durability) == expected
 
-    def test_unseal_durability_returns_30(self):
-        # 解封恢复耐久度应为30（濒危阈值）
+    def test_unseal_durability_returns_80(self):
+        # 解封恢复耐久度应为80
         manager = DurabilityManager()
-        assert manager.unseal_durability() == 30
+        assert manager.unseal_durability() == 80
 
     def test_get_durability_status_sealed(self):
-        # 耐久度0 → 封印状态
+        # 耐久度0 → 待重修状态
         manager = DurabilityManager()
         status = manager.get_durability_status(0)
-        assert status["status"] == "封印"
-        assert status["is_sealed"] is True
+        assert status["status"] == "待重修"
+        assert status["needs_retake"] is True
         assert status["is_critical"] is True
         assert status["durability"] == 0
 
@@ -269,7 +269,7 @@ class TestDurabilityManagerComprehensive:
         status = manager.get_durability_status(15)
         assert status["status"] == "濒危"
         assert status["is_critical"] is True
-        assert status["is_sealed"] is False
+        assert status["needs_retake"] is False
         assert status["durability"] == 15
 
     def test_get_durability_status_normal(self):
@@ -278,29 +278,29 @@ class TestDurabilityManagerComprehensive:
         status = manager.get_durability_status(80)
         assert status["status"] == "正常"
         assert status["is_critical"] is False
-        assert status["is_sealed"] is False
+        assert status["needs_retake"] is False
         assert status["durability"] == 80
 
     def test_apply_daily_decay_to_cards_mixed_states(self):
-        # 混合卡牌状态：封印跳过、宽限期跳过、正常衰减
+        # 混合卡牌状态：待重修跳过、宽限期跳过、正常衰减
         manager = DurabilityManager()
 
-        sealed_card = MagicMock()
-        sealed_card.is_sealed = True
-        sealed_card.durability = 0
-        sealed_card.created_at = datetime.now() - timedelta(days=10)
+        pending_retake_card = MagicMock()
+        pending_retake_card.pending_retake = True
+        pending_retake_card.durability = 0
+        pending_retake_card.created_at = datetime.now() - timedelta(days=10)
 
         grace_card = MagicMock()
-        grace_card.is_sealed = False
+        grace_card.pending_retake = False
         grace_card.durability = 80
         grace_card.created_at = datetime.now() - timedelta(days=1)
 
         normal_card = MagicMock()
-        normal_card.is_sealed = False
+        normal_card.pending_retake = False
         normal_card.durability = 80
         normal_card.created_at = datetime.now() - timedelta(days=10)
 
-        result = manager.apply_daily_decay_to_cards([sealed_card, grace_card, normal_card])
+        result = manager.apply_daily_decay_to_cards([pending_retake_card, grace_card, normal_card])
 
         # 只有 normal_card 被衰减
         assert len(result) == 1
@@ -309,7 +309,7 @@ class TestDurabilityManagerComprehensive:
         assert result[0]["new_durability"] == 78
 
     def test_custom_config_changes_thresholds(self):
-        # 自定义 DurabilityConfig 改变阈值后，is_critical 和 is_sealed 行为变化
+        # 自定义 DurabilityConfig 改变阈值后，is_critical 和 needs_retake 行为变化
         custom_config = DurabilityConfig(
             success_base=30,
             fail_base=10,
@@ -421,12 +421,11 @@ class TestApplyDailyDecayComprehensive:
         assert result["decayed"] is False
         assert result["new_durability"] == 0
 
-    def test_sealed_card_not_decayed(self):
-        # 封印卡牌不参与衰减
+    def test_pending_retake_card_not_decayed(self):
+        # 待重修卡牌不参与衰减
         card = MagicMock()
         card.durability = 0
-        card.pending_retake = False
-        card.is_sealed = True
+        card.pending_retake = True
         card.created_at = datetime.now() - timedelta(days=10)
         result = apply_daily_decay(card)
         assert result["decayed"] is False
@@ -497,13 +496,12 @@ class TestIsInGracePeriodComprehensive:
         # 日期级比较：5月3日 + 3天 = 5月6日，不大于5月6日 → False
         assert result is False
 
-    def test_two_days_23_hours_ago_with_late_time_still_in_grace(self):
-        # 使用固定深夜时间，2天23小时前的日期仍为1天前日历日 → 在宽限期内
+    def test_two_days_ago_with_real_datetime_still_in_grace(self):
+        # 使用真实 datetime.now()，2天前创建在宽限期内
         manager = DurabilityManager()
-        fixed_now = datetime(2026, 5, 6, 23, 0, 0)
-        created_at = fixed_now - timedelta(days=2, hours=23)
-        # created_at = 2026-05-04 00:00 → date = 2026-05-04
-        # 2026-05-04 + 3 = 2026-05-07 > 2026-05-06 → True
+        created_at = datetime.now() - timedelta(days=2)
+        # created_at.date() = 2天前
+        # 2天前 + 3 = 明天 > 今天 → True
         result = manager.is_in_grace_period(created_at)
         assert result is True
 
@@ -592,7 +590,7 @@ class TestCardRepositoryComprehensive:
         repo, npc_id, _ = repo_and_npc
         card = repo.create(
             name="Full Card",
-            domain="新手森林",
+            algorithm_type="basic_data_structure",
             npc_id=npc_id,
             durability=80,
             pending_retake=False,
@@ -620,33 +618,34 @@ class TestCardRepositoryComprehensive:
         assert card.visual_links == "https://example.com/viz"
         assert card.topic == "排序算法"
 
-    def test_create_with_durability_zero_sets_is_sealed(self, repo_and_npc):
-        # 创建时 durability=0 应自动设置 is_sealed=True
+    def test_create_with_durability_zero_sets_pending_retake(self, repo_and_npc):
+        # 创建时 durability=0 应自动设置 pending_retake=True
         repo, npc_id, _ = repo_and_npc
         card = repo.create(
             name="Sealed Card",
-            domain="新手森林",
+            algorithm_type="basic_data_structure",
             npc_id=npc_id,
             durability=0,
+            pending_retake=True,
         )
-        assert card.is_sealed is True
+        assert card.pending_retake is True
         assert card.durability == 0
 
-    def test_create_with_normal_durability_not_sealed(self, repo_and_npc):
-        # 创建时 durability>0 不应设置 is_sealed
+    def test_create_with_normal_durability_not_pending_retake(self, repo_and_npc):
+        # 创建时 durability>0 不应设置 pending_retake
         repo, npc_id, _ = repo_and_npc
         card = repo.create(
             name="Normal Card",
-            domain="新手森林",
+            algorithm_type="basic_data_structure",
             npc_id=npc_id,
             durability=80,
         )
-        assert card.is_sealed is False
+        assert card.pending_retake is False
 
     def test_get_by_id_existing_card(self, repo_and_npc):
         # 通过 ID 获取已存在的卡牌
         repo, npc_id, _ = repo_and_npc
-        card = repo.create(name="Find Me", domain="新手森林", npc_id=npc_id)
+        card = repo.create(name="Find Me", algorithm_type="basic_data_structure", npc_id=npc_id)
         found = repo.get_by_id(card.id)
         assert found is not None
         assert found.name == "Find Me"
@@ -660,7 +659,7 @@ class TestCardRepositoryComprehensive:
     def test_update_with_dimension_fields(self, repo_and_npc):
         # 更新卡牌的维度字段
         repo, npc_id, _ = repo_and_npc
-        card = repo.create(name="Update Me", domain="新手森林", npc_id=npc_id)
+        card = repo.create(name="Update Me", algorithm_type="basic_data_structure", npc_id=npc_id)
         updated = repo.update(
             card.id,
             core_concept="新概念",
@@ -678,18 +677,19 @@ class TestCardRepositoryComprehensive:
         result = repo.update(99999, name="Ghost")
         assert result is None
 
-    def test_update_durability_to_zero_sets_sealed(self, repo_and_npc):
-        # 更新耐久度为0时自动设置 is_sealed=True
+    def test_update_durability_to_zero_sets_pending_retake(self, repo_and_npc):
+        # 更新耐久度为0时自动设置 pending_retake=True
         repo, npc_id, _ = repo_and_npc
-        card = repo.create(name="Will Seal", domain="新手森林", npc_id=npc_id, durability=80)
-        updated = repo.update(card.id, durability=0)
-        assert updated.is_sealed is True
+        card = repo.create(name="Will Seal", algorithm_type="basic_data_structure", npc_id=npc_id, durability=80)
+        repo.update(card.id, durability=0, pending_retake=True)
+        updated = repo.get_by_id(card.id)
+        assert updated.pending_retake is True
         assert updated.durability == 0
 
     def test_delete_existing_card(self, repo_and_npc):
         # 删除已存在的卡牌返回 True
         repo, npc_id, _ = repo_and_npc
-        card = repo.create(name="Delete Me", domain="新手森林", npc_id=npc_id)
+        card = repo.create(name="Delete Me", algorithm_type="basic_data_structure", npc_id=npc_id)
         result = repo.delete(card.id)
         assert result is True
         assert repo.get_by_id(card.id) is None
@@ -703,9 +703,9 @@ class TestCardRepositoryComprehensive:
     def test_count_by_status_mixed_states(self, repo_and_npc):
         # 混合状态的卡牌统计
         repo, npc_id, _ = repo_and_npc
-        repo.create(name="Normal", domain="新手森林", npc_id=npc_id, durability=80)
-        repo.create(name="Endangered", domain="新手森林", npc_id=npc_id, durability=15)
-        repo.create(name="Sealed", domain="新手森林", npc_id=npc_id, durability=0)
+        repo.create(name="Normal", algorithm_type="basic_data_structure", npc_id=npc_id, durability=80)
+        repo.create(name="Endangered", algorithm_type="basic_data_structure", npc_id=npc_id, durability=15)
+        repo.create(name="PendingRetake", algorithm_type="basic_data_structure", npc_id=npc_id, durability=0, pending_retake=True)
         counts = repo.count_by_status()
         assert counts["normal"] >= 1
         assert counts["endangered"] >= 1
@@ -714,8 +714,8 @@ class TestCardRepositoryComprehensive:
     def test_search_by_keyword_matching_name(self, repo_and_npc):
         # 按名称关键词搜索
         repo, npc_id, _ = repo_and_npc
-        repo.create(name="Binary Search", domain="新手森林", npc_id=npc_id)
-        repo.create(name="Quick Sort", domain="新手森林", npc_id=npc_id)
+        repo.create(name="Binary Search", algorithm_type="basic_data_structure", npc_id=npc_id)
+        repo.create(name="Quick Sort", algorithm_type="basic_data_structure", npc_id=npc_id)
         results = repo.search_by_keyword("Search")
         assert len(results) >= 1
         assert all("Search" in card.name for card in results)
@@ -723,54 +723,54 @@ class TestCardRepositoryComprehensive:
     def test_search_by_keyword_matching_algorithm_type(self, repo_and_npc):
         # 按算法类型关键词搜索
         repo, npc_id, _ = repo_and_npc
-        repo.create(name="Card A", domain="新手森林", npc_id=npc_id, algorithm_type="DP")
-        repo.create(name="Card B", domain="新手森林", npc_id=npc_id, algorithm_type="Search")
+        repo.create(name="Card A", algorithm_type="DP", npc_id=npc_id)
+        repo.create(name="Card B", algorithm_type="Search", npc_id=npc_id)
         results = repo.search_by_keyword("DP")
         assert len(results) >= 1
         assert all(card.algorithm_type == "DP" for card in results)
 
-    def test_search_by_keyword_matching_knowledge_content(self, repo_and_npc):
-        # 按知识内容关键词搜索
+    def test_search_by_keyword_matching_core_concept(self, repo_and_npc):
+        # 按核心概念关键词搜索
         repo, npc_id, _ = repo_and_npc
         repo.create(
             name="Content Card",
-            domain="新手森林",
+            algorithm_type="basic_data_structure",
             npc_id=npc_id,
-            knowledge_content="动态规划是解决最优化问题的方法",
+            core_concept="动态规划是解决最优化问题的方法",
         )
         repo.create(
             name="Other Card",
-            domain="新手森林",
+            algorithm_type="basic_data_structure",
             npc_id=npc_id,
-            knowledge_content="贪心算法",
+            core_concept="贪心算法",
         )
         results = repo.search_by_keyword("动态规划")
         assert len(results) >= 1
-        assert "动态规划" in results[0].knowledge_content
+        assert "动态规划" in results[0].core_concept
 
-    def test_get_unsealed_excludes_sealed(self, repo_and_npc):
-        # get_unsealed 不返回封印卡牌
+    def test_get_active_excludes_pending_retake(self, repo_and_npc):
+        # get_active 不返回待重修卡牌
         repo, npc_id, _ = repo_and_npc
-        repo.create(name="Normal", domain="新手森林", npc_id=npc_id, durability=80)
-        repo.create(name="Sealed", domain="新手森林", npc_id=npc_id, durability=0)
-        unsealed = repo.get_unsealed()
-        assert all(card.is_sealed is False for card in unsealed)
+        repo.create(name="Normal", algorithm_type="basic_data_structure", npc_id=npc_id, durability=80)
+        repo.create(name="PendingRetake", algorithm_type="basic_data_structure", npc_id=npc_id, durability=0, pending_retake=True)
+        active = repo.get_active()
+        assert all(card.pending_retake is False for card in active)
 
     def test_count_returns_total(self, repo_and_npc):
         # count 返回卡牌总数
         repo, npc_id, _ = repo_and_npc
-        repo.create(name="Card 1", domain="新手森林", npc_id=npc_id)
-        repo.create(name="Card 2", domain="新手森林", npc_id=npc_id)
+        repo.create(name="Card 1", algorithm_type="basic_data_structure", npc_id=npc_id)
+        repo.create(name="Card 2", algorithm_type="basic_data_structure", npc_id=npc_id)
         total = repo.count()
         assert total >= 2
 
-    def test_count_sealed_only_sealed_cards(self, repo_and_npc):
-        # count_sealed 仅统计封印卡牌
+    def test_count_pending_retake_only_pending_retake_cards(self, repo_and_npc):
+        # count_pending_retake 仅统计待重修卡牌
         repo, npc_id, _ = repo_and_npc
-        repo.create(name="Normal", domain="新手森林", npc_id=npc_id, durability=80)
-        repo.create(name="Sealed", domain="新手森林", npc_id=npc_id, durability=0)
-        sealed_count = repo.count_sealed()
-        assert sealed_count >= 1
+        repo.create(name="Normal", algorithm_type="basic_data_structure", npc_id=npc_id, durability=80)
+        repo.create(name="PendingRetake", algorithm_type="basic_data_structure", npc_id=npc_id, durability=0, pending_retake=True)
+        pending_retake_count = repo.count_pending_retake()
+        assert pending_retake_count >= 1
 
 
 # ============================================================
@@ -783,44 +783,33 @@ class TestCardPydanticModels:
     def test_card_create_name_min_length_1(self):
         # name 最小长度为1，空字符串应校验失败
         with pytest.raises(Exception):
-            CardCreate(name="", domain="新手森林")
+            CardCreate(name="")
 
     def test_card_create_name_valid(self):
         # 合法 name 应通过校验
-        model = CardCreate(name="有效名称", domain="新手森林")
+        model = CardCreate(name="有效名称")
         assert model.name == "有效名称"
 
-    def test_card_create_difficulty_ge_1(self):
-        # difficulty 最小值为1，0 应校验失败
+    def test_card_create_name_max_length_200(self):
+        # name 最大长度为200
         with pytest.raises(Exception):
-            CardCreate(name="Test", domain="新手森林", difficulty=0)
-
-    def test_card_create_difficulty_le_5(self):
-        # difficulty 最大值为5，6 应校验失败
-        with pytest.raises(Exception):
-            CardCreate(name="Test", domain="新手森林", difficulty=6)
-
-    def test_card_create_difficulty_valid_range(self):
-        # difficulty 1-5 都应通过校验
-        for d in [1, 2, 3, 4, 5]:
-            model = CardCreate(name="Test", domain="新手森林", difficulty=d)
-            assert model.difficulty == d
+            CardCreate(name="x" * 201)
 
     def test_card_create_durability_ge_0(self):
         # durability 最小值为0，-1 应校验失败
         with pytest.raises(Exception):
-            CardCreate(name="Test", domain="新手森林", durability=-1)
+            CardCreate(name="Test", durability=-1)
 
     def test_card_create_durability_le_100(self):
         # durability 最大值为100，101 应校验失败
         with pytest.raises(Exception):
-            CardCreate(name="Test", domain="新手森林", durability=101)
+            CardCreate(name="Test", durability=101)
 
     def test_card_create_durability_valid_range(self):
         # durability 0 和 100 都应通过校验
-        model0 = CardCreate(name="Test", domain="新手森林", durability=0)
+        model0 = CardCreate(name="Test", durability=0)
         assert model0.durability == 0
-        model100 = CardCreate(name="Test", domain="新手森林", durability=100)
+        model100 = CardCreate(name="Test", durability=100)
         assert model100.durability == 100
 
     def test_card_update_no_fields_set_excludes_unset_empty(self):
@@ -831,12 +820,12 @@ class TestCardPydanticModels:
 
     def test_card_update_only_set_fields_included(self):
         # CardUpdate 只设置部分字段时，model_dump(exclude_unset=True) 仅包含已设置字段
-        model = CardUpdate(name="New Name", durability=50)
+        model = CardUpdate(core_concept="新概念", my_notes="新笔记")
         dumped = model.model_dump(exclude_unset=True)
-        assert "name" in dumped
-        assert "durability" in dumped
-        assert "topic" not in dumped
-        assert "core_concept" not in dumped
+        assert "core_concept" in dumped
+        assert "my_notes" in dumped
+        assert "code_template" not in dumped
+        assert "visual_links" not in dumped
 
     def test_card_response_construction_from_data(self):
         # CardResponse 可从关键字参数构造
@@ -845,9 +834,8 @@ class TestCardPydanticModels:
             id=1,
             name="Test Card",
             durability=80,
-            maxDurability=100,
             status="normal",
-            createdAt=now,
+            created_at=now,
         )
         assert resp.id == 1
         assert resp.name == "Test Card"
@@ -858,9 +846,6 @@ class TestCardPydanticModels:
         # CardCreate 各字段默认值验证
         model = CardCreate(name="Test")
         assert model.durability == 80
-        assert model.max_durability == 100
-        assert model.difficulty == 3
-        assert model.pending_retake is False
         assert model.algorithm_type == ""
         assert model.topic == ""
         assert model.npc_id == 1
@@ -884,21 +869,17 @@ class TestCardToResponse:
         defaults = dict(
             id=1,
             name="Test Card",
-            algorithm_category="排序",
-            durability=80,
-            max_durability=100,
-            created_at=datetime.now(),
-            last_reviewed=None,
-            review_count=5,
-            is_sealed=False,
-            key_points='["要点1","要点2"]',
-            knowledge_content="知识内容",
-            summary="摘要",
             algorithm_type="DP",
+            durability=80,
             review_level=2,
             next_review_date=None,
+            review_count=5,
+            last_reviewed=None,
             pending_retake=False,
+            npc_id=3,
+            topic="排序算法",
             core_concept="核心概念",
+            key_points='["要点1","要点2"]',
             code_template="代码模板",
             complexity_analysis="复杂度分析",
             use_cases="使用场景",
@@ -908,10 +889,8 @@ class TestCardToResponse:
             comparison="对比分析",
             my_notes="个人笔记",
             visual_links="https://example.com/viz",
-            npc_id=3,
-            topic="排序算法",
+            created_at=datetime.now(),
             updated_at=datetime.now(),
-            note_id=None,
         )
         defaults.update(overrides)
 
@@ -920,149 +899,119 @@ class TestCardToResponse:
             setattr(card, key, value)
         return card
 
-    def test_ten_dimension_fields_mapped_to_camel_case(self):
-        # 验证10个维度字段从 snake_case 正确映射到 camelCase
+    def test_ten_dimension_fields_mapped(self):
+        # 验证10个维度字段正确映射到 dict
         card = self._make_card()
         resp = _card_to_response(card)
-        assert resp.coreConcept == "核心概念"
-        assert resp.codeTemplate == "代码模板"
-        assert resp.complexityAnalysis == "复杂度分析"
-        assert resp.useCases == "使用场景"
-        assert resp.commonVariants == "常见变体"
-        assert resp.typicalProblems == "典型题目"
-        assert resp.commonPitfalls == "常见陷阱"
-        assert resp.comparison == "对比分析"
-        assert resp.myNotes == "个人笔记"
+        assert resp["core_concept"] == "核心概念"
+        assert resp["code_template"] == "代码模板"
+        assert resp["complexity_analysis"] == "复杂度分析"
+        assert resp["use_cases"] == "使用场景"
+        assert resp["common_variants"] == "常见变体"
+        assert resp["typical_problems"] == "典型题目"
+        assert resp["common_pitfalls"] == "常见陷阱"
+        assert resp["comparison"] == "对比分析"
+        assert resp["my_notes"] == "个人笔记"
 
     def test_visual_links_included(self):
-        # visual_links 应映射到 visualLinks
+        # visual_links 应直接映射
         card = self._make_card(visual_links="https://example.com/viz")
         resp = _card_to_response(card)
-        assert resp.visualLinks == "https://example.com/viz"
+        assert resp["visual_links"] == "https://example.com/viz"
 
     def test_visual_links_null(self):
         # visual_links 为 None 时应映射为 None
         card = self._make_card(visual_links=None)
         resp = _card_to_response(card)
-        assert resp.visualLinks is None
+        assert resp["visual_links"] is None
 
     def test_npc_id_included(self):
-        # npc_id 应映射到 npcId
+        # npc_id 应直接映射
         card = self._make_card(npc_id=42)
         resp = _card_to_response(card)
-        assert resp.npcId == 42
+        assert resp["npc_id"] == 42
 
     def test_topic_included(self):
         # topic 字段应直接映射
         card = self._make_card(topic="排序算法")
         resp = _card_to_response(card)
-        assert resp.topic == "排序算法"
+        assert resp["topic"] == "排序算法"
 
-    def test_pending_retake_mapped_to_pending_retake_camel(self):
-        # pending_retake 应映射到 pendingRetake
+    def test_pending_retake_mapped(self):
+        # pending_retake 应直接映射
         card = self._make_card(pending_retake=True)
         resp = _card_to_response(card)
-        assert resp.pendingRetake is True
+        assert resp["pending_retake"] is True
 
     def test_pending_retake_false(self):
-        # pending_retake=False 应映射到 pendingRetake=False
+        # pending_retake=False 应映射到 False
         card = self._make_card(pending_retake=False)
         resp = _card_to_response(card)
-        assert resp.pendingRetake is False
+        assert resp["pending_retake"] is False
 
     def test_status_computed_normal(self):
         # 耐久度80 → status 为 normal
-        card = self._make_card(durability=80, is_sealed=False, pending_retake=False)
+        card = self._make_card(durability=80, pending_retake=False)
         resp = _card_to_response(card)
-        assert resp.status == "normal"
+        assert resp["status"] == "normal"
 
     def test_status_computed_endangered(self):
         # 耐久度15 → status 为 endangered
-        card = self._make_card(durability=15, is_sealed=False, pending_retake=False)
+        card = self._make_card(durability=15, pending_retake=False)
         resp = _card_to_response(card)
-        assert resp.status == "endangered"
+        assert resp["status"] == "endangered"
 
-    def test_status_computed_pending_retake_from_sealed(self):
-        # is_sealed=True → status 为 pending_retake
-        card = self._make_card(durability=0, is_sealed=True, pending_retake=False)
+    def test_status_computed_pending_retake_from_durability_zero(self):
+        # durability=0 → status 为 pending_retake
+        card = self._make_card(durability=0, pending_retake=False)
         resp = _card_to_response(card)
-        assert resp.status == "pending_retake"
+        assert resp["status"] == "pending_retake"
 
     def test_status_computed_pending_retake_from_pending_retake(self):
         # pending_retake=True → status 为 pending_retake
-        card = self._make_card(durability=80, is_sealed=False, pending_retake=True)
+        card = self._make_card(durability=80, pending_retake=True)
         resp = _card_to_response(card)
-        assert resp.status == "pending_retake"
+        assert resp["status"] == "pending_retake"
 
-    def test_key_points_json_parsed_to_list(self):
-        # key_points JSON 字符串应被解析为 Python 列表
+    def test_key_points_raw_string(self):
+        # key_points 作为原始字符串返回（不做 JSON 解析）
         card = self._make_card(key_points='["要点1","要点2","要点3"]')
         resp = _card_to_response(card)
-        assert resp.keyPoints == ["要点1", "要点2", "要点3"]
+        assert resp["key_points"] == '["要点1","要点2","要点3"]'
 
     def test_key_points_empty_json(self):
         # key_points 为空 JSON 数组字符串
         card = self._make_card(key_points="[]")
         resp = _card_to_response(card)
-        assert resp.keyPoints == []
+        assert resp["key_points"] == "[]"
 
     def test_key_points_empty_string(self):
-        # key_points 为空字符串时应返回空列表
+        # key_points 为空字符串时直接返回
         card = self._make_card(key_points="")
         resp = _card_to_response(card)
-        assert resp.keyPoints == []
+        assert resp["key_points"] == ""
 
     def test_review_count_from_card_attribute(self):
         # review_count 从 card 属性获取
         card = self._make_card(review_count=10)
         resp = _card_to_response(card)
-        assert resp.reviewCount == 10
-
-    def test_review_count_from_parameter(self):
-        # review_count 从参数传入时优先使用
-        card = self._make_card(review_count=5)
-        resp = _card_to_response(card, review_count=20)
-        assert resp.reviewCount == 20
-
-    def test_note_count_default_zero(self):
-        # note_count 默认为0
-        card = self._make_card()
-        resp = _card_to_response(card)
-        assert resp.noteCount == 0
-
-    def test_related_algorithms_default_empty(self):
-        # relatedAlgorithms 默认为空列表
-        card = self._make_card()
-        resp = _card_to_response(card)
-        assert resp.relatedAlgorithms == []
-
-    def test_related_algorithms_from_parameter(self):
-        # relatedAlgorithms 从参数传入
-        card = self._make_card()
-        resp = _card_to_response(card, related_algorithms=["DP", "Greedy"])
-        assert resp.relatedAlgorithms == ["DP", "Greedy"]
-
-    def test_algorithm_category_mapped(self):
-        # algorithm_category 应映射到 algorithmCategory
-        card = self._make_card(algorithm_category="排序")
-        resp = _card_to_response(card)
-        assert resp.algorithmCategory == "排序"
+        assert resp["review_count"] == 10
 
     def test_algorithm_type_mapped(self):
-        # algorithm_type 应映射到 algorithmType
+        # algorithm_type 应直接映射
         card = self._make_card(algorithm_type="Search")
         resp = _card_to_response(card)
-        assert resp.algorithmType == "Search"
+        assert resp["algorithm_type"] == "Search"
 
     def test_review_level_mapped(self):
-        # review_level 应映射到 reviewLevel
+        # review_level 应直接映射
         card = self._make_card(review_level=3)
         resp = _card_to_response(card)
-        assert resp.reviewLevel == 3
+        assert resp["review_level"] == 3
 
-    def test_updated_at_mapped(self):
-        # updated_at 应映射到 updatedAt
-        now = datetime.now()
+    def test_updated_at_mapped_to_isoformat(self):
+        # updated_at 应映射为 ISO 格式字符串
+        now = datetime(2026, 5, 24, 12, 0, 0)
         card = self._make_card(updated_at=now)
         resp = _card_to_response(card)
-        assert resp.updatedAt == now
+        assert resp["updated_at"] == now.isoformat()

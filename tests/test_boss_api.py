@@ -343,7 +343,7 @@ def test_submit_defeat_guide_contains_go_review_and_go_dialogue(client, test_db)
     assert "go_dialogue" in action_names
     go_review_action = next(a for a in actions if a["action"] == "go_review")
     assert go_review_action["label"] == "去修炼巩固"
-    assert go_review_action["target_path"] == "/review"
+    assert go_review_action["target_path"] == "/daily-review"
     go_dialogue_action = next(a for a in actions if a["action"] == "go_dialogue")
     assert go_dialogue_action["label"] == "去重新修习"
     assert go_dialogue_action["target_path"] == "/"

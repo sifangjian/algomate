@@ -222,7 +222,8 @@ class TestIsInGracePeriod:
     def test_just_inside_grace_period(self):
         from algomate.core.game.durability import DurabilityManager
         manager = DurabilityManager()
-        created_at = datetime.now() - timedelta(days=2, hours=23)
+        # 2天前创建 → date + 3 = 明天 > 今天 → 在宽限期内
+        created_at = datetime.now() - timedelta(days=2)
         assert manager.is_in_grace_period(created_at) is True
 
 
