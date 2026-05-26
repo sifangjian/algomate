@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { npcService, REALM_ID_TO_NAME } from '../services/npcService'
+import { dialogueService } from '../services/dialogueService'
 import { useDialogueStore } from '../stores/dialogueStore'
 import { useCardStore } from '../stores/cardStore'
 import PostDialogueGuide from '../components/dialogue/PostDialogueGuide'
@@ -13,6 +14,25 @@ import { showToast } from '../components/ui/Toast/index'
 import styles from './NpcDialogue.module.css'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+
+const SESSION_KEY = 'algomate_dialogue_session'
+
+function saveDialogueSession(data) {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(data))
+}
+
+function loadDialogueSession() {
+    try {
+        const raw = sessionStorage.getItem(SESSION_KEY)
+        return raw ? JSON.parse(raw) : null
+    } catch {
+        return null
+    }
+}
+
+function clearDialogueSession() {
+    sessionStorage.removeItem(SESSION_KEY)
+}
 
 function getImportanceBadge(level) {
     if (level === 'core') return '🔴'
@@ -31,6 +51,8 @@ function getImportanceLabel(level) {
 export default function NpcDialogue() {
     const { realmId } = useParams()
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const urlDialogueId = searchParams.get('dialogueId')
     const messagesEndRef = useRef(null)
     const messagesListRef = useRef(null)
     const inputRef = useRef(null)
@@ -60,6 +82,8 @@ export default function NpcDialogue() {
         saveNote,
         createCard,
         endDialogue,
+        startHeartbeat,
+        loadHistory,
         reset,
     } = useDialogueStore()
 
@@ -68,6 +92,35 @@ export default function NpcDialogue() {
     useEffect(() => {
         if (!realmId) return
         setIsNpcLoading(true)
+
+        const restoreFromSessionOrUrl = async (npcData) => {
+            const saved = loadDialogueSession()
+            const targetDialogueId = urlDialogueId || (saved?.realmId === realmId ? saved?.dialogueId : null)
+
+            if (targetDialogueId) {
+                try {
+                    const historyData = await loadHistory(targetDialogueId)
+                    if (historyData?.status === 'ended') {
+                        try {
+                            await dialogueService.resume(targetDialogueId)
+                        } catch {
+                            // resume 失败不丢弃已加载的历史
+                        }
+                    }
+                    useDialogueStore.setState({ status: 'active' })
+                    saveDialogueSession({ dialogueId: targetDialogueId, npcId: npcData.id, realmId })
+                    startHeartbeat()
+                    return
+                } catch {
+                    // loadHistory 本身失败，走新建流程
+                    clearDialogueSession()
+                }
+            }
+
+            await startDialogue(npcData.id)
+            saveDialogueSession({ dialogueId: useDialogueStore.getState().dialogueId, npcId: npcData.id, realmId })
+        }
+
         npcService.getByRealmId(realmId).then(async (resp) => {
             const data = resp?.data || resp
             if (data && data.id) {
@@ -77,7 +130,7 @@ export default function NpcDialogue() {
                 }
                 setNpc(mergedNpc)
                 try {
-                    await startDialogue(data.id)
+                    await restoreFromSessionOrUrl(data)
                 } catch (err) {
                     showToast(`启动修习失败: ${err.message}`, 'error')
                 }
@@ -94,6 +147,7 @@ export default function NpcDialogue() {
 
     useEffect(() => {
         return () => {
+            clearDialogueSession()
             reset()
         }
     }, [])
@@ -230,6 +284,7 @@ export default function NpcDialogue() {
             }
             if (dialogueId) {
                 const result = await endDialogue()
+                clearDialogueSession()
                 if (result?.abandoned) {
                     showToast('本次修习未创建卡牌，记录已放弃', 'info')
                     navigate('/')

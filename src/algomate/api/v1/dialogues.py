@@ -482,6 +482,139 @@ async def end_dialogue(dialogue_id: int):
         session.close()
 
 
+@router.get("/by-card/{card_id}")
+async def get_dialogue_by_card(card_id: int):
+    from algomate.data.database import Database
+    from algomate.models.cards import Card
+    from algomate.models.dialogue_records import DialogueRecord
+    from algomate.models.dialogue_messages import DialogueMessageRecord
+    from algomate.models.npcs import NPC
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        card = session.query(Card).filter(Card.id == card_id).first()
+        if not card:
+            raise HTTPException(status_code=404, detail={"code": 40404, "message": "卡牌不存在"})
+
+        if not card.dialogue_id:
+            raise HTTPException(status_code=404, detail={"code": 40405, "message": "该卡牌没有关联的对话记录"})
+
+        record = session.query(DialogueRecord).filter(DialogueRecord.id == card.dialogue_id).first()
+        if not record:
+            raise HTTPException(status_code=404, detail={"code": 40405, "message": "对话记录不存在"})
+
+        npc = session.query(NPC).filter(NPC.id == record.npc_id).first()
+        msg_count = session.query(DialogueMessageRecord).filter(
+            DialogueMessageRecord.dialogue_id == record.id
+        ).count()
+
+        return {
+            "dialogue_id": record.id,
+            "npc_id": record.npc_id,
+            "npc_name": npc.name if npc else "未知NPC",
+            "topic": record.topic,
+            "status": record.status,
+            "message_count": msg_count,
+            "created_at": record.created_at.isoformat() if record.created_at else None,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("get_dialogue_by_card failed for card %s: %s", card_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        session.close()
+
+
+@router.post("/{dialogue_id}/resume")
+async def resume_dialogue(dialogue_id: int):
+    from algomate.data.database import Database
+    from algomate.models.dialogue_records import DialogueRecord
+    from algomate.models.dialogue_messages import DialogueMessageRecord
+    from algomate.models.npcs import NPC
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        record = session.query(DialogueRecord).filter(DialogueRecord.id == dialogue_id).first()
+        if not record:
+            raise HTTPException(status_code=404, detail={"code": 40405, "message": f"对话 {dialogue_id} 不存在"})
+
+        if record.status == "active":
+            npc = session.query(NPC).filter(NPC.id == record.npc_id).first()
+            return {
+                "dialogue_id": record.id,
+                "npc_id": record.npc_id,
+                "npc_name": npc.name if npc else "",
+                "topic": record.topic,
+                "status": "active",
+                "message": "对话仍在进行中",
+            }
+
+        record.status = "active"
+        record.last_active_at = datetime.now()
+
+        resume_msg = DialogueMessageRecord(
+            dialogue_id=dialogue_id,
+            role="assistant",
+            content="欢迎回来！让我们继续修习吧。",
+            created_at=datetime.now(),
+        )
+        session.add(resume_msg)
+        session.commit()
+
+        if dialogue_id in _active_sessions:
+            _active_sessions[dialogue_id].status = DialogueState.ACTIVE
+
+        npc = session.query(NPC).filter(NPC.id == record.npc_id).first()
+        return {
+            "dialogue_id": record.id,
+            "npc_id": record.npc_id,
+            "npc_name": npc.name if npc else "",
+            "topic": record.topic,
+            "status": "active",
+            "greeting": "欢迎回来！让我们继续修习吧。",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        logger.error("resume_dialogue failed for dialogue %s: %s", dialogue_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        session.close()
+
+
+@router.delete("/{dialogue_id}/messages")
+async def clear_dialogue_messages(dialogue_id: int):
+    from algomate.data.database import Database
+    from algomate.models.dialogue_records import DialogueRecord
+    from algomate.models.dialogue_messages import DialogueMessageRecord
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        record = session.query(DialogueRecord).filter(DialogueRecord.id == dialogue_id).first()
+        if not record:
+            raise HTTPException(status_code=404, detail={"code": 40405, "message": f"对话 {dialogue_id} 不存在"})
+
+        deleted = session.query(DialogueMessageRecord).filter(
+            DialogueMessageRecord.dialogue_id == dialogue_id
+        ).delete()
+        session.commit()
+
+        return {"deleted_count": deleted, "message": "对话记录已清空"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        logger.error("clear_dialogue_messages failed for dialogue %s: %s", dialogue_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        session.close()
+
+
 @router.get("/{dialogue_id}/history")
 async def get_dialogue_history(dialogue_id: int):
     from algomate.data.database import Database
@@ -524,6 +657,21 @@ async def get_dialogue_history(dialogue_id: int):
                 "updated_at": note.updated_at.isoformat() if note.updated_at else None,
             }
 
+        from algomate.models.cards import Card as CardModel
+        dialogue_cards = session.query(CardModel).filter(
+            CardModel.dialogue_id == dialogue_id
+        ).all()
+        cards_data = [
+            {
+                "id": c.id,
+                "name": c.name,
+                "algorithm_type": c.algorithm_type,
+                "durability": c.durability,
+                "topic": c.topic,
+            }
+            for c in dialogue_cards
+        ]
+
         return {
             "dialogue_id": record.id,
             "npc_id": record.npc_id,
@@ -533,6 +681,7 @@ async def get_dialogue_history(dialogue_id: int):
             "messages": messages,
             "note": note_data,
             "card_id": record.card_id,
+            "cards": cards_data,
             "created_at": record.created_at.isoformat() if record.created_at else None,
         }
     except HTTPException:

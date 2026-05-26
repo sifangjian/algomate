@@ -96,4 +96,13 @@ export const dialogueService = {
 
   heartbeat: (dialogueId) =>
     api.post(`/v1/dialogues/${dialogueId}/heartbeat`),
+
+  getByCard: (cardId) =>
+    api.get(`/v1/dialogues/by-card/${cardId}`),
+
+  resume: (dialogueId) =>
+    api.post(`/v1/dialogues/${dialogueId}/resume`),
+
+  clearMessages: (dialogueId) =>
+    api.delete(`/v1/dialogues/${dialogueId}/messages`),
 }

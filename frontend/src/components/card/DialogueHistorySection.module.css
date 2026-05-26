@@ -1,0 +1,222 @@
+.section {
+  margin-top: 12px;
+}
+
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--color-text-primary, #1a1a2e);
+  transition: all 0.15s ease;
+}
+
+.toggleBtn:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.toggleIcon {
+  font-size: 0.7rem;
+  color: var(--color-primary-light, #6366f1);
+  transition: transform 0.2s ease;
+}
+
+.toggleTitle {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.msgBadge {
+  margin-left: auto;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+  color: var(--color-primary-light, #6366f1);
+}
+
+.content {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--color-bg-elevated, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+}
+
+.loading,
+.empty {
+  text-align: center;
+  color: var(--color-text-muted, #9ca3af);
+  font-size: 0.82rem;
+  padding: 16px;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.msg {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.userMsg {
+  justify-content: flex-end;
+}
+
+.npcMsg {
+  justify-content: flex-start;
+}
+
+.avatar {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.msgBubble {
+  max-width: 80%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.npcMsg .msgBubble {
+  background: var(--color-bg-card, #fff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-top-left-radius: 3px;
+  color: var(--color-text-primary, #1a1a2e);
+}
+
+.userMsg .msgBubble {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.05));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-top-right-radius: 3px;
+  color: var(--color-text-primary, #1a1a2e);
+}
+
+.msgContent p {
+  margin: 0 0 4px 0;
+}
+
+.msgContent p:last-child {
+  margin-bottom: 0;
+}
+
+.msgContent code {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8em;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.msgContent pre {
+  margin: 4px 0;
+  padding: 6px 8px;
+  background: #1e1e2e;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.75rem;
+}
+
+.msgContent pre code {
+  display: block;
+  background: none;
+  padding: 0;
+  color: #cdd6f4;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.continueBtn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.continueBtn:hover {
+  opacity: 0.9;
+}
+
+.clearBtn {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.clearBtn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.clearConfirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clearConfirmText {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.confirmYes {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.confirmYes:disabled {
+  opacity: 0.5;
+}
+
+.confirmNo {
+  padding: 4px 10px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+}

@@ -142,3 +142,12 @@ export const REALM_ID_TO_NAME = {
   'math_hall': '数学殿堂',
   'trial_ground': '试炼之地',
 }
+
+export function getRealmIdByNpcId(npcId) {
+  for (const [realmId, id] of Object.entries(REALM_TO_NPC_ID)) {
+    if (id === npcId && !realmId.match(/[一-鿿]/)) {
+      return realmId
+    }
+  }
+  return null
+}

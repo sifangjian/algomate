@@ -227,8 +227,10 @@ export const useDialogueStore = create((set, get) => ({
       const historyData = data.data || data
       set({
         dialogueId,
+        npcId: historyData.npc_id || null,
         messages: (historyData.messages || []).map((m) => ({
           ...m,
+          role: m.role === 'assistant' ? 'npc' : m.role,
           displayed: true,
           isStreaming: false,
         })),
@@ -238,6 +240,7 @@ export const useDialogueStore = create((set, get) => ({
         npcName: historyData.npc_name || '',
         npcAvatar: historyData.npc_avatar || '',
         topic: historyData.topic || '',
+        dialogueCards: historyData.cards || [],
       })
       return historyData
     } catch (err) {

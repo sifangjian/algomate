@@ -6,6 +6,7 @@ import { showToast } from '../ui/Toast/index'
 import Button from '../ui/Button/Button'
 import DimensionSection from '../card/DimensionSection'
 import VisualLinksSection from '../card/VisualLinksSection'
+import DialogueHistorySection from '../card/DialogueHistorySection'
 import CardEditForm from '../card/CardEditForm'
 import RetakeButton from '../card/RetakeButton'
 import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
@@ -197,6 +198,7 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
             <>
               <DimensionSection card={selectedCard} />
               <VisualLinksSection visualLinks={selectedCard.visual_links} />
+              <DialogueHistorySection card={selectedCard} />
             </>
           )}
 
