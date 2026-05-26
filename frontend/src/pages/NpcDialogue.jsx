@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { npcService, REALM_ID_TO_NAME } from '../services/npcService'
 import { useDialogueStore } from '../stores/dialogueStore'
+import { useCardStore } from '../stores/cardStore'
 import PostDialogueGuide from '../components/dialogue/PostDialogueGuide'
+import CardDetailDrawer from '../components/card/CardDetailDrawer'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
 import { ConfirmDialog } from '../components/ui/Modal/Modal'
@@ -42,21 +44,25 @@ export default function NpcDialogue() {
     const [algorithmInfo, setAlgorithmInfo] = useState(null)
     const [isEnding, setIsEnding] = useState(false)
     const [isNearBottom, setIsNearBottom] = useState(true)
+    const [newCardName, setNewCardName] = useState('')
 
     const {
         dialogueId,
         messages,
         isStreaming,
         suggestions,
-        earnedCard,
+        dialogueCards,
         existingCard,
         status,
         startDialogue,
         sendMessage,
         saveNote,
+        createCard,
         endDialogue,
         reset,
     } = useDialogueStore()
+
+    const { setSelectedCard, fetchCardDetail } = useCardStore()
 
     useEffect(() => {
         if (!realmId) return
@@ -214,10 +220,13 @@ export default function NpcDialogue() {
             }
             if (dialogueId) {
                 const result = await endDialogue()
-                if (result?.card) {
-                    showToast('修习完成，获得知识卡牌 🎴', 'success')
-                } else if (result?.error) {
-                    showToast(`卡牌生成失败: ${result.error}`, 'warning')
+                if (result?.abandoned) {
+                    showToast('本次修习未创建卡牌，记录已放弃', 'info')
+                    navigate('/')
+                    return
+                }
+                if (result?.cards?.length > 0) {
+                    showToast(`修习完成，保存了${result.cards.length}张卡牌`, 'success')
                 }
             }
             setShowEndConfirm(false)
@@ -226,7 +235,7 @@ export default function NpcDialogue() {
         } finally {
             setIsEnding(false)
         }
-    }, [noteContent, dialogueId, saveNote, endDialogue])
+    }, [noteContent, dialogueId, saveNote, endDialogue, navigate])
 
     const handleKeyDown = useCallback(
         (e) => {
@@ -237,6 +246,24 @@ export default function NpcDialogue() {
         },
         [handleSend]
     )
+
+    const [editingCard, setEditingCard] = useState(null)
+
+    const handleCreateCard = useCallback(async (e) => {
+        if (e.key !== 'Enter' || !newCardName.trim()) return
+        try {
+            await createCard(newCardName.trim())
+            setNewCardName('')
+            showToast(`空白卡牌「${newCardName.trim()}」已创建`, 'success')
+        } catch (err) {
+            showToast(`创建卡牌失败: ${err.message}`, 'error')
+        }
+    }, [newCardName, createCard])
+
+    const handleOpenCard = useCallback(async (card) => {
+        await fetchCardDetail(card.id)
+        setEditingCard(true)
+    }, [fetchCardDetail])
 
     return (
         <div className={`${styles.container} page-container`}>
@@ -338,41 +365,53 @@ export default function NpcDialogue() {
                     </div>
                 </section>
 
-                <aside className={styles.noteSection} aria-label="修炼日记区域">
-                    <h3 className={styles.noteTitle}>📝 修炼日记</h3>
-                    <p className={styles.noteHint}>按模板记录修炼过程，转化为知识卡牌</p>
+                <aside className={styles.noteSection} aria-label="草稿本区域">
+                    <h3 className={styles.noteTitle}>📓 草稿本</h3>
+                    <p className={styles.noteHint}>随手记录要点和想法，这只是草稿，不是最终内容</p>
 
                     <textarea
                         className={styles.noteEditor}
                         value={noteContent}
                         onChange={(e) => setNoteContent(e.target.value)}
-                        placeholder={"📌 今日主题：学习的算法/知识点\n💡 核心理解：用自己的话概括关键思路\n⚠️ 易错难点：踩过的坑或容易混淆的点\n🔑 关键代码：核心代码片段或伪代码\n🧠 个人感悟：总结与反思"}
+                        placeholder={"随意记录关键词、思路片段、待查问题...\n这只是草稿，不需要完整"}
                         rows={10}
-                        aria-label="修炼日记编辑器"
+                        aria-label="草稿本编辑器"
                     />
-                    {earnedCard && (
-                        <div className={styles.earnedCardSection}>
-                            <h4 className={styles.earnedCardTitle}>🎴 获得卡牌</h4>
-                            <div className={styles.earnedCardInfo}>
-                                <p className={styles.earnedCardName}>{earnedCard.name}</p>
-                                {earnedCard.algorithm_category && (
-                                    <span className={styles.earnedCardTag}>{earnedCard.algorithm_category}</span>
-                                )}
-                                {earnedCard.summary && (
-                                    <p className={styles.earnedCardContent}>
-                                        {earnedCard.summary.length > 120
-                                            ? `${earnedCard.summary.slice(0, 120)}...`
-                                            : earnedCard.summary}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    )}
+
+                    <div className={styles.cardCreateArea}>
+                        <h4 className={styles.cardCreateTitle}>+ 新建卡牌</h4>
+                        <input
+                            className={styles.cardCreateInput}
+                            placeholder="输入卡牌名称，回车创建..."
+                            value={newCardName}
+                            onChange={(e) => setNewCardName(e.target.value)}
+                            onKeyDown={handleCreateCard}
+                        />
+                    </div>
 
                     {status === 'ended' && <PostDialogueGuide />}
                 </aside>
+
+                <div className={styles.cardDock}>
+                    {dialogueCards.map((card) => (
+                        <div
+                            key={card.id}
+                            className={styles.dockedCard}
+                            onClick={() => handleOpenCard(card)}
+                            title={card.name}
+                        >
+                            <span className={styles.dockedCardIcon}>📜</span>
+                            <span className={styles.dockedCardName}>{card.name}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
             )}
+
+            <CardDetailDrawer
+                open={!!editingCard}
+                onClose={() => setEditingCard(null)}
+            />
 
             <ConfirmDialog
                 open={showEndConfirm}

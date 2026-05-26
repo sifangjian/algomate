@@ -31,26 +31,9 @@ class DialogueSession:
     messages: List[Dict[str, Any]] = field(default_factory=list)
     note_content: str = ""
     last_active_at: datetime = field(default_factory=datetime.now)
-    card_result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     retry_count: int = 0
     created_at: datetime = field(default_factory=datetime.now)
-
-
-class CardGenerationResult(BaseModel):
-    name: str = Field(description="算法技巧名称")
-    algorithm_type: str = Field(description="算法分类")
-    core_concept: str = Field(description="核心概念")
-    key_points: str = Field(description="要点列表")
-    code_template: str = Field(description="代码模板")
-    complexity_analysis: str = Field(description="复杂度分析")
-    use_cases: str = Field(description="适用场景")
-    common_variants: str = Field(description="常见变体")
-    typical_problems: str = Field(description="典型题目（JSON数组）")
-    common_pitfalls: str = Field(description="常见坑点")
-    comparison: str = Field(description="对比辨析")
-    my_notes: str = Field(description="用户心得（原文）")
-    difficulty: int = Field(ge=1, le=5, description="难度等级")
 
 
 _active_sessions: Dict[int, DialogueSession] = {}
@@ -117,74 +100,6 @@ def _build_enhanced_system_prompt(npc_system_prompt: str, npc_domain: str, topic
 - 回复格式：'这个问题超出了我的专长范围，我主要擅长{npc_domain}方面的知识。你可以问我关于{topics_str}的问题！'
 - 不要尝试回答超出专长的问题，即使你知道答案"""
     return npc_system_prompt + domain_boundary
-
-
-def _build_card_generation_prompt(
-    topic: str,
-    npc_domain: str,
-    dialogue_messages: List[Dict[str, Any]],
-    note_content: str,
-) -> str:
-    messages_formatted = ""
-    for msg in dialogue_messages:
-        role_label = "用户" if msg["role"] == "user" else "NPC"
-        messages_formatted += f"**{role_label}**：{msg['content']}\n\n"
-
-    system_prompt = """你是一个专业的算法知识整理师，擅长从对话记录和用户笔记中提取和结构化算法知识。
-
-你的任务是根据用户与NPC的对话内容和用户笔记，生成一张完整的算法技巧卡牌。
-
-卡牌必须包含以下10个维度，每个维度都要准确、完整、有深度：
-
-1. 核心概念（core_concept）：算法的核心思想和原理，2-3句话概括
-2. 要点列表（key_points）：关键步骤和注意事项，每条一行，3-5条
-3. 代码模板（code_template）：Python伪代码或通用代码框架，包含关键注释
-4. 复杂度分析（complexity_analysis）：时间复杂度和空间复杂度，附带简要推导
-5. 适用场景（use_cases）：什么情况下使用该技巧，2-3个典型场景
-6. 常见变体（common_variants）：该技巧的衍生版本，2-3个
-7. 典型题目（typical_problems）：推荐的LeetCode题目，JSON数组格式，包含title/url/difficulty
-8. 常见坑点（common_pitfalls）：易错点和边界条件，2-3条
-9. 对比辨析（comparison）：与相似技巧的区别，1-2组对比
-10. 我的心得（my_notes）：直接使用用户提供的笔记内容，不做修改
-
-重要规则：
-- 如果对话内容不足以填充某个维度，基于该算法领域的通用知识补充
-- 典型题目必须是真实存在的LeetCode题目
-- 代码模板使用Python语言
-- 所有内容必须准确，不要编造不存在的算法特性"""
-
-    user_prompt = f"""请根据以下对话记录和用户笔记，生成算法技巧卡牌。
-
-## 对话话题
-{topic}
-
-## NPC专长领域
-{npc_domain}
-
-## 对话记录
-{messages_formatted}
-
-## 用户笔记
-{note_content or '（用户未记录笔记）'}
-
-请严格按照以下JSON格式返回卡牌内容：
-{{
-    "name": "算法技巧名称",
-    "algorithm_type": "算法分类",
-    "core_concept": "核心概念...",
-    "key_points": "1. 要点一\\n2. 要点二\\n3. 要点三",
-    "code_template": "def algorithm():\\n    # 代码模板\\n    pass",
-    "complexity_analysis": "时间复杂度: O(...)\\n空间复杂度: O(...)",
-    "use_cases": "1. 场景一\\n2. 场景二",
-    "common_variants": "1. 变体一\\n2. 变体二",
-    "typical_problems": "[{{\\"title\\":\\"题目标题\\",\\"url\\":\\"https://leetcode.cn/problems/xxx/\\",\\"difficulty\\":\\"Easy\\"}}]",
-    "common_pitfalls": "1. 坑点一\\n2. 坑点二",
-    "comparison": "与XXX的区别：...",
-    "my_notes": "用户笔记原文",
-    "difficulty": 3
-}}"""
-
-    return system_prompt, user_prompt
 
 
 @router.post("/start")
@@ -487,10 +402,7 @@ async def end_dialogue(dialogue_id: int):
     from algomate.models.dialogue_records import DialogueRecord
     from algomate.models.dialogue_messages import DialogueMessageRecord
     from algomate.models.dialogue_notes import DialogueNote
-    from algomate.models.npcs import NPC
     from algomate.models.cards import Card
-    from algomate.core.agent.chat_client import ChatClient
-    from algomate.config.settings import AppConfig
 
     db = Database.get_instance()
     session = db.get_session()
@@ -502,150 +414,33 @@ async def end_dialogue(dialogue_id: int):
         if record.status != "active":
             raise HTTPException(status_code=400, detail={"code": 40003, "message": "对话已结束"})
 
-        record.status = "ended"
-        session.commit()
+        # 查询本次对话期间创建的卡牌
+        dialogue_cards = session.query(Card).filter(
+            Card.dialogue_id == dialogue_id
+        ).all()
 
-        messages_records = (
-            session.query(DialogueMessageRecord)
-            .filter(DialogueMessageRecord.dialogue_id == dialogue_id)
-            .order_by(DialogueMessageRecord.created_at.asc())
-            .all()
-        )
+        if not dialogue_cards:
+            # 无卡牌 → 放弃本次对话，删除记录
+            session.query(DialogueNote).filter(DialogueNote.dialogue_id == dialogue_id).delete()
+            session.query(DialogueMessageRecord).filter(DialogueMessageRecord.dialogue_id == dialogue_id).delete()
+            session.delete(record)
+            session.commit()
 
-        note = session.query(DialogueNote).filter(DialogueNote.dialogue_id == dialogue_id).first()
-        note_content = note.content if note else ""
+            if dialogue_id in _active_sessions:
+                del _active_sessions[dialogue_id]
 
-        npc = session.query(NPC).filter(NPC.id == record.npc_id).first()
-
-        dialogue_messages = [
-            {"role": m.role, "content": m.content}
-            for m in messages_records
-        ]
-
-        topic = record.topic or npc.domain if npc else ""
-        npc_domain = npc.domain if npc else ""
-
-        system_prompt, user_prompt = _build_card_generation_prompt(
-            topic=topic,
-            npc_domain=npc_domain,
-            dialogue_messages=dialogue_messages,
-            note_content=note_content,
-        )
-
-        config = AppConfig.load()
-        chat_client = ChatClient(api_key=config.LLM_API_KEY, model=config.LLM_MODEL)
-
-        card_result = None
-        retry_count = 0
-        max_retries = 2
-        last_error = None
-
-        while retry_count < max_retries:
-            try:
-                llm = chat_client._get_llm_with_structured_output(CardGenerationResult, temperature=0.5)
-                from langchain_core.messages import SystemMessage, HumanMessage
-                llm_messages = [
-                    SystemMessage(content=system_prompt),
-                    HumanMessage(content=user_prompt),
-                ]
-                response = llm.invoke(llm_messages)
-
-                if isinstance(response, CardGenerationResult):
-                    card_result = response
-                    break
-                elif isinstance(response, dict):
-                    card_result = CardGenerationResult(**response)
-                    break
-                else:
-                    last_error = "无法解析卡牌生成结果"
-                    retry_count += 1
-            except Exception as e:
-                last_error = str(e)
-                logger.warning("end_dialogue card generation retry %d/%d for dialogue %s: %s", retry_count, max_retries, dialogue_id, e)
-                retry_count += 1
-                import time
-                if retry_count < max_retries:
-                    time.sleep(2 ** retry_count)
-
-        if card_result is None:
-            from algomate.core.guide.service import GuideService
-            guide_service = GuideService()
-            guides = guide_service.generate_guides(
-                scene="after_dialogue",
-                card=None,
-            )
             return {
-                "card": None,
-                "dialogue_preserved": True,
-                "dialogue_id": dialogue_id,
-                "error": f"卡牌生成失败，对话记录已保存，可稍后重试: {last_error}",
-                "retry_available": True,
-                "guides": guides.model_dump(),
+                "abandoned": True,
+                "message": "本次修习未创建卡牌，记录已放弃",
             }
 
-        existing_card = session.query(Card).filter(
-            Card.npc_id == record.npc_id,
-            Card.topic == record.topic,
-        ).first()
-
-        is_update = existing_card is not None
-
-        algorithm_type_mapping = {
-            "基础数据结构": "basic_data_structure",
-            "栈队列与搜索": "basic_data_structure",
-            "搜索与遍历": "search_traversal",
-            "树结构": "tree",
-            "图结构": "graph",
-            "动态规划": "dynamic_programming",
-            "贪心算法": "greedy",
-            "回溯算法": "backtracking",
-            "分治与排序": "divide_conquer",
-            "数学与位运算": "math_bit",
-        }
-        card_algorithm_type = algorithm_type_mapping.get(npc_domain, "basic_data_structure")
-
-        card_data = {
-            "name": card_result.name,
-            "algorithm_type": card_result.algorithm_type or card_algorithm_type,
-            "durability": 80,
-            "pending_retake": False,
-            "core_concept": card_result.core_concept,
-            "key_points": card_result.key_points,
-            "code_template": card_result.code_template,
-            "complexity_analysis": card_result.complexity_analysis,
-            "use_cases": card_result.use_cases,
-            "common_variants": card_result.common_variants,
-            "typical_problems": card_result.typical_problems,
-            "common_pitfalls": card_result.common_pitfalls,
-            "comparison": card_result.comparison,
-            "my_notes": note_content or card_result.my_notes,
-            "visual_links": "[]",
-            "npc_id": record.npc_id,
-            "topic": record.topic or "",
-            "review_level": 0,
-            "review_count": 0,
-        }
-
-        if is_update:
-            for key, value in card_data.items():
-                setattr(existing_card, key, value)
-            existing_card.updated_at = datetime.now()
-            session.commit()
-            session.refresh(existing_card)
-            saved_card = existing_card
-        else:
-            new_card = Card(**card_data)
-            session.add(new_card)
-            session.commit()
-            session.refresh(new_card)
-            saved_card = new_card
-
-        record.card_id = saved_card.id
+        # 有卡牌 → 保留记录
+        record.status = "ended"
+        record.card_id = dialogue_cards[0].id
         session.commit()
 
         if dialogue_id in _active_sessions:
             _active_sessions[dialogue_id].status = DialogueState.ENDED
-            _active_sessions[dialogue_id].card_result = card_data
 
         from algomate.core.guide.service import GuideService
         from algomate.models.bosses import Boss
@@ -657,30 +452,24 @@ async def end_dialogue(dialogue_id: int):
         guide_service = GuideService()
         guides = guide_service.generate_guides(
             scene="after_dialogue",
-            card={"id": saved_card.id, "name": saved_card.name},
+            card={"id": dialogue_cards[0].id, "name": dialogue_cards[0].name},
             has_available_boss=has_available_boss,
         )
 
+        cards_data = [
+            {
+                "id": c.id,
+                "name": c.name,
+                "algorithm_type": c.algorithm_type,
+                "durability": c.durability,
+                "topic": c.topic,
+            }
+            for c in dialogue_cards
+        ]
+
         return {
-            "card": {
-                "id": saved_card.id,
-                "name": saved_card.name,
-                "algorithm_type": saved_card.algorithm_type,
-                "durability": saved_card.durability,
-                "topic": saved_card.topic,
-                "core_concept": saved_card.core_concept,
-                "key_points": saved_card.key_points,
-                "code_template": saved_card.code_template,
-                "complexity_analysis": saved_card.complexity_analysis,
-                "use_cases": saved_card.use_cases,
-                "common_variants": saved_card.common_variants,
-                "typical_problems": saved_card.typical_problems,
-                "common_pitfalls": saved_card.common_pitfalls,
-                "comparison": saved_card.comparison,
-                "my_notes": saved_card.my_notes,
-                "visual_links": saved_card.visual_links,
-            },
-            "is_update": is_update,
+            "cards": cards_data,
+            "dialogue_id": dialogue_id,
             "guides": guides.model_dump(),
         }
     except HTTPException:

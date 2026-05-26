@@ -57,125 +57,6 @@ class TestBuildEnhancedSystemPrompt:
         assert result.startswith(original)
 
 
-class TestBuildCardGenerationPrompt:
-    """测试 _build_card_generation_prompt 函数"""
-
-    def test_should_return_system_and_user_prompt(self):
-        from algomate.api.v1.dialogues import _build_card_generation_prompt
-
-        system_prompt, user_prompt = _build_card_generation_prompt(
-            topic="二分查找",
-            npc_domain="基础数据结构",
-            dialogue_messages=[
-                {"role": "user", "content": "什么是二分查找？"},
-                {"role": "assistant", "content": "二分查找是一种搜索算法。"},
-            ],
-            note_content="二分查找的核心是折半",
-        )
-
-        assert "算法知识整理师" in system_prompt
-        assert "10个维度" in system_prompt
-        assert "二分查找" in user_prompt
-        assert "基础数据结构" in user_prompt
-        assert "什么是二分查找？" in user_prompt
-        assert "二分查找的核心是折半" in user_prompt
-
-    def test_should_handle_empty_note(self):
-        from algomate.api.v1.dialogues import _build_card_generation_prompt
-
-        _, user_prompt = _build_card_generation_prompt(
-            topic="排序",
-            npc_domain="分治算法",
-            dialogue_messages=[],
-            note_content="",
-        )
-
-        assert "用户未记录笔记" in user_prompt
-
-    def test_should_format_user_and_npc_messages(self):
-        from algomate.api.v1.dialogues import _build_card_generation_prompt
-
-        _, user_prompt = _build_card_generation_prompt(
-            topic="DP",
-            npc_domain="动态规划",
-            dialogue_messages=[
-                {"role": "user", "content": "How to DP?"},
-                {"role": "assistant", "content": "DP is..."},
-            ],
-            note_content="test",
-        )
-
-        assert "**用户**：How to DP?" in user_prompt
-        assert "**NPC**：DP is..." in user_prompt
-
-
-class TestCardGenerationResult:
-    """测试 CardGenerationResult Pydantic 模型"""
-
-    def test_should_create_valid_instance(self):
-        from algomate.api.v1.dialogues import CardGenerationResult
-
-        card = CardGenerationResult(
-            name="二分查找",
-            algorithm_type="搜索",
-            core_concept="折半搜索",
-            key_points="1. 有序数组\n2. 中间元素",
-            code_template="def binary_search(): pass",
-            complexity_analysis="O(log n)",
-            use_cases="1. 有序数组查找",
-            common_variants="1. 左边界二分",
-            typical_problems='[{"title":"搜索插入位置"}]',
-            common_pitfalls="1. 溢出",
-            comparison="与线性查找的区别",
-            my_notes="用户笔记",
-            difficulty=3,
-        )
-
-        assert card.name == "二分查找"
-        assert card.difficulty == 3
-        assert card.algorithm_type == "搜索"
-
-    def test_should_reject_difficulty_below_1(self):
-        from algomate.api.v1.dialogues import CardGenerationResult
-
-        with pytest.raises(Exception):
-            CardGenerationResult(
-                name="test",
-                algorithm_type="test",
-                core_concept="test",
-                key_points="test",
-                code_template="test",
-                complexity_analysis="test",
-                use_cases="test",
-                common_variants="test",
-                typical_problems="test",
-                common_pitfalls="test",
-                comparison="test",
-                my_notes="test",
-                difficulty=0,
-            )
-
-    def test_should_reject_difficulty_above_5(self):
-        from algomate.api.v1.dialogues import CardGenerationResult
-
-        with pytest.raises(Exception):
-            CardGenerationResult(
-                name="test",
-                algorithm_type="test",
-                core_concept="test",
-                key_points="test",
-                code_template="test",
-                complexity_analysis="test",
-                use_cases="test",
-                common_variants="test",
-                typical_problems="test",
-                common_pitfalls="test",
-                comparison="test",
-                my_notes="test",
-                difficulty=6,
-            )
-
-
 class TestDialogueState:
     """测试 DialogueState 枚举"""
 
@@ -216,7 +97,6 @@ class TestDialogueSessionDataclass:
         assert session.messages == []
         assert session.note_content == ""
         assert session.retry_count == 0
-        assert session.card_result is None
         assert session.error is None
 
     def test_should_allow_setting_optional_fields(self):
@@ -248,6 +128,7 @@ class TestNPCDialogueFlowHelperMethods:
         npc.name = name
         npc.domain = domain
         npc.topics = json.dumps(topics or ["背包问题", "最长子序列"])
+        npc.specialties = json.dumps(["动态规划", "背包问题"])
         npc.greeting = greeting
         npc.location = location
         npc.system_prompt = "你是算法导师"
@@ -258,11 +139,12 @@ class TestNPCDialogueFlowHelperMethods:
 
         flow = NPCDialogueFlow.__new__(NPCDialogueFlow)
         npc = self._make_mock_npc(topics=["背包问题", "最长子序列", "区间DP", "树形DP"])
+        npc.title = "动态规划大师"
 
         result = flow._build_capabilities_section(npc)
 
         assert "我是老夫子" in result
-        assert "专精动态规划" in result
+        assert "动态规划大师导师" in result
         assert "背包问题" in result
 
     def test_build_capabilities_section_without_topics(self):
@@ -271,6 +153,7 @@ class TestNPCDialogueFlowHelperMethods:
         flow = NPCDialogueFlow.__new__(NPCDialogueFlow)
         npc = self._make_mock_npc(topics=[])
         npc.topics = None
+        npc.title = None
 
         result = flow._build_capabilities_section(npc)
 
@@ -294,6 +177,7 @@ class TestNPCDialogueFlowHelperMethods:
         flow = NPCDialogueFlow.__new__(NPCDialogueFlow)
         npc = self._make_mock_npc(topics=[])
         npc.topics = None
+        npc.specialties = None
 
         result = flow._build_topics_section(npc)
 

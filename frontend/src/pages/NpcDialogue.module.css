@@ -68,7 +68,7 @@
 
 @media (min-width: 769px) {
     .layout {
-        grid-template-columns: 65% 35%;
+        grid-template-columns: 1fr 320px 60px;
     }
 }
 
@@ -426,54 +426,143 @@
     }
 }
 
-.earnedCardSection {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    background: rgba(16, 185, 129, 0.06);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    border-radius: var(--radius-md);
+/* 卡牌创建区域 */
+.cardCreateArea {
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
     margin-top: 4px;
-    animation: slideUp 300ms ease forwards;
 }
 
-.earnedCardTitle {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #10b981;
-    margin: 0;
+.cardCreateTitle {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: 0 0 6px 0;
 }
 
-.earnedCardInfo {
+.cardCreateInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.82rem;
+    outline: none;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.cardCreateInput:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.cardCreateInput::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* 卡牌停靠堆栈 */
+.cardDock {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+    padding: 16px 4px;
+    align-items: flex-end;
+    justify-content: flex-start;
 }
 
-.earnedCardName {
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    margin: 0;
+.dockedCard {
+    width: 48px;
+    height: 64px;
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.04));
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    animation: cardAppear 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.earnedCardTag {
-    display: inline-block;
-    padding: 3px 8px;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: 10px;
-    font-size: 0.72rem;
-    color: var(--color-primary-light);
-    width: fit-content;
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateX(20px) rotate(5deg) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) rotate(var(--card-rotate, -2deg)) scale(1);
+    }
 }
 
-.earnedCardContent {
-    font-size: 0.8rem;
+.dockedCard:nth-child(1) { --card-rotate: -2deg; }
+.dockedCard:nth-child(2) { --card-rotate: 1.5deg; }
+.dockedCard:nth-child(3) { --card-rotate: -1deg; }
+.dockedCard:nth-child(4) { --card-rotate: 2deg; }
+.dockedCard:nth-child(n+5) { --card-rotate: -1.5deg; }
+
+.dockedCard {
+    transform: rotate(var(--card-rotate, -2deg));
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dockedCard + .dockedCard {
+    margin-top: -8px;
+}
+
+.dockedCard:hover {
+    transform: rotate(0deg) translateX(-16px) scale(1.08);
+    box-shadow:
+        -4px 2px 16px rgba(99, 102, 241, 0.4),
+        0 0 20px rgba(99, 102, 241, 0.25),
+        inset 0 0 8px rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.6);
+    z-index: 10;
+    width: auto;
+    min-width: 48px;
+    padding-right: 12px;
+}
+
+.dockedCard:hover::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 6px;
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.2));
+    z-index: -1;
+    animation: glowPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.dockedCardIcon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.dockedCardName {
+    font-size: 0.6rem;
     color: var(--color-text-secondary);
-    line-height: 1.5;
-    margin: 0;
+    white-space: nowrap;
+    max-width: 0;
+    overflow: hidden;
+    transition: max-width 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+}
+
+.dockedCard:hover .dockedCardName {
+    max-width: 100px;
+    opacity: 1;
 }
 
 .greetingContainer {

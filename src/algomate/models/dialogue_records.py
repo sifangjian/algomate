@@ -29,4 +29,4 @@ class DialogueRecord(Base):
     npc = relationship("NPC", back_populates="dialogue_records")
     messages = relationship("DialogueMessageRecord", back_populates="dialogue", cascade="all, delete-orphan")
     notes = relationship("DialogueNote", back_populates="dialogue", cascade="all, delete-orphan")
-    card = relationship("Card", back_populates="dialogue_records")
+    card = relationship("Card", back_populates="dialogue_records", foreign_keys=[card_id])

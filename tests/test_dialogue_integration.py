@@ -16,10 +16,8 @@ from algomate.core.game.realm_unlock import Realm as Domain
 from algomate.api.v1.dialogues import (
     DialogueState,
     DialogueSession,
-    CardGenerationResult,
     _active_sessions,
     _build_enhanced_system_prompt,
-    _build_card_generation_prompt,
     _get_session,
 )
 
@@ -864,54 +862,6 @@ class TestDialogueSessionCacheIntegration:
             _active_sessions[dialogue_id].status = DialogueState.ACTIVE
 
         assert _active_sessions[dialogue_id].status == DialogueState.ACTIVE
-
-
-class TestCardGenerationPromptIntegration:
-    """卡牌生成提示词与对话数据集成测试"""
-
-    def test_card_prompt_includes_dialogue_messages(self):
-        dialogue_messages = [
-            {"role": "user", "content": "请讲背包问题"},
-            {"role": "assistant", "content": "背包问题是经典的DP问题"},
-        ]
-        system_prompt, user_prompt = _build_card_generation_prompt(
-            topic="背包问题",
-            npc_domain="动态规划",
-            dialogue_messages=dialogue_messages,
-            note_content="我的笔记",
-        )
-
-        assert "用户" in user_prompt
-        assert "NPC" in user_prompt
-        assert "背包问题" in user_prompt
-        assert "动态规划" in user_prompt
-        assert "我的笔记" in user_prompt
-
-    def test_card_prompt_without_note(self):
-        dialogue_messages = [
-            {"role": "user", "content": "你好"},
-        ]
-        system_prompt, user_prompt = _build_card_generation_prompt(
-            topic="排序",
-            npc_domain="分治与排序",
-            dialogue_messages=dialogue_messages,
-            note_content="",
-        )
-
-        assert "用户未记录笔记" in user_prompt
-
-    def test_card_prompt_10_dimensions(self):
-        system_prompt, _ = _build_card_generation_prompt(
-            topic="测试", npc_domain="测试", dialogue_messages=[], note_content="",
-        )
-
-        dimensions = [
-            "core_concept", "key_points", "code_template",
-            "complexity_analysis", "use_cases", "common_variants",
-            "typical_problems", "common_pitfalls", "comparison", "my_notes",
-        ]
-        for dim in dimensions:
-            assert dim in system_prompt
 
 
 class TestCrossTableIntegrity:

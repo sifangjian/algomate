@@ -21,6 +21,7 @@ class Card(Base):
     last_reviewed = Column(DateTime, nullable=True)
     pending_retake = Column(Boolean, default=False, nullable=False)
     npc_id = Column(Integer, ForeignKey("npcs.id"), nullable=False, default=1)
+    dialogue_id = Column(Integer, ForeignKey("dialogue_records.id"), nullable=True)
     topic = Column(String(100), nullable=False, default="")
     core_concept = Column(Text, default="", nullable=False)
     key_points = Column(Text, default="[]", nullable=False)
@@ -40,7 +41,8 @@ class Card(Base):
     answer_records = relationship("AnswerRecord", back_populates="card", cascade="all, delete-orphan")
     review_records = relationship("ReviewRecord", back_populates="card", cascade="all, delete-orphan")
     npc = relationship("NPC", back_populates="cards")
-    dialogue_records = relationship("DialogueRecord", back_populates="card", cascade="all, delete-orphan")
+    dialogue = relationship("DialogueRecord", foreign_keys=[dialogue_id])
+    dialogue_records = relationship("DialogueRecord", back_populates="card", cascade="all, delete-orphan", foreign_keys="[DialogueRecord.card_id]")
     battle_records = relationship("BattleRecord", back_populates="card", cascade="all, delete-orphan")
 
 
@@ -49,6 +51,7 @@ class CardCreate(BaseModel):
     algorithm_type: Optional[str] = Field("", description="算法类型")
     durability: int = Field(default=80, ge=0, le=100, description="耐久度")
     npc_id: Optional[int] = Field(1, description="关联NPC ID")
+    dialogue_id: Optional[int] = Field(None, description="关联对话ID")
     topic: Optional[str] = Field("", description="主题")
     core_concept: Optional[str] = Field("", description="核心概念")
     key_points: Optional[str] = Field("[]", description="关键要点")

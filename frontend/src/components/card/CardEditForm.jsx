@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, memo } from 'react'
 import { useCardStore } from '../../stores/cardStore'
+import { cardService } from '../../services/cardService'
 import { showToast } from '../ui/Toast/index'
 import Button from '../ui/Button/Button'
 import styles from './CardEditForm.module.css'
@@ -47,6 +48,8 @@ function CardEditForm({ card, onSave, onCancel }) {
   const { updateCard, setSelectedCard } = useCardStore()
   const [form, setForm] = useState({})
   const [isSaving, setIsSaving] = useState(false)
+  const [polishingField, setPolishingField] = useState(null)
+  const [polishPreview, setPolishPreview] = useState(null)
 
   useEffect(() => {
     if (!card) return
@@ -71,6 +74,38 @@ function CardEditForm({ card, onSave, onCancel }) {
 
   const handleFieldChange = useCallback((key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
+    if (polishPreview?.field === key) {
+      setPolishPreview(null)
+    }
+  }, [polishPreview])
+
+  const handlePolish = useCallback(async (fieldKey) => {
+    const content = form[fieldKey]
+    if (!content?.trim()) {
+      showToast('请先输入内容再进行润色', 'warning')
+      return
+    }
+    setPolishingField(fieldKey)
+    setPolishPreview(null)
+    try {
+      const result = await cardService.polishCard({ content, type: fieldKey })
+      const polished = result.data?.polished_content || result.polished_content
+      setPolishPreview({ field: fieldKey, content: polished })
+    } catch (err) {
+      showToast(`润色失败: ${err.message}`, 'error')
+    } finally {
+      setPolishingField(null)
+    }
+  }, [form])
+
+  const handleAcceptPolish = useCallback(() => {
+    if (!polishPreview) return
+    setForm((prev) => ({ ...prev, [polishPreview.field]: polishPreview.content }))
+    setPolishPreview(null)
+  }, [polishPreview])
+
+  const handleRejectPolish = useCallback(() => {
+    setPolishPreview(null)
   }, [])
 
   const handleSave = useCallback(async () => {
@@ -122,7 +157,16 @@ function CardEditForm({ card, onSave, onCancel }) {
       <div className={styles.dimensionsGrid}>
         {EDITABLE_DIMENSIONS.map(({ key, label, rows }) => (
           <div key={key} className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>{label}</label>
+            <div className={styles.fieldLabelRow}>
+              <label className={styles.fieldLabel}>{label}</label>
+              <button
+                className={styles.polishBtn}
+                onClick={() => handlePolish(key)}
+                disabled={polishingField === key || !form[key]?.trim()}
+              >
+                {polishingField === key ? '...' : '✨ 润色'}
+              </button>
+            </div>
             <textarea
               className={styles.fieldTextarea}
               value={form[key] || ''}
@@ -130,6 +174,19 @@ function CardEditForm({ card, onSave, onCancel }) {
               placeholder={`输入${label.replace(/^[^\s]+\s/, '')}...`}
               rows={rows}
             />
+            {polishPreview?.field === key && (
+              <div className={styles.polishPreview}>
+                <pre className={styles.polishContent}>{polishPreview.content}</pre>
+                <div className={styles.polishActions}>
+                  <button className={styles.polishAccept} onClick={handleAcceptPolish}>
+                    ✓ 采用
+                  </button>
+                  <button className={styles.polishReject} onClick={handleRejectPolish}>
+                    ✕ 跳过
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

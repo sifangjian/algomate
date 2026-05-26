@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { dialogueService } from '../services/dialogueService'
+import { cardService } from '../services/cardService'
 import { useGuideStore } from './guideStore'
 import { useSettingsStore } from './settingsStore'
 import { showToast } from '../components/ui/Toast/index'
@@ -18,7 +19,7 @@ export const useDialogueStore = create((set, get) => ({
   noteId: null,
   suggestions: [],
   existingCard: null,
-  earnedCard: null,
+  dialogueCards: [],
   isStreaming: false,
   error: null,
   heartbeatTimer: null,
@@ -164,6 +165,26 @@ export const useDialogueStore = create((set, get) => ({
     }
   },
 
+  createCard: async (name) => {
+    const { dialogueId, npcId } = get()
+    if (!dialogueId) return null
+    try {
+      const result = await cardService.createCard({
+        name,
+        npc_id: npcId,
+        dialogue_id: dialogueId,
+      })
+      const card = result.data || result
+      set((state) => ({
+        dialogueCards: [...state.dialogueCards, card],
+      }))
+      return card
+    } catch (err) {
+      set({ error: err.message })
+      throw err
+    }
+  },
+
   endDialogue: async () => {
     const { dialogueId } = get()
     if (!dialogueId) return null
@@ -173,13 +194,15 @@ export const useDialogueStore = create((set, get) => ({
       const endData = data.data || data
       set({
         status: 'ended',
-        earnedCard: endData.card || null,
         error: endData.error || null,
       })
       if (endData.guides) {
         useGuideStore.getState().setGuide(endData.guides)
       }
-      if (endData.card) {
+      if (endData.abandoned) {
+        return endData
+      }
+      if (endData.cards?.length > 0) {
         const { onboardingCompleted, completeOnboarding } = useSettingsStore.getState()
         if (!onboardingCompleted) {
           try {
@@ -262,7 +285,7 @@ export const useDialogueStore = create((set, get) => ({
       noteId: null,
       suggestions: [],
       existingCard: null,
-      earnedCard: null,
+      dialogueCards: [],
       isStreaming: false,
       error: null,
       heartbeatTimer: null,

@@ -22,6 +22,76 @@
     color: var(--color-text-secondary);
 }
 
+.fieldLabelRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.polishBtn {
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 10px;
+    color: #a855f7;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.polishBtn:hover:not(:disabled) {
+    background: rgba(168, 85, 247, 0.2);
+}
+
+.polishBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.polishPreview {
+    margin-top: 4px;
+    padding: 8px;
+    background: rgba(168, 85, 247, 0.05);
+    border: 1px dashed rgba(168, 85, 247, 0.3);
+    border-radius: var(--radius-sm);
+}
+
+.polishContent {
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0 0 6px 0;
+}
+
+.polishActions {
+    display: flex;
+    gap: 6px;
+}
+
+.polishAccept {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    color: #10b981;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.polishReject {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    background: rgba(107, 114, 128, 0.1);
+    border: 1px solid rgba(107, 114, 128, 0.3);
+    border-radius: 8px;
+    color: #6b7280;
+    cursor: pointer;
+    font-family: inherit;
+}
+
 .fieldInput {
     padding: 10px 12px;
     border: 1px solid var(--border-color);
