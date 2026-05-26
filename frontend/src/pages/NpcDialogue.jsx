@@ -5,7 +5,8 @@ import { dialogueService } from '../services/dialogueService'
 import { useDialogueStore } from '../stores/dialogueStore'
 import { useCardStore } from '../stores/cardStore'
 import PostDialogueGuide from '../components/dialogue/PostDialogueGuide'
-import CardDetailDrawer from '../components/card/CardDetailDrawer'
+import CardDetailPanel from '../components/card/CardDetailPanel'
+import CardDock from '../components/card/CardDock'
 import QuickAsk from '../components/QuickAsk'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
@@ -68,6 +69,7 @@ export default function NpcDialogue() {
     const [isEnding, setIsEnding] = useState(false)
     const [isNearBottom, setIsNearBottom] = useState(true)
     const [newCardName, setNewCardName] = useState('')
+    const [sourceRect, setSourceRect] = useState(null)
 
     const {
         dialogueId,
@@ -87,7 +89,7 @@ export default function NpcDialogue() {
         reset,
     } = useDialogueStore()
 
-    const { setSelectedCard, fetchCardDetail } = useCardStore()
+    const { cards, fetchCards, setSelectedCard, fetchCardDetail } = useCardStore()
 
     useEffect(() => {
         if (!realmId) return
@@ -212,6 +214,10 @@ export default function NpcDialogue() {
         })
     }, [])
 
+    useEffect(() => {
+        fetchCards()
+    }, [fetchCards])
+
     const getTopicImportanceDynamic = (topic) => {
         if (!algorithmInfo?.topic_importance) return null
         return algorithmInfo.topic_importance[topic.trim()] || null
@@ -325,8 +331,9 @@ export default function NpcDialogue() {
         }
     }, [newCardName, createCard])
 
-    const handleOpenCard = useCallback(async (card) => {
+    const handleOpenCard = useCallback(async (card, rect) => {
         await fetchCardDetail(card.id)
+        setSourceRect(rect)
         setEditingCard(true)
     }, [fetchCardDetail])
 
@@ -456,26 +463,15 @@ export default function NpcDialogue() {
 
                     {status === 'ended' && <PostDialogueGuide />}
                 </aside>
-
-                <div className={styles.cardDock}>
-                    {dialogueCards.map((card) => (
-                        <div
-                            key={card.id}
-                            className={styles.dockedCard}
-                            onClick={() => handleOpenCard(card)}
-                            title={card.name}
-                        >
-                            <span className={styles.dockedCardIcon}>📜</span>
-                            <span className={styles.dockedCardName}>{card.name}</span>
-                        </div>
-                    ))}
-                </div>
             </div>
             )}
 
-            <CardDetailDrawer
+            <CardDock cards={cards} onCardClick={handleOpenCard} />
+
+            <CardDetailPanel
                 open={!!editingCard}
                 onClose={() => setEditingCard(null)}
+                sourceRect={sourceRect}
             />
 
             <ConfirmDialog
