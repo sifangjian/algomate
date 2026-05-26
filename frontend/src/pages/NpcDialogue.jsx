@@ -136,6 +136,14 @@ export default function NpcDialogue() {
         return () => el.removeEventListener('scroll', handleScroll)
     }, [checkNearBottom])
 
+    const prevIsStreamingRef = useRef(false)
+    useEffect(() => {
+        if (prevIsStreamingRef.current && !isStreaming) {
+            setTimeout(() => inputRef.current?.focus(), 0)
+        }
+        prevIsStreamingRef.current = isStreaming
+    }, [isStreaming])
+
     useEffect(() => {
         if (isNearBottom) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -169,6 +177,7 @@ export default function NpcDialogue() {
         }
 
         setInputValue('')
+        inputRef.current?.focus()
         const controller = await sendMessage(msgText)
         if (controller) {
             abortControllerRef.current = controller

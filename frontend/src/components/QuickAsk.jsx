@@ -11,6 +11,7 @@ export default function QuickAsk({ npcId, npcName, visible }) {
   const [isStreaming, setIsStreaming] = useState(false)
   const messagesEndRef = useRef(null)
   const abortRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
@@ -23,6 +24,7 @@ export default function QuickAsk({ npcId, npcName, visible }) {
     if (!text || isStreaming || !npcId) return
 
     setInputValue('')
+    inputRef.current?.focus()
 
     const userMsg = { id: `q_user_${Date.now()}`, role: 'user', content: text }
     const npcMsgId = `q_npc_${Date.now()}`
@@ -50,6 +52,7 @@ export default function QuickAsk({ npcId, npcName, visible }) {
           prev.map((m) => (m.id === npcMsgId ? { ...m, isStreaming: false } : m))
         )
         setIsStreaming(false)
+        setTimeout(() => inputRef.current?.focus(), 0)
       },
       onError: (err) => {
         setMessages((prev) =>
@@ -60,6 +63,7 @@ export default function QuickAsk({ npcId, npcName, visible }) {
           )
         )
         setIsStreaming(false)
+        setTimeout(() => inputRef.current?.focus(), 0)
       },
     })
 
@@ -156,6 +160,7 @@ export default function QuickAsk({ npcId, npcName, visible }) {
 
           <div className={styles.inputArea}>
             <textarea
+              ref={inputRef}
               className={styles.input}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
