@@ -80,6 +80,7 @@
 }
 
 .messagesList {
+    position: relative;
     flex: 1;
     overflow-y: auto;
     padding: 12px;
@@ -123,7 +124,8 @@
 
 .msgBubble {
     padding: 12px 16px !important;
-    max-width: 80%;
+    width: fit-content;
+    max-width: 100%;
     border-left: 3px solid var(--color-primary);
 }
 
@@ -369,7 +371,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-width: 80%;
+    max-width: 90%;
 }
 
 .suggestionsList {
@@ -565,6 +567,97 @@
 .viewToggleBar {
     display: flex;
     padding-left: 4px;
+}
+
+.messageControls {
+    display: flex;
+    gap: 8px;
+    padding-left: 4px;
+    align-items: center;
+}
+
+.expandToggleBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    color: #10b981;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.expandToggleBtn:hover {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(16, 185, 129, 0.5);
+    transform: translateY(-1px);
+}
+
+.expandToggleBtn:active {
+    transform: translateY(0);
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.expandIcon {
+    font-size: 0.7rem;
+    transition: transform 0.3s ease;
+}
+
+.expandToggleBtn:hover .expandIcon {
+    transform: scale(1.2);
+}
+
+.expandText {
+    font-weight: 500;
+}
+
+.messageContent {
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.2s ease;
+    position: relative;
+}
+
+.messageContent.expanded {
+    opacity: 1;
+}
+
+.messageContent.collapsed {
+    opacity: 0.95;
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+.messageContent.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to bottom, transparent, var(--color-bg-card));
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .expandToggleBtn {
+        padding: 3px 10px;
+        font-size: 0.7rem;
+    }
+    
+    .expandIcon {
+        font-size: 0.65rem;
+    }
+    
+    .messageControls {
+        gap: 6px;
+    }
 }
 
 .viewToggleBtn {
@@ -779,4 +872,30 @@
 .markdownBody del {
     text-decoration: line-through;
     color: var(--color-text-muted);
+}
+
+.scrollToBottomBtn {
+    position: sticky;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 16px;
+    font-size: 0.78rem;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    z-index: 10;
+    align-self: center;
+}
+
+.scrollToBottomBtn:hover {
+    background: var(--color-primary-light);
+    transform: translateX(-50%) translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }

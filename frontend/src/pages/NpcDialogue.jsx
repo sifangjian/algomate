@@ -29,6 +29,7 @@ export default function NpcDialogue() {
     const { realmId } = useParams()
     const navigate = useNavigate()
     const messagesEndRef = useRef(null)
+    const messagesListRef = useRef(null)
     const inputRef = useRef(null)
     const abortControllerRef = useRef(null)
 
@@ -40,6 +41,7 @@ export default function NpcDialogue() {
     const [isNpcLoading, setIsNpcLoading] = useState(true)
     const [algorithmInfo, setAlgorithmInfo] = useState(null)
     const [isEnding, setIsEnding] = useState(false)
+    const [isNearBottom, setIsNearBottom] = useState(true)
 
     const {
         dialogueId,
@@ -110,9 +112,28 @@ export default function NpcDialogue() {
         }).finally(() => setIsNpcLoading(false))
     }, [realmId, startDialogue])
 
+    const checkNearBottom = useCallback(() => {
+        const el = messagesListRef.current
+        if (!el) return true
+        const threshold = 80
+        return el.scrollHeight - el.scrollTop - el.clientHeight < threshold
+    }, [])
+
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
+        const el = messagesListRef.current
+        if (!el) return
+        const handleScroll = () => {
+            setIsNearBottom(checkNearBottom())
+        }
+        el.addEventListener('scroll', handleScroll, { passive: true })
+        return () => el.removeEventListener('scroll', handleScroll)
+    }, [checkNearBottom])
+
+    useEffect(() => {
+        if (isNearBottom) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+    }, [messages, isNearBottom])
 
     useEffect(() => {
         npcService.getAlgorithmInfo().then((data) => {
@@ -253,7 +274,7 @@ export default function NpcDialogue() {
             {npc && (
             <div className={styles.layout}>
                 <section className={styles.chatSection} aria-label="对话区域">
-                    <div className={styles.messagesList} role="log" aria-live="polite">
+                    <div className={styles.messagesList} ref={messagesListRef} role="log" aria-live="polite">
                         {messages.map((msg) =>
                             msg.role === 'npc' ? (
                                 <NpcMessage key={msg.id} message={msg} onSuggestionClick={handleSuggestionClick} />
@@ -262,6 +283,18 @@ export default function NpcDialogue() {
                             )
                         )}
                         <div ref={messagesEndRef} />
+                        {!isNearBottom && (
+                            <button
+                                className={styles.scrollToBottomBtn}
+                                onClick={() => {
+                                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+                                    setIsNearBottom(true)
+                                }}
+                                aria-label="滚动到底部"
+                            >
+                                ↓ 最新消息
+                            </button>
+                        )}
                     </div>
 
                     <div className={styles.quickQuestions}>
@@ -428,36 +461,93 @@ function NpcMessage({ message, onSuggestionClick }) {
     const suggestions = message.suggestions || []
     const showSuggestions = suggestions.length > 0 && !isStreaming
     const [viewMode, setViewMode] = useState('rendered')
+    const [isExpanded, setIsExpanded] = useState(true)
+    const contentRef = useRef(null)
+    const messageRef = useRef(null)
 
     const showToggle = !isStreaming && message.id !== 'greeting' && message.content
+    const contentHeight = useRef(0)
+
+    useEffect(() => {
+        if (contentRef.current) {
+            contentHeight.current = contentRef.current.scrollHeight
+        }
+    }, [message.content, isExpanded])
+
+    const handleToggle = useCallback(() => {
+        const messagesList = messageRef.current?.closest(`.${styles.messagesList}`)
+        if (!messagesList || !messageRef.current) {
+            setIsExpanded(!isExpanded)
+            return
+        }
+
+        const messageTop = messageRef.current.offsetTop
+        const scrollTop = messagesList.scrollTop
+        const viewportHeight = messagesList.clientHeight
+        const messageBottom = messageTop + messageRef.current.offsetHeight
+        const isAboveViewport = messageTop < scrollTop
+        const isBelowViewport = messageBottom > scrollTop + viewportHeight
+        const isPartiallyVisible = !isAboveViewport && !isBelowViewport
+
+        setIsExpanded(!isExpanded)
+
+        if (isPartiallyVisible) {
+            requestAnimationFrame(() => {
+                const newMessageHeight = messageRef.current.offsetHeight
+                const heightDiff = newMessageHeight - (isExpanded ? contentHeight.current : 0)
+                messagesList.scrollTo({
+                    top: scrollTop + heightDiff * 0.5,
+                    behavior: 'smooth'
+                })
+            })
+        }
+    }, [isExpanded])
 
     return (
-        <div className={styles.npcMsg}>
+        <div className={styles.npcMsg} ref={messageRef}>
             <span className={styles.msgAvatar}>🧙</span>
             <div className={styles.npcMsgContent}>
                 <GameCard className={styles.msgBubble}>
                     <div className={styles.msgBubbleInner}>
                         {message.id === 'greeting' ? (
                             <NpcGreetingMessage text={message.content} />
-                        ) : viewMode === 'rendered' ? (
-                            <div className={styles.markdownBody}>
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        a: ({ href, children, ...props }) => (
-                                            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>
-                                        )
-                                    }}
-                                >{message.content}</ReactMarkdown>
-                            </div>
                         ) : (
-                            <pre className={styles.rawText}>{message.content}</pre>
+                            <div 
+                                ref={contentRef}
+                                className={`${styles.messageContent} ${isExpanded ? styles.expanded : styles.collapsed}`}
+                                style={{ maxHeight: isExpanded ? 'none' : '80px' }}
+                            >
+                                {viewMode === 'rendered' ? (
+                                    <div className={styles.markdownBody}>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                a: ({ href, children, ...props }) => (
+                                                    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>{children}</a>
+                                                )
+                                            }}
+                                        >{message.content}</ReactMarkdown>
+                                    </div>
+                                ) : (
+                                    <pre className={styles.rawText}>{message.content}</pre>
+                                )}
+                            </div>
                         )}
                         {isStreaming && <span className={styles.cursor}>|</span>}
                     </div>
                 </GameCard>
                 {showToggle && (
-                    <div className={styles.viewToggleBar}>
+                    <div className={styles.messageControls}>
+                        <button
+                            className={styles.expandToggleBtn}
+                            onClick={handleToggle}
+                            title={isExpanded ? '收起内容' : '展开内容'}
+                            aria-label={isExpanded ? '收起内容' : '展开内容'}
+                            aria-expanded={isExpanded}
+                        >
+                            <span className={styles.expandIcon}>{isExpanded ? '▼' : '▶'}</span>
+                            <span className={styles.expandText}>{isExpanded ? '收起' : '展开'}</span>
+                        </button>
                         <button
                             className={styles.viewToggleBtn}
                             onClick={() => setViewMode(viewMode === 'rendered' ? 'raw' : 'rendered')}
