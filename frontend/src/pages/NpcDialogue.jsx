@@ -5,6 +5,7 @@ import { useDialogueStore } from '../stores/dialogueStore'
 import { useCardStore } from '../stores/cardStore'
 import PostDialogueGuide from '../components/dialogue/PostDialogueGuide'
 import CardDetailDrawer from '../components/card/CardDetailDrawer'
+import QuickAsk from '../components/QuickAsk'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
 import { ConfirmDialog } from '../components/ui/Modal/Modal'
@@ -423,6 +424,12 @@ export default function NpcDialogue() {
                 confirmText="结束修习"
                 cancelText="继续修习"
                 loading={isEnding}
+            />
+
+            <QuickAsk
+                npcId={npc?.id}
+                npcName={npc?.name}
+                visible={!!dialogueId && status === 'active'}
             />
         </div>
     )

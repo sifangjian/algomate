@@ -15,6 +15,7 @@ from algomate.api.v1.tasks import router as tasks_router
 from algomate.api.v1.users import router as users_router
 from algomate.api.v1.progress import router as progress_router
 from algomate.api.v1.algorithm_info import router as algorithm_info_router
+from algomate.api.v1.quick_ask import router as quick_ask_router
 
 router = APIRouter()
 
@@ -33,3 +34,4 @@ router.include_router(tasks_router)
 router.include_router(users_router)
 router.include_router(progress_router)
 router.include_router(algorithm_info_router)
+router.include_router(quick_ask_router)
