@@ -594,26 +594,19 @@ class TestCardRepositoryComprehensive:
             npc_id=npc_id,
             durability=80,
             pending_retake=False,
-            core_concept="核心概念",
-            code_template="代码模板",
-            complexity_analysis="复杂度分析",
-            use_cases="使用场景",
-            common_variants="常见变体",
-            typical_problems="典型题目",
-            common_pitfalls="常见陷阱",
-            comparison="对比分析",
+            basic_content=json.dumps({"concept_definition": "核心概念", "features": "特点"}, ensure_ascii=False),
+            practical_content=json.dumps({"examples": ["示例"], "applicable_scenarios": "使用场景", "precautions": "注意事项"}, ensure_ascii=False),
+            advanced_content=json.dumps({"common_mistakes": "常见陷阱", "extensions": "常见变体", "advanced_solutions": "典型题目"}, ensure_ascii=False),
             my_notes="个人笔记",
             visual_links="https://example.com/viz",
             topic="排序算法",
         )
-        assert card.core_concept == "核心概念"
-        assert card.code_template == "代码模板"
-        assert card.complexity_analysis == "复杂度分析"
-        assert card.use_cases == "使用场景"
-        assert card.common_variants == "常见变体"
-        assert card.typical_problems == "典型题目"
-        assert card.common_pitfalls == "常见陷阱"
-        assert card.comparison == "对比分析"
+        basic = json.loads(card.basic_content)
+        assert basic["concept_definition"] == "核心概念"
+        practical = json.loads(card.practical_content)
+        assert practical["applicable_scenarios"] == "使用场景"
+        advanced = json.loads(card.advanced_content)
+        assert advanced["common_mistakes"] == "常见陷阱"
         assert card.my_notes == "个人笔记"
         assert card.visual_links == "https://example.com/viz"
         assert card.topic == "排序算法"
@@ -662,13 +655,11 @@ class TestCardRepositoryComprehensive:
         card = repo.create(name="Update Me", algorithm_type="basic_data_structure", npc_id=npc_id)
         updated = repo.update(
             card.id,
-            core_concept="新概念",
-            code_template="新模板",
+            basic_content=json.dumps({"concept_definition": "新概念"}, ensure_ascii=False),
             topic="新主题",
         )
         assert updated is not None
-        assert updated.core_concept == "新概念"
-        assert updated.code_template == "新模板"
+        assert json.loads(updated.basic_content)["concept_definition"] == "新概念"
         assert updated.topic == "新主题"
 
     def test_update_non_existing_card_returns_none(self, repo_and_npc):
@@ -820,11 +811,11 @@ class TestCardPydanticModels:
 
     def test_card_update_only_set_fields_included(self):
         # CardUpdate 只设置部分字段时，model_dump(exclude_unset=True) 仅包含已设置字段
-        model = CardUpdate(core_concept="新概念", my_notes="新笔记")
+        model = CardUpdate(basic_content={"concept_definition": "新概念"}, my_notes="新笔记")
         dumped = model.model_dump(exclude_unset=True)
-        assert "core_concept" in dumped
+        assert "basic_content" in dumped
         assert "my_notes" in dumped
-        assert "code_template" not in dumped
+        assert "practical_content" not in dumped
         assert "visual_links" not in dumped
 
     def test_card_response_construction_from_data(self):
@@ -849,7 +840,7 @@ class TestCardPydanticModels:
         assert model.algorithm_type == ""
         assert model.topic == ""
         assert model.npc_id == 1
-        assert model.core_concept == ""
+        assert model.basic_content == "{}"
         assert model.visual_links is None
 
 
@@ -878,15 +869,9 @@ class TestCardToResponse:
             pending_retake=False,
             npc_id=3,
             topic="排序算法",
-            core_concept="核心概念",
-            key_points='["要点1","要点2"]',
-            code_template="代码模板",
-            complexity_analysis="复杂度分析",
-            use_cases="使用场景",
-            common_variants="常见变体",
-            typical_problems="典型题目",
-            common_pitfalls="常见陷阱",
-            comparison="对比分析",
+            basic_content='{"concept_definition": "核心概念", "features": "要点"}',
+            practical_content='{"examples": [], "applicable_scenarios": "使用场景", "precautions": "注意事项"}',
+            advanced_content='{"common_mistakes": "常见陷阱", "extensions": "常见变体", "advanced_solutions": "典型题目"}',
             my_notes="个人笔记",
             visual_links="https://example.com/viz",
             created_at=datetime.now(),
@@ -900,17 +885,14 @@ class TestCardToResponse:
         return card
 
     def test_ten_dimension_fields_mapped(self):
-        # 验证10个维度字段正确映射到 dict
+        # 验证三层结构化内容正确映射到 dict
         card = self._make_card()
         resp = _card_to_response(card)
-        assert resp["core_concept"] == "核心概念"
-        assert resp["code_template"] == "代码模板"
-        assert resp["complexity_analysis"] == "复杂度分析"
-        assert resp["use_cases"] == "使用场景"
-        assert resp["common_variants"] == "常见变体"
-        assert resp["typical_problems"] == "典型题目"
-        assert resp["common_pitfalls"] == "常见陷阱"
-        assert resp["comparison"] == "对比分析"
+        assert resp["basic_content"]["concept_definition"] == "核心概念"
+        assert resp["practical_content"]["applicable_scenarios"] == "使用场景"
+        assert resp["advanced_content"]["common_mistakes"] == "常见陷阱"
+        assert resp["advanced_content"]["extensions"] == "常见变体"
+        assert resp["advanced_content"]["advanced_solutions"] == "典型题目"
         assert resp["my_notes"] == "个人笔记"
 
     def test_visual_links_included(self):
@@ -973,23 +955,24 @@ class TestCardToResponse:
         resp = _card_to_response(card)
         assert resp["status"] == "pending_retake"
 
-    def test_key_points_raw_string(self):
-        # key_points 作为原始字符串返回（不做 JSON 解析）
-        card = self._make_card(key_points='["要点1","要点2","要点3"]')
+    def test_basic_content_json_parsed(self):
+        # basic_content JSON 字符串被解析为 dict
+        card = self._make_card(basic_content='{"concept_definition": "概念A", "features": "要点B"}')
         resp = _card_to_response(card)
-        assert resp["key_points"] == '["要点1","要点2","要点3"]'
+        assert resp["basic_content"]["concept_definition"] == "概念A"
+        assert resp["basic_content"]["features"] == "要点B"
 
-    def test_key_points_empty_json(self):
-        # key_points 为空 JSON 数组字符串
-        card = self._make_card(key_points="[]")
+    def test_basic_content_empty_json(self):
+        # basic_content 为空 JSON 对象字符串
+        card = self._make_card(basic_content="{}")
         resp = _card_to_response(card)
-        assert resp["key_points"] == "[]"
+        assert resp["basic_content"] == {}
 
-    def test_key_points_empty_string(self):
-        # key_points 为空字符串时直接返回
-        card = self._make_card(key_points="")
+    def test_basic_content_invalid_json_returns_empty_dict(self):
+        # basic_content 为无效 JSON 字符串时返回空 dict
+        card = self._make_card(basic_content="")
         resp = _card_to_response(card)
-        assert resp["key_points"] == ""
+        assert resp["basic_content"] == {}
 
     def test_review_count_from_card_attribute(self):
         # review_count 从 card 属性获取

@@ -67,7 +67,7 @@ describe('dialogueStore - 首次修习完成检测 (F08-T010)', () => {
 
       mockEndDialogue.mockResolvedValue({
         data: {
-          card: { id: 1, name: '二分查找' },
+          cards: [{ id: 1, name: '二分查找' }],
         },
       })
       mockUpdateV1Settings.mockResolvedValue({ code: 200 })
@@ -85,7 +85,7 @@ describe('dialogueStore - 首次修习完成检测 (F08-T010)', () => {
 
       mockEndDialogue.mockResolvedValue({
         data: {
-          card: { id: 1, name: '二分查找' },
+          cards: [{ id: 1, name: '二分查找' }],
         },
       })
 
@@ -102,7 +102,7 @@ describe('dialogueStore - 首次修习完成检测 (F08-T010)', () => {
 
       mockEndDialogue.mockResolvedValue({
         data: {
-          card: null,
+          cards: [],
         },
       })
 
@@ -118,7 +118,7 @@ describe('dialogueStore - 首次修习完成检测 (F08-T010)', () => {
 
       mockEndDialogue.mockResolvedValue({
         data: {
-          card: { id: 1, name: '二分查找' },
+          cards: [{ id: 1, name: '二分查找' }],
         },
       })
       mockUpdateV1Settings.mockResolvedValue({ code: 200 })
@@ -135,7 +135,7 @@ describe('dialogueStore - 首次修习完成检测 (F08-T010)', () => {
 
       mockEndDialogue.mockResolvedValue({
         data: {
-          card: { id: 1, name: '二分查找' },
+          cards: [{ id: 1, name: '二分查找' }],
         },
       })
       mockUpdateV1Settings.mockResolvedValue({ code: 200 })
@@ -152,7 +152,7 @@ describe('dialogueStore - 首次修习完成检测 (F08-T010)', () => {
 
       mockEndDialogue.mockResolvedValue({
         data: {
-          card: { id: 1, name: '二分查找' },
+          cards: [{ id: 1, name: '二分查找' }],
         },
       })
       mockUpdateV1Settings.mockRejectedValue(new Error('API error'))

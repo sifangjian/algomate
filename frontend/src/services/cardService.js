@@ -41,6 +41,28 @@ export const cardService = {
     return result.data
   },
 
+  // 链接管理
+  getLinks: async (cardId) => {
+    const result = await api.get(`/v1/cards/${cardId}/links`)
+    return result.data
+  },
+
+  addLink: async (cardId, data) => {
+    const result = await api.post(`/v1/cards/${cardId}/links`, data)
+    return result.data
+  },
+
+  removeLink: async (linkId) => {
+    const result = await api.delete(`/v1/cards/links/${linkId}`)
+    return result.data
+  },
+
+  getGraph: async () => {
+    const result = await api.get('/v1/cards/graph')
+    return result.data
+  },
+
+  // 复习相关
   startReview: (cardId) => api.post(`/v1/dashboard/review/start/${cardId}`),
 
   completeReview: (cardId, action) => api.post(`/v1/dashboard/review/complete/${cardId}`, { action }),

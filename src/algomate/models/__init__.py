@@ -7,6 +7,7 @@
 from algomate.models.user_settings import UserSetting
 from algomate.models.notes import Note
 from algomate.models.cards import Card, CardUpdate, CardResponse
+from algomate.models.card_links import CardLink
 from algomate.models.npcs import NPC
 from algomate.models.bosses import Boss
 from algomate.models.questions import Question
@@ -24,6 +25,7 @@ __all__ = [
     "Card",
     "CardUpdate",
     "CardResponse",
+    "CardLink",
     "NPC",
     "Boss",
     "Question",

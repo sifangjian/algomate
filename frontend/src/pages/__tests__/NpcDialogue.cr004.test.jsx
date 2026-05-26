@@ -130,14 +130,14 @@ describe('NpcDialogue - CR-004 变更', () => {
 
       mockSaveNote.mockResolvedValue({ data: { saved: true, note_id: 1, saved_at: '2026-05-10T10:00:00' } })
       mockEndDialogue.mockResolvedValue({
-        data: { card: { id: 1, name: '二分查找' }, is_update: false, guides: { go_boss: true, go_workshop: true } },
+        data: { cards: [{ id: 1, name: '二分查找' }], is_update: false, guides: { go_boss: true, go_workshop: true } },
       })
 
       renderNpcDialogue()
       await screen.findByText('老夫子', { selector: 'h2' })
       await waitForDialogueReady()
 
-      const noteEditor = screen.getByLabelText('修炼日记编辑器')
+      const noteEditor = screen.getByLabelText('草稿本编辑器')
       await user.type(noteEditor, '二分查找的心得体会')
 
       const endBtn = screen.getByRole('button', { name: /结束修习/ })
@@ -160,7 +160,7 @@ describe('NpcDialogue - CR-004 变更', () => {
       const user = userEvent.setup()
 
       mockEndDialogue.mockResolvedValue({
-        data: { card: { id: 1, name: '二分查找' }, is_update: false, guides: { go_boss: true, go_workshop: true } },
+        data: { cards: [{ id: 1, name: '二分查找' }], is_update: false, guides: { go_boss: true, go_workshop: true } },
       })
 
       renderNpcDialogue()
@@ -206,7 +206,7 @@ describe('NpcDialogue - CR-004 变更', () => {
       renderNpcDialogue()
       await screen.findByText('老夫子', { selector: 'h2' })
 
-      const noteSection = screen.getByLabelText('修炼日记区域')
+      const noteSection = screen.getByLabelText('草稿本区域')
       const saveBtn = [...noteSection.querySelectorAll('button')].find(
         (btn) => btn.textContent.includes('保存心得')
       )
@@ -217,7 +217,7 @@ describe('NpcDialogue - CR-004 变更', () => {
       renderNpcDialogue()
       await screen.findByText('老夫子', { selector: 'h2' })
 
-      const noteSection = screen.getByLabelText('修炼日记区域')
+      const noteSection = screen.getByLabelText('草稿本区域')
       const endLink = noteSection.querySelector('[class*="endSessionLink"]')
       expect(endLink).toBeNull()
     })

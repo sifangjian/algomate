@@ -1,0 +1,104 @@
+.editor {
+    padding: 12px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.searchInput,
+.select,
+.keywordInput {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.searchInput:focus,
+.select:focus,
+.keywordInput:focus {
+    border-color: var(--color-primary);
+}
+
+.typeButtons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.typeBtn {
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.typeBtn:hover {
+    border-color: var(--accent, #6366f1);
+    color: var(--accent, #6366f1);
+}
+
+.typeBtnActive {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--accent, #6366f1);
+    color: var(--accent, #6366f1);
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.submitBtn {
+    padding: 6px 16px;
+    font-size: 0.82rem;
+    background: var(--accent, #6366f1);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.submitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancelBtn {
+    padding: 6px 16px;
+    font-size: 0.82rem;
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}

@@ -545,9 +545,9 @@ class TestHealthCheck:
         expected_columns = {
             "id", "name", "durability",
             "pending_retake", "npc_id", "topic", "visual_links",
-            "core_concept", "code_template", "complexity_analysis",
-            "algorithm_type", "key_points", "use_cases", "common_variants",
-            "typical_problems", "common_pitfalls", "comparison", "my_notes",
+            "algorithm_type",
+            "basic_content", "practical_content", "advanced_content",
+            "my_notes", "dialogue_id",
             "review_level", "review_count", "next_review_date", "last_reviewed",
             "created_at", "updated_at",
         }

@@ -262,12 +262,11 @@ describe('NpcDetailModal', () => {
       )
     )
 
-    const badges = screen.getAllByText('已获卡牌')
-    expect(badges.length).toBe(1)
+    expect(screen.getByText(/已获.*张卡牌/)).toBeInTheDocument()
   })
 
   it('无 topics 数据时专长领域仍正常显示', () => {
-    const npcWithoutTopics = { ...npcWithTopics, topics: undefined }
+    const npcWithoutTopics = { ...npcWithTopics, topics: undefined, card_count: 0 }
     mockHallStore.selectedNpc = npcWithoutTopics
     mockHallStore.modalOpen = true
 
@@ -279,7 +278,7 @@ describe('NpcDetailModal', () => {
 
     expect(screen.getByText('专长领域')).toBeInTheDocument()
     expect(screen.getByText('数组与双指针')).toBeInTheDocument()
-    expect(screen.queryByText('已获卡牌')).not.toBeInTheDocument()
+    expect(screen.queryByText(/已获.*张卡牌/)).not.toBeInTheDocument()
   })
 
   it('应显示导师描述', () => {

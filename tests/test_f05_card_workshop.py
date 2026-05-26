@@ -131,7 +131,7 @@ class TestGetCardDetailAPI:
         assert data["code"] == 200
         assert data["data"]["name"] == "二分查找"
         assert data["data"]["algorithm_type"] == "Search"
-        assert data["data"]["core_concept"] == "折半搜索"
+        assert data["data"]["basic_content"]["concept_definition"] == "折半搜索"
 
     def test_get_card_detail_has_all_dimensions(self, client, sample_npc, db_session):
         card = _create_card(db_session, sample_npc.id, name="测试卡牌")
@@ -139,9 +139,8 @@ class TestGetCardDetailAPI:
         response = client.get(f"/api/v1/cards/{card.id}")
         data = response.json()["data"]
         expected_fields = [
-            "core_concept", "key_points", "code_template", "complexity_analysis",
-            "use_cases", "common_variants", "typical_problems", "common_pitfalls",
-            "comparison", "my_notes", "visual_links",
+            "basic_content", "practical_content", "advanced_content",
+            "my_notes", "visual_links",
         ]
         for field in expected_fields:
             assert field in data, f"Missing field: {field}"
@@ -173,27 +172,27 @@ class TestUpdateCardAPI:
         card = _create_card(db_session, sample_npc.id, name="测试卡牌", core_concept="旧概念")
 
         response = client.put(f"/api/v1/cards/{card.id}", json={
-            "core_concept": "新概念",
+            "basic_content": {"concept_definition": "新概念"},
         })
         data = response.json()
         assert data["code"] == 200
-        assert data["data"]["updated"] is True
+        assert data["data"]["id"] == card.id
+        assert data["data"]["name"] == "测试卡牌"
 
     def test_update_card_verify_persistence(self, client, sample_npc, db_session):
         card = _create_card(db_session, sample_npc.id, name="测试卡牌", core_concept="旧概念")
 
-        client.put(f"/api/v1/cards/{card.id}", json={"core_concept": "新概念"})
+        client.put(f"/api/v1/cards/{card.id}", json={"basic_content": {"concept_definition": "新概念"}})
 
         response = client.get(f"/api/v1/cards/{card.id}")
-        assert response.json()["data"]["core_concept"] == "新概念"
+        assert response.json()["data"]["basic_content"]["concept_definition"] == "新概念"
 
     def test_update_card_multiple_fields(self, client, sample_npc, db_session):
         card = _create_card(db_session, sample_npc.id, name="测试卡牌",
                             core_concept="旧", key_points="旧要点")
 
         response = client.put(f"/api/v1/cards/{card.id}", json={
-            "core_concept": "新概念",
-            "key_points": "新要点",
+            "basic_content": {"concept_definition": "新概念", "features": "新要点"},
             "my_notes": "个人笔记",
         })
         assert response.json()["code"] == 200
@@ -215,7 +214,7 @@ class TestUpdateCardAPI:
         card = _create_card(db_session, sample_npc.id, name="测试卡牌", core_concept="概念A")
 
         response = client.put(f"/api/v1/cards/{card.id}", json={
-            "core_concept": "概念A",
+            "basic_content": {"concept_definition": "概念A"},
         })
         assert response.status_code == 400
         assert response.json()["detail"]["code"] == 40002
@@ -228,7 +227,7 @@ class TestUpdateCardAPI:
         assert response.json()["detail"]["code"] == 40002
 
     def test_update_card_not_found(self, client, sample_npc):
-        response = client.put("/api/v1/cards/99999", json={"core_concept": "新概念"})
+        response = client.put("/api/v1/cards/99999", json={"basic_content": {"concept_definition": "新概念"}})
         assert response.status_code == 404
         assert response.json()["detail"]["code"] == 40404
 
@@ -373,8 +372,9 @@ class TestCardResponseFormat:
         assert "pending_retake" in data
         assert "review_level" in data
         assert "review_count" in data
-        assert "core_concept" in data
-        assert "key_points" in data
+        assert "basic_content" in data
+        assert "practical_content" in data
+        assert "advanced_content" in data
 
     def test_card_list_response_format(self, client, sample_npc, db_session):
         _create_card(db_session, sample_npc.id, name="卡牌A")
@@ -392,15 +392,20 @@ class TestCardResponseFormat:
 def _create_card(session, npc_id, name="测试卡牌", algorithm_type="Search",
                  durability=80, pending_retake=False, core_concept="",
                  key_points="", review_level=0, review_count=0):
+    import json
     from algomate.models.cards import Card
+    basic = {}
+    if core_concept:
+        basic["concept_definition"] = core_concept
+    if key_points:
+        basic["features"] = key_points
     card = Card(
         name=name,
         algorithm_type=algorithm_type,
         npc_id=npc_id,
         durability=durability,
         pending_retake=pending_retake,
-        core_concept=core_concept,
-        key_points=key_points,
+        basic_content=json.dumps(basic, ensure_ascii=False) if basic else "{}",
         review_level=review_level,
         review_count=review_count,
     )

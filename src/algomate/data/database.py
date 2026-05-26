@@ -18,7 +18,7 @@ def _ensure_models_imported():
     global _models_imported
     if not _models_imported:
         from algomate.models import (
-            Note, Card, NPC, Boss, Question, AnswerRecord,
+            Note, Card, CardLink, NPC, Boss, Question, AnswerRecord,
             DialogueRecord, DialogueMessageRecord, DialogueNote,
             ReviewRecord, LearningProgress, UserSetting,
             BattleRecord

@@ -7,6 +7,8 @@ import Button from '../ui/Button/Button'
 import DimensionSection from '../card/DimensionSection'
 import VisualLinksSection from '../card/VisualLinksSection'
 import DialogueHistorySection from '../card/DialogueHistorySection'
+import CardLinksSection from '../card/CardLinksSection'
+import KnowledgeGraph from '../card/KnowledgeGraph'
 import CardEditForm from '../card/CardEditForm'
 import RetakeButton from '../card/RetakeButton'
 import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
@@ -30,10 +32,11 @@ function getStatusClass(status) {
 
 export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
   const navigate = useNavigate()
-  const { selectedCard, deleteCard } = useCardStore()
+  const { selectedCard, deleteCard, graphData, fetchGraphData } = useCardStore()
   const [isEditing, setIsEditing] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showGraph, setShowGraph] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -90,6 +93,17 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
   const handleReview = useCallback(() => {
     if (selectedCard) {
       navigate(`/boss/battle?cardId=${selectedCard.id}`)
+    }
+  }, [selectedCard, navigate])
+
+  const handleOpenGraph = useCallback(async () => {
+    await fetchGraphData()
+    setShowGraph(true)
+  }, [fetchGraphData])
+
+  const handleGraphNodeClick = useCallback((node) => {
+    if (selectedCard?.id !== node.id) {
+      navigate(`/cards?cardId=${node.id}`)
     }
   }, [selectedCard, navigate])
 
@@ -198,6 +212,7 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
             <>
               <DimensionSection card={selectedCard} />
               <VisualLinksSection visualLinks={selectedCard.visual_links} />
+              <CardLinksSection card={selectedCard} />
               <DialogueHistorySection card={selectedCard} />
             </>
           )}
@@ -213,6 +228,9 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
           <div className={styles.footer}>
             <Button variant="primary" onClick={handleReview} className={styles.reviewBtn}>
               📖 修炼
+            </Button>
+            <Button variant="ghost" onClick={handleOpenGraph} className={styles.graphBtn}>
+              🕸️ 图谱
             </Button>
             <Button variant="ghost" onClick={handleEdit} className={styles.editBtn}>
               ✏️ 编辑
@@ -236,6 +254,18 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
                   确认删除
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {showGraph && (
+          <div className={styles.graphOverlay} onClick={() => setShowGraph(false)}>
+            <div className={styles.graphContainer} onClick={(e) => e.stopPropagation()}>
+              <KnowledgeGraph
+                data={graphData}
+                onNodeClick={handleGraphNodeClick}
+                onClose={() => setShowGraph(false)}
+              />
             </div>
           </div>
         )}

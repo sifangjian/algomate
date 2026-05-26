@@ -200,16 +200,16 @@ export default function DailyReview() {
                         <h2 className={styles.panelTitle}>📖 知识回顾 - {selectedTask.card_name}</h2>
                         {reviewContent ? (
                             <div className={styles.reviewContent}>
-                                {reviewContent.core_concept && (
+                                {reviewContent.basic_content?.concept_definition && (
                                     <div className={styles.reviewSection}>
                                         <h3 className={styles.reviewSectionTitle}>核心概念</h3>
-                                        <p className={styles.reviewSectionText}>{reviewContent.core_concept}</p>
+                                        <p className={styles.reviewSectionText}>{reviewContent.basic_content.concept_definition}</p>
                                     </div>
                                 )}
-                                {reviewContent.key_points && (
+                                {reviewContent.basic_content?.features && (
                                     <div className={styles.reviewSection}>
                                         <h3 className={styles.reviewSectionTitle}>关键要点</h3>
-                                        <p className={styles.reviewSectionText}>{reviewContent.key_points}</p>
+                                        <p className={styles.reviewSectionText}>{reviewContent.basic_content.features}</p>
                                     </div>
                                 )}
                                 {reviewContent.my_notes && (

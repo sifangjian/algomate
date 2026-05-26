@@ -45,26 +45,25 @@ class TestCardModelAlignment:
         col = Card.__table__.c.durability
         assert col.default.arg == 80, "durability default should be 80"
 
-    def test_card_has_content_dimension_fields(self):
+    def test_card_has_tier_content_fields(self):
         from algomate.models.cards import Card
-        content_dims = [
-            'core_concept', 'code_template', 'complexity_analysis',
-            'use_cases', 'common_variants', 'typical_problems',
-            'common_pitfalls', 'comparison', 'my_notes'
-        ]
-        for field in content_dims:
+        tier_fields = ['basic_content', 'practical_content', 'advanced_content', 'my_notes']
+        for field in tier_fields:
             assert hasattr(Card, field), f"Card should have {field} field"
 
-    def test_card_content_dimensions_default_empty_string(self):
+    def test_card_tier_content_defaults(self):
         from algomate.models.cards import Card
-        content_dims = [
-            'core_concept', 'code_template', 'complexity_analysis',
-            'use_cases', 'common_variants', 'typical_problems',
-            'common_pitfalls', 'comparison', 'my_notes'
-        ]
-        for field in content_dims:
-            col = Card.__table__.c[field]
-            assert col.default.arg == "", f"{field} default should be empty string"
+        assert Card.__table__.c.basic_content.default.arg == "{}"
+        assert Card.__table__.c.practical_content.default.arg == "{}"
+        assert Card.__table__.c.advanced_content.default.arg == "{}"
+
+    def test_card_backward_compat_core_concept(self):
+        from algomate.models.cards import Card
+        assert hasattr(Card, 'core_concept'), "Card should keep core_concept as @property"
+
+    def test_card_backward_compat_key_points(self):
+        from algomate.models.cards import Card
+        assert hasattr(Card, 'key_points'), "Card should keep key_points as @property"
 
     def test_card_has_visual_links_field(self):
         from algomate.models.cards import Card
@@ -106,10 +105,6 @@ class TestCardModelAlignment:
         col = Card.__table__.c.topic
         assert col.nullable is False, "topic should not be nullable"
 
-    def test_card_backward_compat_key_points(self):
-        from algomate.models.cards import Card
-        assert hasattr(Card, 'key_points'), "Card should keep key_points for backward compat"
-
     def test_card_create_has_new_fields(self):
         from algomate.models.cards import CardCreate
         fields = CardCreate.model_fields
@@ -118,17 +113,16 @@ class TestCardModelAlignment:
         assert 'npc_id' in fields, "CardCreate should have npc_id"
         assert 'topic' in fields, "CardCreate should have topic"
         assert 'visual_links' in fields, "CardCreate should have visual_links"
-        for dim in ['core_concept', 'code_template', 'complexity_analysis',
-                     'use_cases', 'common_variants', 'typical_problems',
-                     'common_pitfalls', 'comparison', 'my_notes']:
-            assert dim in fields, f"CardCreate should have {dim}"
+        assert 'basic_content' in fields, "CardCreate should have basic_content"
+        assert 'practical_content' in fields, "CardCreate should have practical_content"
+        assert 'advanced_content' in fields, "CardCreate should have advanced_content"
+        assert 'my_notes' in fields, "CardCreate should have my_notes"
 
     def test_card_update_has_new_fields(self):
         from algomate.models.cards import CardUpdate
         fields = CardUpdate.model_fields
-        for dim in ['core_concept', 'key_points', 'code_template', 'complexity_analysis',
-                     'use_cases', 'common_variants', 'typical_problems',
-                     'common_pitfalls', 'comparison', 'my_notes', 'visual_links']:
+        for dim in ['basic_content', 'practical_content', 'advanced_content',
+                     'my_notes', 'visual_links']:
             assert dim in fields, f"CardUpdate should have {dim}"
 
     def test_card_response_has_new_fields(self):
@@ -138,10 +132,10 @@ class TestCardModelAlignment:
         assert 'npc_id' in fields, "CardResponse should have npc_id"
         assert 'topic' in fields, "CardResponse should have topic"
         assert 'visual_links' in fields, "CardResponse should have visual_links"
-        for dim in ['core_concept', 'code_template', 'complexity_analysis',
-                     'use_cases', 'common_variants', 'typical_problems',
-                     'common_pitfalls', 'comparison', 'my_notes']:
-            assert dim in fields, f"CardResponse should have {dim}"
+        assert 'basic_content' in fields, "CardResponse should have basic_content"
+        assert 'practical_content' in fields, "CardResponse should have practical_content"
+        assert 'advanced_content' in fields, "CardResponse should have advanced_content"
+        assert 'my_notes' in fields, "CardResponse should have my_notes"
 
 
 # ============================================================

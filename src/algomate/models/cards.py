@@ -1,10 +1,18 @@
+import json
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field
 
 from algomate.data.database import Base
+
+
+def _safe_json_parse(value: str, default=None):
+    try:
+        return json.loads(value) if value else default
+    except (json.JSONDecodeError, TypeError):
+        return default
 
 
 class Card(Base):
@@ -23,15 +31,12 @@ class Card(Base):
     npc_id = Column(Integer, ForeignKey("npcs.id"), nullable=False, default=1)
     dialogue_id = Column(Integer, ForeignKey("dialogue_records.id"), nullable=True)
     topic = Column(String(100), nullable=False, default="")
-    core_concept = Column(Text, default="", nullable=False)
-    key_points = Column(Text, default="[]", nullable=False)
-    code_template = Column(Text, default="", nullable=False)
-    complexity_analysis = Column(Text, default="", nullable=False)
-    use_cases = Column(Text, default="", nullable=False)
-    common_variants = Column(Text, default="", nullable=False)
-    typical_problems = Column(Text, default="", nullable=False)
-    common_pitfalls = Column(Text, default="", nullable=False)
-    comparison = Column(Text, default="", nullable=False)
+
+    # 三层结构化内容（JSON Text）
+    basic_content = Column(Text, default="{}", nullable=False)
+    practical_content = Column(Text, default="{}", nullable=False)
+    advanced_content = Column(Text, default="{}", nullable=False)
+
     my_notes = Column(Text, default="", nullable=False)
     visual_links = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
@@ -44,6 +49,81 @@ class Card(Base):
     dialogue = relationship("DialogueRecord", foreign_keys=[dialogue_id])
     dialogue_records = relationship("DialogueRecord", back_populates="card", cascade="all, delete-orphan", foreign_keys="[DialogueRecord.card_id]")
     battle_records = relationship("BattleRecord", back_populates="card", cascade="all, delete-orphan")
+    outgoing_links = relationship("CardLink", foreign_keys="[CardLink.source_card_id]", cascade="all, delete-orphan", back_populates="source_card")
+    incoming_links = relationship("CardLink", foreign_keys="[CardLink.target_card_id]", cascade="all, delete-orphan", back_populates="target_card")
+
+    # --- 向后兼容 @property ---
+    # question_generator.py, bosses.py, review_plan_service.py 等仍用旧字段名读取
+
+    @property
+    def core_concept(self) -> str:
+        data = _safe_json_parse(self.basic_content, {})
+        return data.get("concept_definition", "") if isinstance(data, dict) else ""
+
+    @core_concept.setter
+    def core_concept(self, value: str):
+        data = _safe_json_parse(self.basic_content, {})
+        if not isinstance(data, dict):
+            data = {}
+        data["concept_definition"] = value
+        self.basic_content = json.dumps(data, ensure_ascii=False)
+
+    @property
+    def key_points(self) -> str:
+        data = _safe_json_parse(self.basic_content, {})
+        return data.get("features", "") if isinstance(data, dict) else ""
+
+    @key_points.setter
+    def key_points(self, value: str):
+        data = _safe_json_parse(self.basic_content, {})
+        if not isinstance(data, dict):
+            data = {}
+        data["features"] = value
+        self.basic_content = json.dumps(data, ensure_ascii=False)
+
+
+class BasicContent(BaseModel):
+    concept_definition: str = Field("", description="概念定义")
+    features: str = Field("", description="特点")
+    confusing_concepts: str = Field("", description="易混淆概念")
+
+
+class Solution(BaseModel):
+    name: str = Field("解法", description="解法名称")
+    code: str = Field("", description="解法代码")
+    principle: str = Field("", description="原理说明")
+    complexity: str = Field("", description="时间/空间复杂度")
+
+
+class Example(BaseModel):
+    title: str = Field("例题", description="例题标题")
+    problem: str = Field("", description="题目描述")
+    solutions: List[Solution] = Field(default_factory=list, description="解法列表")
+
+
+class PracticalContent(BaseModel):
+    examples: List[Example] = Field(default_factory=list, description="例题列表")
+    applicable_scenarios: str = Field("", description="适用场景")
+    precautions: str = Field("", description="注意事项")
+
+
+class AdvancedContent(BaseModel):
+    common_mistakes: str = Field("", description="易错点")
+    extensions: str = Field("", description="拓展方向")
+    advanced_solutions: str = Field("", description="高级解法")
+
+
+def _normalize_content(value: Union[str, dict, None], model_class) -> str:
+    if value is None:
+        return "{}"
+    if isinstance(value, str):
+        parsed = _safe_json_parse(value)
+        if parsed is not None:
+            return value
+        return "{}"
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False)
+    return "{}"
 
 
 class CardCreate(BaseModel):
@@ -53,15 +133,9 @@ class CardCreate(BaseModel):
     npc_id: Optional[int] = Field(1, description="关联NPC ID")
     dialogue_id: Optional[int] = Field(None, description="关联对话ID")
     topic: Optional[str] = Field("", description="主题")
-    core_concept: Optional[str] = Field("", description="核心概念")
-    key_points: Optional[str] = Field("[]", description="关键要点")
-    code_template: Optional[str] = Field("", description="代码模板")
-    complexity_analysis: Optional[str] = Field("", description="复杂度分析")
-    use_cases: Optional[str] = Field("", description="使用场景")
-    common_variants: Optional[str] = Field("", description="常见变体")
-    typical_problems: Optional[str] = Field("", description="典型题目")
-    common_pitfalls: Optional[str] = Field("", description="常见陷阱")
-    comparison: Optional[str] = Field("", description="对比分析")
+    basic_content: Optional[Union[str, dict]] = Field("{}", description="基础内容（JSON）")
+    practical_content: Optional[Union[str, dict]] = Field("{}", description="实战内容（JSON）")
+    advanced_content: Optional[Union[str, dict]] = Field("{}", description="进阶内容（JSON）")
     my_notes: Optional[str] = Field("", description="个人笔记")
     visual_links: Optional[str] = Field(None, description="可视化链接")
 
@@ -70,15 +144,9 @@ class CardCreate(BaseModel):
 
 
 class CardUpdate(BaseModel):
-    core_concept: Optional[str] = Field(None, description="核心概念")
-    key_points: Optional[str] = Field(None, description="关键要点")
-    code_template: Optional[str] = Field(None, description="代码模板")
-    complexity_analysis: Optional[str] = Field(None, description="复杂度分析")
-    use_cases: Optional[str] = Field(None, description="使用场景")
-    common_variants: Optional[str] = Field(None, description="常见变体")
-    typical_problems: Optional[str] = Field(None, description="典型题目")
-    common_pitfalls: Optional[str] = Field(None, description="常见陷阱")
-    comparison: Optional[str] = Field(None, description="对比分析")
+    basic_content: Optional[Union[str, dict]] = Field(None, description="基础内容（JSON）")
+    practical_content: Optional[Union[str, dict]] = Field(None, description="实战内容（JSON）")
+    advanced_content: Optional[Union[str, dict]] = Field(None, description="进阶内容（JSON）")
     my_notes: Optional[str] = Field(None, description="个人笔记")
     visual_links: Optional[str] = Field(None, description="可视化链接")
 
@@ -97,17 +165,12 @@ class CardResponse(BaseModel):
     last_reviewed: Optional[datetime] = None
     pending_retake: bool = False
     npc_id: Optional[int] = None
+    dialogue_id: Optional[int] = None
     topic: Optional[str] = None
     status: str
-    core_concept: Optional[str] = None
-    key_points: Optional[str] = None
-    code_template: Optional[str] = None
-    complexity_analysis: Optional[str] = None
-    use_cases: Optional[str] = None
-    common_variants: Optional[str] = None
-    typical_problems: Optional[str] = None
-    common_pitfalls: Optional[str] = None
-    comparison: Optional[str] = None
+    basic_content: Optional[dict] = None
+    practical_content: Optional[dict] = None
+    advanced_content: Optional[dict] = None
     my_notes: Optional[str] = None
     visual_links: Optional[str] = None
     created_at: datetime

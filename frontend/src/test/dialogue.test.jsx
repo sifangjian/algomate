@@ -138,11 +138,11 @@ describe('dialogueStore', () => {
   })
 
   describe('endDialogue', () => {
-    it('应结束对话并设置earnedCard', async () => {
+    it('应结束对话并返回cards数组', async () => {
       useDialogueStore.setState({ dialogueId: 1, status: 'active' })
       dialogueService.endDialogue.mockResolvedValue({
         data: {
-          card: { name: '二分查找', algorithm_type: '搜索', difficulty: 3 },
+          cards: [{ name: '二分查找', algorithm_type: '搜索', difficulty: 3 }],
           is_update: false,
           guides: { go_boss: true, go_workshop: true },
         },
@@ -150,24 +150,23 @@ describe('dialogueStore', () => {
 
       const result = await useDialogueStore.getState().endDialogue()
 
-      expect(result.card.name).toBe('二分查找')
+      expect(result.cards[0].name).toBe('二分查找')
       const state = useDialogueStore.getState()
       expect(state.status).toBe('ended')
-      expect(state.earnedCard.name).toBe('二分查找')
     })
 
     it('卡牌生成失败时应设置error', async () => {
       useDialogueStore.setState({ dialogueId: 1, status: 'active' })
       dialogueService.endDialogue.mockResolvedValue({
         data: {
-          card: null,
+          cards: [],
           error: 'AI服务暂时不可用',
           dialogue_preserved: true,
         },
       })
 
       const result = await useDialogueStore.getState().endDialogue()
-      expect(result.card).toBeNull()
+      expect(result.cards).toHaveLength(0)
       expect(result.error).toBe('AI服务暂时不可用')
     })
   })

@@ -1,12 +1,12 @@
+import json
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import func
-
 from algomate.data.database import Database
-from algomate.models.cards import Card, CardCreate, CardUpdate, CardResponse
+from algomate.models.cards import Card, CardCreate, CardUpdate, _normalize_content
+from algomate.models.card_links import CardLink, LinkCreate, LinkResponse
 from algomate.core.game.durability import compute_card_status
 
 router = APIRouter(prefix="/cards", tags=["卡牌工坊"])
@@ -19,6 +19,17 @@ def success_response(data=None, message="success"):
 
 def error_response(code, message, status_code):
     raise HTTPException(status_code=status_code, detail={"code": code, "message": message})
+
+
+def _parse_json_field(value) -> dict:
+    if value is None:
+        return {}
+    if isinstance(value, dict):
+        return value
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return {}
 
 
 def _card_to_response(card: Card) -> dict:
@@ -36,15 +47,9 @@ def _card_to_response(card: Card) -> dict:
         "dialogue_id": card.dialogue_id,
         "topic": card.topic,
         "status": compute_card_status(card.durability, card.pending_retake),
-        "core_concept": card.core_concept,
-        "key_points": card.key_points,
-        "code_template": card.code_template,
-        "complexity_analysis": card.complexity_analysis,
-        "use_cases": card.use_cases,
-        "common_variants": card.common_variants,
-        "typical_problems": card.typical_problems,
-        "common_pitfalls": card.common_pitfalls,
-        "comparison": card.comparison,
+        "basic_content": _parse_json_field(card.basic_content),
+        "practical_content": _parse_json_field(card.practical_content),
+        "advanced_content": _parse_json_field(card.advanced_content),
         "my_notes": card.my_notes,
         "visual_links": card.visual_links,
         "created_at": card.created_at.isoformat() if card.created_at else None,
@@ -53,17 +58,41 @@ def _card_to_response(card: Card) -> dict:
 
 
 EDITABLE_FIELDS = {
-    "core_concept", "key_points", "code_template", "complexity_analysis",
-    "use_cases", "common_variants", "typical_problems", "common_pitfalls",
-    "comparison", "my_notes", "visual_links",
+    "basic_content", "practical_content", "advanced_content",
+    "my_notes", "visual_links",
 }
+
+
+@router.get("/graph")
+async def get_graph():
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        cards = session.query(Card).all()
+        links = session.query(CardLink).all()
+        nodes = [
+            {"id": c.id, "name": c.name, "algorithm_type": c.algorithm_type}
+            for c in cards
+        ]
+        edges = [
+            {
+                "source": l.source_card_id,
+                "target": l.target_card_id,
+                "link_type": l.link_type,
+                "source_keyword": l.source_keyword,
+            }
+            for l in links
+        ]
+        return success_response(data={"nodes": nodes, "edges": edges})
+    finally:
+        session.close()
 
 
 @router.get("")
 async def get_cards(
     algorithm_type: Optional[str] = Query(None, description="按算法类型筛选"),
     status: Optional[str] = Query(None, description="按状态筛选：endangered/pending_retake"),
-    keyword: Optional[str] = Query(None, description="按关键词搜索（匹配名称、核心概念、关键要点）"),
+    keyword: Optional[str] = Query(None, description="按关键词搜索（匹配名称、内容）"),
 ):
     db = Database.get_instance()
     session = db.get_session()
@@ -89,8 +118,8 @@ async def get_cards(
             keyword_pattern = f"%{keyword}%"
             query = query.filter(
                 (Card.name.ilike(keyword_pattern))
-                | (Card.core_concept.ilike(keyword_pattern))
-                | (Card.key_points.ilike(keyword_pattern))
+                | (Card.basic_content.ilike(keyword_pattern))
+                | (Card.practical_content.ilike(keyword_pattern))
             )
 
         cards = query.order_by(Card.created_at.desc()).all()
@@ -138,8 +167,12 @@ async def update_card(card_id: int, card_update: CardUpdate):
         has_changes = False
         for key, value in update_data.items():
             current_val = getattr(card, key, None)
-            new_val = value if value is not None else ""
-            cur_val = current_val if current_val is not None else ""
+            if key in ("basic_content", "practical_content", "advanced_content"):
+                new_val = _normalize_content(value, None)
+                cur_val = current_val or "{}"
+            else:
+                new_val = value if value is not None else ""
+                cur_val = current_val if current_val is not None else ""
             if cur_val != new_val:
                 has_changes = True
                 break
@@ -148,11 +181,14 @@ async def update_card(card_id: int, card_update: CardUpdate):
             error_response(40002, "内容未变更", 400)
 
         for key, value in update_data.items():
-            setattr(card, key, value)
+            if key in ("basic_content", "practical_content", "advanced_content"):
+                setattr(card, key, _normalize_content(value, None))
+            else:
+                setattr(card, key, value)
 
         session.commit()
         session.refresh(card)
-        return success_response(data={"updated": True})
+        return success_response(data=_card_to_response(card))
     except HTTPException:
         raise
     except Exception as e:
@@ -238,15 +274,9 @@ async def create_card(card_data: CardCreate):
             npc_id=card_data.npc_id,
             dialogue_id=card_data.dialogue_id,
             topic=card_data.topic or "",
-            core_concept=card_data.core_concept or "",
-            key_points=card_data.key_points or "[]",
-            code_template=card_data.code_template or "",
-            complexity_analysis=card_data.complexity_analysis or "",
-            use_cases=card_data.use_cases or "",
-            common_variants=card_data.common_variants or "",
-            typical_problems=card_data.typical_problems or "",
-            common_pitfalls=card_data.common_pitfalls or "",
-            comparison=card_data.comparison or "",
+            basic_content=_normalize_content(card_data.basic_content, None),
+            practical_content=_normalize_content(card_data.practical_content, None),
+            advanced_content=_normalize_content(card_data.advanced_content, None),
             my_notes=card_data.my_notes or "",
             visual_links=card_data.visual_links,
         )
@@ -278,15 +308,16 @@ async def polish_card(request: dict):
         client = ChatClient(api_key=config.LLM_API_KEY)
 
         FIELD_LABELS = {
-            "core_concept": "核心概念",
-            "key_points": "关键要点",
-            "code_template": "代码模板",
-            "complexity_analysis": "复杂度分析",
-            "use_cases": "使用场景",
-            "common_variants": "常见变体",
-            "typical_problems": "典型题目",
-            "common_pitfalls": "常见陷阱",
-            "comparison": "对比分析",
+            "concept_definition": "概念定义",
+            "features": "特点",
+            "confusing_concepts": "易混淆概念",
+            "applicable_scenarios": "适用场景",
+            "precautions": "注意事项",
+            "common_mistakes": "易错点",
+            "extensions": "拓展方向",
+            "advanced_solutions": "高级解法",
+            "problem": "题目描述",
+            "principle": "原理说明",
             "my_notes": "个人笔记",
         }
         label = FIELD_LABELS.get(field_type, field_type)
@@ -307,3 +338,122 @@ async def polish_card(request: dict):
     except Exception as e:
         logger.error("polish_card failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"AI润色失败: {str(e)}")
+
+
+# --- 链接管理端点 ---
+
+@router.get("/{card_id}/links")
+async def get_card_links(card_id: int):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        card = session.query(Card).filter(Card.id == card_id).first()
+        if not card:
+            error_response(40404, "卡牌不存在", 404)
+
+        outgoing = session.query(CardLink).filter(CardLink.source_card_id == card_id).all()
+        incoming = session.query(CardLink).filter(CardLink.target_card_id == card_id).all()
+
+        result = []
+        for link in outgoing:
+            target = session.query(Card).filter(Card.id == link.target_card_id).first()
+            result.append({
+                "id": link.id,
+                "source_card_id": link.source_card_id,
+                "target_card_id": link.target_card_id,
+                "link_type": link.link_type,
+                "source_keyword": link.source_keyword,
+                "target_card_name": target.name if target else None,
+                "direction": "outgoing",
+                "created_at": link.created_at.isoformat() if link.created_at else None,
+            })
+        for link in incoming:
+            source = session.query(Card).filter(Card.id == link.source_card_id).first()
+            result.append({
+                "id": link.id,
+                "source_card_id": link.source_card_id,
+                "target_card_id": link.target_card_id,
+                "link_type": link.link_type,
+                "source_keyword": link.source_keyword,
+                "source_card_name": source.name if source else None,
+                "direction": "incoming",
+                "created_at": link.created_at.isoformat() if link.created_at else None,
+            })
+        return success_response(data=result)
+    finally:
+        session.close()
+
+
+@router.post("/{card_id}/links")
+async def create_card_link(card_id: int, link_data: LinkCreate):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        if card_id == link_data.target_card_id:
+            error_response(40001, "不能链接到自身", 400)
+
+        source = session.query(Card).filter(Card.id == card_id).first()
+        if not source:
+            error_response(40404, "源卡牌不存在", 404)
+
+        target = session.query(Card).filter(Card.id == link_data.target_card_id).first()
+        if not target:
+            error_response(40404, "目标卡牌不存在", 404)
+
+        existing = session.query(CardLink).filter(
+            CardLink.source_card_id == card_id,
+            CardLink.target_card_id == link_data.target_card_id,
+            CardLink.link_type == link_data.link_type,
+        ).first()
+        if existing:
+            error_response(40001, "该链接已存在", 400)
+
+        link = CardLink(
+            source_card_id=card_id,
+            target_card_id=link_data.target_card_id,
+            link_type=link_data.link_type,
+            source_keyword=link_data.source_keyword,
+        )
+        session.add(link)
+        session.commit()
+        session.refresh(link)
+
+        return success_response(data={
+            "id": link.id,
+            "source_card_id": link.source_card_id,
+            "target_card_id": link.target_card_id,
+            "link_type": link.link_type,
+            "source_keyword": link.source_keyword,
+            "target_card_name": target.name,
+            "created_at": link.created_at.isoformat() if link.created_at else None,
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        logger.error("create_card_link failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"创建链接失败: {str(e)}")
+    finally:
+        session.close()
+
+
+@router.delete("/links/{link_id}")
+async def delete_card_link(link_id: int):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        link = session.query(CardLink).filter(CardLink.id == link_id).first()
+        if not link:
+            error_response(40404, "链接不存在", 404)
+
+        session.delete(link)
+        session.commit()
+        return success_response(data=None)
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        logger.error("delete_card_link failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"删除链接失败: {str(e)}")
+    finally:
+        session.close()

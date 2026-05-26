@@ -51,15 +51,21 @@ function makeCard(overrides = {}) {
     id: 1,
     name: '二分查找',
     algorithm_type: 'Search',
-    core_concept: '通过不断折半缩小搜索范围',
-    key_points: '["确定左右边界","计算中间值","比较并缩小范围"]',
-    code_template: 'def binary_search(arr, target):\n    left, right = 0, len(arr) - 1',
-    complexity_analysis: '时间 O(log n)，空间 O(1)',
-    use_cases: '有序数组搜索',
-    common_variants: '左闭右开写法',
-    typical_problems: '["搜索插入位置","寻找峰值"]',
-    common_pitfalls: '忘记处理边界条件',
-    comparison: '与线性搜索对比',
+    basic_content: JSON.stringify({
+      concept_definition: '通过不断折半缩小搜索范围',
+      features: '确定左右边界\n计算中间值\n比较并缩小范围',
+      confusing_concepts: '二分查找与插值查找的区别',
+    }),
+    practical_content: JSON.stringify({
+      examples: [{ title: '搜索插入位置', problem: '在有序数组中找到目标值的插入位置', solutions: ['使用二分查找定位'] }],
+      applicable_scenarios: '有序数组搜索',
+      precautions: '注意边界条件',
+    }),
+    advanced_content: JSON.stringify({
+      common_mistakes: '忘记处理边界条件',
+      extensions: '左闭右开写法',
+      advanced_solutions: '与线性搜索对比',
+    }),
     my_notes: '二分查找是高效搜索算法',
     visual_links: null,
     ...overrides,
@@ -93,87 +99,91 @@ describe('DimensionSection', () => {
   it('renders dimension items for card with content', () => {
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    expect(screen.getByText('核心概念')).toBeInTheDocument()
-    expect(screen.getByText('关键要点')).toBeInTheDocument()
+    expect(screen.getByText('概念定义')).toBeInTheDocument()
+    expect(screen.getByText('特点')).toBeInTheDocument()
   })
 
   it('hides dimension items for empty/null values', () => {
-    const card = makeCard({ common_pitfalls: null, comparison: '', my_notes: undefined })
+    const card = makeCard({
+      advanced_content: JSON.stringify({ common_mistakes: '', extensions: '', advanced_solutions: '' }),
+      my_notes: undefined,
+    })
     render(<DimensionSection card={card} />)
-    expect(screen.queryByText('常见陷阱')).not.toBeInTheDocument()
-    expect(screen.queryByText('对比分析')).not.toBeInTheDocument()
+    expect(screen.queryByText('易错点')).not.toBeInTheDocument()
+    expect(screen.queryByText('拓展方向')).not.toBeInTheDocument()
     expect(screen.queryByText('个人笔记')).not.toBeInTheDocument()
   })
 
-  it('core_concept and key_points are expanded by default', () => {
+  it('concept_definition and features buttons are present in basic tier', () => {
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const coreBtn = screen.getByRole('button', { name: /核心概念/ })
-    const keyBtn = screen.getByRole('button', { name: /关键要点/ })
-    expect(coreBtn).toHaveAttribute('aria-expanded', 'true')
-    expect(keyBtn).toHaveAttribute('aria-expanded', 'true')
+    const conceptBtn = screen.getByRole('button', { name: /概念定义/ })
+    const featuresBtn = screen.getByRole('button', { name: /特点/ })
+    expect(conceptBtn).toBeInTheDocument()
+    expect(featuresBtn).toBeInTheDocument()
   })
 
-  it('other dimensions are collapsed by default', () => {
+  it('other dimensions are present in advanced tier', () => {
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const complexityBtn = screen.getByRole('button', { name: /复杂度分析/ })
-    expect(complexityBtn).toHaveAttribute('aria-expanded', 'false')
+    const mistakesBtn = screen.getByRole('button', { name: /易错点/ })
+    expect(mistakesBtn).toBeInTheDocument()
   })
 
   it('clicking a collapsed dimension header expands it', async () => {
     const user = userEvent.setup()
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const complexityBtn = screen.getByRole('button', { name: /复杂度分析/ })
-    expect(complexityBtn).toHaveAttribute('aria-expanded', 'false')
-    await user.click(complexityBtn)
-    expect(complexityBtn).toHaveAttribute('aria-expanded', 'true')
+    const mistakesBtn = screen.getByRole('button', { name: /易错点/ })
+    expect(screen.queryByText('忘记处理边界条件')).not.toBeInTheDocument()
+    await user.click(mistakesBtn)
+    expect(screen.getByText('忘记处理边界条件')).toBeInTheDocument()
   })
 
-  it('clicking an expanded dimension header collapses it', async () => {
+  it('clicking a dimension header toggles its content visibility', async () => {
     const user = userEvent.setup()
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const coreBtn = screen.getByRole('button', { name: /核心概念/ })
-    expect(coreBtn).toHaveAttribute('aria-expanded', 'true')
-    await user.click(coreBtn)
-    expect(coreBtn).toHaveAttribute('aria-expanded', 'false')
+    const conceptBtn = screen.getByRole('button', { name: /概念定义/ })
+    // Click to expand
+    await user.click(conceptBtn)
+    expect(screen.getByText('通过不断折半缩小搜索范围')).toBeInTheDocument()
+    // Click to collapse
+    await user.click(conceptBtn)
+    expect(screen.queryByText('通过不断折半缩小搜索范围')).not.toBeInTheDocument()
   })
 
-  it('code_template renders in a pre block', () => {
+  it('applicable_scenarios button is present in practical tier', () => {
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const codeHeader = screen.getByRole('button', { name: /代码模板/ })
-    expect(codeHeader).toHaveAttribute('aria-expanded', 'false')
+    const scenarioBtn = screen.getByRole('button', { name: /适用场景/ })
+    expect(scenarioBtn).toBeInTheDocument()
   })
 
-  it('code_template content is visible in pre when expanded', async () => {
+  it('applicable_scenarios content is visible when expanded', async () => {
     const user = userEvent.setup()
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const codeHeader = screen.getByRole('button', { name: /代码模板/ })
-    await user.click(codeHeader)
-    const pre = screen.getByText(/def binary_search/).closest('pre')
-    expect(pre).toBeInTheDocument()
+    const scenarioBtn = screen.getByRole('button', { name: /适用场景/ })
+    await user.click(scenarioBtn)
+    expect(screen.getByText(/有序数组搜索/)).toBeInTheDocument()
   })
 
-  it('typical_problems parses JSON array and renders as list', async () => {
+  it('examples render in practical tier', async () => {
     const user = userEvent.setup()
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    const problemsHeader = screen.getByRole('button', { name: /典型题目/ })
-    await user.click(problemsHeader)
+    // examples are rendered directly by ExamplesList, title is visible
     expect(screen.getByText('搜索插入位置')).toBeInTheDocument()
-    expect(screen.getByText('寻找峰值')).toBeInTheDocument()
   })
 
-  it('key_points parses JSON array and renders as list', () => {
+  it('features text is rendered when expanded', async () => {
+    const user = userEvent.setup()
     const card = makeCard()
     render(<DimensionSection card={card} />)
-    expect(screen.getByText('确定左右边界')).toBeInTheDocument()
-    expect(screen.getByText('计算中间值')).toBeInTheDocument()
-    expect(screen.getByText('比较并缩小范围')).toBeInTheDocument()
+    const featuresBtn = screen.getByRole('button', { name: /特点/ })
+    await user.click(featuresBtn)
+    expect(screen.getByText(/确定左右边界/)).toBeInTheDocument()
   })
 
   it('returns null when card is null', () => {
@@ -410,16 +420,17 @@ describe('CardEditForm', () => {
   it('renders dimension textareas for editable fields', () => {
     const card = makeCard()
     render(<CardEditForm card={card} />)
-    expect(screen.getByPlaceholderText(/输入核心概念/)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/输入关键要点/)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/输入代码模板/)).toBeInTheDocument()
+    expect(screen.getByText(/概念定义/)).toBeInTheDocument()
+    expect(screen.getByText(/特点/)).toBeInTheDocument()
+    expect(screen.getByText(/易混淆概念/)).toBeInTheDocument()
   })
 
-  it('renders 10 dimension textareas', () => {
+  it('renders tier sections for basic, practical and advanced', () => {
     const card = makeCard()
     render(<CardEditForm card={card} />)
-    const textareas = screen.getAllByRole('textbox')
-    expect(textareas.length).toBeGreaterThanOrEqual(10)
+    expect(screen.getByText(/基础/)).toBeInTheDocument()
+    expect(screen.getByText(/实战/)).toBeInTheDocument()
+    expect(screen.getByText(/进阶/)).toBeInTheDocument()
   })
 
   it('save button is disabled when no changes', () => {
@@ -433,9 +444,10 @@ describe('CardEditForm', () => {
     const user = userEvent.setup()
     const card = makeCard()
     render(<CardEditForm card={card} />)
-    const conceptInput = screen.getByPlaceholderText(/输入核心概念/)
+    const textareas = screen.getAllByRole('textbox')
+    const conceptInput = textareas[0]
     await user.clear(conceptInput)
-    await user.type(conceptInput, '新的核心概念')
+    await user.type(conceptInput, '新的概念定义')
     const saveBtn = screen.getByRole('button', { name: /保存/ })
     expect(saveBtn).not.toBeDisabled()
   })
@@ -443,15 +455,18 @@ describe('CardEditForm', () => {
   it('calls store updateCard on save', async () => {
     const user = userEvent.setup()
     const card = makeCard()
-    const updatedCard = { ...card, core_concept: '新的核心概念' }
+    const updatedCard = { ...card, basic_content: JSON.stringify({ concept_definition: '新的概念定义', features: '', confusing_concepts: '' }) }
     mockUpdateCard.mockResolvedValue(updatedCard)
     render(<CardEditForm card={card} />)
-    const conceptInput = screen.getByPlaceholderText(/输入核心概念/)
+    const textareas = screen.getAllByRole('textbox')
+    const conceptInput = textareas[0]
     await user.clear(conceptInput)
-    await user.type(conceptInput, '新的核心概念')
+    await user.type(conceptInput, '新的概念定义')
     const saveBtn = screen.getByRole('button', { name: /保存/ })
     await user.click(saveBtn)
-    expect(mockUpdateCard).toHaveBeenCalledWith(card.id, expect.objectContaining({ core_concept: '新的核心概念' }))
+    expect(mockUpdateCard).toHaveBeenCalledWith(card.id, expect.objectContaining({
+      basic_content: expect.objectContaining({ concept_definition: '新的概念定义' }),
+    }))
   })
 })
 
