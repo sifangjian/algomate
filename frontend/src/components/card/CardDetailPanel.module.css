@@ -1,18 +1,6 @@
-.overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: rgba(0, 0, 0, 0);
-    transition: background 0.35s ease;
-}
-
-.overlayExpanded {
-    background: rgba(0, 0, 0, 0.5);
-}
-
 .panel {
     position: fixed;
-    z-index: 201;
+    z-index: 150;
     background: var(--color-bg-secondary);
     border: 1px solid var(--border-color);
     display: flex;
@@ -28,6 +16,25 @@
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
 }
 
+.panelExpanded {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* 动画完成后移除 transition，使拖拽/resize 无延迟 */
+.animationComplete {
+    transition: none !important;
+}
+
+.dragging {
+    box-shadow: 0 16px 56px rgba(0, 0, 0, 0.6) !important;
+    opacity: 0.95;
+}
+
+.resizing {
+    box-shadow: 0 16px 56px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Header 作为拖拽把手 */
 .panelHeader {
     display: flex;
     align-items: center;
@@ -35,6 +42,7 @@
     padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
+    user-select: none;
 }
 
 .panelHeaderLeft {
@@ -73,6 +81,7 @@
     border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
     flex-shrink: 0;
+    z-index: 1;
 }
 
 .panelCloseBtn:hover {
@@ -87,6 +96,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 .panelContentVisible {
@@ -293,6 +303,92 @@
     margin-top: 4px;
 }
 
+/* ---- Resize handles ---- */
+.resizeHandle {
+    position: absolute;
+    z-index: 5;
+}
+
+.resize_se {
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+}
+
+.resize_sw {
+    left: 0;
+    bottom: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nesw-resize;
+}
+
+.resize_ne {
+    right: 0;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nesw-resize;
+}
+
+.resize_nw {
+    left: 0;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+}
+
+/* 角落视觉指示器 */
+.resize_se::after,
+.resize_sw::after,
+.resize_ne::after,
+.resize_nw::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--color-text-muted);
+    border-bottom: 2px solid var(--color-text-muted);
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.resize_se::after {
+    right: 4px;
+    bottom: 4px;
+}
+
+.resize_sw::after {
+    left: 4px;
+    bottom: 4px;
+    transform: scaleX(-1);
+}
+
+.resize_ne::after {
+    right: 4px;
+    top: 4px;
+    transform: scaleY(-1);
+}
+
+.resize_nw::after {
+    left: 4px;
+    top: 4px;
+    transform: scale(-1, -1);
+}
+
+.panelExpanded .resizeHandle::after {
+    opacity: 0.6;
+}
+
+.panelExpanded .resizeHandle:hover::after {
+    opacity: 1;
+    border-color: var(--color-primary-light);
+}
+
+/* ---- 移动端适配 ---- */
 @media (max-width: 768px) {
     .panel {
         width: 100% !important;
@@ -303,6 +399,14 @@
         height: 85vh !important;
         border-radius: 16px 16px 0 0 !important;
         transform: none !important;
+    }
+
+    .panelHeader {
+        cursor: default !important;
+    }
+
+    .resizeHandle {
+        display: none;
     }
 
     .statsRow {
