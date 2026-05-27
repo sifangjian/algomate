@@ -218,6 +218,15 @@
     border-color: var(--color-primary) !important;
 }
 
+.practiceBtn {
+    transition: all var(--transition-fast);
+}
+
+.practiceBtn:hover {
+    color: var(--color-success) !important;
+    border-color: var(--color-success) !important;
+}
+
 .deleteBtn {
     transition: all var(--transition-fast);
 }

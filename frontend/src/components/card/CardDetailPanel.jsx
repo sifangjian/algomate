@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useCardStore } from '../../stores/cardStore'
+import { getRealmIdByNpcId } from '../../services/npcService'
 import { showToast } from '../ui/Toast/index'
 import Button from '../ui/Button/Button'
 import DimensionSection from '../card/DimensionSection'
@@ -165,6 +166,19 @@ export default function CardDetailPanel({ open, onClose, sourceRect }) {
         if (selectedCard) {
             navigate(`/boss/battle?cardId=${selectedCard.id}`)
         }
+    }, [selectedCard, navigate])
+
+    const handlePractice = useCallback(() => {
+        if (!selectedCard?.dialogue_id) {
+            showToast('该卡牌无关联修习记录', 'warning')
+            return
+        }
+        const realmId = selectedCard.realm_id || getRealmIdByNpcId(selectedCard.npc_id)
+        if (!realmId) {
+            showToast('无法定位导师所在秘境', 'error')
+            return
+        }
+        navigate(`/npc/${realmId}?dialogueId=${selectedCard.dialogue_id}`)
     }, [selectedCard, navigate])
 
     useEffect(() => {
@@ -340,11 +354,16 @@ export default function CardDetailPanel({ open, onClose, sourceRect }) {
 
                 {!isEditing && (
                     <div className={styles.panelFooter}>
-                        <Button variant="primary" onClick={handleReview} className={styles.reviewBtn}>
-                            📖 修炼
-                        </Button>
                         <Button variant="ghost" onClick={handleEdit} className={styles.editBtn}>
                             ✏️ 编辑
+                        </Button>
+                        {selectedCard.dialogue_id && (
+                            <Button variant="ghost" onClick={handlePractice} className={styles.practiceBtn}>
+                                📖 修炼
+                            </Button>
+                        )}
+                        <Button variant="primary" onClick={handleReview} className={styles.reviewBtn}>
+                            ⚔️ 挑战
                         </Button>
                         <Button variant="ghost" onClick={handleDeleteRequest} className={styles.deleteBtn}>
                             🗑️ 删除

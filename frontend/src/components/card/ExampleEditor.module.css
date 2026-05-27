@@ -9,7 +9,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--bg-secondary, #f8fafc);
+  background: rgba(15, 15, 26, 0.4);
   border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
@@ -26,7 +26,8 @@
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 13px;
-  background: white;
+  background: rgba(15, 15, 26, 0.5);
+  color: var(--color-text-primary, #e2e8f0);
 }
 
 .titleInput:focus {
@@ -80,6 +81,8 @@
   line-height: 1.5;
   resize: vertical;
   font-family: inherit;
+  background: rgba(15, 15, 26, 0.5);
+  color: var(--color-text-primary, #e2e8f0);
 }
 
 .textarea:focus {
@@ -130,7 +133,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: var(--bg-tertiary, #f1f5f9);
+  background: rgba(15, 15, 26, 0.3);
   border-bottom: 1px solid var(--border-color, #e2e8f0);
 }
 
@@ -140,7 +143,8 @@
   border-radius: 4px;
   padding: 3px 8px;
   font-size: 12px;
-  background: white;
+  background: rgba(15, 15, 26, 0.5);
+  color: var(--color-text-primary, #e2e8f0);
 }
 
 .solutionNameInput:focus {
@@ -168,7 +172,8 @@
   font-size: 12px;
   font-family: monospace;
   width: 100px;
-  background: white;
+  background: rgba(15, 15, 26, 0.5);
+  color: var(--color-text-primary, #e2e8f0);
 }
 
 .complexityInput:focus {

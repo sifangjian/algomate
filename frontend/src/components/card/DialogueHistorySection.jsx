@@ -101,9 +101,6 @@ export default function DialogueHistorySection({ card }) {
               </div>
 
               <div className={styles.actions}>
-                <button className={styles.continueBtn} onClick={handleContinue}>
-                  继续修习
-                </button>
                 {!showClearConfirm ? (
                   <button
                     className={styles.clearBtn}

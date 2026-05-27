@@ -16,15 +16,15 @@
   gap: 8px;
   width: 100%;
   padding: 8px 12px;
-  background: var(--bg-secondary, #f8fafc);
+  background: rgba(15, 15, 26, 0.4);
   border: none;
   cursor: pointer;
   font-size: 14px;
-  color: var(--text-primary, #1e293b);
+  color: var(--color-text-primary, #e2e8f0);
 }
 
 .exampleHeader:hover {
-  background: var(--bg-hover, #f1f5f9);
+  background: rgba(15, 15, 26, 0.6);
 }
 
 .exampleIndex {
@@ -66,7 +66,7 @@
 
 .problemSection {
   padding: 8px;
-  background: var(--bg-secondary, #f8fafc);
+  background: rgba(15, 15, 26, 0.4);
   border-radius: 6px;
 }
 
@@ -94,15 +94,15 @@
   gap: 8px;
   width: 100%;
   padding: 6px 10px;
-  background: var(--bg-tertiary, #f1f5f9);
+  background: rgba(15, 15, 26, 0.3);
   border: none;
   cursor: pointer;
   font-size: 13px;
-  color: var(--text-primary, #1e293b);
+  color: var(--color-text-primary, #e2e8f0);
 }
 
 .solutionHeader:hover {
-  background: var(--bg-hover, #e2e8f0);
+  background: rgba(15, 15, 26, 0.5);
 }
 
 .solutionName {
@@ -114,8 +114,8 @@
 .complexityTag {
   font-size: 11px;
   padding: 1px 6px;
-  background: var(--accent-light, #e0e7ff);
-  color: var(--accent-dark, #4338ca);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--color-primary-light, #a5b4fc);
   border-radius: 4px;
   font-family: monospace;
 }
