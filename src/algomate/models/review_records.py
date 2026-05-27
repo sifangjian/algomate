@@ -19,7 +19,6 @@ class ReviewRecord(Base):
     Attributes:
         id: 记录唯一标识
         card_id: 关联卡牌ID（外键）
-        note_id: 关联心得ID（外键）— deprecated，请使用 card_id
         review_date: 修炼日期
         status: 修炼状态（pending/completed/skipped）
         score: 本次修炼战绩
@@ -28,7 +27,6 @@ class ReviewRecord(Base):
     __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    note_id = Column(Integer, ForeignKey("notes.id"), nullable=True)
     card_id = Column(Integer, ForeignKey("cards.id"), nullable=True)
     review_date = Column(DateTime, default=datetime.now, nullable=False)
     status = Column(String(20), default="pending", nullable=False)
@@ -40,5 +38,4 @@ class ReviewRecord(Base):
     review_level_before = Column(Integer, nullable=True)
     review_level_after = Column(Integer, nullable=True)
 
-    note = relationship("Note", back_populates="review_records")  # deprecated: 请使用 card
     card = relationship("Card", back_populates="review_records")

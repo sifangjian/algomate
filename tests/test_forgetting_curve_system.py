@@ -21,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from algomate.data.database import Base
 from algomate.models.cards import Card
 from algomate.models.review_records import ReviewRecord
-from algomate.models.notes import Note
 from algomate.review.review_plan_service import ReviewPlanService
 
 

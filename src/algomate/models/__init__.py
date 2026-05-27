@@ -5,7 +5,6 @@
 """
 
 from algomate.models.user_settings import UserSetting
-from algomate.models.notes import Note
 from algomate.models.cards import Card, CardUpdate, CardResponse
 from algomate.models.card_links import CardLink
 from algomate.models.npcs import NPC
@@ -21,7 +20,6 @@ from algomate.models.learning_progress import LearningProgress
 
 __all__ = [
     "UserSetting",
-    "Note",
     "Card",
     "CardUpdate",
     "CardResponse",

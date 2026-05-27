@@ -9,9 +9,9 @@
 
 from typing import Dict, List, Any
 from collections import defaultdict
-from algomate.models import AnswerRecord, Note
+from algomate.models import AnswerRecord, Card
 from ...data.database import Database
-from ...data.repositories import AnswerRecordRepository, NoteRepository
+from ...data.repositories import AnswerRecordRepository, CardRepository
 
 
 class WeakPointAnalyzer:
@@ -60,8 +60,8 @@ class WeakPointAnalyzer:
             type_stats = defaultdict(lambda: {"total": 0, "correct": 0})
             for record in records:
                 question = record.question
-                if question and question.note:
-                    algo_type = question.note.algorithm_type
+                if question and question.card:
+                    algo_type = question.card.algorithm_type
                     type_stats[algo_type]["total"] += 1
                     if record.is_correct:
                         type_stats[algo_type]["correct"] += 1

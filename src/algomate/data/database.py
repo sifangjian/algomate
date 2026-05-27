@@ -18,7 +18,7 @@ def _ensure_models_imported():
     global _models_imported
     if not _models_imported:
         from algomate.models import (
-            Note, Card, CardLink, NPC, Boss, Question, AnswerRecord,
+            Card, CardLink, NPC, Boss, Question, AnswerRecord,
             DialogueRecord, DialogueMessageRecord, DialogueNote,
             ReviewRecord, LearningProgress, UserSetting,
             BattleRecord
@@ -97,14 +97,23 @@ def _fix_orphan_notnull_columns(engine):
         except Exception:
             continue
 
-        model_column_names = {col.name for col in Base.metadata.tables[table_name].columns}
+        table_model = Base.metadata.tables[table_name]
+        model_column_names = {col.name for col in table_model.columns}
+        model_nullable = {col.name: col.nullable for col in table_model.columns}
 
         orphan_notnull = set()
+        nullable_mismatch = set()
         for col in db_columns:
             if col['name'] not in model_column_names and not col.get('nullable', True):
                 orphan_notnull.add(col['name'])
+            elif col['name'] in model_column_names:
+                db_nullable = col.get('nullable', True)
+                model_allows_null = model_nullable.get(col['name'], True)
+                if not db_nullable and model_allows_null:
+                    nullable_mismatch.add(col['name'])
 
-        if not orphan_notnull:
+        columns_to_relax = orphan_notnull | nullable_mismatch
+        if not columns_to_relax:
             continue
 
         pk_constraint = inspector.get_pk_constraint(table_name)
@@ -138,7 +147,7 @@ def _fix_orphan_notnull_columns(engine):
                 parts.append('PRIMARY KEY')
                 if has_autoincrement and col_type.upper() == 'INTEGER':
                     parts.append('AUTOINCREMENT')
-            elif col_name not in orphan_notnull and not col.get('nullable', True):
+            elif col_name not in columns_to_relax and not col.get('nullable', True):
                 parts.append('NOT NULL')
 
             default = col.get('default')
@@ -193,6 +202,8 @@ def _fix_orphan_notnull_columns(engine):
 
         for col_name in orphan_notnull:
             print(f"  [MIGRATION] Made orphan column {col_name} in table {table_name} nullable")
+        for col_name in nullable_mismatch:
+            print(f"  [MIGRATION] Made column {col_name} in table {table_name} nullable (model nullable mismatch)")
 
 
 def init_db(config: Optional["AppConfig"] = None) -> "Database":

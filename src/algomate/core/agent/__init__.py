@@ -8,7 +8,6 @@ Agent 模块
 - AlgoMateAgent: 基于 Tool-augmented 的智能体
 - ToolAugmentedChatClient: 支持 Tool 模式的 ChatClient
 - ContentAnalyzer: 内容分析器
-- NoteAnalyzer: 心得分析器（已废弃，请使用 ContentAnalyzer）
 - QuestionGenerator: 试炼生成器
 - AnswerEvaluator: 答案评估器
 - WeakPointAnalyzer: 薄弱点分析器

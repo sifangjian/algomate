@@ -60,4 +60,3 @@ class Note(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     npc = relationship("NPC", back_populates="notes")
-    review_records = relationship("ReviewRecord", back_populates="note")

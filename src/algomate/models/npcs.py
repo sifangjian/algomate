@@ -27,6 +27,5 @@ class NPC(Base):
     system_prompt = Column(Text, nullable=False, default="")
     greeting = Column(Text, nullable=True)
 
-    notes = relationship("Note", back_populates="npc")
     dialogue_records = relationship("DialogueRecord", back_populates="npc")
     cards = relationship("Card", back_populates="npc")

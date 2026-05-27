@@ -248,39 +248,37 @@ class AlgoMateAgent:
         return evaluate_answer
 
     def _create_search_notes_tool(self) -> BaseTool:
-        """创建心得搜索工具"""
+        """创建卡牌搜索工具"""
 
         @tool(args_schema=NoteSearchInput, parse_docstring=True)
         def search_notes(query: str, limit: int = 5) -> str:
-            """搜索已存储的心得
+            """搜索已存储的卡牌
 
-            当用户想查看之前保存的心得、或者搜索特定算法的心得时使用。
+            当用户想查看之前保存的卡牌、或者搜索特定算法的卡牌时使用。
 
             Args:
                 query: 搜索关键词，可以是算法类型、标签或内容关键词
                 limit: 返回结果数量限制，默认5条
 
             Returns:
-                匹配的心得列表（JSON格式）
+                匹配的卡牌列表（JSON格式）
             """
             if self.database is None:
                 return json.dumps({"error": "数据库未初始化"}, ensure_ascii=False)
 
             try:
-                from ...data.repositories import NoteRepository
-                note_repo = NoteRepository(self.database)
-                notes = note_repo.search_by_keyword(query, limit=limit)
+                from ...data.repositories import CardRepository
+                card_repo = CardRepository(self.database)
+                cards = card_repo.search_by_keyword(query, limit=limit)
 
                 result = []
-                for note in notes:
+                for card in cards:
                     result.append({
-                        "id": note.id,
-                        "title": note.title,
-                        "algorithm_type": note.algorithm_type,
-                        "difficulty": note.difficulty,
-                        "summary": note.summary,
-                        "tags": json.loads(note.tags) if note.tags else [],
-                        "mastery_level": note.mastery_level,
+                        "id": card.id,
+                        "name": card.name,
+                        "algorithm_type": card.algorithm_type,
+                        "core_concept": card.core_concept,
+                        "durability": card.durability,
                     })
                 return json.dumps(result, ensure_ascii=False, indent=2)
             except Exception as e:
@@ -302,28 +300,24 @@ class AlgoMateAgent:
                 days: 获取未来几天的修炼计划，默认7天
 
             Returns:
-                修炼计划列表（JSON格式），包含心得信息和建议修炼时间
+                修炼计划列表（JSON格式），包含卡牌信息和建议修炼时间
             """
             if self.database is None:
                 return json.dumps({"error": "数据库未初始化"}, ensure_ascii=False)
 
             try:
-                from ...data.repositories import NoteRepository
-                note_repo = NoteRepository(self.database)
-                today = date.today()
-
-                notes_due = note_repo.get_notes_due_for_review(today, days_ahead=days)
+                from ...review.review_plan_service import ReviewPlanService
+                review_service = ReviewPlanService(self.database)
+                plan = review_service.get_today_review_plan()
 
                 result = []
-                for note in notes_due:
+                for item in plan[:days * 5]:
                     result.append({
-                        "id": note.id,
-                        "title": note.title,
-                        "algorithm_type": note.algorithm_type,
-                        "summary": note.summary,
-                        "difficulty": note.difficulty,
-                        "mastery_level": note.mastery_level,
-                        "review_count": note.review_count,
+                        "card_id": item["card_id"],
+                        "name": item["name"],
+                        "algorithm_type": item["algorithm_type"],
+                        "durability": item["durability"],
+                        "review_count": item["review_count"],
                     })
                 return json.dumps(result, ensure_ascii=False, indent=2)
             except Exception as e:

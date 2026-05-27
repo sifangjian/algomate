@@ -10,7 +10,6 @@ from algomate.models.dialogue_messages import DialogueMessageRecord, DialogueMes
 from algomate.models.dialogue_notes import DialogueNote, DialogueNoteCreate, DialogueNoteResponse
 from algomate.models.npcs import NPC
 from algomate.models.cards import Card
-from algomate.models.notes import Note
 
 
 @pytest.fixture

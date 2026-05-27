@@ -163,21 +163,18 @@ async def generate_quiz(request: dict):
 @router.post("/save-note")
 async def save_learning_note(note_data: dict):
     from algomate.data.database import Database
-    from algomate.data.repositories.note_repo import NoteRepository
+    from algomate.data.repositories.card_repo import CardRepository
 
     db = Database.get_instance()
-    note_repo = NoteRepository(db)
+    card_repo = CardRepository(db)
 
     try:
-        new_note = note_repo.create(
-            title=note_data.get("title") or "",
-            content=note_data.get("content") or "",
-            algorithm_type=note_data.get("algorithm_type") or "其他",
-            difficulty=note_data.get("difficulty") or "中等",
-            summary=note_data.get("summary") or "",
-            tags=note_data.get("tags") or "[]"
+        new_card = card_repo.create(
+            name=note_data.get("title") or "未命名卡牌",
+            algorithm_type=note_data.get("algorithm_type") or "",
+            my_notes=note_data.get("content") or "",
         )
-        return {"id": new_note.id, "message": "心得保存成功"}
+        return {"id": new_card.id, "message": "卡牌保存成功"}
     except Exception as e:
         logger.error("save_learning_note failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

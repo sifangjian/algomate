@@ -13,7 +13,6 @@ class ReviewRecordStub(TestBase):
     __tablename__ = "review_records"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    note_id = Column(Integer, nullable=True)
     card_id = Column(Integer, nullable=True)
     review_date = Column(DateTime, default=datetime.now, nullable=False)
     status = Column(String(20), default="pending", nullable=False)

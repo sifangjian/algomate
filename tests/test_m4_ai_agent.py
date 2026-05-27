@@ -1,7 +1,7 @@
 """
 M4 AI能力层测试脚本
 
-测试 ChatClient、NoteAnalyzer、QuestionGenerator、AnswerEvaluator 模块
+测试 ChatClient、ContentAnalyzer、QuestionGenerator、AnswerEvaluator 模块
 """
 
 import sys
@@ -19,7 +19,7 @@ from algomate.core.agent import (
     AnswerEvaluationResult,
     AnswerEvaluator,
 )
-from algomate.core.agent.note_analyzer import NoteAnalyzer
+from algomate.core.agent.content_analyzer import ContentAnalyzer
 from algomate.core.agent.question_generator import QuestionGenerator
 from algomate.config.settings import AppConfig
 
@@ -68,9 +68,9 @@ def test_chat_client():
 
 
 def test_note_analyzer():
-    """测试心得分析器"""
+    """测试内容分析器"""
     print("\n" + "=" * 60)
-    print("测试 M4.2 NoteAnalyzer")
+    print("测试 M4.2 ContentAnalyzer")
     print("=" * 60)
     
     config = AppConfig.load()
@@ -85,7 +85,7 @@ def test_note_analyzer():
         base_url=config.LLM_BASE_URL,
     )
     
-    analyzer = NoteAnalyzer(client)
+    analyzer = ContentAnalyzer(client)
     
     print("\n1. 测试心得分析功能")
     try:
@@ -119,7 +119,7 @@ def binary_search(nums, target):
 ```
 """
         
-        result = analyzer.analyze_note(note_content)
+        result = analyzer.analyze_content(note_content)
         
         assert isinstance(result, NoteAnalysisResult), "返回类型错误"
         assert result.algorithm_type, "算法类型为空"
@@ -153,7 +153,7 @@ def binary_search(nums, target):
         print(f"   [FAIL] Markdown 结构解析失败: {e}")
         raise
     
-    print("\n[OK] M4.2 NoteAnalyzer 测试通过")
+    print("\n[OK] M4.2 ContentAnalyzer 测试通过")
 
 
 def test_question_generator():

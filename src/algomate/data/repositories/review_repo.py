@@ -20,18 +20,13 @@ class ReviewRecordRepository:
     """
 
     def __init__(self, db: Database):
-        """初始化修炼记录仓库
-
-        Args:
-            db: 数据库实例
-        """
         self.db = db
 
-    def create(self, note_id: int, review_date: datetime, **kwargs) -> ReviewRecord:
+    def create(self, card_id: int, review_date: datetime, **kwargs) -> ReviewRecord:
         """创建修炼记录
 
         Args:
-            note_id: 关联心得ID
+            card_id: 关联卡牌ID
             review_date: 修炼日期
             **kwargs: 其他可选参数
 
@@ -41,7 +36,7 @@ class ReviewRecordRepository:
         session = self.db.get_session()
         try:
             record = ReviewRecord(
-                note_id=note_id,
+                card_id=card_id,
                 review_date=review_date,
                 **kwargs
             )
@@ -67,11 +62,11 @@ class ReviewRecordRepository:
         finally:
             session.close()
 
-    def get_by_note_id(self, note_id: int) -> List[ReviewRecord]:
-        """获取指定心得的所有修炼记录
+    def get_by_card_id(self, card_id: int) -> List[ReviewRecord]:
+        """获取指定卡牌的所有修炼记录
 
         Args:
-            note_id: 心得ID
+            card_id: 卡牌ID
 
         Returns:
             修炼记录列表
@@ -80,7 +75,7 @@ class ReviewRecordRepository:
         try:
             return (
                 session.query(ReviewRecord)
-                .filter(ReviewRecord.note_id == note_id)
+                .filter(ReviewRecord.card_id == card_id)
                 .order_by(ReviewRecord.review_date.desc())
                 .all()
             )

@@ -9,8 +9,6 @@ from algomate.data.database import Base, Database, _ensure_models_imported
 from algomate.models.npcs import NPC
 from algomate.models.bosses import Boss
 from algomate.models.cards import Card
-from algomate.models.battle_records import BattleRecord
-from algomate.models.notes import Note
 from algomate.models.questions import Question
 from algomate.models.answer_records import AnswerRecord
 from algomate.models.dialogue_records import DialogueRecord
