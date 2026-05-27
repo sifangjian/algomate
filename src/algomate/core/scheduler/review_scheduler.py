@@ -9,7 +9,7 @@
 修炼任务生成规则：
     1. 优先濒危卡牌（耐久度 < 30）
     2. 然后到期的遗忘曲线修炼卡牌
-    3. 结合长期遗忘曲线和Boss挑战
+    3. 结合长期遗忘曲线和LeetCode挑战
     4. 根据游戏难度设置每日任务数量
 """
 
@@ -36,7 +36,7 @@ class TaskType(str, Enum):
     """任务类型枚举"""
     CRITICAL_REVIEW = "critical_review"
     FORGETTING_CURVE_REVIEW = "forgetting_curve_review"
-    BOSS_CHALLENGE = "boss_challenge"
+    LEETCODE_CHALLENGE = "leetcode_challenge"
 
 
 PRIORITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -236,19 +236,19 @@ class ReviewScheduler:
                 for card in non_critical_cards[:remaining_slots]:
                     tasks.append(ReviewTask(
                         task_id=f"review_{task_counter}",
-                        task_type=TaskType.BOSS_CHALLENGE,
+                        task_type=TaskType.LEETCODE_CHALLENGE,
                         card_id=card.id,
                         card_name=card.name,
                         card_algorithm_type=card.algorithm_type,
                         card_durability=card.durability,
                         priority="low",
-                        reason="Boss挑战",
+                        reason="LeetCode挑战",
                         due_date=date.today(),
                         algorithm_type=getattr(card, 'algorithm_type', ''),
                         max_durability=getattr(card, 'max_durability', 100),
                         review_level=getattr(card, 'review_level', 0),
                         next_review_date=card.next_review_date.date() if card.next_review_date else None,
-                        review_types=["boss_challenge"],
+                        review_types=["leetcode_challenge"],
                     ))
                     task_counter += 1
             

@@ -1,0 +1,48 @@
+.statsBar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 16px;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.statsItem {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.statsHighlight {
+    color: var(--color-primary-light);
+    font-weight: 700;
+}
+
+.statsDot {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+}
+
+.endangeredBadge {
+    margin-left: auto;
+    padding: 2px 10px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 10px;
+    color: var(--color-danger);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .statsBar {
+        gap: 10px;
+    }
+
+    .endangeredBadge {
+        margin-left: 0;
+    }
+}

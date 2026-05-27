@@ -214,9 +214,9 @@ class TestReviewSchedulerSorting:
     def test_tasks_sorted_by_priority(self):
         tasks = [
             ReviewTask(
-                task_id="1", task_type=TaskType.BOSS_CHALLENGE,
+                task_id="1", task_type=TaskType.LEETCODE_CHALLENGE,
                 card_id=1, card_name="A", card_algorithm_type="sort",
-                card_durability=50, priority="low", reason="Boss挑战",
+                card_durability=50, priority="low", reason="LeetCode挑战",
             ),
             ReviewTask(
                 task_id="2", task_type=TaskType.FORGETTING_CURVE_REVIEW,
@@ -280,9 +280,9 @@ class TestReviewSchedulerSorting:
                 card_durability=10, priority="critical", reason="濒危",
             ),
             ReviewTask(
-                task_id="3", task_type=TaskType.BOSS_CHALLENGE,
+                task_id="3", task_type=TaskType.LEETCODE_CHALLENGE,
                 card_id=3, card_name="C", card_algorithm_type="graph",
-                card_durability=80, priority="low", reason="Boss挑战",
+                card_durability=80, priority="low", reason="LeetCode挑战",
             ),
             ReviewTask(
                 task_id="4", task_type=TaskType.FORGETTING_CURVE_REVIEW,

@@ -49,38 +49,11 @@
   gap: 12px;
 }
 
-.levelBadge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-  border: 2px solid var(--color-accent);
-  box-shadow: var(--shadow-glow);
-  flex-shrink: 0;
-}
-
-.levelNum {
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--color-accent);
-  line-height: 1;
-}
-
-.levelLabel {
-  font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.8);
-  letter-spacing: 1px;
-}
-
 .userInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  min-width: 120px;
+  gap: 4px;
+  align-items: flex-end;
 }
 
 .nickname {
@@ -92,23 +65,31 @@
   text-overflow: ellipsis;
 }
 
-.expBar {
-  height: 6px;
-  background: var(--color-bg-primary);
-  border-radius: 3px;
-  overflow: hidden;
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.expFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-  border-radius: 3px;
-  transition: width var(--transition-slow);
+.statChip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: 10px;
 }
 
-.expText {
-  font-size: 0.65rem;
-  color: var(--color-text-muted);
+.statIcon {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.statVal {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-primary-light);
 }
 
 .settingsBtn {
@@ -141,30 +122,29 @@
     font-size: 1rem;
   }
 
-  .userInfo {
-    min-width: 90px;
-  }
-
   .nickname {
     font-size: 0.75rem;
   }
 
-  .expText {
-    display: none;
+  .statsRow {
+    gap: 4px;
+  }
+
+  .statChip {
+    padding: 1px 6px;
+  }
+
+  .statVal {
+    font-size: 0.65rem;
   }
 }
 
 @media (max-width: 480px) {
-  .levelBadge {
-    width: 36px;
-    height: 36px;
+  .statsRow {
+    gap: 3px;
   }
 
-  .levelNum {
-    font-size: 0.85rem;
-  }
-
-  .userInfo {
-    min-width: 70px;
+  .statIcon {
+    font-size: 0.6rem;
   }
 }

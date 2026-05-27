@@ -1,448 +1,172 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
 import { cardService } from '../services/cardService'
+import { useUserStore } from '../stores/userStore'
 import LoadingScreen from '../components/ui/Loading/LoadingScreen'
-import Button from '../components/ui/Button/Button'
-import { showToast } from '../components/ui/Toast/index'
 import PostReviewGuide from '../components/guide/PostReviewGuide'
+import ReviewStatsBar from '../components/dailyReview/ReviewStatsBar'
+import TaskCard from '../components/dailyReview/TaskCard'
+import KnowledgeReview from '../components/dailyReview/KnowledgeReview'
+import QuickQuiz from '../components/dailyReview/QuickQuiz'
+import LeetCodeChallenge from '../components/dailyReview/LeetCodeChallenge'
 import styles from './DailyReview.module.css'
 
 const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 }
 
-const TASK_TYPE_CONFIG = {
-    critical_review: { label: '濒危', className: styles.reasonCritical },
-    forgetting_curve_review: { label: '遗忘曲线', className: styles.reasonForgetting },
-    boss_challenge: { label: 'Boss挑战', className: styles.reasonBoss },
-}
-
-function getDurabilityClass(durability, maxDurability) {
-    const pct = maxDurability > 0 ? (durability / maxDurability) * 100 : 0
-    if (pct < 30) return styles.durabilityFillCritical
-    if (pct < 60) return styles.durabilityFillWarning
-    return styles.durabilityFillNormal
-}
-
-function getAlgorithmIcon(category) {
-    const map = {
-        Search: '🔍',
-        Sorting: '📊',
-        'Dynamic Programming': '🎯',
-        Graph: '🕸️',
-        Tree: '🌲',
-        Recursion: '🔄',
-        Array: '📋',
-        String: '📝',
-        Greedy: '💰',
-        Math: '🔢',
-    }
-    return map[category] || '📜'
-}
-
 export default function DailyReview() {
-    const navigate = useNavigate()
-    const [tasks, setTasks] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [completedTaskIds, setCompletedTaskIds] = useState(new Set())
-    const [reviewMode, setReviewMode] = useState(null)
-    const [selectedTask, setSelectedTask] = useState(null)
-    const [quizData, setQuizData] = useState(null)
-    const [quizAnswers, setQuizAnswers] = useState({})
-    const [quizSubmitted, setQuizSubmitted] = useState(false)
-    const [reviewContent, setReviewContent] = useState(null)
-    const [reviewLoading, setReviewLoading] = useState(false)
-    const [reviewStats, setReviewStats] = useState(null)
-    const [endangeredCount, setEndangeredCount] = useState(0)
-    const [hasCards, setHasCards] = useState(true)
-    const [remainingEndangered, setRemainingEndangered] = useState(null)
-    const [guide, setGuide] = useState(null)
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [completedTaskIds, setCompletedTaskIds] = useState(new Set())
+  const [reviewMode, setReviewMode] = useState(null)
+  const [selectedTask, setSelectedTask] = useState(null)
+  const [reviewStats, setReviewStats] = useState(null)
+  const [endangeredCount, setEndangeredCount] = useState(0)
+  const [hasCards, setHasCards] = useState(true)
+  const [guide, setGuide] = useState(null)
+  const updateUserStats = useUserStore(s => s.updateStats)
 
-    const fetchTasks = useCallback(async () => {
-        setLoading(true)
-        try {
-            const data = await cardService.getTodayReviewTasks()
-            const resp = data?.data || data
-            setTasks(resp?.tasks || [])
-            setEndangeredCount(resp?.endangered_count || 0)
-            setHasCards(resp?.has_cards !== false)
-        } catch {
-            showToast('获取今日修炼任务失败', 'error')
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+  const fetchTasks = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await cardService.getTodayReviewTasks()
+      const resp = data?.data || data
+      setTasks(resp?.tasks || [])
+      setEndangeredCount(resp?.endangered_count || 0)
+      setHasCards(resp?.has_cards !== false)
+    } catch {
+      // toast handled in sub-components
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-    useEffect(() => {
-        fetchTasks()
-        cardService.getReviewStats().then(data => setReviewStats(data)).catch(() => {})
-    }, [fetchTasks])
-
-    const sortedTasks = useMemo(() => {
-        return [...tasks].sort((a, b) => {
-            const pa = PRIORITY_ORDER[a.priority] ?? 3
-            const pb = PRIORITY_ORDER[b.priority] ?? 3
-            return pa - pb
+  useEffect(() => {
+    fetchTasks()
+    cardService.getReviewStats().then(data => {
+      setReviewStats(data)
+      const stats = data?.data || data
+      if (stats) {
+        updateUserStats({
+          totalCards: stats.total_cards ?? stats.total_review_count ?? 0,
+          streakDays: stats.weekly_review_days ?? 0,
+          totalReviews: stats.total_review_count ?? 0,
         })
-    }, [tasks])
+      }
+    }).catch(() => {})
+  }, [fetchTasks])
 
-    const completedCount = completedTaskIds.size
-    const totalCount = tasks.length
+  const sortedTasks = (() => {
+    return [...tasks].sort((a, b) => {
+      const pa = PRIORITY_ORDER[a.priority] ?? 3
+      const pb = PRIORITY_ORDER[b.priority] ?? 3
+      return pa - pb
+    })
+  })()
 
-    const handleReview = useCallback(async (task) => {
-        setReviewLoading(true)
-        setReviewMode('review')
-        setSelectedTask(task)
-        try {
-            const card = await cardService.getById(task.card_id)
-            setReviewContent(card)
-        } catch {
-            showToast('加载知识回顾失败', 'error')
-            setReviewMode(null)
-            setSelectedTask(null)
-        } finally {
-            setReviewLoading(false)
-        }
-    }, [])
+  const handleReview = useCallback((task) => {
+    setSelectedTask(task)
+    setReviewMode('review')
+  }, [])
 
-    const handleQuiz = useCallback(async (task) => {
-        setReviewLoading(true)
-        setReviewMode('quiz')
-        setSelectedTask(task)
-        setQuizAnswers({})
-        setQuizSubmitted(false)
-        try {
-            const data = await cardService.generateReviewQuiz(task.card_id, 2)
-            const resp = data?.data || data
-            setQuizData(resp)
-        } catch {
-            showToast('加载快速问答失败', 'error')
-            setReviewMode(null)
-            setSelectedTask(null)
-        } finally {
-            setReviewLoading(false)
-        }
-    }, [])
+  const handleQuiz = useCallback((task) => {
+    setSelectedTask(task)
+    setReviewMode('quiz')
+  }, [])
 
-    const handleBoss = useCallback((task) => {
-        navigate(`/boss/battle?cardId=${task.card_id}`)
-    }, [navigate])
+  const handleLeetCode = useCallback((task) => {
+    setSelectedTask(task)
+    setReviewMode('leetcode')
+  }, [])
 
-    const handleQuizAnswer = useCallback((questionIndex, answer) => {
-        setQuizAnswers(prev => ({ ...prev, [questionIndex]: answer }))
-    }, [])
-
-    const handleQuizSubmit = useCallback(async () => {
-        setQuizSubmitted(true)
-        if (selectedTask) {
-            try {
-                const data = await cardService.completeReviewV1(selectedTask.card_id, 'quick_quiz')
-                const resp = data?.data || data
-                setCompletedTaskIds(prev => new Set([...prev, selectedTask.card_id]))
-                if (resp?.remaining_endangered !== undefined) {
-                    setRemainingEndangered(resp.remaining_endangered)
-                }
-                if (resp?.guide) {
-                    setGuide(resp.guide)
-                }
-                showToast('问答完成！', 'success')
-            } catch {
-                showToast('完成修炼失败', 'error')
-            }
-        }
-    }, [selectedTask])
-
-    const handleCompleteReview = useCallback(async () => {
-        if (!selectedTask) return
-        try {
-            const data = await cardService.completeReviewV1(selectedTask.card_id, 'content_review')
-            const resp = data?.data || data
-            setCompletedTaskIds(prev => new Set([...prev, selectedTask.card_id]))
-            if (resp?.remaining_endangered !== undefined) {
-                setRemainingEndangered(resp.remaining_endangered)
-            }
-            if (resp?.guide) {
-                setGuide(resp.guide)
-            }
-            showToast('知识回顾完成！', 'success')
-            setReviewMode(null)
-            setSelectedTask(null)
-            setReviewContent(null)
-        } catch {
-            showToast('完成回顾失败', 'error')
-        }
-    }, [selectedTask])
-
-    const handleBack = useCallback(() => {
-        setReviewMode(null)
-        setSelectedTask(null)
-        setReviewContent(null)
-        setQuizData(null)
-        setQuizAnswers({})
-        setQuizSubmitted(false)
-    }, [])
-
-    if (loading) {
-        return <LoadingScreen />
+  const handleComplete = useCallback(async (reviewType) => {
+    if (!selectedTask) return
+    try {
+      const data = await cardService.completeReviewV1(selectedTask.card_id, reviewType)
+      const resp = data?.data || data
+      setCompletedTaskIds(prev => new Set([...prev, selectedTask.card_id]))
+      if (resp?.guide) setGuide(resp.guide)
+      setReviewMode(null)
+      setSelectedTask(null)
+    } catch {
+      // handled in sub-components
     }
+  }, [selectedTask])
 
-    if (reviewMode && selectedTask) {
-        return (
-            <div className={`${styles.container} page-container`}>
-                <button className={styles.backBtn} onClick={handleBack}>
-                    ← 返回任务列表
-                </button>
+  const handleBack = useCallback(() => {
+    setReviewMode(null)
+    setSelectedTask(null)
+    setGuide(null)
+  }, [])
 
-                {reviewLoading ? (
-                    <div className={styles.panelLoading}>
-                        <LoadingScreen />
-                    </div>
-                ) : reviewMode === 'review' ? (
-                    <div className={styles.reviewPanel}>
-                        <h2 className={styles.panelTitle}>📖 知识回顾 - {selectedTask.card_name}</h2>
-                        {reviewContent ? (
-                            <div className={styles.reviewContent}>
-                                {reviewContent.basic_content?.concept_definition && (
-                                    <div className={styles.reviewSection}>
-                                        <h3 className={styles.reviewSectionTitle}>核心概念</h3>
-                                        <p className={styles.reviewSectionText}>{reviewContent.basic_content.concept_definition}</p>
-                                    </div>
-                                )}
-                                {reviewContent.basic_content?.features && (
-                                    <div className={styles.reviewSection}>
-                                        <h3 className={styles.reviewSectionTitle}>关键要点</h3>
-                                        <p className={styles.reviewSectionText}>{reviewContent.basic_content.features}</p>
-                                    </div>
-                                )}
-                                {reviewContent.my_notes && (
-                                    <div className={styles.reviewSection}>
-                                        <h3 className={styles.reviewSectionTitle}>我的心得</h3>
-                                        <p className={styles.reviewSectionText}>{reviewContent.my_notes}</p>
-                                    </div>
-                                )}
-                                <div className={styles.panelActions}>
-                                    <Button variant="accent" onClick={handleCompleteReview}>
-                                        ✅ 完成回顾
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className={styles.emptyPanel}>
-                                <p>暂无知识内容</p>
-                            </div>
-                        )}
-                    </div>
-                ) : reviewMode === 'quiz' ? (
-                    <div className={styles.quizPanel}>
-                        <h2 className={styles.panelTitle}>✏️ 快速问答 - {selectedTask.card_name}</h2>
-                        {quizData?.questions?.length > 0 ? (
-                            <div className={styles.quizContent}>
-                                {quizData.questions.map((q, qi) => (
-                                    <div key={qi} className={styles.quizQuestion}>
-                                        <p className={styles.quizQuestionText}>
-                                            <span className={styles.quizQuestionNum}>{qi + 1}.</span> {q.question || q.content}
-                                        </p>
-                                        <div className={styles.quizOptions}>
-                                            {(q.options || []).map((opt, oi) => {
-                                                const label = String.fromCharCode(65 + oi)
-                                                const isSelected = quizAnswers[qi] === label
-                                                const isCorrect = quizSubmitted && q.correct_answer === label
-                                                const isWrong = quizSubmitted && isSelected && q.correct_answer !== label
-                                                return (
-                                                    <button
-                                                        key={oi}
-                                                        className={`${styles.quizOption} ${isSelected ? styles.quizOptionSelected : ''} ${isCorrect ? styles.quizOptionCorrect : ''} ${isWrong ? styles.quizOptionWrong : ''}`}
-                                                        onClick={() => !quizSubmitted && handleQuizAnswer(qi, label)}
-                                                        disabled={quizSubmitted}
-                                                    >
-                                                        <span className={styles.quizOptionLabel}>{label}</span>
-                                                        <span className={styles.quizOptionText}>{opt}</span>
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                        {quizSubmitted && q.explanation && (
-                                            <div className={styles.quizExplanation}>{q.explanation}</div>
-                                        )}
-                                    </div>
-                                ))}
-                                <div className={styles.panelActions}>
-                                    {!quizSubmitted ? (
-                                        <Button
-                                            variant="accent"
-                                            onClick={handleQuizSubmit}
-                                            disabled={Object.keys(quizAnswers).length === 0}
-                                        >
-                                            📝 提交答案
-                                        </Button>
-                                    ) : (
-                                        <Button variant="ghost" onClick={handleBack}>
-                                            返回任务列表
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className={styles.emptyPanel}>
-                                <p>暂无问答题</p>
-                                <Button variant="ghost" onClick={handleBack}>返回</Button>
-                            </div>
-                        )}
-                    </div>
-                ) : null}
+  if (loading) return <LoadingScreen />
 
-                {guide && (
-                    <PostReviewGuide guide={guide} scene="after_review" />
-                )}
-                {!guide && remainingEndangered !== null && remainingEndangered > 0 && (
-                    <div className={styles.endangeredTip}>
-                        ⚠️ 还有 {remainingEndangered} 张濒危卡牌需要修炼！
-                    </div>
-                )}
+  return (
+    <div className={`${styles.container} page-container`}>
+      <div className={styles.header}>
+        <h1 className={styles.pageTitle}>📋 每日修炼</h1>
+        <p className={styles.pageSubtitle}>巩固算法知识，保持卡牌耐久</p>
+      </div>
+
+      <ReviewStatsBar
+        completedCount={completedTaskIds.size}
+        totalCount={tasks.length}
+        weeklyDays={reviewStats?.weekly_review_days}
+        totalReviews={reviewStats?.total_review_count}
+        endangeredCount={endangeredCount}
+      />
+
+      {reviewMode === 'review' && selectedTask && (
+        <KnowledgeReview
+          task={selectedTask}
+          onComplete={() => handleComplete('content_review')}
+          onBack={handleBack}
+        />
+      )}
+
+      {reviewMode === 'quiz' && selectedTask && (
+        <QuickQuiz
+          task={selectedTask}
+          onComplete={() => handleComplete('quick_quiz')}
+          onBack={handleBack}
+        />
+      )}
+
+      {reviewMode === 'leetcode' && selectedTask && (
+        <LeetCodeChallenge
+          task={selectedTask}
+          onComplete={() => handleComplete('leetcode_challenge')}
+          onBack={handleBack}
+        />
+      )}
+
+      {!reviewMode && (
+        <>
+          {tasks.length === 0 ? (
+            <div className={styles.emptyState}>
+              <span className={styles.emptyIcon}>📋</span>
+              {!hasCards ? (
+                <p className={styles.emptyText}>修习更多算法技巧后，这里会出现每日修炼任务</p>
+              ) : (
+                <p className={styles.emptyText}>今日没有待修炼任务，继续保持！🎉</p>
+              )}
             </div>
-        )
-    }
-
-    return (
-        <div className={`${styles.container} page-container`}>
-            <div className={styles.header}>
-                <h1 className={styles.pageTitle}>📋 每日修炼</h1>
-                <p className={styles.pageSubtitle}>巩固算法知识，保持卡牌耐久</p>
+          ) : (
+            <div className={styles.taskList}>
+              {sortedTasks.map((task) => (
+                <TaskCard
+                  key={task.task_id}
+                  task={task}
+                  isCompleted={completedTaskIds.has(task.card_id)}
+                  onReview={() => handleReview(task)}
+                  onQuiz={() => handleQuiz(task)}
+                  onLeetCode={() => handleLeetCode(task)}
+                />
+              ))}
             </div>
+          )}
+        </>
+      )}
 
-            {endangeredCount > 0 && (
-                <div className={styles.endangeredAlert}>
-                    🚨 {endangeredCount} 张濒危卡牌急需修炼！
-                </div>
-            )}
-
-            {totalCount > 0 && (
-                <div className={styles.statsSection}>
-                    <div className={styles.statItem}>
-                        <span className={styles.statValue}>{completedCount}/{totalCount}</span>
-                        <span className={styles.statLabel}>已完成</span>
-                    </div>
-                    <div className={styles.statItem}>
-                        <span className={styles.statValue}>{totalCount - completedCount}</span>
-                        <span className={styles.statLabel}>待修炼</span>
-                    </div>
-                </div>
-            )}
-
-            {reviewStats && (
-                <div className={styles.reviewStatsSection}>
-                    <h3 className={styles.reviewStatsTitle}>修炼统计</h3>
-                    <div className={styles.reviewStatsGrid}>
-                        <div className={styles.reviewStatCard}>
-                            <span className={styles.reviewStatValue}>{reviewStats.total_review_count ?? 0}</span>
-                            <span className={styles.reviewStatLabel}>累计修炼</span>
-                        </div>
-                        <div className={styles.reviewStatCard}>
-                            <span className={styles.reviewStatValue}>{reviewStats.weekly_review_days ?? 0}</span>
-                            <span className={styles.reviewStatLabel}>本周修炼天数</span>
-                        </div>
-                        <div className={styles.reviewStatCard}>
-                            <span className={styles.reviewStatValue}>{reviewStats.completed_today ?? 0}</span>
-                            <span className={styles.reviewStatLabel}>今日已完成</span>
-                        </div>
-                    </div>
-                    {reviewStats.review_level_distribution && Object.keys(reviewStats.review_level_distribution).length > 0 && (
-                        <div className={styles.levelDistribution}>
-                            <span className={styles.levelDistTitle}>修炼等级分布</span>
-                            <div className={styles.levelDistBars}>
-                                {Object.entries(reviewStats.review_level_distribution).map(([level, count]) => (
-                                    <div key={level} className={styles.levelDistItem}>
-                                        <span className={styles.levelDistLabel}>Lv.{level}</span>
-                                        <div className={styles.levelDistBar}>
-                                            <div className={styles.levelDistFill} style={{ width: `${Math.min(100, count * 20)}%` }} />
-                                        </div>
-                                        <span className={styles.levelDistCount}>{count}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {tasks.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <span className={styles.emptyIcon}>📋</span>
-                    {!hasCards ? (
-                        <p className={styles.emptyText}>修习更多算法技巧后，这里会出现每日修炼任务</p>
-                    ) : (
-                        <p className={styles.emptyText}>今日没有待修炼任务，继续保持！🎉</p>
-                    )}
-                </div>
-            ) : (
-                <div className={styles.taskList}>
-                    {sortedTasks.map((task) => {
-                        const isCompleted = completedTaskIds.has(task.card_id)
-                        const typeConfig = TASK_TYPE_CONFIG[task.task_type] || TASK_TYPE_CONFIG.boss_challenge
-                        const durability = task.card_durability ?? 0
-                        const maxDurability = task.max_durability || 100
-                        const durabilityPct = maxDurability > 0 ? Math.min(100, Math.max(0, (durability / maxDurability) * 100)) : 0
-
-                        return (
-                            <div
-                                key={task.task_id}
-                                className={`${styles.taskCard} ${isCompleted ? styles.completed : ''}`}
-                            >
-                                <div className={styles.taskHeader}>
-                                    <div className={styles.taskNameArea}>
-                                        <span className={styles.taskIcon}>
-                                            {getAlgorithmIcon(task.algorithm_type)}
-                                        </span>
-                                        <span className={styles.taskName}>{task.card_name}</span>
-                                    </div>
-                                    <span className={`${styles.reason} ${typeConfig.className}`}>
-                                        {typeConfig.label}
-                                    </span>
-                                </div>
-
-                                <div className={styles.durabilityBar}>
-                                    <div
-                                        className={`${styles.durabilityFill} ${getDurabilityClass(durability, maxDurability)}`}
-                                        style={{ width: `${durabilityPct}%` }}
-                                    />
-                                </div>
-                                <span className={styles.durabilityText}>
-                                    耐久 {durability}/{maxDurability}
-                                </span>
-
-                                {!isCompleted ? (
-                                    <div className={styles.actionButtons}>
-                                        {(task.review_types || ['content_review', 'quick_quiz', 'boss_challenge']).map((rt) => {
-                                            if (rt === 'content_review') {
-                                                return (
-                                                    <button key={rt} className={styles.actionBtn} onClick={() => handleReview(task)}>
-                                                        📖 知识回顾
-                                                    </button>
-                                                )
-                                            }
-                                            if (rt === 'quick_quiz') {
-                                                return (
-                                                    <button key={rt} className={styles.actionBtn} onClick={() => handleQuiz(task)}>
-                                                        ✏️ 快速问答
-                                                    </button>
-                                                )
-                                            }
-                                            if (rt === 'boss_challenge') {
-                                                return (
-                                                    <button key={rt} className={styles.actionBtn} onClick={() => handleBoss(task)}>
-                                                        🐉 Boss挑战
-                                                    </button>
-                                                )
-                                            }
-                                            return null
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className={styles.completedBadge}>✅ 今日已修炼</div>
-                                )}
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
-        </div>
-    )
+      {guide && <PostReviewGuide guide={guide} scene="after_review" />}
+    </div>
+  )
 }

@@ -82,4 +82,6 @@ export const cardService = {
   completeReviewV1: (cardId, reviewType) => api.post(`/v1/reviews/${cardId}/complete`, { review_type: reviewType }),
 
   generateReviewQuiz: (cardId, count = 2) => api.post(`/v1/reviews/${cardId}/quiz`, { count }),
+
+  getLeetCodeRecommendation: (cardId) => api.post(`/v1/reviews/${cardId}/leetcode`),
 }

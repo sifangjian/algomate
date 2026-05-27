@@ -1,0 +1,178 @@
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.taskCard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    opacity: 0;
+    animation: slideUp 300ms ease forwards;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.taskCard:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08);
+}
+
+.completed {
+    opacity: 0.55;
+    filter: grayscale(0.5);
+    animation: none;
+}
+
+.completed .taskName {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+}
+
+.taskHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.taskNameArea {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+.taskIcon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.taskName {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reason {
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.reasonCritical {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-danger);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.reasonForgetting {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--color-warning);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.reasonLeetcode {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--color-primary-light);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.durabilityRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.durabilityBar {
+    flex: 1;
+    height: 6px;
+    background: var(--color-bg-primary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.durabilityFill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width var(--transition-slow);
+}
+
+.fillCritical {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.fillWarning {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.fillNormal {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.durabilityText {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.actionBtn {
+    padding: 5px 12px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 14px;
+    color: var(--color-primary-light);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.actionBtn:hover {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+    transform: translateY(-1px);
+}
+
+.actionBtn:active {
+    transform: translateY(0);
+}
+
+.completedBadge {
+    font-size: 0.8rem;
+    color: var(--color-success);
+}
+
+@media (max-width: 768px) {
+    .actionButtons {
+        flex-direction: column;
+    }
+
+    .actionBtn {
+        text-align: center;
+    }
+}

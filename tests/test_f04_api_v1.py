@@ -96,7 +96,7 @@ class TestGetTodayReviewTasks:
         task1 = _make_task(priority="critical", card_durability=10)
         task2 = _make_task(task_id="review_2", task_type="forgetting_curve_review",
                            priority="high", card_durability=50, card_id=2)
-        task3 = _make_task(task_id="review_3", task_type="boss_challenge",
+        task3 = _make_task(task_id="review_3", task_type="leetcode_challenge",
                            priority="low", card_durability=80, card_id=3)
 
         mock_scheduler = MockScheduler.return_value
@@ -112,7 +112,7 @@ class TestGetTodayReviewTasks:
         assert len(result["data"]["tasks"]) == 3
         for task in result["data"]["tasks"]:
             assert "review_types" in task
-            assert task["review_types"] == ["content_review", "quick_quiz", "boss_challenge"]
+            assert task["review_types"] == ["content_review", "quick_quiz", "leetcode_challenge"]
 
     @patch("algomate.core.scheduler.review_scheduler.ReviewScheduler")
     @patch("algomate.data.database.Database")
