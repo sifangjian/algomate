@@ -48,110 +48,37 @@ AlgoMate 包含 **4 大功能模块**，形成完整的学习闭环：
 
 ***
 
-## 安装与配置
+## 快速开始
 
-### 环境要求
+### Docker 部署（推荐）
 
-- Node.js 18+
-- uv（Python 包管理器）
-- npm（Node.js 包管理器）
-
-### 安装步骤
+**环境要求**：Docker 20.10+、Docker Compose 2.0+
 
 ```bash
 # 1. 克隆项目
 git clone git@github.com:sifangjian/algomate.git
 cd algomate
 
-# 2. 安装后端依赖
-uv sync
-
-# 3. 安装前端依赖
-cd frontend && npm install && cd ..
-
-# 4. 配置环境变量
+# 2. 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件，填入 LLM_API_KEY（智谱 API 密钥）
-```
+# 编辑 .env 文件，填入 LLM_API_KEY
 
-### 配置说明
+# 3. 一键启动
+docker compose up -d
 
-**必填配置**：
-
-| 变量名           | 说明              | 获取方式                              |
-| ------------- | --------------- | --------------------------------- |
-| `LLM_API_KEY` | 智谱 GLM-4 API 密钥 | 访问 <https://open.bigmodel.cn/> 获取 |
-
-**可选配置**：
-
-| 变量名              | 默认值                          | 说明           |
-| ---------------- | ---------------------------- | ------------ |
-| `APP_ENV`        | `development`                | 运行环境         |
-| `DATABASE_URL`   | `sqlite:///data/algomate.db` | 数据库路径        |
-| `ENCRYPTION_KEY` | 无                            | AES-256 加密密钥 |
-
-***
-
-## 使用方法
-
-### 启动应用
-
-**开发环境**（推荐，一键启动前后端）：
-
-```bash
-python scripts/dev.py
+# 4. 查看日志
+docker compose logs -f
 ```
 
 访问：<http://localhost:3000>
 
-**仅启动后端**：
+**停止服务**：
 
 ```bash
-python scripts/dev.py --backend
+docker compose down          # 停止服务
+docker compose down -v       # 停止并清空数据
 ```
 
-**仅启动前端**：
-
-```bash
-python scripts/dev.py --frontend
-```
-
-**生产环境**：
-
-```bash
-# 构建前端
-cd frontend && npm run build && cd ..
-
-# 启动后端
-export APP_ENV=production
-uv run uvicorn algomate.main:app --host 0.0.0.0 --port 8000
-```
-
-访问：<http://localhost:8000>
-
-***
-
-## 项目结构
-
-```
-algomate/
-├── src/algomate/          # 后端源代码
-│   ├── main.py            # FastAPI 应用入口
-│   ├── api/               # API 层
-│   ├── core/              # 核心层（AI Agent、游戏机制、遗忘曲线）
-│   ├── data/              # 数据层
-│   └── models/            # 数据模型
-├── frontend/              # 前端源代码
-│   └── src/
-│       ├── pages/         # 页面组件
-│       ├── components/    # UI 组件
-│       ├── stores/        # 状态管理
-│       └── services/      # API 服务
-├── tests/                 # 测试文件
-├── .trae/specs/           # 项目文档
-├── .env.example           # 环境变量示例
-└── pyproject.toml         # Python 项目配置
-```
 
 ***
 
