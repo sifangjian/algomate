@@ -9,8 +9,9 @@ services:
       dockerfile: Dockerfile
     container_name: algomate-backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    # 后端端口映射（可选，仅开发调试时需要）
+    # ports:
+    #   - "${BACKEND_PORT:-8000}:8000"
     volumes:
       # 持久化数据库
       - algomate-data:/app/data
@@ -34,7 +35,7 @@ services:
     container_name: algomate-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       backend:
         condition: service_healthy

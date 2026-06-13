@@ -4,26 +4,25 @@
 # 阶段1: 构建依赖
 FROM python:3.11-slim AS builder
 
-# 配置国内镜像源加速
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
-
-# 安装 uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
 WORKDIR /app
 
-# 复制依赖文件
-COPY pyproject.toml ./
+# 复制项目文件（用于安装依赖）
+COPY pyproject.toml uv.lock README.md ./
 
-# 安装依赖到虚拟环境（使用清华 PyPI 镜像）
-RUN uv venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    uv pip install --no-cache -i https://pypi.tuna.tsinghua.edu.cn/simple -e .
+# 安装 uv 并创建虚拟环境，安装所有依赖
+RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv && \
+    uv venv /opt/venv && \
+    uv pip install --python /opt/venv/bin/python -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache -e .
 
 # 阶段2: 运行环境
 FROM python:3.11-slim
 
 WORKDIR /app
+
+# 安装 curl（用于健康检查）
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
 # 从构建阶段复制虚拟环境
 COPY --from=builder /opt/venv /opt/venv
