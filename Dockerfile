@@ -10,9 +10,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 
 # 安装 uv 并创建虚拟环境，安装所有依赖
-RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv && \
+# 使用阿里云镜像源（如果失败可尝试其他源）
+RUN pip install -i https://mirrors.aliyun.com/pypi/simple/ uv && \
     uv venv /opt/venv && \
-    uv pip install --python /opt/venv/bin/python -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache -e .
+    uv pip install --python /opt/venv/bin/python -i https://mirrors.aliyun.com/pypi/simple/ --no-cache -e .
 
 # 阶段2: 运行环境
 FROM python:3.11-slim
