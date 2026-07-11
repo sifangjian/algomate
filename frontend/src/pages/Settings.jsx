@@ -10,7 +10,9 @@ import styles from './Settings.module.css'
 const DEFAULT_SETTINGS = {
   apiConfig: {
     openaiApiKey: '',
-    openaiModel: 'gpt-4',
+    openaiModel: 'glm-4.7-flash',
+    apiBaseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    apiConfigEnabled: false,
     apiConnectionStatus: 'unknown',
   },
   emailConfig: {
@@ -58,14 +60,17 @@ export default function Settings() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const data = await settingService.getSettings()
+      const response = await settingService.getSettings()
+      const data = response.data || response  // 兼容两种响应格式
       if (data) {
         setSettings((prev) => ({
           ...prev,
           apiConfig: {
             ...prev.apiConfig,
             openaiApiKey: data.api_key || '',
-            openaiModel: 'gpt-4',
+            openaiModel: data.model || 'glm-4.7-flash',
+            apiBaseUrl: data.api_base_url || 'https://open.bigmodel.cn/api/paas/v4',
+            apiConfigEnabled: data.api_config_enabled || false,
           },
           emailConfig: {
             ...prev.emailConfig,
@@ -120,16 +125,20 @@ export default function Settings() {
     }
     setTestingApi(true)
     try {
-      const result = await settingService.testApi(settings.apiConfig.openaiApiKey)
-      updateApiConfig('apiConnectionStatus', result.connected ? 'connected' : 'error')
-      showToast(result.connected ? '✅ API连接成功!' : `❌ 连接失败: ${result.message}`, result.connected ? 'success' : 'error')
+      const result = await settingService.testApi({
+        apiKey: settings.apiConfig.openaiApiKey,
+        model: settings.apiConfig.openaiModel,
+        apiBaseUrl: settings.apiConfig.apiBaseUrl
+      })
+      updateApiConfig('apiConnectionStatus', result.success ? 'connected' : 'error')
+      showToast(result.success ? '✅ API连接成功!' : `❌ 连接失败: ${result.message}`, result.success ? 'success' : 'error')
     } catch (err) {
       updateApiConfig('apiConnectionStatus', 'error')
       showToast(`测试失败: ${err.message}`, 'error')
     } finally {
       setTestingApi(false)
     }
-  }, [settings.apiConfig.openaiApiKey, updateApiConfig])
+  }, [settings.apiConfig, updateApiConfig])
 
   const handleTestEmail = useCallback(async () => {
     setTestingEmail(true)
@@ -153,8 +162,11 @@ export default function Settings() {
   const handleSave = useCallback(async () => {
     setSaving(true)
     try {
-      await settingService.saveSettings({
+      await settingService.updateV1Settings({
         api_key: settings.apiConfig.openaiApiKey,
+        model: settings.apiConfig.openaiModel,
+        api_base_url: settings.apiConfig.apiBaseUrl,
+        api_config_enabled: settings.apiConfig.apiConfigEnabled,
         email_host: settings.emailConfig.smtpHost,
         email_port: Number(settings.emailConfig.smtpPort),
         email_username: settings.emailConfig.senderEmail,
@@ -202,6 +214,53 @@ export default function Settings() {
             icon="🔐"
             helperText="用于AI对话和试炼生成功能"
           />
+          <Input
+            label="模型名称"
+            value={settings.apiConfig.openaiModel}
+            onChange={(e) => updateApiConfig('openaiModel', e.target.value)}
+            placeholder="例如: gpt-4, glm-4.7-flash"
+            icon="🤖"
+          />
+          <Input
+            label="API基础URL"
+            value={settings.apiConfig.apiBaseUrl}
+            onChange={(e) => updateApiConfig('apiBaseUrl', e.target.value)}
+            placeholder="例如: https://api.openai.com/v1"
+            icon="🌐"
+          />
+          <div className={styles.toggleRow}>
+            <label className={styles.fieldLabel}>启用自定义API配置</label>
+            <button
+              className={`${styles.switch} ${settings.apiConfig.apiConfigEnabled ? styles.switchOn : ''}`}
+              onClick={async () => {
+                const newEnabledState = !settings.apiConfig.apiConfigEnabled
+                updateApiConfig('apiConfigEnabled', newEnabledState)
+
+                // 自动保存启用状态
+                try {
+                  await settingService.updateV1Settings({
+                    api_key: settings.apiConfig.openaiApiKey,
+                    model: settings.apiConfig.openaiModel,
+                    api_base_url: settings.apiConfig.apiBaseUrl,
+                    api_config_enabled: newEnabledState,
+                  })
+                  showToast(
+                    newEnabledState ? '✅ 已启用自定义API配置' : '✅ 已切换为默认配置',
+                    'success'
+                  )
+                } catch (err) {
+                  showToast(`保存失败: ${err.message}`, 'error')
+                  // 保存失败时恢复状态
+                  updateApiConfig('apiConfigEnabled', !newEnabledState)
+                }
+              }}
+              aria-label="切换启用状态"
+              aria-checked={settings.apiConfig.apiConfigEnabled}
+              role="switch"
+            >
+              <span className={styles.switchThumb} />
+            </button>
+          </div>
           <div className={styles.inputRow}>
             <button
               className={styles.toggleBtn}

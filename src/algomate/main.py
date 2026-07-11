@@ -33,13 +33,6 @@ from .core.memory.forgetting_curve import ForgettingCurveEngine
 from .core.scheduler.review_scheduler import ReviewScheduler
 from .core.scheduler.email_sender import EmailSender
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-    ],
-)
 logger = logging.getLogger(__name__)
 
 _LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
@@ -60,13 +53,13 @@ def setup_logging(config: AppConfig):
     console_handler.setFormatter(
         logging.Formatter(_LOG_FORMAT)
     )
-    logging.getLogger().addHandler(console_handler)
+    logger.addHandler(console_handler)
 
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setFormatter(
         logging.Formatter(_LOG_FORMAT)
     )
-    logging.getLogger().addHandler(file_handler)
+    logger.addHandler(file_handler)
 
 
 class AlgomateApp:
@@ -121,6 +114,7 @@ class AlgomateApp:
         print("="*50)
         print(self.chat_client.get_graph_diagram())
         print("="*50)
+        logger.info(f"🤖 AI组件初始化完成 | 模型: {self.config.LLM_MODEL} | API Base URL: {self.config.LLM_BASE_URL}")
         self.content_analyzer = ContentAnalyzer(self.chat_client)
         self.question_generator = QuestionGenerator(self.chat_client)
         self.weak_point_analyzer = WeakPointAnalyzer(self.db)

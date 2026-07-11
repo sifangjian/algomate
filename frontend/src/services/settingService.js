@@ -5,7 +5,7 @@ export const settingService = {
 
   saveSettings: (data) => api.post('/v1/settings/legacy', data),
 
-  testApi: (apiKey) => api.post('/v1/settings/test-api', { apiKey }),
+  testApi: (testData) => api.post('/v1/settings/test-api', testData),
 
   testEmail: (emailConfig) => api.post('/v1/settings/test-email', emailConfig),
 

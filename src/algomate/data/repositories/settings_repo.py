@@ -9,9 +9,13 @@ DEFAULT_SETTINGS = {
     "api_key_configured": "false",
     "theme": "light",
     "language": "zh-CN",
+    "api_key": "",
+    "model": "glm-4.7-flash",
+    "api_base_url": "https://open.bigmodel.cn/api/paas/v4",
+    "api_config_enabled": "false",
 }
 
-BOOLEAN_KEYS = {"onboarding_completed", "api_key_configured"}
+BOOLEAN_KEYS = {"onboarding_completed", "api_key_configured", "api_config_enabled"}
 
 VALID_THEMES = {"light", "dark"}
 
@@ -79,6 +83,19 @@ class SettingsRepository:
 
         if "api_key_configured" in update_data:
             self._upsert("api_key_configured", str(update_data["api_key_configured"]).lower())
+
+        # 处理API配置相关字段
+        if "api_key" in update_data:
+            self._upsert("api_key", update_data["api_key"])
+
+        if "model" in update_data:
+            self._upsert("model", update_data["model"])
+
+        if "api_base_url" in update_data:
+            self._upsert("api_base_url", update_data["api_base_url"])
+
+        if "api_config_enabled" in update_data:
+            self._upsert("api_config_enabled", str(update_data["api_config_enabled"]).lower())
 
         self.session.commit()
         return {"updated": True}

@@ -12,12 +12,17 @@ LangChain v1 主要更新：
 - Middleware: 中间件系统，支持动态控制提示、会话摘要等
 - content_blocks: 统一的消息内容表示
 - 简化的命名空间：langchain.agents, langchain.messages, langchain.tools
+
+并发控制：
+- 使用线程锁确保同一时间只有一个大模型调用
+- 防止超出 glm-4.7-flash 的并发限制（同一时间只支持一个调用）
 """
 
 from __future__ import annotations
 
 import json
 import re
+import threading
 from typing import (
     Annotated,
     Any,
@@ -207,7 +212,7 @@ class ChatClient:
     def __init__(
         self,
         api_key: str,
-        model: str = "glm-4",
+        model: str = "glm-4.7-flash",
         base_url: str = "https://open.bigmodel.cn/api/paas/v4",
         temperature: float = 0.7,
         timeout: int = 30,
@@ -216,7 +221,7 @@ class ChatClient:
 
         Args:
             api_key: API 密钥
-            model: 模型名称，默认为 glm-4
+            model: 模型名称，默认为 glm-4.7-flash
             base_url: API 基础 URL，默认为智谱 AI 的 URL
             temperature: 生成温度参数，控制随机性（0-1）
             timeout: 请求超时时间（秒）
@@ -226,6 +231,8 @@ class ChatClient:
         self.base_url = base_url
         self.temperature = temperature
         self.timeout = timeout
+        # 添加并发控制锁，防止大模型API调用超出并发限制
+        self._llm_lock = threading.Lock()
 
         self._llm: Optional[ChatOpenAI] = None
         self._agent = None
@@ -242,6 +249,11 @@ class ChatClient:
             ChatOpenAI 实例
         """
         if self._llm is None:
+            import logging
+            logger = logging.getLogger(__name__)
+
+            logger.info(f"🔧 初始化 ChatOpenAI | 模型: {self.model} | Base URL: {self.base_url}")
+
             self._llm = ChatOpenAI(
                 api_key=self.api_key,
                 model=self.model,
@@ -249,7 +261,73 @@ class ChatClient:
                 timeout=self.timeout,
                 base_url=self.base_url,
             )
+
+            # 获取base_url（新版langchain使用openai_api_base属性）
+            api_base = getattr(self._llm, 'openai_api_base', None) or getattr(self._llm, 'base_url', None)
+            logger.info(f"✅ ChatOpenAI 初始化完成 | 模型: {self._llm.model_name or self._llm.model} | Base URL: {api_base or 'default'}")
         return self._llm
+
+    def _call_with_lock(self, func, *args, **kwargs):
+        """使用锁包装大模型调用
+
+        确保同一时间只有一个大模型调用，防止超出并发限制
+
+        Args:
+            func: 要调用的函数（通常是 llm.invoke 或 llm.stream）
+            *args: 函数的位置参数
+            **kwargs: 函数的关键字参数
+
+        Returns:
+            函数调用的结果
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # 获取实际调用的模型信息
+        model_name = kwargs.get('model', self.model)
+        if hasattr(args[0], 'model_name'):
+            # 从LLM对象获取模型名称
+            model_name = getattr(args[0], 'model_name', self.model)
+        elif hasattr(args[0], 'model'):
+            # 从LLM对象获取模型属性
+            model_name = getattr(args[0], 'model', self.model)
+
+        logger.info(f"🚀 开始调用大模型 API | 模型: {model_name} | Base URL: {self.base_url}")
+
+        # 打印请求参数详情
+        if args:
+            # 如果第一个参数是messages列表，打印消息数量和内容摘要
+            if isinstance(args[0], list) and len(args[0]) > 0:
+                messages_summary = []
+                for i, msg in enumerate(args[0][:5]):  # 只打印前5条消息，避免日志过长
+                    if hasattr(msg, 'content'):
+                        content_preview = str(msg.content)[:100]  # 内容预览（最多100字符）
+                        role = getattr(msg, 'type', 'unknown')
+                        messages_summary.append(f"[{i}] {role}: {content_preview}...")
+                    elif isinstance(msg, dict):
+                        role = msg.get('role', 'unknown')
+                        content = msg.get('content', '')
+                        content_preview = str(content)[:100]
+                        messages_summary.append(f"[{i}] {role}: {content_preview}...")
+
+                total_messages = len(args[0])
+                logger.info(f"📝 请求参数 | 消息数量: {total_messages} | 前5条摘要:\n" + "\n".join(messages_summary))
+
+                if total_messages > 5:
+                    logger.info(f"📝 还有 {total_messages - 5} 条消息未显示")
+
+        # 打印其他参数
+        if kwargs:
+            logger.info(f"⚙️  其他参数: {kwargs}")
+
+        with self._llm_lock:
+            try:
+                result = func(*args, **kwargs)
+                logger.info(f"✅ 大模型 API 调用成功 | 模型: {model_name}")
+                return result
+            except Exception as e:
+                logger.error(f"❌ 大模型 API 调用失败 | 模型: {model_name} | 错误: {str(e)}")
+                raise
 
     def _get_llm_with_structured_output(
         self,
@@ -265,12 +343,19 @@ class ChatClient:
         Returns:
             配置好的 ChatOpenAI 实例
         """
+        import logging
+        logger = logging.getLogger(__name__)
+
         temp = temperature if temperature is not None else self.temperature
+        model_name = f"{self.model}+structured"
+
+        logger.info(f"📋 创建结构化输出 LLM | 模型: {model_name} | 温度: {temp}")
 
         llm = self.llm.bind(temperature=temp)
 
         if output_schema:
             llm = llm.with_structured_output(output_schema)
+            logger.info(f"✅ 结构化输出配置完成 | 模型: {model_name} | 输出模式: {output_schema.__name__ if output_schema else 'none'}")
 
         return llm
 
@@ -302,7 +387,7 @@ class ChatClient:
         if temperature is not None:
             llm = llm.bind(temperature=temperature)
 
-        response = llm.invoke(messages_list)
+        response = self._call_with_lock(llm.invoke, messages_list)
 
         if isinstance(response, AIMessage):
             return response.content
@@ -357,7 +442,7 @@ class ChatClient:
             llm = llm.bind(temperature=temperature)
 
         try:
-            for chunk in llm.stream(messages_list):
+            for chunk in self._call_with_lock(llm.stream, messages_list):
                 if isinstance(chunk, str):
                     content = chunk
                 elif hasattr(chunk, 'content'):
@@ -395,7 +480,7 @@ class ChatClient:
         in_suggestions = False
 
         try:
-            for chunk in llm.stream(messages_list):
+            for chunk in self._call_with_lock(llm.stream, messages_list):
                 if isinstance(chunk, str):
                     content = chunk
                 elif hasattr(chunk, 'content'):
@@ -529,7 +614,7 @@ class ChatClient:
 
         try:
             llm = self._get_llm_with_structured_output(ContentAnalysisResult)
-            response = llm.invoke(messages)
+            response = self._call_with_lock(llm.invoke, messages)
 
             if isinstance(response, ContentAnalysisResult):
                 return response
@@ -545,7 +630,7 @@ class ChatClient:
         except Exception as e:
             try:
                 llm = self.llm
-                raw_response = llm.invoke(messages)
+                raw_response = self._call_with_lock(llm.invoke, messages)
                 
                 if hasattr(raw_response, 'content'):
                     response_text = raw_response.content
@@ -630,7 +715,7 @@ class ChatClient:
 
         try:
             llm = self._get_llm_with_structured_output(QuestionsResult)
-            response = llm.invoke(messages)
+            response = self._call_with_lock(llm.invoke, messages)
 
             if isinstance(response, QuestionsResult):
                 return response.questions
@@ -646,7 +731,7 @@ class ChatClient:
             
             try:
                 llm = self.llm
-                raw_response = llm.invoke(messages)
+                raw_response = self._call_with_lock(llm.invoke, messages)
                 
                 if hasattr(raw_response, 'content'):
                     response_text = raw_response.content
@@ -711,7 +796,7 @@ class ChatClient:
 
         try:
             llm = self._get_llm_with_structured_output(AnswerEvaluationResult)
-            response = llm.invoke(messages)
+            response = self._call_with_lock(llm.invoke, messages)
 
             if isinstance(response, AnswerEvaluationResult):
                 return response
@@ -726,7 +811,7 @@ class ChatClient:
         except Exception as e:
             try:
                 llm = self.llm
-                raw_response = llm.invoke(messages)
+                raw_response = self._call_with_lock(llm.invoke, messages)
                 
                 if hasattr(raw_response, 'content'):
                     response_text = raw_response.content
@@ -853,7 +938,7 @@ class ChatClient:
             llm = self._get_llm_with_structured_output(RouteDecision, temperature=0.3)
             router_messages = [SystemMessage(content=system_prompt)] + messages
 
-            response = llm.invoke(router_messages)
+            response = self._call_with_lock(llm.invoke, router_messages)
 
             if isinstance(response, RouteDecision):
                 return {
@@ -896,7 +981,7 @@ class ChatClient:
 
         try:
             chat_messages = self._build_messages(messages, system_prompt=self.DEFAULT_SYSTEM_PROMPT)
-            response = self.llm.invoke(chat_messages)
+            response = self._call_with_lock(self.llm.invoke, chat_messages)
 
             if isinstance(response, AIMessage):
                 new_messages = messages + [response]
@@ -1044,7 +1129,7 @@ class ChatClient:
                 prompt = f"用户请求修炼：{review_type}"
 
             review_messages = [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]
-            response = self.llm.invoke(review_messages)
+            response = self._call_with_lock(self.llm.invoke, review_messages)
 
             response_text = response.content if isinstance(response, AIMessage) else str(response)
             review_text = f"""📚 **修炼时间**

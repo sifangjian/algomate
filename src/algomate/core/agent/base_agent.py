@@ -435,7 +435,7 @@ class ToolAugmentedChatClient(ChatClient):
     def __init__(
         self,
         api_key: str,
-        model: str = "glm-4",
+        model: str = "glm-4.7-flash",
         base_url: str = "https://open.bigmodel.cn/api/paas/v4",
         temperature: float = 0.7,
         timeout: int = 30,

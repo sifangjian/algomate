@@ -52,7 +52,7 @@ class AppConfig:
     LOG_PATH: Path = DATA_DIR.parent / "logs" / "algomate.log"
 
     LLM_API_KEY: str = ""
-    LLM_MODEL: str = "glm-4"
+    LLM_MODEL: str = "glm-4.7-flash"
     LLM_BASE_URL: str = "https://open.bigmodel.cn/api/paas/v4"
 
     SMTP_HOST: str = "smtp.qq.com"
@@ -87,6 +87,10 @@ class AppConfig:
 
         if not self.LLM_API_KEY:
             self.LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+        if not self.LLM_MODEL:
+            self.LLM_MODEL = os.getenv("LLM_MODEL", self.LLM_MODEL)
+        if not self.LLM_BASE_URL:
+            self.LLM_BASE_URL = os.getenv("LLM_BASE_URL", self.LLM_BASE_URL)
         if not self.SMTP_PASSWORD:
             self.SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
         if not self.SMTP_USER:
@@ -119,6 +123,25 @@ class AppConfig:
         return cls._instance
 
     @classmethod
+    def reload(cls, config_path: Optional[Path] = None) -> "AppConfig":
+        """重新加载配置，清除单例缓存
+
+        当配置文件被修改后，调用此方法强制重新加载最新配置。
+
+        Args:
+            config_path: 配置文件路径，默认为 ~/.algomate/config.yaml
+
+        Returns:
+            重新加载后的 AppConfig 实例
+
+        Example:
+            >>> # 修改配置后重新加载
+            >>> config = AppConfig.reload()
+        """
+        cls._instance = None
+        return cls.get(config_path)
+
+    @classmethod
     def load(cls, config_path: Optional[Path] = None) -> "AppConfig":
         """从 YAML 文件加载配置
 
@@ -144,6 +167,15 @@ class AppConfig:
                 import yaml
                 with open(config_path, "r", encoding="utf-8") as f:
                     data = yaml.safe_load(f) or {}
+                
+                # 将字符串路径转回 Path 对象
+                if 'DATA_DIR' in data and isinstance(data['DATA_DIR'], str):
+                    data['DATA_DIR'] = Path(data['DATA_DIR'])
+                if 'DB_PATH' in data and isinstance(data['DB_PATH'], str):
+                    data['DB_PATH'] = Path(data['DB_PATH'])
+                if 'LOG_PATH' in data and isinstance(data['LOG_PATH'], str):
+                    data['LOG_PATH'] = Path(data['LOG_PATH'])
+                
                 return cls(**data)
             except ImportError:
                 pass
@@ -159,5 +191,15 @@ class AppConfig:
         if config_path is None:
             config_path = self.DATA_DIR / "config.yaml"
 
+        # 只保存可序列化的字段，排除Path类型和单例实例
+        save_data = {}
+        for key, value in self.__dict__.items():
+            if key == '_instance':  # 排除单例实例字段
+                continue
+            if isinstance(value, Path):  # Path对象转为字符串
+                save_data[key] = str(value)
+            else:
+                save_data[key] = value
+
         with open(config_path, "w", encoding="utf-8") as f:
-            yaml.dump(self.__dict__, f, allow_unicode=True, default_flow_style=False)
+            yaml.dump(save_data, f, allow_unicode=True, default_flow_style=False)

@@ -7,41 +7,38 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      network: host
     container_name: algomate-backend
     restart: unless-stopped
     # 后端端口映射（可选，仅开发调试时需要）
     # ports:
     #   - "${BACKEND_PORT:-8000}:8000"
     volumes:
-      # 持久化数据库
-      - algomate-data:/app/data
+      # 挂载代码目录，修改代码后重启容器即可生效
+      - .:/app
     environment:
       - APP_ENV=production
       - DATABASE_URL=sqlite:///app/data/algomate.db
     env_file:
       - .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
-  # 前端服务（Nginx 托管静态文件）
+  # 前端服务（Vite 开发服务器）
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      network: host
     container_name: algomate-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      # 挂载前端源代码，修改代码自动热更新
+      - ./frontend:/app
+      # 排除 node_modules，使用容器内的依赖
+      - /app/node_modules
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     environment:
+      # 使用Docker服务名称（backend）作为主机名
       - VITE_API_URL=http://backend:8000
 
 volumes:
