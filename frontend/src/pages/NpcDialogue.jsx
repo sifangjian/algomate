@@ -6,9 +6,7 @@ import { useDialogueStore } from '../stores/dialogueStore'
 import { useCardStore } from '../stores/cardStore'
 import { cardService } from '../services/cardService'
 import PostDialogueGuide from '../components/dialogue/PostDialogueGuide'
-import CardDetailPanel from '../components/card/CardDetailPanel'
 import CardEditForm from '../components/card/CardEditForm'
-import CardDock from '../components/card/CardDock'
 import QuickAsk from '../components/QuickAsk'
 import GameCard from '../components/ui/Card/GameCard'
 import Button from '../components/ui/Button/Button'
@@ -74,7 +72,6 @@ export default function NpcDialogue() {
     const [isSearching, setIsSearching] = useState(false)
     const [showSearchDropdown, setShowSearchDropdown] = useState(false)
     const [asideCard, setAsideCard] = useState(null)
-    const [sourceRect, setSourceRect] = useState(null)
     const searchInputRef = useRef(null)
     const searchDropdownRef = useRef(null)
 
@@ -95,7 +92,7 @@ export default function NpcDialogue() {
         reset,
     } = useDialogueStore()
 
-    const { cards, fetchCards, setSelectedCard, fetchCardDetail, updateCard } = useCardStore()
+    const { fetchCards, setSelectedCard, fetchCardDetail, updateCard } = useCardStore()
 
     useEffect(() => {
         if (!realmId) return
@@ -321,7 +318,6 @@ export default function NpcDialogue() {
         [handleSend]
     )
 
-    const [editingCard, setEditingCard] = useState(null)
 
     // 搜索卡牌逻辑
     const performSearch = useCallback(async (query) => {
@@ -444,12 +440,6 @@ export default function NpcDialogue() {
     const handleAsideCardClose = useCallback(() => {
         setAsideCard(null)
     }, [])
-
-    const handleOpenCard = useCallback(async (card, rect) => {
-        await fetchCardDetail(card.id)
-        setSourceRect(rect)
-        setEditingCard(true)
-    }, [fetchCardDetail])
 
     return (
         <div className={`${styles.container} page-container`}>
@@ -625,13 +615,6 @@ export default function NpcDialogue() {
                 </div>
             )}
 
-            <CardDock cards={cards} onCardClick={handleOpenCard} />
-
-            <CardDetailPanel
-                open={!!editingCard}
-                onClose={() => setEditingCard(null)}
-                sourceRect={sourceRect}
-            />
 
             <ConfirmDialog
                 open={showEndConfirm}
