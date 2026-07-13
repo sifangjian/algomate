@@ -201,25 +201,21 @@ test.describe('NPC Dialogue E2E Test', () => {
         console.log(`  ${hasNpcResponse ? '✅' : '⚠️'} Step 7 ${results.step7}: NPC response in chat`)
         await page.screenshot({ path: 'e2e-results/step7-npc-response.png' })
 
-        // Step 8: Check 修炼日记 section
-        console.log('\n=== Step 8: Check 修炼日记 section ===')
-        const noteEditor = page.locator('textarea[aria-label="修炼日记编辑器"]')
-        const hasNoteEditor = await noteEditor.isVisible({ timeout: 5000 }).catch(() => false)
+        // Step 8: Check 卡牌搜索 section
+        console.log('\n=== Step 8: Check 卡牌搜索 section ===')
+        const searchInput = page.locator('input[aria-label="搜索卡牌"]')
+        const hasSearchInput = await searchInput.isVisible({ timeout: 5000 }).catch(() => false)
 
-        const noteTitle = page.locator('text=修炼日记')
-        const hasNoteTitle = await noteTitle.first().isVisible({ timeout: 3000 }).catch(() => false)
+        const searchPlaceholder = page.locator('input[placeholder*="搜索或新建卡牌"]')
+        const hasSearchPlaceholder = await searchPlaceholder.isVisible({ timeout: 3000 }).catch(() => false)
 
-        const saveNoteBtn = page.locator('button:has-text("保存心得")')
-        const hasSaveNoteBtn = await saveNoteBtn.isVisible({ timeout: 3000 }).catch(() => false)
+        console.log(`  Search input (aria-label="搜索卡牌") visible: ${hasSearchInput}`)
+        console.log(`  Search placeholder visible: ${hasSearchPlaceholder}`)
 
-        console.log(`  "修炼日记" title visible: ${hasNoteTitle}`)
-        console.log(`  Note editor (aria-label="修炼日记编辑器") visible: ${hasNoteEditor}`)
-        console.log(`  "保存心得" button visible: ${hasSaveNoteBtn}`)
-
-        const step8Pass = hasNoteEditor && hasNoteTitle
+        const step8Pass = hasSearchInput
         results.step8 = step8Pass ? 'PASS' : 'FAIL'
-        console.log(`  ${step8Pass ? '✅' : '❌'} Step 8 ${results.step8}: 修炼日记 section`)
-        await page.screenshot({ path: 'e2e-results/step8-note-section.png' })
+        console.log(`  ${step8Pass ? '✅' : '❌'} Step 8 ${results.step8}: 卡牌搜索 section`)
+        await page.screenshot({ path: 'e2e-results/step8-card-search-section.png' })
 
         // Step 9: Click 结束修习 and verify confirmation dialog
         console.log('\n=== Step 9: Click 结束修习 ===')

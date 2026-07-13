@@ -4,8 +4,10 @@ import { npcService, REALM_ID_TO_NAME } from '../services/npcService'
 import { dialogueService } from '../services/dialogueService'
 import { useDialogueStore } from '../stores/dialogueStore'
 import { useCardStore } from '../stores/cardStore'
+import { cardService } from '../services/cardService'
 import PostDialogueGuide from '../components/dialogue/PostDialogueGuide'
 import CardDetailPanel from '../components/card/CardDetailPanel'
+import CardEditForm from '../components/card/CardEditForm'
 import CardDock from '../components/card/CardDock'
 import QuickAsk from '../components/QuickAsk'
 import GameCard from '../components/ui/Card/GameCard'
@@ -62,14 +64,19 @@ export default function NpcDialogue() {
     const [npc, setNpc] = useState(null)
     const [npcError, setNpcError] = useState(null)
     const [inputValue, setInputValue] = useState('')
-    const [noteContent, setNoteContent] = useState('')
     const [showEndConfirm, setShowEndConfirm] = useState(false)
     const [isNpcLoading, setIsNpcLoading] = useState(true)
     const [algorithmInfo, setAlgorithmInfo] = useState(null)
     const [isEnding, setIsEnding] = useState(false)
     const [isNearBottom, setIsNearBottom] = useState(true)
-    const [newCardName, setNewCardName] = useState('')
+    const [searchQuery, setSearchQuery] = useState('')
+    const [searchResults, setSearchResults] = useState([])
+    const [isSearching, setIsSearching] = useState(false)
+    const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+    const [asideCard, setAsideCard] = useState(null)
     const [sourceRect, setSourceRect] = useState(null)
+    const searchInputRef = useRef(null)
+    const searchDropdownRef = useRef(null)
 
     const {
         dialogueId,
@@ -81,7 +88,6 @@ export default function NpcDialogue() {
         status,
         startDialogue,
         sendMessage,
-        saveNote,
         createCard,
         endDialogue,
         startHeartbeat,
@@ -89,7 +95,7 @@ export default function NpcDialogue() {
         reset,
     } = useDialogueStore()
 
-    const { cards, fetchCards, setSelectedCard, fetchCardDetail } = useCardStore()
+    const { cards, fetchCards, setSelectedCard, fetchCardDetail, updateCard } = useCardStore()
 
     useEffect(() => {
         if (!realmId) return
@@ -285,9 +291,6 @@ export default function NpcDialogue() {
     const handleEndDialogue = useCallback(async () => {
         setIsEnding(true)
         try {
-            if (noteContent.trim() && dialogueId) {
-                await saveNote(noteContent)
-            }
             if (dialogueId) {
                 const result = await endDialogue()
                 clearDialogueSession()
@@ -306,7 +309,7 @@ export default function NpcDialogue() {
         } finally {
             setIsEnding(false)
         }
-    }, [noteContent, dialogueId, saveNote, endDialogue, navigate])
+    }, [dialogueId, endDialogue, navigate])
 
     const handleKeyDown = useCallback(
         (e) => {
@@ -320,16 +323,127 @@ export default function NpcDialogue() {
 
     const [editingCard, setEditingCard] = useState(null)
 
-    const handleCreateCard = useCallback(async (e) => {
-        if (e.key !== 'Enter' || !newCardName.trim()) return
-        try {
-            await createCard(newCardName.trim())
-            setNewCardName('')
-            showToast(`空白卡牌「${newCardName.trim()}」已创建`, 'success')
-        } catch (err) {
-            showToast(`创建卡牌失败: ${err.message}`, 'error')
+    // 搜索卡牌逻辑
+    const performSearch = useCallback(async (query) => {
+        const trimmed = query.trim()
+        if (!trimmed) {
+            setSearchResults([])
+            setShowSearchDropdown(false)
+            return
         }
-    }, [newCardName, createCard])
+        setIsSearching(true)
+        try {
+            const data = await cardService.getAll({ keyword: trimmed })
+            const results = data.cards || []
+            setSearchResults(results)
+            setShowSearchDropdown(true)
+        } catch {
+            setSearchResults([])
+        } finally {
+            setIsSearching(false)
+        }
+    }, [])
+
+    const searchDebounceRef = useRef(null)
+    const handleSearchChange = useCallback((e) => {
+        const value = e.target.value
+        setSearchQuery(value)
+        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+        if (!value.trim()) {
+            setSearchResults([])
+            setShowSearchDropdown(false)
+            return
+        }
+        searchDebounceRef.current = setTimeout(() => {
+            performSearch(value)
+        }, 300)
+    }, [performSearch])
+
+    const openCardInAside = useCallback(async (card) => {
+        const detail = await fetchCardDetail(card.id)
+        if (detail) {
+            setAsideCard(detail)
+            setSelectedCard(detail)
+        }
+        setSearchQuery('')
+        setSearchResults([])
+        setShowSearchDropdown(false)
+    }, [fetchCardDetail, setSelectedCard])
+
+    const handleSearchSelect = useCallback(async (card) => {
+        await openCardInAside(card)
+    }, [openCardInAside])
+
+    const handleSearchKeyDown = useCallback(async (e) => {
+        if (e.key !== 'Enter' || !searchQuery.trim()) return
+        e.preventDefault()
+
+        const trimmed = searchQuery.trim()
+        setIsSearching(true)
+        try {
+            // 精确匹配
+            const data = await cardService.getAll({ keyword: trimmed })
+            const results = data.cards || []
+            const exactMatch = results.find(c => c.name === trimmed)
+
+            if (exactMatch) {
+                await openCardInAside(exactMatch)
+                showToast(`已打开卡牌「${trimmed}」`, 'success')
+            } else {
+                // 自动新建卡牌
+                try {
+                    const newCard = await createCard(trimmed)
+                    if (newCard) {
+                        await fetchCards()
+                        const detail = await fetchCardDetail(newCard.id)
+                        if (detail) {
+                            setAsideCard(detail)
+                            setSelectedCard(detail)
+                        }
+                        showToast(`新卡牌「${trimmed}」已创建并打开`, 'success')
+                    }
+                } catch (err) {
+                    showToast(`创建卡牌失败: ${err.message}`, 'error')
+                }
+            }
+        } catch {
+            showToast('搜索卡牌失败', 'error')
+        } finally {
+            setIsSearching(false)
+            setSearchQuery('')
+            setSearchResults([])
+            setShowSearchDropdown(false)
+        }
+    }, [searchQuery, createCard, fetchCards, fetchCardDetail, openCardInAside, setSelectedCard])
+
+    // 点击外部关闭搜索下拉
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target) &&
+                searchInputRef.current && !searchInputRef.current.contains(e.target)) {
+                setShowSearchDropdown(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    const handleAsideCardSave = useCallback(async (cardId, payload) => {
+        try {
+            const updatedCard = await updateCard(cardId, payload)
+            setAsideCard(updatedCard)
+            setSelectedCard(updatedCard)
+            showToast(`卡牌已更新`, 'success')
+            return updatedCard
+        } catch (err) {
+            showToast(`保存失败: ${err.message}`, 'error')
+            throw err
+        }
+    }, [updateCard, setSelectedCard])
+
+    const handleAsideCardClose = useCallback(() => {
+        setAsideCard(null)
+    }, [])
 
     const handleOpenCard = useCallback(async (card, rect) => {
         await fetchCardDetail(card.id)
@@ -371,99 +485,144 @@ export default function NpcDialogue() {
             )}
 
             {npc && (
-            <div className={styles.layout}>
-                <section className={styles.chatSection} aria-label="对话区域">
-                    <div className={styles.messagesList} ref={messagesListRef} role="log" aria-live="polite">
-                        {messages.map((msg) =>
-                            msg.role === 'npc' ? (
-                                <NpcMessage key={msg.id} message={msg} onSuggestionClick={handleSuggestionClick} />
-                            ) : (
-                                <UserMessage key={msg.id} message={msg} />
-                            )
-                        )}
-                        <div ref={messagesEndRef} />
-                        {!isNearBottom && (
-                            <button
-                                className={styles.scrollToBottomBtn}
-                                onClick={() => {
-                                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-                                    setIsNearBottom(true)
-                                }}
-                                aria-label="滚动到底部"
-                            >
-                                ↓ 最新消息
-                            </button>
-                        )}
-                    </div>
-
-                    <div className={styles.quickQuestions}>
-                        {npc.quickQuestions?.map((q) => {
-                            const importance = getTopicImportanceDynamic(q.text)
-                            const badge = getImportanceBadge(importance)
-                            return (
+                <div className={styles.layout}>
+                    <section className={styles.chatSection} aria-label="对话区域">
+                        <div className={styles.messagesList} ref={messagesListRef} role="log" aria-live="polite">
+                            {messages.map((msg) =>
+                                msg.role === 'npc' ? (
+                                    <NpcMessage key={msg.id} message={msg} onSuggestionClick={handleSuggestionClick} />
+                                ) : (
+                                    <UserMessage key={msg.id} message={msg} />
+                                )
+                            )}
+                            <div ref={messagesEndRef} />
+                            {!isNearBottom && (
                                 <button
-                                    key={q.id}
-                                    className={`${styles.quickQBtn} ${importance ? styles[`quickQ_${importance}`] : ''}`}
-                                    onClick={() => handleQuickQuestion(q)}
+                                    className={styles.scrollToBottomBtn}
+                                    onClick={() => {
+                                        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+                                        setIsNearBottom(true)
+                                    }}
+                                    aria-label="滚动到底部"
                                 >
-                                    {badge} {q.text}
+                                    ↓ 最新消息
                                 </button>
-                            )
-                        })}
-                    </div>
+                            )}
+                        </div>
 
-                    <div className={styles.inputArea}>
-                        <textarea
-                            ref={inputRef}
-                            className={styles.input}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="输入你的问题..."
-                            rows={2}
-                            disabled={isStreaming}
-                            aria-label="消息输入框"
-                        />
-                        <Button
-                            variant="accent"
-                            size="md"
-                            onClick={() => handleSend()}
-                            disabled={!inputValue.trim() || isStreaming}
-                            loading={isStreaming}
-                            icon="➤"
-                        >
-                            发送
-                        </Button>
-                    </div>
-                </section>
+                        <div className={styles.quickQuestions}>
+                            {npc.quickQuestions?.map((q) => {
+                                const importance = getTopicImportanceDynamic(q.text)
+                                const badge = getImportanceBadge(importance)
+                                return (
+                                    <button
+                                        key={q.id}
+                                        className={`${styles.quickQBtn} ${importance ? styles[`quickQ_${importance}`] : ''}`}
+                                        onClick={() => handleQuickQuestion(q)}
+                                    >
+                                        {badge} {q.text}
+                                    </button>
+                                )
+                            })}
+                        </div>
 
-                <aside className={styles.noteSection} aria-label="草稿本区域">
-                    <h3 className={styles.noteTitle}>📓 草稿本</h3>
-                    <p className={styles.noteHint}>随手记录要点和想法，这只是草稿，不是最终内容</p>
+                        <div className={styles.inputArea}>
+                            <textarea
+                                ref={inputRef}
+                                className={styles.input}
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder="输入你的问题..."
+                                rows={2}
+                                disabled={isStreaming}
+                                aria-label="消息输入框"
+                            />
+                            <Button
+                                variant="accent"
+                                size="md"
+                                onClick={() => handleSend()}
+                                disabled={!inputValue.trim() || isStreaming}
+                                loading={isStreaming}
+                                icon="➤"
+                            >
+                                发送
+                            </Button>
+                        </div>
+                    </section>
 
-                    <textarea
-                        className={styles.noteEditor}
-                        value={noteContent}
-                        onChange={(e) => setNoteContent(e.target.value)}
-                        placeholder={"随意记录关键词、思路片段、待查问题...\n这只是草稿，不需要完整"}
-                        rows={10}
-                        aria-label="草稿本编辑器"
-                    />
+                    <aside className={styles.noteSection} aria-label="卡牌区域">
+                        <div className={styles.searchArea}>
+                            <div className={styles.searchInputWrapper}>
+                                <span className={styles.searchIcon}>🔍</span>
+                                <input
+                                    ref={searchInputRef}
+                                    className={styles.searchInput}
+                                    placeholder="搜索或新建卡牌..."
+                                    value={searchQuery}
+                                    onChange={handleSearchChange}
+                                    onKeyDown={handleSearchKeyDown}
+                                    onFocus={() => { if (searchResults.length > 0) setShowSearchDropdown(true) }}
+                                    aria-label="搜索卡牌"
+                                />
+                                {isSearching && <span className={styles.searchLoading}>⏳</span>}
+                            </div>
+                            {showSearchDropdown && searchResults.length > 0 && (
+                                <div className={styles.searchDropdown} ref={searchDropdownRef}>
+                                    {searchResults.map((card) => (
+                                        <button
+                                            key={card.id}
+                                            className={styles.searchResultItem}
+                                            onClick={() => handleSearchSelect(card)}
+                                        >
+                                            <span className={styles.searchResultIcon}>📜</span>
+                                            <span className={styles.searchResultName}>{card.name}</span>
+                                            {card.algorithm_type && (
+                                                <span className={styles.searchResultType}>{card.algorithm_type}</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {showSearchDropdown && searchQuery.trim() && searchResults.length === 0 && !isSearching && (
+                                <div className={styles.searchDropdown} ref={searchDropdownRef}>
+                                    <div className={styles.searchNoResult}>
+                                        未找到「{searchQuery.trim()}」，回车新建
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                    <div className={styles.cardCreateArea}>
-                        <h4 className={styles.cardCreateTitle}>+ 新建卡牌</h4>
-                        <input
-                            className={styles.cardCreateInput}
-                            placeholder="输入卡牌名称，回车创建..."
-                            value={newCardName}
-                            onChange={(e) => setNewCardName(e.target.value)}
-                            onKeyDown={handleCreateCard}
-                        />
-                    </div>
+                        {asideCard ? (
+                            <div className={styles.asideCardEditor}>
+                                <div className={styles.asideCardHeader}>
+                                    <h3 className={styles.asideCardTitle}>
+                                        📜 {asideCard.name}
+                                    </h3>
+                                    <button
+                                        className={styles.asideCardClose}
+                                        onClick={handleAsideCardClose}
+                                        aria-label="关闭卡牌编辑"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                                <CardEditForm
+                                    card={asideCard}
+                                    onSave={() => { }}
+                                    onCancel={handleAsideCardClose}
+                                />
+                            </div>
+                        ) : (
+                            <div className={styles.asideEmpty}>
+                                <span className={styles.asideEmptyIcon}>📜</span>
+                                <p className={styles.asideEmptyText}>搜索或新建卡牌后，在此处编辑</p>
+                            </div>
+                        )}
 
-                    {status === 'ended' && <PostDialogueGuide />}
-                </aside>
-            </div>
+                        {status === 'ended' && <PostDialogueGuide />}
+                    </aside>
+                </div>
             )}
 
             <CardDock cards={cards} onCardClick={handleOpenCard} />
@@ -618,7 +777,7 @@ function NpcMessage({ message, onSuggestionClick }) {
                         {message.id === 'greeting' ? (
                             <NpcGreetingMessage text={message.content} />
                         ) : (
-                            <div 
+                            <div
                                 ref={contentRef}
                                 className={`${styles.messageContent} ${isExpanded ? styles.expanded : styles.collapsed}`}
                                 style={{ maxHeight: isExpanded ? 'none' : '80px' }}

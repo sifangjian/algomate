@@ -44,7 +44,7 @@ function getDefaultFloatingRect(sourceRect) {
 
     const width = Math.min(520, vw * 0.45)
     const height = Math.min(Math.max(vh * 0.7, 500), vh - 16)
-    // 默认放在右侧，留出 320px 给草稿本
+    // 默认放在右侧，留出 320px 给侧边栏
     const rightSpace = vw - 320
     const x = rightSpace > width + 40 ? rightSpace - width - 16 : Math.max(16, vw - width - 16)
     const y = Math.max(8, (vh - height) / 2)

@@ -323,48 +323,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     min-height: 0;
-}
-
-.noteTitle {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--color-text-primary);
-}
-
-.noteHint {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-}
-
-.noteLabel {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
-
-.noteEditor {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
-    font-size: 0.85rem;
-    resize: vertical;
-    min-height: 150px;
-    flex: 1;
-    outline: none;
-    font-family: inherit;
-    transition: border-color var(--transition-fast);
-}
-
-.noteEditor:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-.noteEditor::placeholder {
-    color: var(--color-text-muted);
+    position: relative;
 }
 
 .npcMsgContent {
@@ -426,41 +385,189 @@
     }
 }
 
-/* 卡牌创建区域 */
-.cardCreateArea {
-    border-top: 1px solid var(--border-color);
-    padding-top: 10px;
-    margin-top: 4px;
+/* 搜索区域 */
+.searchArea {
+    position: relative;
 }
 
-.cardCreateTitle {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    margin: 0 0 6px 0;
-}
-
-.cardCreateInput {
-    width: 100%;
-    padding: 8px 12px;
+.searchInputWrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
-    font-size: 0.82rem;
-    outline: none;
-    font-family: inherit;
-    box-sizing: border-box;
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.cardCreateInput:focus {
+.searchInputWrapper:focus-within {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
-.cardCreateInput::placeholder {
+.searchIcon {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.searchInput {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 0.82rem;
+    outline: none;
+    font-family: inherit;
+    padding: 4px 0;
+}
+
+.searchInput::placeholder {
     color: var(--color-text-muted);
+}
+
+.searchLoading {
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.searchDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    z-index: 20;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.searchResultItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+
+.searchResultItem:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.searchResultItem+.searchResultItem {
+    border-top: 1px solid var(--border-color);
+}
+
+.searchResultIcon {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.searchResultName {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.searchResultType {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 8px;
+    color: var(--color-primary-light);
+    flex-shrink: 0;
+}
+
+.searchNoResult {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+/* aside 卡牌编辑区域 */
+.asideCardEditor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.asideCardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.asideCardTitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.asideCardClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.asideCardClose:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--color-danger);
+}
+
+.asideEmpty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 30px 10px;
+    color: var(--color-text-muted);
+}
+
+.asideEmptyIcon {
+    font-size: 2rem;
+    opacity: 0.4;
+}
+
+.asideEmptyText {
+    font-size: 0.82rem;
+    margin: 0;
+    text-align: center;
 }
 
 .greetingContainer {
@@ -606,8 +713,8 @@
 
 .messageContent {
     overflow: hidden;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                opacity 0.2s ease;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.2s ease;
     position: relative;
 }
 
@@ -637,11 +744,11 @@
         padding: 3px 10px;
         font-size: 0.7rem;
     }
-    
+
     .expandIcon {
         font-size: 0.65rem;
     }
-    
+
     .messageControls {
         gap: 6px;
     }
