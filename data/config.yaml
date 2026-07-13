@@ -5,7 +5,7 @@ EMAIL_FROM: your_email@qq.com
 EMAIL_TO: recipient@example.com
 LLM_API_KEY: e6f937cb70c04106ae2d25e2822324ca.IzWApSDXvXyLsDtv
 LLM_BASE_URL: https://open.bigmodel.cn/api/paas/v4
-LLM_MODEL: glm-4.6v
+LLM_MODEL: glm-4.7-flash
 LOG_PATH: /app/logs/algomate.log
 REVIEW_ENABLED: true
 REVIEW_INTERVALS:

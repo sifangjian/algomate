@@ -152,7 +152,6 @@ export default function NpcDialogue() {
 
     useEffect(() => {
         return () => {
-            clearDialogueSession()
             reset()
         }
     }, [])
