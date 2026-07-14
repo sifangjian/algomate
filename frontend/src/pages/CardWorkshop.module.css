@@ -128,6 +128,37 @@
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
 }
 
+.tabBar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.tabBtn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all var(--transition-fast);
+}
+
+.tabBtn:hover {
+    color: var(--color-text-primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.tabBtnActive {
+    color: var(--color-primary-light);
+    border-bottom-color: var(--color-primary);
+}
+
 .toolbar {
     display: flex;
     gap: 12px;

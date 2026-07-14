@@ -4,7 +4,6 @@ import Header from './components/layout/Header'
 import SideNav from './components/layout/SideNav'
 import BottomNav from './components/layout/BottomNav'
 import ToastContainer from './components/ui/Toast/ToastContainer'
-import TaskDrawer from './components/ui/TaskDrawer/TaskDrawer'
 import LoadingScreen from './components/ui/Loading/LoadingScreen'
 import OnboardingController from './components/onboarding/OnboardingController'
 import { useSettingsStore } from './stores/settingsStore'
@@ -14,7 +13,6 @@ const HallPage = lazy(() => import('./pages/HallPage'))
 const NpcDialogue = lazy(() => import('./pages/NpcDialogue'))
 const BossBattle = lazy(() => import('./pages/BossBattle'))
 const CardWorkshop = lazy(() => import('./pages/CardWorkshop'))
-const DailyReview = lazy(() => import('./pages/DailyReview'))
 const Settings = lazy(() => import('./pages/Settings'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
@@ -47,14 +45,12 @@ function AppContent() {
             <Route path="/npc/:realmId" element={<NpcDialogue />} />
             <Route path="/boss/battle" element={<BossBattle />} />
             <Route path="/workshop" element={<CardWorkshop />} />
-            <Route path="/daily-review" element={<DailyReview />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
       <ToastContainer />
-      <TaskDrawer />
       <OnboardingController />
     </div>
   )

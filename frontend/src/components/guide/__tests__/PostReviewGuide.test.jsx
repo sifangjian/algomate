@@ -22,7 +22,7 @@ import { useGuideStore } from '../../../stores/guideStore'
 
 const GUIDE_BOTH_AVAILABLE = {
   available_actions: [
-    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: true },
+    { action: 'continue_review', label: '继续修炼', target_path: '/workshop', available: true },
     { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss/battle', available: true },
   ],
   message: '还有 1 张卡牌濒危，是否继续修炼？',
@@ -30,7 +30,7 @@ const GUIDE_BOTH_AVAILABLE = {
 
 const GUIDE_CONTINUE_UNAVAILABLE = {
   available_actions: [
-    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: false },
+    { action: 'continue_review', label: '继续修炼', target_path: '/workshop', available: false },
     { action: 'go_boss', label: '去 Boss 战检验', target_path: '/boss/battle', available: true },
   ],
   message: '所有卡牌状态良好，去 Boss 战检验学习成果吧！',
@@ -73,11 +73,11 @@ describe('PostReviewGuide', () => {
     expect(screen.getByRole('button', { name: /去 Boss 战检验/ })).not.toBeNull()
   })
 
-  it('点击继续修炼应导航到 /daily-review', async () => {
+  it('点击继续修炼应导航到 /workshop', async () => {
     const user = userEvent.setup()
     render(<PostReviewGuide guide={GUIDE_BOTH_AVAILABLE} scene="after_review" />)
     await user.click(screen.getByRole('button', { name: /继续修炼/ }))
-    expect(mockNavigate).toHaveBeenCalledWith('/daily-review')
+    expect(mockNavigate).toHaveBeenCalledWith('/workshop')
   })
 
   it('点击去 Boss 战检验应导航到 /boss/battle', async () => {

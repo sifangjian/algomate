@@ -2,7 +2,6 @@ import { useEffect, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
 import { useUserStore } from '../stores/userStore'
-import { useUIStore } from '../stores/uiStore'
 import { realmService } from '../services/realmService'
 import { userService } from '../services/userService'
 import { taskService } from '../services/learningService'
@@ -17,7 +16,6 @@ export default function AdventureMap() {
     const navigate = useNavigate()
     const { realms, setRealms, setLoading, setError } = useGameStore()
     const { setUser } = useUserStore()
-    const { setTasks, setTasksLoading, addToast } = useUIStore()
     const [stats, setStats] = useState({ total_cards: 0, total_realms: 0, consecutive_days: 0 })
     const hasCards = stats.total_cards > 0
     const [selectedPartialRealm, setSelectedPartialRealm] = useState(null)
@@ -26,12 +24,10 @@ export default function AdventureMap() {
 
     const fetchInitialData = useCallback(async () => {
         setLoading(true)
-        setTasksLoading(true)
         try {
-            const [realmsData, userData, tasksData, statsData] = await Promise.allSettled([
+            const [realmsData, userData, statsData] = await Promise.allSettled([
                 realmService.getAll(),
                 userService.getUser().catch(() => null),
-                taskService.getTodayTasks(),
                 statsService.getOverview(),
             ])
 
@@ -50,16 +46,6 @@ export default function AdventureMap() {
                 setUser(userData.value)
             }
 
-            if (tasksData.status === 'fulfilled' && tasksData.value?.tasks) {
-                setTasks(tasksData.value.tasks)
-            } else {
-                setTasks([])
-                if (tasksData.status === 'rejected') {
-                    console.error('Tasks API Error:', tasksData.reason)
-                    showToast('获取今日任务失败', 'error')
-                }
-            }
-
             if (statsData.status === 'fulfilled' && statsData.value) {
                 setStats(statsData.value)
             } else {
@@ -71,12 +57,10 @@ export default function AdventureMap() {
         } catch (err) {
             setError(err.message)
             showToast('加载失败: ' + err.message, 'error')
-            setTasks([])
         } finally {
             setLoading(false)
-            setTasksLoading(false)
         }
-    }, [setRealms, setUser, setTasks, setTasksLoading, setLoading, setError])
+    }, [setRealms, setUser, setLoading, setError])
 
     useEffect(() => {
         fetchInitialData()

@@ -31,7 +31,7 @@ const GUIDE_TWO_AVAILABLE = {
 const GUIDE_ONE_AVAILABLE_ONE_UNAVAILABLE = {
   available_actions: [
     { action: 'go_boss', label: '去 Boss 战', target_path: '/boss/battle', available: true },
-    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: false },
+    { action: 'continue_review', label: '继续修炼', target_path: '/workshop', available: false },
   ],
   message: '请选择下一步',
 }
@@ -39,7 +39,7 @@ const GUIDE_ONE_AVAILABLE_ONE_UNAVAILABLE = {
 const GUIDE_ALL_UNAVAILABLE = {
   available_actions: [
     { action: 'go_boss', label: '去 Boss 战', target_path: '/boss/battle', available: false },
-    { action: 'continue_review', label: '继续修炼', target_path: '/daily-review', available: false },
+    { action: 'continue_review', label: '继续修炼', target_path: '/workshop', available: false },
   ],
   message: '请选择下一步',
 }

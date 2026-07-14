@@ -100,12 +100,7 @@ export default function DailyReview() {
   if (loading) return <LoadingScreen />
 
   return (
-    <div className={`${styles.container} page-container`}>
-      <div className={styles.header}>
-        <h1 className={styles.pageTitle}>📋 每日修炼</h1>
-        <p className={styles.pageSubtitle}>巩固算法知识，保持卡牌耐久</p>
-      </div>
-
+    <div className={styles.container}>
       <ReviewStatsBar
         completedCount={completedTaskIds.size}
         totalCount={tasks.length}

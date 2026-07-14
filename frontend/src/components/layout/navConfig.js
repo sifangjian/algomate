@@ -2,22 +2,12 @@ export const navItems = [
     {
         path: '/',
         icon: '🏛️',
-        label: '导师大厅',
+        label: '修炼',
         exact: true,
     },
     {
         path: '/workshop',
         icon: '🎴',
-        label: '卡牌工坊',
-    },
-    {
-        path: '/daily-review',
-        icon: '📋',
-        label: '每日修炼',
+        label: '图鉴',
     },
 ]
-
-export const taskNavItem = {
-    icon: '📋',
-    label: '今日任务',
-}

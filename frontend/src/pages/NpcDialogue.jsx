@@ -444,7 +444,7 @@ export default function NpcDialogue() {
         <div className={`${styles.container} page-container`}>
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
-                    <button className={styles.backBtn} onClick={() => navigate('/')} aria-label="返回地图">
+                    <button className={styles.backBtn} onClick={() => { clearDialogueSession(); navigate('/') }} aria-label="返回地图">
                         ← 返回地图
                     </button>
                     <div className={styles.npcInfo}>
