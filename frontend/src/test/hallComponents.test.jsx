@@ -1,51 +1,13 @@
 import React from 'react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import AlgorithmTypeTags from '../components/hall/AlgorithmTypeTags'
 import SpecialtyTags from '../components/hall/SpecialtyTags'
 import CardCountBadge from '../components/hall/CardCountBadge'
-import RecommendTip from '../components/hall/RecommendTip'
 import NpcAvatar from '../components/hall/NpcAvatar'
-import NpcGrid from '../components/hall/NpcGrid'
-import LearningPathCard from '../components/hall/LearningPathCard'
-import NpcDetailModal from '../components/hall/NpcDetailModal'
-
-describe('AlgorithmTypeTags', () => {
-  const types = [
-    { value: '', label: '全部' },
-    { value: 'basic_data_structure', label: '基础数据结构' },
-    { value: 'tree', label: '树结构' },
-  ]
-
-  it('应渲染所有类型标签', () => {
-    render(<AlgorithmTypeTags types={types} selected="" onSelect={vi.fn()} />)
-    expect(screen.getByText('全部')).toBeInTheDocument()
-    expect(screen.getByText('基础数据结构')).toBeInTheDocument()
-    expect(screen.getByText('树结构')).toBeInTheDocument()
-  })
-
-  it('应高亮选中的标签', () => {
-    render(<AlgorithmTypeTags types={types} selected="tree" onSelect={vi.fn()} />)
-    const treeTag = screen.getByText('树结构')
-    expect(treeTag).toHaveAttribute('aria-checked', 'true')
-  })
-
-  it('点击标签应调用 onSelect', async () => {
-    const onSelect = vi.fn()
-    render(<AlgorithmTypeTags types={types} selected="" onSelect={onSelect} />)
-    await userEvent.click(screen.getByText('树结构'))
-    expect(onSelect).toHaveBeenCalledWith('tree')
-  })
-
-  it('点击"全部"应传入空字符串', async () => {
-    const onSelect = vi.fn()
-    render(<AlgorithmTypeTags types={types} selected="tree" onSelect={onSelect} />)
-    await userEvent.click(screen.getByText('全部'))
-    expect(onSelect).toHaveBeenCalledWith('')
-  })
-})
+import AlgorithmMap from '../components/hall/AlgorithmMap'
+import { useHallStore } from '../stores/hallStore'
 
 describe('SpecialtyTags', () => {
   it('应渲染所有专长标签', () => {
@@ -83,18 +45,6 @@ describe('CardCountBadge', () => {
   })
 })
 
-describe('RecommendTip', () => {
-  it('应显示推荐提示文本', () => {
-    render(<RecommendTip />)
-    expect(screen.getByText('推荐新手从这里开始')).toBeInTheDocument()
-  })
-
-  it('应包含星标图标', () => {
-    render(<RecommendTip />)
-    expect(screen.getByText('⭐')).toBeInTheDocument()
-  })
-})
-
 describe('NpcAvatar', () => {
   it('应根据 avatar 键显示对应 emoji', () => {
     render(<NpcAvatar avatar="laofuzi" name="老夫子" />)
@@ -112,198 +62,68 @@ describe('NpcAvatar', () => {
   })
 })
 
-describe('NpcGrid', () => {
-  it('应渲染所有 NPC 卡片', () => {
-    const npcs = [
-      { id: 1, name: '老夫子', title: '基础数据结构导师', algorithm_type: 'basic_data_structure', specialties: ['数组'], avatar: 'laofuzi', card_count: 0 },
-      { id: 2, name: '栈语者', title: '栈队列与搜索导师', algorithm_type: 'stack_queue_search', specialties: ['栈'], avatar: 'zhanzhe', card_count: 2 },
-    ]
-    render(<NpcGrid npcs={npcs} isNewUser={false} />)
-    expect(screen.getByText('老夫子')).toBeInTheDocument()
-    expect(screen.getByText('栈语者')).toBeInTheDocument()
-  })
-
-  it('空列表应显示空状态', () => {
-    render(<NpcGrid npcs={[]} isNewUser={false} />)
-    expect(screen.getByText('未找到匹配的导师')).toBeInTheDocument()
-  })
-
-  it('有卡牌的 NPC 应显示卡牌数量', () => {
-    const npcs = [
-      { id: 1, name: '老夫子', title: '基础数据结构导师', algorithm_type: 'basic_data_structure', specialties: ['数组'], avatar: 'laofuzi', card_count: 3 },
-    ]
-    render(<NpcGrid npcs={npcs} isNewUser={false} />)
-    expect(screen.getByText('已获3张卡牌')).toBeInTheDocument()
-  })
-
-  it('新用户时老夫子应显示推荐提示', () => {
-    const npcs = [
-      { id: 1, name: '老夫子', title: '基础数据结构导师', algorithm_type: 'basic_data_structure', specialties: ['数组'], avatar: 'laofuzi', card_count: 0 },
-    ]
-    render(<NpcGrid npcs={npcs} isNewUser={true} />)
-    expect(screen.getByText('推荐新手从这里开始')).toBeInTheDocument()
-  })
-})
-
-describe('LearningPathCard', () => {
-  const steps = [
-    { order: 1, npc_name: '老夫子', algorithm_type: 'basic_data_structure', stage: '基础入门', goal: '掌握基础数据结构' },
-    { order: 2, npc_name: '栈语者', algorithm_type: 'stack_queue_search', stage: '搜索基础', goal: '掌握栈队列与搜索' },
-  ]
-
-  it('应显示推荐学习路径标题', () => {
-    render(<LearningPathCard steps={steps} />)
-    expect(screen.getByText('推荐学习路径')).toBeInTheDocument()
-  })
-
-  it('默认折叠状态不应显示步骤详情', () => {
-    render(<LearningPathCard steps={steps} />)
-    expect(screen.queryByText('基础入门')).not.toBeInTheDocument()
-  })
-
-  it('点击展开后应显示步骤详情', async () => {
-    render(<LearningPathCard steps={steps} />)
-    await userEvent.click(screen.getByText('推荐学习路径'))
-    expect(screen.getByText('基础入门')).toBeInTheDocument()
-    expect(screen.getByText('掌握基础数据结构')).toBeInTheDocument()
-    expect(screen.getByText('搜索基础')).toBeInTheDocument()
-  })
-
-  it('再次点击应折叠', async () => {
-    render(<LearningPathCard steps={steps} />)
-    const header = screen.getByText('推荐学习路径')
-    await userEvent.click(header)
-    expect(screen.getByText('基础入门')).toBeInTheDocument()
-    await userEvent.click(header)
-    expect(screen.queryByText('基础入门')).not.toBeInTheDocument()
-  })
-})
-
-const mockHallStore = {
-  selectedNpc: null,
-  modalOpen: false,
-  setModalOpen: vi.fn(),
-  fetchNpcDetail: vi.fn(),
+const mockAlgorithmInfo = {
+  algorithm_types: ['数组与双指针', '链表', '哈希表', '线性DP', '背包问题'],
+  topic_importance: {
+    '数组与双指针': 'core',
+    '链表': 'core',
+    '哈希表': 'core',
+    '线性DP': 'core',
+    '背包问题': 'important',
+  },
+  topic_prerequisites: {
+    '背包问题': ['线性DP'],
+  },
+  topic_progress: {
+    '数组与双指针': { card_count: 2, avg_durability: 80, learned: true },
+    '链表': { card_count: 0, avg_durability: 0, learned: false },
+    '哈希表': { card_count: 0, avg_durability: 0, learned: false },
+    '线性DP': { card_count: 1, avg_durability: 50, learned: true },
+    '背包问题': { card_count: 0, avg_durability: 0, learned: false },
+  },
 }
 
-vi.mock('../stores/hallStore', () => ({
-  useHallStore: () => mockHallStore,
-}))
+const mockNpcs = [
+  { id: 1, name: '基础数据结构', title: '基础数据结构', specialties: ['数组与双指针', '链表', '哈希表'], avatar: '📚' },
+  { id: 2, name: '动态规划', title: '动态规划', specialties: ['线性DP', '背包问题'], avatar: '💡' },
+]
 
-vi.mock('../components/ui/Modal/Modal', () => ({
-  default: ({ open, children, title }) => open ? React.createElement('div', { 'data-testid': 'modal' }, children) : null,
-}))
+const mockLearningPath = [
+  { order: 1, npc_name: '基础数据结构', algorithm_type: 'basic_data_structure', stage: '基础入门', goal: '掌握基础数据结构' },
+  { order: 2, npc_name: '动态规划', algorithm_type: 'dynamic_programming', stage: '进阶学习', goal: '掌握动态规划' },
+]
 
-vi.mock('../components/ui/Button/Button', () => ({
-  default: ({ children, onClick, loading, fullWidth }) =>
-    React.createElement('button', { onClick, disabled: loading, 'data-testid': 'button' }, children),
-}))
-
-vi.mock('../components/ui/Toast/index', () => ({
-  showToast: vi.fn(),
-}))
-
-describe('NpcDetailModal', () => {
-  const npcWithTopics = {
-    id: 1,
-    name: '老夫子',
-    title: '基础数据结构导师',
-    avatar: 'laofuzi',
-    description: '新手森林的守护者老夫子',
-    specialties: ['数组与双指针', '链表', '哈希表'],
-    topics: [
-      { name: '数组与双指针', has_card: false },
-      { name: '链表', has_card: true },
-      { name: '哈希表', has_card: false },
-    ],
-    card_count: 1,
-  }
-
+describe('AlgorithmMap', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    useHallStore.setState({
+      npcs: [],
+      algorithmInfo: null,
+      learningPath: [],
+    })
   })
 
-  it('应显示专长领域标题和所有专长标签', () => {
-    mockHallStore.selectedNpc = npcWithTopics
-    mockHallStore.modalOpen = true
-
+  it('加载中应显示加载提示', () => {
     render(
       React.createElement(MemoryRouter, null,
-        React.createElement(NpcDetailModal)
+        React.createElement(AlgorithmMap)
       )
     )
-
-    expect(screen.getByText('专长领域')).toBeInTheDocument()
-    expect(screen.getByText('数组与双指针')).toBeInTheDocument()
-    expect(screen.getByText('链表')).toBeInTheDocument()
-    expect(screen.getByText('哈希表')).toBeInTheDocument()
+    expect(screen.getByText('正在加载算法地图...')).toBeInTheDocument()
   })
 
-  it('不应显示修习话题区块', () => {
-    mockHallStore.selectedNpc = npcWithTopics
-    mockHallStore.modalOpen = true
-
-    render(
+  it('应渲染SVG地图', () => {
+    useHallStore.setState({
+      npcs: mockNpcs,
+      algorithmInfo: mockAlgorithmInfo,
+      learningPath: [],
+    })
+    const { container } = render(
       React.createElement(MemoryRouter, null,
-        React.createElement(NpcDetailModal)
+        React.createElement(AlgorithmMap)
       )
     )
-
-    expect(screen.queryByText('修习话题')).not.toBeInTheDocument()
-  })
-
-  it('已获卡牌的专长应显示已获卡牌徽章', () => {
-    mockHallStore.selectedNpc = npcWithTopics
-    mockHallStore.modalOpen = true
-
-    render(
-      React.createElement(MemoryRouter, null,
-        React.createElement(NpcDetailModal)
-      )
-    )
-
-    expect(screen.getByText(/已获.*张卡牌/)).toBeInTheDocument()
-  })
-
-  it('无 topics 数据时专长领域仍正常显示', () => {
-    const npcWithoutTopics = { ...npcWithTopics, topics: undefined, card_count: 0 }
-    mockHallStore.selectedNpc = npcWithoutTopics
-    mockHallStore.modalOpen = true
-
-    render(
-      React.createElement(MemoryRouter, null,
-        React.createElement(NpcDetailModal)
-      )
-    )
-
-    expect(screen.getByText('专长领域')).toBeInTheDocument()
-    expect(screen.getByText('数组与双指针')).toBeInTheDocument()
-    expect(screen.queryByText(/已获.*张卡牌/)).not.toBeInTheDocument()
-  })
-
-  it('应显示导师描述', () => {
-    mockHallStore.selectedNpc = npcWithTopics
-    mockHallStore.modalOpen = true
-
-    render(
-      React.createElement(MemoryRouter, null,
-        React.createElement(NpcDetailModal)
-      )
-    )
-
-    expect(screen.getByText('新手森林的守护者老夫子')).toBeInTheDocument()
-  })
-
-  it('应显示卡牌数量', () => {
-    mockHallStore.selectedNpc = npcWithTopics
-    mockHallStore.modalOpen = true
-
-    render(
-      React.createElement(MemoryRouter, null,
-        React.createElement(NpcDetailModal)
-      )
-    )
-
-    expect(screen.getByText('已获 1 张卡牌')).toBeInTheDocument()
+    const svg = container.querySelector('svg')
+    expect(svg).toBeInTheDocument()
   })
 })

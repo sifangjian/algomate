@@ -175,7 +175,7 @@ test.describe('F02 NPC对话修习 - E2E 测试', () => {
         await expect(page.getByText('返回地图')).toBeVisible({ timeout: 15000 })
         await page.getByText('返回地图').click()
 
-        await expect(page.getByRole('heading', { name: '导师大厅' })).toBeVisible({ timeout: 15000 })
+        await expect(page.getByRole('heading', { name: '算法地图' })).toBeVisible({ timeout: 15000 })
     })
 
     test('F02-AC-007: 快捷问题按钮应可见且可点击', async ({ page }) => {
@@ -238,6 +238,6 @@ test.describe('F02 NPC对话修习 - E2E 测试', () => {
         await expect(page.getByText('返回地图')).toBeVisible({ timeout: 10000 })
         await page.getByText('返回地图').click()
 
-        await expect(page.getByRole('heading', { name: '导师大厅' })).toBeVisible({ timeout: 15000 })
+        await expect(page.getByRole('heading', { name: '算法地图' })).toBeVisible({ timeout: 15000 })
     })
 })

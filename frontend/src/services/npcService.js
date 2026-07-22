@@ -21,7 +21,7 @@ export const npcService = {
     if (typeof realmId === 'number' || !isNaN(Number(realmId))) {
       return api.get(`/v1/npcs/${realmId}`)
     }
-    return Promise.reject(new Error(`未找到秘境 ${realmId} 的导师`))
+    return Promise.reject(new Error(`未找到领域 ${realmId} 的导师`))
   },
 
   getAlgorithmInfo: () => api.get('/v1/algorithm-info'),
@@ -99,48 +99,52 @@ export const npcService = {
 }
 
 const REALM_TO_NPC_ID = {
-  'novice_forest': 1,
-  '新手森林': 1,
-  'mist_swamp': 2,
-  '迷雾沼泽': 2,
-  'ancient_forest': 3,
-  '古树森林': 3,
-  'fate_maze': 4,
-  '命运迷宫': 4,
-  'greed_tower': 5,
-  '贪婪之塔': 5,
-  'wisdom_temple': 6,
-  '智慧圣殿': 6,
-  'split_mountain': 7,
-  '分裂山脉': 7,
-  'math_hall': 8,
-  '数学殿堂': 8,
-  'trial_ground': 9,
-  '试炼之地': 9,
+  'basic_data_structure': 1,
+  '基础数据结构': 1,
+  'stack_queue_search': 2,
+  '搜索与基础': 2,
+  'search_traversal': 3,
+  '搜索进阶': 3,
+  'tree': 4,
+  '树结构': 4,
+  'graph': 5,
+  '图结构': 5,
+  'backtracking': 6,
+  '回溯算法': 6,
+  'greedy': 7,
+  '贪心算法': 7,
+  'dynamic_programming': 8,
+  '动态规划': 8,
+  'divide_conquer': 9,
+  '分治与排序': 9,
+  'math_bit': 10,
+  '数学与位运算': 10,
 }
 
 export const LOCATION_TO_REALM_ID = {
-  '新手森林': 'novice_forest',
-  '迷雾沼泽': 'mist_swamp',
-  '古树森林': 'ancient_forest',
-  '命运迷宫': 'fate_maze',
-  '贪婪之塔': 'greed_tower',
-  '智慧圣殿': 'wisdom_temple',
-  '分裂山脉': 'split_mountain',
-  '数学殿堂': 'math_hall',
-  '试炼之地': 'trial_ground',
+  '基础数据结构': 'basic_data_structure',
+  '搜索与基础': 'stack_queue_search',
+  '搜索进阶': 'search_traversal',
+  '树结构': 'tree',
+  '图结构': 'graph',
+  '回溯算法': 'backtracking',
+  '贪心算法': 'greedy',
+  '动态规划': 'dynamic_programming',
+  '分治与排序': 'divide_conquer',
+  '数学与位运算': 'math_bit',
 }
 
 export const REALM_ID_TO_NAME = {
-  'novice_forest': '新手森林',
-  'mist_swamp': '迷雾沼泽',
-  'ancient_forest': '古树森林',
-  'fate_maze': '命运迷宫',
-  'greed_tower': '贪婪之塔',
-  'wisdom_temple': '智慧圣殿',
-  'split_mountain': '分裂山脉',
-  'math_hall': '数学殿堂',
-  'trial_ground': '试炼之地',
+  'basic_data_structure': '基础数据结构',
+  'stack_queue_search': '搜索与基础',
+  'search_traversal': '搜索进阶',
+  'tree': '树结构',
+  'graph': '图结构',
+  'backtracking': '回溯算法',
+  'greedy': '贪心算法',
+  'dynamic_programming': '动态规划',
+  'divide_conquer': '分治与排序',
+  'math_bit': '数学与位运算',
 }
 
 export function getRealmIdByNpcId(npcId) {

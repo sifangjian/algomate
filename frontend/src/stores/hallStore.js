@@ -4,25 +4,15 @@ import { statsService } from '../services/statsService'
 
 export const useHallStore = create((set, get) => ({
   npcs: [],
-  selectedNpc: null,
   learningPath: [],
   stats: null,
-  filters: {
-    algorithm_type: '',
-    keyword: '',
-  },
+  algorithmInfo: null,
   loading: false,
-  modalOpen: false,
 
   fetchNpcs: async () => {
     set({ loading: true })
     try {
-      const { filters } = get()
-      const params = {}
-      if (filters.algorithm_type) params.algorithm_type = filters.algorithm_type
-      if (filters.keyword.trim()) params.keyword = filters.keyword.trim()
-
-      const data = await npcService.getAll(params)
+      const data = await npcService.getAll()
       set({
         npcs: data.data?.npcs || [],
         learningPath: data.data?.learning_path || [],
@@ -31,15 +21,6 @@ export const useHallStore = create((set, get) => ({
       console.error('Failed to fetch NPCs:', err)
     } finally {
       set({ loading: false })
-    }
-  },
-
-  fetchNpcDetail: async (id) => {
-    try {
-      const data = await npcService.getById(id)
-      set({ selectedNpc: data.data })
-    } catch (err) {
-      console.error('Failed to fetch NPC detail:', err)
     }
   },
 
@@ -53,30 +34,21 @@ export const useHallStore = create((set, get) => ({
     }
   },
 
-  setSelectedNpc: (npc) => set({
-    selectedNpc: npc,
-    modalOpen: npc !== null,
-  }),
-
-  setFilters: (partial) => {
-    set((state) => ({
-      filters: { ...state.filters, ...partial },
-    }))
+  fetchAlgorithmInfo: async () => {
+    try {
+      const data = await npcService.getAlgorithmInfo()
+      set({ algorithmInfo: data })
+    } catch (err) {
+      console.error('Failed to fetch algorithm info:', err)
+      set({ algorithmInfo: null })
+    }
   },
-
-  resetFilters: () => set({
-    filters: { algorithm_type: '', keyword: '' },
-  }),
-
-  setModalOpen: (open) => set({ modalOpen: open }),
 
   resetHall: () => set({
     npcs: [],
-    selectedNpc: null,
     learningPath: [],
     stats: null,
-    filters: { algorithm_type: '', keyword: '' },
+    algorithmInfo: null,
     loading: false,
-    modalOpen: false,
   }),
 }))

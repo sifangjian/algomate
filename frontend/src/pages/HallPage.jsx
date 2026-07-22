@@ -2,9 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHallStore } from '../stores/hallStore'
 import HallHeader from '../components/hall/HallHeader'
-import LearningPathCard from '../components/hall/LearningPathCard'
-import NpcGrid from '../components/hall/NpcGrid'
-import NpcDetailModal from '../components/hall/NpcDetailModal'
+import AlgorithmMap from '../components/hall/AlgorithmMap'
 import LoadingScreen from '../components/ui/Loading/LoadingScreen'
 import styles from './HallPage.module.css'
 
@@ -22,7 +20,7 @@ function loadDialogueSession() {
 export default function HallPage() {
   const navigate = useNavigate()
   const redirectedRef = useRef(false)
-  const { npcs, learningPath, stats, filters, loading, fetchNpcs, fetchStats, setFilters } = useHallStore()
+  const { npcs, learningPath, loading, fetchNpcs, fetchStats, fetchAlgorithmInfo } = useHallStore()
 
   useEffect(() => {
     if (redirectedRef.current) return
@@ -34,26 +32,17 @@ export default function HallPage() {
     }
     fetchNpcs()
     fetchStats()
-  }, [filters, fetchNpcs, fetchStats, navigate])
-
-  const isNewUser = stats?.is_new_user ?? false
+    fetchAlgorithmInfo()
+  }, [fetchNpcs, fetchStats, fetchAlgorithmInfo, navigate])
 
   return (
     <div className={styles.hallPage}>
-      <HallHeader
-        filters={filters}
-        onFilterChange={setFilters}
-        onReset={useHallStore.getState().resetFilters}
-      />
-      {learningPath.length > 0 && (
-        <LearningPathCard steps={learningPath} />
-      )}
+      <HallHeader />
       {loading ? (
         <LoadingScreen />
       ) : (
-        <NpcGrid npcs={npcs} isNewUser={isNewUser} />
+        <AlgorithmMap />
       )}
-      <NpcDetailModal />
     </div>
   )
 }

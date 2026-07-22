@@ -8,10 +8,37 @@ async def get_algorithm_info():
     from algomate.config.algorithm_types import (
         TOPIC_PREREQUISITES,
         TOPIC_IMPORTANCE,
-        ALGORITHM_CATEGORIES,
+        ALGORITHM_TYPES,
     )
-    return {
-        "topic_prerequisites": TOPIC_PREREQUISITES,
-        "topic_importance": TOPIC_IMPORTANCE,
-        "algorithm_categories": ALGORITHM_CATEGORIES,
-    }
+
+    from algomate.data.database import Database
+    from algomate.models.cards import Card
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        topic_progress = {}
+        for topic in ALGORITHM_TYPES:
+            cards = session.query(Card).filter(Card.algorithm_type == topic).all()
+            if cards:
+                avg_durability = sum(c.durability for c in cards) / len(cards)
+                topic_progress[topic] = {
+                    "card_count": len(cards),
+                    "avg_durability": round(avg_durability, 1),
+                    "learned": len(cards) > 0,
+                }
+            else:
+                topic_progress[topic] = {
+                    "card_count": 0,
+                    "avg_durability": 0,
+                    "learned": False,
+                }
+
+        return {
+            "topic_prerequisites": TOPIC_PREREQUISITES,
+            "topic_importance": TOPIC_IMPORTANCE,
+            "topic_progress": topic_progress,
+            "algorithm_types": ALGORITHM_TYPES,
+        }
+    finally:
+        session.close()

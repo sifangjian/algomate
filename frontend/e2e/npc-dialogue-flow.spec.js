@@ -32,7 +32,7 @@ test.describe('NPC Dialogue E2E Test', () => {
         // Step 2: Verify Hall page loads with NPC cards
         console.log('\n=== Step 2: Verify Hall page loads ===')
         const hallPageContent = await page.textContent('body')
-        const hasHallTitle = hallPageContent?.includes('导师大厅') || hallPageContent?.includes('老夫子') || hallPageContent?.includes('秘境')
+        const hasHallTitle = hallPageContent?.includes('算法地图') || hallPageContent?.includes('老夫子') || hallPageContent?.includes('秘境')
         console.log(`  Hall page includes NPC-related text: ${hasHallTitle}`)
 
         const npcCardElements = await page.locator('[role="button"]').filter({ hasText: /老夫子|墨子|鬼谷子|鲁班|华佗|诸葛亮/ }).count()
@@ -279,7 +279,7 @@ test.describe('NPC Dialogue E2E Test', () => {
             console.log(`  Navigated back to hall page: ${isBackToHall}`)
 
             const hallContent = await page.textContent('body').catch(() => '')
-            const hasHallContent = hallContent?.includes('导师大厅') || hallContent?.includes('老夫子') || hallContent?.includes('秘境')
+            const hasHallContent = hallContent?.includes('算法地图') || hallContent?.includes('老夫子') || hallContent?.includes('秘境')
             console.log(`  Hall page content visible: ${hasHallContent}`)
 
             step10Pass = isBackToHall || hasHallContent
