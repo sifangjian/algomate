@@ -1,0 +1,113 @@
+.overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #2a2a2a;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 420px;
+  max-width: 560px;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #e0e0e0;
+}
+
+.title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.desc {
+  font-size: 14px;
+  color: #aaa;
+  margin: 0 0 12px;
+}
+
+.cardList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.cardItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+  font-size: 13px;
+}
+
+.cardName {
+  color: #e0e0e0;
+}
+
+.cardType {
+  color: #888;
+  font-size: 12px;
+}
+
+.noEmpty {
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.reportText {
+  font-size: 14px;
+  color: #aaa;
+  margin: 0 0 12px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cancelBtn {
+  padding: 8px 20px;
+  border: 1px solid #555;
+  background: transparent;
+  color: #aaa;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cancelBtn:hover {
+  border-color: #888;
+  color: #ddd;
+}
+
+.confirmBtn {
+  padding: 8px 20px;
+  border: none;
+  background: #e0a060;
+  color: #1a1a1a;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: #eab070;
+}

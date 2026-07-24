@@ -62,6 +62,28 @@ export const cardService = {
     return result.data
   },
 
+  // 空卡牌清理
+  getEmptyCards: async () => {
+    const result = await api.get('/v1/cards/empty')
+    return result.data
+  },
+
+  cleanupEmptyCards: async () => {
+    const result = await api.delete('/v1/cards/cleanup-empty')
+    return result.data
+  },
+
+  // 前置关联
+  addPrerequisite: async (cardId, prerequisiteCardId) => {
+    const result = await api.post(`/v1/cards/${cardId}/prerequisites`, { prerequisite_card_id: prerequisiteCardId })
+    return result.data
+  },
+
+  removePrerequisite: async (cardId, prerequisiteCardId) => {
+    const result = await api.delete(`/v1/cards/${cardId}/prerequisites/${prerequisiteCardId}`)
+    return result.data
+  },
+
   // 复习相关
   startReview: (cardId) => api.post(`/v1/dashboard/review/start/${cardId}`),
 

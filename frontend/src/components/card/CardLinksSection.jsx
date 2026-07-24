@@ -47,13 +47,15 @@ export default function CardLinksSection({ card }) {
       )}
 
       <div className={styles.linksList}>
-        {links.map((link) => (
-          <div key={link.link_id} className={styles.linkItem}>
+        {links.map((link) => {
+          const linkName = link.direction === 'outgoing' ? link.target_card_name : link.source_card_name
+          return (
+          <div key={link.id} className={styles.linkItem}>
             <span className={styles.linkType}>
               {LINK_TYPE_LABELS[link.link_type] || link.link_type}
             </span>
             <span className={styles.linkName}>
-              {link.card_name}
+              {linkName}
             </span>
             {link.source_keyword && (
               <span className={styles.keyword}>#{link.source_keyword}</span>
@@ -63,13 +65,14 @@ export default function CardLinksSection({ card }) {
             </span>
             <button
               className={styles.removeBtn}
-              onClick={() => handleRemove(link.link_id)}
+              onClick={() => handleRemove(link.id)}
               title="移除关联"
             >
               ✕
             </button>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {showEditor && (

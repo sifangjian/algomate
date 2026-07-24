@@ -62,25 +62,14 @@ describe('NpcAvatar', () => {
   })
 })
 
-const mockAlgorithmInfo = {
-  algorithm_types: ['数组与双指针', '链表', '哈希表', '线性DP', '背包问题'],
-  topic_importance: {
-    '数组与双指针': 'core',
-    '链表': 'core',
-    '哈希表': 'core',
-    '线性DP': 'core',
-    '背包问题': 'important',
-  },
-  topic_prerequisites: {
-    '背包问题': ['线性DP'],
-  },
-  topic_progress: {
-    '数组与双指针': { card_count: 2, avg_durability: 80, learned: true },
-    '链表': { card_count: 0, avg_durability: 0, learned: false },
-    '哈希表': { card_count: 0, avg_durability: 0, learned: false },
-    '线性DP': { card_count: 1, avg_durability: 50, learned: true },
-    '背包问题': { card_count: 0, avg_durability: 0, learned: false },
-  },
+const mockCardGraph = {
+  nodes: [
+    { id: 1, name: '数组与双指针', algorithm_type: '数组与双指针', durability: 80, review_level: 2, is_empty: false },
+    { id: 2, name: '滑动窗口', algorithm_type: '滑动窗口', durability: 60, review_level: 1, is_empty: false },
+  ],
+  edges: [
+    { source: 1, target: 2, link_type: 'prerequisite', source_card_name: '数组与双指针', target_card_name: '滑动窗口' },
+  ],
 }
 
 const mockNpcs = [
@@ -98,8 +87,15 @@ describe('AlgorithmMap', () => {
     vi.clearAllMocks()
     useHallStore.setState({
       npcs: [],
-      algorithmInfo: null,
+      cardGraph: null,
       learningPath: [],
+      selectedCard: null,
+      emptyCards: [],
+      fetchCardGraph: vi.fn(),
+      fetchEmptyCards: vi.fn(),
+      cleanupEmptyCards: vi.fn(),
+      addPrerequisite: vi.fn(),
+      removePrerequisite: vi.fn(),
     })
   })
 
@@ -109,13 +105,13 @@ describe('AlgorithmMap', () => {
         React.createElement(AlgorithmMap)
       )
     )
-    expect(screen.getByText('正在加载算法地图...')).toBeInTheDocument()
+    expect(screen.getByText('正在加载卡牌地图...')).toBeInTheDocument()
   })
 
   it('应渲染SVG地图', () => {
     useHallStore.setState({
       npcs: mockNpcs,
-      algorithmInfo: mockAlgorithmInfo,
+      cardGraph: mockCardGraph,
       learningPath: [],
     })
     const { container } = render(
@@ -125,5 +121,38 @@ describe('AlgorithmMap', () => {
     )
     const svg = container.querySelector('svg')
     expect(svg).toBeInTheDocument()
+  })
+
+  it('应渲染节点名称和连线', () => {
+    useHallStore.setState({
+      npcs: mockNpcs,
+      cardGraph: mockCardGraph,
+      learningPath: [],
+    })
+    const { container } = render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(AlgorithmMap)
+      )
+    )
+    expect(screen.getAllByText('数组与双指针').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('滑动窗口').length).toBeGreaterThan(0)
+    const lines = container.querySelectorAll('line')
+    expect(lines.length).toBeGreaterThan(0)
+  })
+
+  it('应显示图例', () => {
+    useHallStore.setState({
+      npcs: mockNpcs,
+      cardGraph: mockCardGraph,
+      learningPath: [],
+    })
+    render(
+      React.createElement(MemoryRouter, null,
+        React.createElement(AlgorithmMap)
+      )
+    )
+    expect(screen.getByText('前置关联')).toBeInTheDocument()
+    expect(screen.getByText('相关关联')).toBeInTheDocument()
+    expect(screen.getByText('空卡牌')).toBeInTheDocument()
   })
 })

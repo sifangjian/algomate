@@ -7,7 +7,11 @@ from fastapi import APIRouter, HTTPException, Query
 from algomate.data.database import Database
 from algomate.models.cards import Card, CardCreate, CardUpdate, _normalize_content
 from algomate.models.card_links import CardLink, LinkCreate, LinkResponse
+from algomate.models.topic_prerequisites import TopicPrerequisite
 from algomate.core.game.durability import compute_card_status
+from algomate.config.algorithm_types import ALGORITHM_TYPES
+from collections import deque
+from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/cards", tags=["卡牌工坊"])
 logger = logging.getLogger(__name__)
@@ -30,6 +34,85 @@ def _parse_json_field(value) -> dict:
         return json.loads(value)
     except (json.JSONDecodeError, TypeError):
         return {}
+
+
+def _is_empty_content(value) -> bool:
+    """Check if a content field is empty"""
+    if value is None or value == "":
+        return True
+    if isinstance(value, dict):
+        return len(value) == 0
+    if isinstance(value, str):
+        if value.strip() == "" or value.strip() == "{}":
+            return True
+        try:
+            parsed = json.loads(value)
+            return isinstance(parsed, dict) and len(parsed) == 0
+        except (json.JSONDecodeError, TypeError):
+            return False
+    return False
+
+
+def _is_card_empty(card):
+    """Check if a card has no meaningful content."""
+    for field in ('basic_content', 'practical_content', 'advanced_content'):
+        if not _is_empty_content(getattr(card, field, None)):
+            return False
+    if card.my_notes and card.my_notes.strip():
+        return False
+    return True
+
+
+def _find_empty_cards(session):
+    """Find all empty cards, excluding those that are the only card for their algorithm_type in ALGORITHM_TYPES."""
+    from collections import defaultdict
+    all_cards = session.query(Card).all()
+    cards_by_type = defaultdict(list)
+    for card in all_cards:
+        cards_by_type[card.algorithm_type].append(card)
+
+    empty_cards = []
+    for card in all_cards:
+        is_empty = (
+            _is_empty_content(card.basic_content)
+            and _is_empty_content(card.practical_content)
+            and _is_empty_content(card.advanced_content)
+            and (card.my_notes is None or card.my_notes == "")
+        )
+        if not is_empty:
+            continue
+        algo_type = card.algorithm_type
+        total_in_type = len(cards_by_type.get(algo_type, []))
+        if total_in_type == 1 and algo_type in ALGORITHM_TYPES:
+            continue
+        empty_cards.append(card)
+    return empty_cards
+
+
+def _has_cycle(session, source_card_id, target_card_id):
+    """Check if adding source->target prerequisite would create a cycle.
+    A cycle exists if target is already a (transitive) prerequisite of source.
+    """
+    visited = set()
+    queue = deque([source_card_id])
+    while queue:
+        current = queue.popleft()
+        if current == target_card_id:
+            return True
+        if current in visited:
+            continue
+        visited.add(current)
+        prereqs = session.query(CardLink.source_card_id).filter(
+            CardLink.target_card_id == current,
+            CardLink.link_type == "prerequisite"
+        ).all()
+        for (prereq_id,) in prereqs:
+            queue.append(prereq_id)
+    return False
+
+
+class PrerequisiteCreate(BaseModel):
+    prerequisite_card_id: int = Field(..., description="前置卡牌ID")
 
 
 def _card_to_response(card: Card) -> dict:
@@ -71,7 +154,14 @@ async def get_graph():
         cards = session.query(Card).all()
         links = session.query(CardLink).all()
         nodes = [
-            {"id": c.id, "name": c.name, "algorithm_type": c.algorithm_type}
+            {
+                "id": c.id,
+                "name": c.name,
+                "algorithm_type": c.algorithm_type,
+                "durability": c.durability,
+                "review_level": c.review_level,
+                "is_empty": _is_card_empty(c),
+            }
             for c in cards
         ]
         edges = [
@@ -80,6 +170,8 @@ async def get_graph():
                 "target": l.target_card_id,
                 "link_type": l.link_type,
                 "source_keyword": l.source_keyword,
+                "source_card_name": l.source_card.name if l.source_card else None,
+                "target_card_name": l.target_card.name if l.target_card else None,
             }
             for l in links
         ]
@@ -130,6 +222,54 @@ async def get_cards(
             "endangered_count": endangered_count,
             "pending_retake_count": pending_retake_count,
         })
+    finally:
+        session.close()
+
+
+@router.get("/empty")
+async def get_empty_cards():
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        empty_cards = _find_empty_cards(session)
+        result = [
+            {
+                "id": card.id,
+                "name": card.name,
+                "algorithm_type": card.algorithm_type,
+                "created_at": card.created_at.isoformat() if card.created_at else None,
+            }
+            for card in empty_cards
+        ]
+        return success_response(data={
+            "empty_cards": result,
+            "count": len(result),
+        })
+    finally:
+        session.close()
+
+
+@router.delete("/cleanup-empty")
+async def cleanup_empty_cards():
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        empty_cards = _find_empty_cards(session)
+        deleted_cards = [
+            {"id": card.id, "name": card.name, "algorithm_type": card.algorithm_type}
+            for card in empty_cards
+        ]
+        for card in empty_cards:
+            session.delete(card)
+        session.commit()
+        return success_response(data={
+            "deleted_count": len(deleted_cards),
+            "deleted_cards": deleted_cards,
+        })
+    except Exception as e:
+        session.rollback()
+        logger.error("cleanup_empty_cards failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"清理空卡牌失败: {str(e)}")
     finally:
         session.close()
 
@@ -283,6 +423,23 @@ async def create_card(card_data: CardCreate):
         session.add(card)
         session.commit()
         session.refresh(card)
+
+        # 若提供了前置节点，写入动态依赖表
+        if card_data.prerequisites:
+            for prereq in card_data.prerequisites:
+                if not prereq or not prereq.strip():
+                    continue
+                existing = session.query(TopicPrerequisite).filter(
+                    TopicPrerequisite.topic == card.algorithm_type,
+                    TopicPrerequisite.prerequisite == prereq.strip(),
+                ).first()
+                if not existing:
+                    session.add(TopicPrerequisite(
+                        topic=card.algorithm_type,
+                        prerequisite=prereq.strip(),
+                    ))
+            session.commit()
+
         return success_response(data=_card_to_response(card))
     except Exception as e:
         session.rollback()
@@ -455,5 +612,89 @@ async def delete_card_link(link_id: int):
         session.rollback()
         logger.error("delete_card_link failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"删除链接失败: {str(e)}")
+    finally:
+        session.close()
+
+
+# --- 前置关联端点 ---
+
+
+@router.post("/{card_id}/prerequisites")
+async def add_prerequisite(card_id: int, data: PrerequisiteCreate):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        if card_id == data.prerequisite_card_id:
+            error_response(40001, "不能将自己设为前置卡牌", 400)
+
+        card = session.query(Card).filter(Card.id == card_id).first()
+        if not card:
+            error_response(40404, "卡牌不存在", 404)
+
+        prereq_card = session.query(Card).filter(Card.id == data.prerequisite_card_id).first()
+        if not prereq_card:
+            error_response(40404, "前置卡牌不存在", 404)
+
+        existing = session.query(CardLink).filter(
+            CardLink.source_card_id == data.prerequisite_card_id,
+            CardLink.target_card_id == card_id,
+            CardLink.link_type == "prerequisite",
+        ).first()
+        if existing:
+            error_response(40001, "该前置关联已存在", 400)
+
+        if _has_cycle(session, data.prerequisite_card_id, card_id):
+            error_response(40001, "添加此前置关联会形成循环依赖", 400)
+
+        link = CardLink(
+            source_card_id=data.prerequisite_card_id,
+            target_card_id=card_id,
+            link_type="prerequisite",
+        )
+        session.add(link)
+        session.commit()
+        session.refresh(link)
+
+        return success_response(data={
+            "id": link.id,
+            "source_card_id": link.source_card_id,
+            "target_card_id": link.target_card_id,
+            "link_type": link.link_type,
+            "source_keyword": link.source_keyword,
+            "source_card_name": prereq_card.name,
+            "created_at": link.created_at.isoformat() if link.created_at else None,
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        logger.error("add_prerequisite failed for card %s: %s", card_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"添加前置关联失败: {str(e)}")
+    finally:
+        session.close()
+
+
+@router.delete("/{card_id}/prerequisites/{prerequisite_card_id}")
+async def remove_prerequisite(card_id: int, prerequisite_card_id: int):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        link = session.query(CardLink).filter(
+            CardLink.source_card_id == prerequisite_card_id,
+            CardLink.target_card_id == card_id,
+            CardLink.link_type == "prerequisite",
+        ).first()
+        if not link:
+            error_response(40404, "前置关联不存在", 404)
+
+        session.delete(link)
+        session.commit()
+        return success_response(data=None)
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        logger.error("remove_prerequisite failed for card %s prereq %s: %s", card_id, prerequisite_card_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"移除前置关联失败: {str(e)}")
     finally:
         session.close()

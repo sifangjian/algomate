@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCardStore } from '../stores/cardStore'
+import { useHallStore } from '../stores/hallStore'
 import { cardService } from '../services/cardService'
 import useDebounce from '../hooks/useDebounce'
 import GameCard from '../components/ui/Card/GameCard'
@@ -24,17 +25,30 @@ const STATUS_OPTIONS = [
 
 function CreateCardModal({ open, onClose, onCreated }) {
     const { addCard } = useCardStore()
+    const { algorithmInfo, fetchAlgorithmInfo } = useHallStore()
 
     const [form, setForm] = useState({
         name: '',
         algorithm_type: '',
         difficulty: 3,
         noteContent: '',
+        prerequisites: [],
     })
     const [errors, setErrors] = useState({})
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [polishingField, setPolishingField] = useState(null)
     const [polishPreview, setPolishPreview] = useState(null)
+
+    const algorithmTypes = useMemo(
+        () => algorithmInfo?.algorithm_types || [],
+        [algorithmInfo]
+    )
+
+    useEffect(() => {
+        if (open && !algorithmInfo) {
+            fetchAlgorithmInfo()
+        }
+    }, [open, algorithmInfo, fetchAlgorithmInfo])
 
     const resetForm = useCallback(() => {
         setForm({
@@ -42,6 +56,7 @@ function CreateCardModal({ open, onClose, onCreated }) {
             algorithm_type: '',
             difficulty: 3,
             noteContent: '',
+            prerequisites: [],
         })
         setErrors({})
         setPolishingField(null)
@@ -111,9 +126,14 @@ function CreateCardModal({ open, onClose, onCreated }) {
                 algorithm_type: form.algorithm_type.trim() || null,
                 difficulty: form.difficulty,
             }
+            if (form.prerequisites && form.prerequisites.length > 0) {
+                payload.prerequisites = form.prerequisites
+            }
             const newCard = await cardService.createCard(payload)
             addCard(newCard)
             showToast(`卡牌「${newCard.name}」创建成功！`, 'success')
+            // 刷新算法地图数据，使新节点出现在地图中
+            fetchAlgorithmInfo()
             onCreated?.(newCard)
             handleClose()
         } catch (err) {
@@ -121,7 +141,7 @@ function CreateCardModal({ open, onClose, onCreated }) {
         } finally {
             setIsSubmitting(false)
         }
-    }, [form, validate, addCard, onCreated, handleClose])
+    }, [form, validate, addCard, onCreated, handleClose, fetchAlgorithmInfo])
 
     return (
         <Modal open={open} onClose={handleClose} title="✨ 创建新卡牌" size="lg">
@@ -143,16 +163,40 @@ function CreateCardModal({ open, onClose, onCreated }) {
                     <input
                         id="card-type"
                         className={styles.fieldInput}
-                        placeholder="如：Dynamic Programming"
+                        placeholder="选择或输入算法类型"
                         value={form.algorithm_type}
                         onChange={(e) => handleFieldChange('algorithm_type', e.target.value)}
                         list="type-list"
                     />
                     <datalist id="type-list">
-                        {ALGORITHM_CATEGORIES.map((c) => (
-                            <option key={c} value={c} />
+                        {algorithmTypes.map((t) => (
+                            <option key={t} value={t} />
                         ))}
                     </datalist>
+                </div>
+
+                <div className={styles.formField}>
+                    <label className={styles.fieldLabel}>前置节点（可选，用于在算法地图中建立依赖关系）</label>
+                    <div className={styles.prereqSelector}>
+                        {algorithmTypes.map((t) => (
+                            <label key={t} className={`${styles.prereqChip} ${form.prerequisites.includes(t) ? styles.prereqChipActive : ''}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={form.prerequisites.includes(t)}
+                                    onChange={(e) => {
+                                        setForm(prev => ({
+                                            ...prev,
+                                            prerequisites: e.target.checked
+                                                ? [...prev.prerequisites, t]
+                                                : prev.prerequisites.filter(p => p !== t),
+                                        }))
+                                    }}
+                                    style={{ display: 'none' }}
+                                />
+                                {t}
+                            </label>
+                        ))}
+                    </div>
                 </div>
 
                 <div className={styles.formField}>

@@ -290,6 +290,43 @@
     border-color: var(--color-primary);
 }
 
+.prereqSelector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+}
+
+.prereqChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all var(--transition-fast);
+}
+
+.prereqChip:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text-primary);
+}
+
+.prereqChipActive {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+
 .starRating {
     display: flex;
     align-items: center;

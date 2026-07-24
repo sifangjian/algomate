@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { npcService } from '../services/npcService'
 import { statsService } from '../services/statsService'
+import { cardService } from '../services/cardService'
 
 export const useHallStore = create((set, get) => ({
   npcs: [],
@@ -8,6 +9,9 @@ export const useHallStore = create((set, get) => ({
   stats: null,
   algorithmInfo: null,
   loading: false,
+  selectedCard: null,
+  cardGraph: null,
+  emptyCards: [],
 
   fetchNpcs: async () => {
     set({ loading: true })
@@ -44,11 +48,100 @@ export const useHallStore = create((set, get) => ({
     }
   },
 
+  setSelectedCard: (card) => set({ selectedCard: card }),
+  clearSelectedCard: () => set({ selectedCard: null }),
+
+  fetchCardByAlgorithmType: async (algorithmType) => {
+    try {
+      const result = await cardService.getAll({ algorithm_type: algorithmType })
+      const card = result?.cards?.[0] || null
+      set({ selectedCard: card })
+      return card
+    } catch (err) {
+      console.error('Failed to fetch card by algorithm type:', err)
+      set({ selectedCard: null })
+      return null
+    }
+  },
+
+  fetchCardById: async (cardId) => {
+    try {
+      const card = await cardService.getById(cardId)
+      set({ selectedCard: card })
+      return card
+    } catch (err) {
+      console.error('Failed to fetch card by id:', err)
+      set({ selectedCard: null })
+      return null
+    }
+  },
+
+  fetchCardGraph: async () => {
+    try {
+      const data = await cardService.getGraph()
+      set({ cardGraph: data.data || data })
+    } catch (err) {
+      console.error('Failed to fetch card graph:', err)
+      set({ cardGraph: null })
+    }
+  },
+
+  fetchEmptyCards: async () => {
+    try {
+      const data = await cardService.getEmptyCards()
+      set({ emptyCards: data.data?.empty_cards || data.empty_cards || [] })
+    } catch (err) {
+      console.error('Failed to fetch empty cards:', err)
+      set({ emptyCards: [] })
+    }
+  },
+
+  cleanupEmptyCards: async () => {
+    try {
+      const data = await cardService.cleanupEmptyCards()
+      // Refresh graph and empty cards after cleanup
+      const graphData = await cardService.getGraph()
+      const emptyData = await cardService.getEmptyCards()
+      set({ cardGraph: graphData.data || graphData, emptyCards: emptyData.data?.empty_cards || emptyData.empty_cards || [] })
+      return data
+    } catch (err) {
+      console.error('Failed to cleanup empty cards:', err)
+      throw err
+    }
+  },
+
+  addPrerequisite: async (cardId, prerequisiteCardId) => {
+    try {
+      await cardService.addPrerequisite(cardId, prerequisiteCardId)
+      // Refresh graph after adding prerequisite
+      const data = await cardService.getGraph()
+      set({ cardGraph: data.data || data })
+    } catch (err) {
+      console.error('Failed to add prerequisite:', err)
+      throw err
+    }
+  },
+
+  removePrerequisite: async (cardId, prerequisiteCardId) => {
+    try {
+      await cardService.removePrerequisite(cardId, prerequisiteCardId)
+      // Refresh graph after removing prerequisite
+      const data = await cardService.getGraph()
+      set({ cardGraph: data.data || data })
+    } catch (err) {
+      console.error('Failed to remove prerequisite:', err)
+      throw err
+    }
+  },
+
   resetHall: () => set({
     npcs: [],
     learningPath: [],
     stats: null,
     algorithmInfo: null,
     loading: false,
+    selectedCard: null,
+    cardGraph: null,
+    emptyCards: [],
   }),
 }))

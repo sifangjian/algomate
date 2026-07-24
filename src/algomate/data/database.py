@@ -21,7 +21,7 @@ def _ensure_models_imported():
             Card, CardLink, NPC, Boss, Question, AnswerRecord,
             DialogueRecord, DialogueMessageRecord, DialogueNote,
             ReviewRecord, LearningProgress, UserSetting,
-            BattleRecord
+            BattleRecord, TopicPrerequisite
         )
         _models_imported = True
 

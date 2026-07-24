@@ -2,11 +2,33 @@
   margin-bottom: var(--spacing-2xl, 32px);
 }
 
+.titleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg, 20px);
+}
+
 .pageTitle {
   font-size: var(--font-size-3xl, 28px);
   font-weight: var(--font-weight-bold, 700);
   color: var(--color-primary-light);
-  margin-bottom: var(--spacing-lg, 20px);
+  margin: 0;
+}
+
+.cleanupBtn {
+  padding: 8px 16px;
+  border: 1px solid #555;
+  background: transparent;
+  color: #aaa;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cleanupBtn:hover {
+  border-color: #888;
+  color: #ddd;
 }
 
 .searchRow {

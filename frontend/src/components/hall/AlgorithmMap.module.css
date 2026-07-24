@@ -1,176 +1,130 @@
 .mapContainer {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    background: #1f1f1f;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #333333;
-}
-
-.emptyState {
-    text-align: center;
-    padding: 80px 24px;
-    color: #8c8c8c;
-    font-size: 16px;
-    background: #1f1f1f;
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 120px);
+  overflow: hidden;
+  background: #1a1a1a;
+  border-radius: 8px;
 }
 
 .mapSvg {
-    display: block;
-    width: 100%;
-    height: clamp(480px, 70vh, 720px);
-    background: #1f1f1f;
-    cursor: grab;
-    user-select: none;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
 }
 
 .mapSvg.dragging {
-    cursor: grabbing;
+  cursor: grabbing;
 }
 
 .gridLine {
-    stroke: #2a2a2a;
-    stroke-width: 1;
-    shape-rendering: crispEdges;
+  stroke: #2a2a2a;
+  stroke-width: 0.5;
 }
 
 .nodeGroup {
-    cursor: pointer;
-}
-
-.nodeRect {
-    fill: #303030;
-    stroke: #8c8c8c;
-    stroke-width: 1.5;
-    transition: fill 0.15s ease, stroke 0.15s ease, stroke-width 0.15s ease;
+  cursor: pointer;
+  transition: transform 0.15s;
 }
 
 .nodeGroup:hover .nodeRect {
-    fill: #3a3a3a;
-    stroke: #ffffff;
-    stroke-width: 2;
+  stroke-width: 2.5;
+  filter: brightness(1.15);
+}
+
+.nodeRect {
+  fill: #303030;
+  stroke: #8c8c8c;
+  stroke-width: 1.5;
+  transition: stroke-width 0.15s, filter 0.15s;
+}
+
+.emptyNode {
+  fill: #252525;
+  stroke: #555555;
+  stroke-dasharray: 4 2;
+  stroke-width: 1.2;
 }
 
 .nodeText {
-    fill: #ffffff;
-    font-size: 13px;
-    font-weight: 500;
-    pointer-events: none;
-    user-select: none;
+  pointer-events: none;
+  user-select: none;
 }
 
-.linkPath {
-    fill: none;
-    stroke: #555555;
-    stroke-width: 1.5;
-    stroke-dasharray: 6 4;
+.typeText {
+  pointer-events: none;
+  user-select: none;
 }
 
-.crossLinkPath {
-    fill: none;
-    stroke: #4a4a4a;
-    stroke-width: 1;
-    stroke-dasharray: 4 4;
+/* Links */
+.prerequisiteLink {
+  stroke: #e0a060;
+  stroke-width: 2;
+  fill: none;
 }
 
+.relatedLink {
+  stroke: #555555;
+  stroke-width: 1.2;
+  stroke-dasharray: 5 3;
+  fill: none;
+}
+
+/* Legend */
 .legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 20px;
-    padding: 12px 20px;
-    background: #262626;
-    border-top: 1px solid #333333;
-    color: #bfbfbf;
-    font-size: 13px;
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 14px;
+  background: rgba(40, 40, 40, 0.9);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #aaa;
 }
 
 .legendItem {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.legendDot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
+.prerequisiteLegend {
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  background: #e0a060;
 }
 
-.legendDot.core {
-    background: #60a5fa;
+.relatedLegend {
+  display: inline-block;
+  width: 24px;
+  height: 0;
+  border-top: 2px dashed #555;
 }
 
-.legendDot.important {
-    background: #a78bfa;
-}
-
-.legendDot.extension {
-    background: #22d3ee;
-}
-
-.toggleBtn {
-    cursor: pointer;
-}
-
-.toggleBtn circle {
-    fill: transparent;
-    transition: fill 0.15s ease;
-}
-
-.toggleBtn:hover circle {
-    fill: #3a3a3a;
-}
-
-.toggleBtn text {
-    pointer-events: none;
-    user-select: none;
-}
-
-.legendLine {
-    width: 28px;
-    height: 0;
-    border-top: 1.5px dashed #555555;
-    display: inline-block;
-}
-
-.crossLegendLine {
-    width: 28px;
-    height: 0;
-    border-top: 1px dashed #4a4a4a;
-    display: inline-block;
-}
-
-.toggleLegend {
-    color: #bfbfbf;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.legendCheck {
-    color: #22c55e;
-    font-size: 14px;
-    line-height: 1;
+.emptyLegend {
+  display: inline-block;
+  width: 16px;
+  height: 12px;
+  border: 1.5px dashed #555;
+  border-radius: 2px;
+  background: #252525;
 }
 
 .hint {
-    margin-left: auto;
-    color: #595959;
-    font-size: 12px;
+  color: #666;
+  font-size: 11px;
+  margin-left: 8px;
 }
 
-@media (max-width: 768px) {
-    .mapSvg {
-        height: clamp(420px, 60vh, 600px);
-    }
-
-    .legend {
-        gap: 12px;
-    }
-
-    .hint {
-        display: none;
-    }
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 16px;
 }

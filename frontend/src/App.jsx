@@ -13,6 +13,7 @@ const HallPage = lazy(() => import('./pages/HallPage'))
 const NpcDialogue = lazy(() => import('./pages/NpcDialogue'))
 const BossBattle = lazy(() => import('./pages/BossBattle'))
 const CardWorkshop = lazy(() => import('./pages/CardWorkshop'))
+const CardStudyPage = lazy(() => import('./pages/CardStudyPage'))
 const Settings = lazy(() => import('./pages/Settings'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
@@ -45,6 +46,7 @@ function AppContent() {
             <Route path="/npc/:realmId" element={<NpcDialogue />} />
             <Route path="/boss/battle" element={<BossBattle />} />
             <Route path="/workshop" element={<CardWorkshop />} />
+            <Route path="/study/:cardId" element={<CardStudyPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

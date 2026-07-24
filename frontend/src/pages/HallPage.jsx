@@ -20,7 +20,7 @@ function loadDialogueSession() {
 export default function HallPage() {
   const navigate = useNavigate()
   const redirectedRef = useRef(false)
-  const { npcs, learningPath, loading, fetchNpcs, fetchStats, fetchAlgorithmInfo } = useHallStore()
+  const { npcs, learningPath, loading, fetchNpcs, fetchStats, fetchAlgorithmInfo, fetchCardGraph } = useHallStore()
 
   useEffect(() => {
     if (redirectedRef.current) return
@@ -33,7 +33,8 @@ export default function HallPage() {
     fetchNpcs()
     fetchStats()
     fetchAlgorithmInfo()
-  }, [fetchNpcs, fetchStats, fetchAlgorithmInfo, navigate])
+    fetchCardGraph()
+  }, [fetchNpcs, fetchStats, fetchAlgorithmInfo, fetchCardGraph, navigate])
 
   return (
     <div className={styles.hallPage}>

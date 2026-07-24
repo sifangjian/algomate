@@ -1,41 +1,30 @@
 import { useMemo, useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHallStore } from '../../stores/hallStore'
-import { tree, hierarchy } from 'd3-hierarchy'
+import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from 'd3-force'
 import styles from './AlgorithmMap.module.css'
 
-const NODE_WIDTH = 128
-const NODE_HEIGHT = 38
+const NODE_WIDTH = 140
+const NODE_HEIGHT = 52
 const NODE_RX = 8
-const V_GAP = 56
-const H_GAP = 200
-const DOT_RADIUS = 6
 const GRID = 40
 
 const COLORS = {
   nodeFill: '#303030',
   nodeBorder: '#8c8c8c',
+  emptyNodeBorder: '#555555',
+  emptyNodeFill: '#252525',
   nodeText: '#ffffff',
+  emptyNodeText: '#888888',
+  typeText: '#999999',
   link: '#555555',
-  crossLink: '#4a4a4a',
+  prerequisiteLink: '#e0a060',
   grid: '#2a2a2a',
-}
-
-const DOT_COLORS = {
-  core: '#60a5fa',
-  important: '#a78bfa',
-  extension: '#22d3ee',
-}
-
-const DOT_LABELS = {
-  core: '基础',
-  important: '进阶',
-  extension: '拓展',
 }
 
 export default function AlgorithmMap() {
   const navigate = useNavigate()
-  const { npcs, algorithmInfo } = useHallStore()
+  const { cardGraph } = useHallStore()
   const svgRef = useRef(null)
   const transformRef = useRef({ x: 0, y: 0, scale: 1 })
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 })
@@ -43,121 +32,60 @@ export default function AlgorithmMap() {
 
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
   const [isDragging, setIsDragging] = useState(false)
-  const [collapsed, setCollapsed] = useState(new Set())
 
   useEffect(() => { transformRef.current = transform }, [transform])
 
-  const topicImportance = useMemo(() => algorithmInfo?.topic_importance || {}, [algorithmInfo])
-  const topicPrerequisites = useMemo(() => algorithmInfo?.topic_prerequisites || {}, [algorithmInfo])
-  const topicProgress = useMemo(() => algorithmInfo?.topic_progress || {}, [algorithmInfo])
-  const allTopics = useMemo(() => algorithmInfo?.algorithm_types || [], [algorithmInfo])
+  const simulationData = useMemo(() => {
+    if (!cardGraph?.nodes?.length) return null
 
-  // 构建严格树：每个节点只分配给其第一个前置依赖作为主父节点
-  const fullTreeData = useMemo(() => {
-    if (!allTopics.length) return null
+    const nodes = cardGraph.nodes.map(n => ({
+      id: n.id,
+      name: n.name,
+      algorithm_type: n.algorithm_type,
+      durability: n.durability,
+      review_level: n.review_level,
+      is_empty: n.is_empty,
+      x: 0,
+      y: 0,
+    }))
 
-    const childrenMap = {}
-    allTopics.forEach(t => { childrenMap[t] = [] })
+    const nodeMap = {}
+    nodes.forEach(n => { nodeMap[n.id] = n })
 
-    const primaryParent = {}
-    allTopics.forEach(topic => {
-      const prereqs = topicPrerequisites[topic] || []
-      if (prereqs.length > 0) {
-        primaryParent[topic] = prereqs[0]
-        childrenMap[prereqs[0]].push(topic)
-      }
-    })
+    const links = (cardGraph.edges || [])
+      .filter(e => nodeMap[e.source] && nodeMap[e.target])
+      .map(e => ({
+        source: e.source,
+        target: e.target,
+        link_type: e.link_type,
+        source_card_name: e.source_card_name,
+        target_card_name: e.target_card_name,
+      }))
 
-    const roots = allTopics.filter(t => !primaryParent[t])
+    const sim = forceSimulation(nodes)
+      .force('link', forceLink(links).id(d => d.id).distance(180).strength(0.5))
+      .force('charge', forceManyBody().strength(-400))
+      .force('center', forceCenter(0, 0))
+      .force('collide', forceCollide().radius(100))
+      .stop()
 
-    const buildNode = (topic) => ({
-      name: topic,
-      children: childrenMap[topic].map(buildNode),
-      importance: topicImportance[topic] || 'extension',
-      learned: !!(topicProgress[topic]?.learned),
-      hasChildren: childrenMap[topic].length > 0,
-    })
+    sim.tick(300)
 
-    return { name: '__root__', children: roots.map(buildNode) }
-  }, [allTopics, topicImportance, topicPrerequisites, topicProgress])
-
-  // 应用折叠状态后计算布局
-  const treeLayout = useMemo(() => {
-    if (!fullTreeData) return null
-
-    const applyCollapse = (node) => ({
-      name: node.name,
-      importance: node.importance,
-      learned: node.learned,
-      hasChildren: node.hasChildren,
-      children: collapsed.has(node.name) ? [] : node.children.map(applyCollapse),
-    })
-
-    const visibleData = {
-      name: '__root__',
-      children: fullTreeData.children.map(applyCollapse),
-    }
-
-    const root = hierarchy(visibleData).sort((a, b) => {
-      const order = { core: 0, important: 1, extension: 2 }
-      return (order[a.data.importance] ?? 3) - (order[b.data.importance] ?? 3)
-    })
-
-    return tree().nodeSize([V_GAP, H_GAP])(root)
-  }, [fullTreeData, collapsed])
-
-  const nodes = useMemo(() => {
-    if (!treeLayout) return []
-    return treeLayout.descendants().filter(d => d.data.name !== '__root__')
-  }, [treeLayout])
-
-  const links = useMemo(() => {
-    if (!treeLayout) return []
-    return treeLayout.links().filter(l => l.source.data.name !== '__root__')
-  }, [treeLayout])
-
-  // 节点位置映射：name → {x, y}（横向布局：x=depth, y=breadth）
-  const nodePositions = useMemo(() => {
-    const map = new Map()
-    nodes.forEach(n => map.set(n.data.name, { x: n.y, y: n.x }))
-    return map
-  }, [nodes])
-
-  // 二级依赖边：非首要前置依赖的跨分支连接
-  const crossEdges = useMemo(() => {
-    const edges = []
-    // 收集当前可见节点名（折叠的节点不在树中）
-    const visibleNames = new Set(nodes.map(n => n.data.name))
-
-    allTopics.forEach(topic => {
-      const prereqs = topicPrerequisites[topic] || []
-      // 跳过第一个前置依赖（那是树的主边），只取后续的
-      for (let i = 1; i < prereqs.length; i++) {
-        const from = prereqs[i]
-        const to = topic
-        // 两端节点都可见时才绘制
-        if (visibleNames.has(from) && visibleNames.has(to)) {
-          edges.push({ from, to })
-        }
-      }
-    })
-    return edges
-  }, [allTopics, topicPrerequisites, nodes])
+    return { nodes, links }
+  }, [cardGraph])
 
   const bounds = useMemo(() => {
-    if (!nodes.length) return null
+    if (!simulationData?.nodes.length) return null
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    nodes.forEach(n => {
-      const x = n.y, y = n.x
-      minX = Math.min(minX, x - NODE_WIDTH / 2)
-      maxX = Math.max(maxX, x + NODE_WIDTH / 2)
-      minY = Math.min(minY, y - NODE_HEIGHT / 2)
-      maxY = Math.max(maxY, y + NODE_HEIGHT / 2)
+    simulationData.nodes.forEach(n => {
+      minX = Math.min(minX, n.x - NODE_WIDTH / 2)
+      maxX = Math.max(maxX, n.x + NODE_WIDTH / 2)
+      minY = Math.min(minY, n.y - NODE_HEIGHT / 2)
+      maxY = Math.max(maxY, n.y + NODE_HEIGHT / 2)
     })
     return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY }
-  }, [nodes])
+  }, [simulationData])
 
-  // 初始视图：scale=1 放大显示局部
   useLayoutEffect(() => {
     if (!bounds || fitRef.current) return
     const svg = svgRef.current
@@ -167,9 +95,11 @@ export default function AlgorithmMap() {
       const rect = svg.getBoundingClientRect()
       if (rect.width === 0 || rect.height === 0) { raf = requestAnimationFrame(fit); return }
       const pad = 40
-      const scale = 1.0
-      const x = pad - bounds.minX * scale
-      const y = pad - bounds.minY * scale + (rect.height - 2 * pad - bounds.height * scale) / 2
+      const scaleX = (rect.width - 2 * pad) / bounds.width
+      const scaleY = (rect.height - 2 * pad) / bounds.height
+      const scale = Math.min(scaleX, scaleY, 1.0)
+      const x = pad - bounds.minX * scale + ((rect.width - 2 * pad) - bounds.width * scale) / 2
+      const y = pad - bounds.minY * scale + ((rect.height - 2 * pad) - bounds.height * scale) / 2
       setTransform({ x, y, scale })
       fitRef.current = true
     }
@@ -177,7 +107,6 @@ export default function AlgorithmMap() {
     return () => cancelAnimationFrame(raf)
   }, [bounds])
 
-  // 滚轮缩放
   useEffect(() => {
     const svg = svgRef.current
     if (!svg) return
@@ -195,7 +124,6 @@ export default function AlgorithmMap() {
     return () => svg.removeEventListener('wheel', onWheel)
   }, [])
 
-  // 拖拽平移
   useEffect(() => {
     const onMove = (e) => {
       if (!dragRef.current.dragging) return
@@ -214,31 +142,19 @@ export default function AlgorithmMap() {
   }, [])
 
   const handleMouseDown = (e) => {
-    if (e.target.closest('[data-toggle]') || e.target.closest('[data-node]')) return
+    if (e.target.closest('[data-node]')) return
     dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, originX: transformRef.current.x, originY: transformRef.current.y }
     setIsDragging(true)
   }
 
-  const toggleCollapse = useCallback((topic, e) => {
-    e.stopPropagation()
-    setCollapsed(prev => {
-      const next = new Set(prev)
-      next.has(topic) ? next.delete(topic) : next.add(topic)
-      return next
-    })
-  }, [])
+  const handleNodeClick = useCallback((node) => {
+    navigate(`/study/${node.id}`)
+  }, [navigate])
 
-  const getNpcForTopic = (topic) => npcs.find(npc => npc.specialties?.includes(topic) || npc.topics?.includes(topic))
-
-  const handleNodeClick = (topic) => {
-    const npc = getNpcForTopic(topic)
-    if (npc) navigate(`/npc/${npc.id}`)
-  }
-
-  if (!algorithmInfo) {
+  if (!cardGraph?.nodes?.length) {
     return (
       <div className={styles.mapContainer}>
-        <div className={styles.emptyState}>正在加载算法地图...</div>
+        <div className={styles.emptyState}>正在加载卡牌地图...</div>
       </div>
     )
   }
@@ -254,113 +170,91 @@ export default function AlgorithmMap() {
     for (let y = startY; y <= endY; y += GRID) gridLines.push(<line key={`h${y}`} x1={startX} y1={y} x2={endX} y2={y} className={styles.gridLine} />)
   }
 
+  const nodeMap = {}
+  simulationData.nodes.forEach(n => { nodeMap[n.id] = n })
+
   return (
     <div className={styles.mapContainer}>
       <svg ref={svgRef} className={`${styles.mapSvg} ${isDragging ? styles.dragging : ''}`} onMouseDown={handleMouseDown}>
         <defs>
-          <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-            <path d="M0,0 L8,4 L0,8 Z" fill={COLORS.link} />
+          <marker id="arrowPrerequisite" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+            <path d="M0,0 L8,4 L0,8 Z" fill={COLORS.prerequisiteLink} />
           </marker>
-          <marker id="cross-arrow" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto" markerUnits="userSpaceOnUse">
-            <path d="M0,0 L6,3 L0,6 Z" fill={COLORS.crossLink} />
+          <marker id="arrowRelated" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+            <path d="M0,0 L8,4 L0,8 Z" fill={COLORS.link} />
           </marker>
         </defs>
 
         <g transform={`translate(${transform.x} ${transform.y}) scale(${transform.scale})`}>
           <g className={styles.grid}>{gridLines}</g>
 
-          {/* 二级依赖边：跨分支虚线 */}
-          <g className={styles.crossLinks}>
-            {crossEdges.map((edge, i) => {
-              const from = nodePositions.get(edge.from)
-              const to = nodePositions.get(edge.to)
-              if (!from || !to) return null
-              // 从前置节点右边缘到目标节点左边缘的贝塞尔曲线
-              const sx = from.x + NODE_WIDTH / 2
-              const sy = from.y
-              const tx = to.x - NODE_WIDTH / 2
-              const ty = to.y
-              const dx = (tx - sx) * 0.4
-              return (
-                <path
-                  key={`cross-${i}`}
-                  className={styles.crossLinkPath}
-                  d={`M ${sx} ${sy} C ${sx + dx} ${sy} ${tx - dx} ${ty} ${tx} ${ty}`}
-                  markerEnd="url(#cross-arrow)"
-                />
-              )
-            })}
-          </g>
-
-          {/* 主树边：正交折线 */}
           <g className={styles.links}>
-            {links.map((link, i) => {
-              const sx = link.source.y + NODE_WIDTH / 2
-              const sy = link.source.x
-              const tx = link.target.y - NODE_WIDTH / 2
-              const ty = link.target.x
-              const midX = (sx + tx) / 2
+            {simulationData.links.map((link, i) => {
+              const s = nodeMap[link.source.id || link.source]
+              const t = nodeMap[link.target.id || link.target]
+              if (!s || !t) return null
+              const isPrereq = link.link_type === 'prerequisite'
+              const dx = t.x - s.x
+              const dy = t.y - s.y
+              const dist = Math.sqrt(dx * dx + dy * dy)
+              if (dist === 0) return null
+              const ux = dx / dist
+              const uy = dy / dist
+              const sx = s.x + ux * (NODE_WIDTH / 2)
+              const sy = s.y + uy * (NODE_HEIGHT / 2)
+              const tx = t.x - ux * (NODE_WIDTH / 2)
+              const ty = t.y - uy * (NODE_HEIGHT / 2)
               return (
-                <path
-                  key={i}
-                  className={styles.linkPath}
-                  d={`M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${ty} L ${tx} ${ty}`}
-                  markerEnd="url(#arrowhead)"
+                <line
+                  key={`link-${i}`}
+                  x1={sx} y1={sy} x2={tx} y2={ty}
+                  className={isPrereq ? styles.prerequisiteLink : styles.relatedLink}
+                  markerEnd={isPrereq ? 'url(#arrowPrerequisite)' : 'url(#arrowRelated)'}
                 />
               )
             })}
           </g>
 
           <g className={styles.nodes}>
-            {nodes.map((node, i) => {
-              const dotColor = DOT_COLORS[node.data.importance] || DOT_COLORS.extension
-              const isCollapsed = collapsed.has(node.data.name)
-              const hasChildren = node.data.hasChildren
+            {simulationData.nodes.map((node) => {
+              const isEmpty = node.is_empty
               return (
                 <g
-                  key={`${node.data.name}-${i}`}
+                  key={`node-${node.id}`}
                   data-node
                   className={styles.nodeGroup}
-                  transform={`translate(${node.y} ${node.x})`}
-                  onClick={() => handleNodeClick(node.data.name)}
+                  transform={`translate(${node.x} ${node.y})`}
+                  onClick={() => handleNodeClick(node)}
                 >
                   <rect
-                    className={styles.nodeRect}
+                    className={`${styles.nodeRect} ${isEmpty ? styles.emptyNode : ''}`}
                     x={-NODE_WIDTH / 2}
                     y={-NODE_HEIGHT / 2}
                     width={NODE_WIDTH}
                     height={NODE_HEIGHT}
                     rx={NODE_RX}
                   />
-                  <circle cx={-NODE_WIDTH / 2 + 12} cy={0} r={DOT_RADIUS} fill={dotColor} />
-                  <text className={styles.nodeText} x={6} y={0} textAnchor="middle" dominantBaseline="middle">
-                    {node.data.name}
+                  <text
+                    className={styles.nodeText}
+                    x={0} y={-6}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={isEmpty ? COLORS.emptyNodeText : COLORS.nodeText}
+                    fontSize="12"
+                    fontWeight="500"
+                  >
+                    {node.name.length > 10 ? node.name.slice(0, 10) + '…' : node.name}
                   </text>
-                  {node.data.learned && (
-                    <text x={NODE_WIDTH / 2 - (hasChildren ? 26 : 10)} y={0} textAnchor="end" dominantBaseline="middle" fill="#22c55e" fontSize="13" style={{ pointerEvents: 'none' }}>
-                      ✓
-                    </text>
-                  )}
-                  {hasChildren && (
-                    <g
-                      data-toggle
-                      className={styles.toggleBtn}
-                      onClick={(e) => toggleCollapse(node.data.name, e)}
-                    >
-                      <circle cx={NODE_WIDTH / 2 + 2} cy={0} r={10} />
-                      <text
-                        x={NODE_WIDTH / 2 + 2}
-                        y={1}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill="#bfbfbf"
-                        fontSize="14"
-                        fontWeight="bold"
-                      >
-                        {isCollapsed ? '+' : '−'}
-                      </text>
-                    </g>
-                  )}
+                  <text
+                    className={styles.typeText}
+                    x={0} y={10}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={COLORS.typeText}
+                    fontSize="9"
+                  >
+                    {node.algorithm_type || '未分类'}
+                  </text>
                 </g>
               )
             })}
@@ -370,26 +264,16 @@ export default function AlgorithmMap() {
 
       <div className={styles.legend}>
         <div className={styles.legendItem}>
-          <span className={styles.legendLine}></span>
-          <span>主依赖</span>
+          <span className={styles.prerequisiteLegend}></span>
+          <span>前置关联</span>
         </div>
         <div className={styles.legendItem}>
-          <span className={styles.crossLegendLine}></span>
-          <span>关联依赖</span>
-        </div>
-        {['core', 'important', 'extension'].map(k => (
-          <div className={styles.legendItem} key={k}>
-            <span className={`${styles.legendDot} ${styles[k]}`}></span>
-            <span>{DOT_LABELS[k]}</span>
-          </div>
-        ))}
-        <div className={styles.legendItem}>
-          <span className={styles.legendCheck}>✓</span>
-          <span>已学习</span>
+          <span className={styles.relatedLegend}></span>
+          <span>相关关联</span>
         </div>
         <div className={styles.legendItem}>
-          <span className={styles.toggleLegend}>+/−</span>
-          <span>展开/折叠</span>
+          <span className={styles.emptyLegend}></span>
+          <span>空卡牌</span>
         </div>
         <div className={styles.hint}>拖拽移动 · 滚轮缩放</div>
       </div>
