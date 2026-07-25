@@ -1,0 +1,115 @@
+.createForm {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldLabel {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.fieldInput {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+.fieldInput:focus {
+    border-color: var(--color-primary);
+}
+
+.prereqSelector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+}
+
+.prereqChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all var(--transition-fast);
+}
+
+.prereqChip:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text-primary);
+}
+
+.prereqChipActive {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+
+.starRating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.starBtn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: var(--color-text-muted);
+    transition: transform var(--transition-fast);
+    line-height: 1;
+}
+
+.starBtn:hover {
+    transform: scale(1.2);
+}
+
+.starBtn.starActive {
+    color: #f59e0b;
+}
+
+.starLabel {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-left: 8px;
+}
+
+.createActions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .createActions {
+        flex-direction: column;
+    }
+}

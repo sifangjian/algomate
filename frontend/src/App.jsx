@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Header from './components/layout/Header'
 import SideNav from './components/layout/SideNav'
 import BottomNav from './components/layout/BottomNav'
@@ -10,9 +10,9 @@ import { useSettingsStore } from './stores/settingsStore'
 
 const AdventureMap = lazy(() => import('./pages/AdventureMap'))
 const HallPage = lazy(() => import('./pages/HallPage'))
+const PracticePage = lazy(() => import('./pages/PracticePage'))
 const NpcDialogue = lazy(() => import('./pages/NpcDialogue'))
 const BossBattle = lazy(() => import('./pages/BossBattle'))
-const CardWorkshop = lazy(() => import('./pages/CardWorkshop'))
 const CardStudyPage = lazy(() => import('./pages/CardStudyPage'))
 const Settings = lazy(() => import('./pages/Settings'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -42,10 +42,11 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<HallPage />} />
             <Route path="/hall" element={<HallPage />} />
+            <Route path="/practice" element={<PracticePage />} />
             <Route path="/adventure" element={<AdventureMap />} />
             <Route path="/npc/:realmId" element={<NpcDialogue />} />
             <Route path="/boss/battle" element={<BossBattle />} />
-            <Route path="/workshop" element={<CardWorkshop />} />
+            <Route path="/workshop" element={<Navigate to="/" replace />} />
             <Route path="/study/:cardId" element={<CardStudyPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />

@@ -31,7 +31,7 @@ function getStatusClass(status) {
   }
 }
 
-export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
+export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCreateCard }) {
   const navigate = useNavigate()
   const { selectedCard, deleteCard, graphData, fetchGraphData } = useCardStore()
   const [isEditing, setIsEditing] = useState(false)
@@ -253,6 +253,9 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete }) {
             </Button>
             <Button variant="ghost" onClick={handleOpenGraph} className={styles.graphBtn}>
               🕸️ 图谱
+            </Button>
+            <Button variant="ghost" onClick={() => onCreateCard?.()} className={styles.createBtn}>
+              ➕ 创建新卡牌
             </Button>
             <Button variant="ghost" onClick={handleDeleteRequest} className={styles.deleteBtn}>
               🗑️ 删除

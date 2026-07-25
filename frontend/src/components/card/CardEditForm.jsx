@@ -4,6 +4,7 @@ import { cardService } from '../../services/cardService'
 import { showToast } from '../ui/Toast/index'
 import Button from '../ui/Button/Button'
 import ExampleEditor from './ExampleEditor'
+import { ALGORITHM_CATEGORIES } from '../../constants/algorithmConstants'
 import styles from './CardEditForm.module.css'
 
 function parseJSON(value) {
@@ -80,6 +81,8 @@ function CardEditForm({ card, onSave, onCancel }) {
     const advanced = parseJSON(card.advanced_content)
 
     setForm({
+      algorithm_type: card.algorithm_type || '',
+      difficulty: card.difficulty || 3,
       basic: { concept_definition: '', features: '', confusing_concepts: '', ...basic },
       practical: {
         examples: practical.examples || [],
@@ -110,7 +113,9 @@ function CardEditForm({ card, onSave, onCancel }) {
       k => (form.advanced[k] || '') !== (origAdvanced[k] || '')
     )
     const notesChanged = (form.my_notes || '') !== (card.my_notes || '')
-    return basicChanged || practicalChanged || advancedChanged || notesChanged
+    const typeChanged = (form.algorithm_type || '') !== (card.algorithm_type || '')
+    const difficultyChanged = (form.difficulty || 3) !== (card.difficulty || 3)
+    return basicChanged || practicalChanged || advancedChanged || notesChanged || typeChanged || difficultyChanged
   }, [form, card])
 
   const handleBasicChange = useCallback((key, value) => {
@@ -193,6 +198,8 @@ function CardEditForm({ card, onSave, onCancel }) {
     setIsSaving(true)
     try {
       const payload = {
+        algorithm_type: form.algorithm_type || null,
+        difficulty: form.difficulty || 3,
         basic_content: form.basic,
         practical_content: form.practical,
         advanced_content: form.advanced,
@@ -218,6 +225,42 @@ function CardEditForm({ card, onSave, onCancel }) {
 
   return (
     <div className={styles.form}>
+      {/* 算法分类 */}
+      <div className={styles.fieldGroup}>
+        <label className={styles.fieldLabel}>算法分类</label>
+        <input
+          className={styles.fieldInput}
+          list="edit-type-list"
+          value={form.algorithm_type || ''}
+          onChange={(e) => setForm(prev => ({ ...prev, algorithm_type: e.target.value }))}
+          placeholder="选择或输入算法类型"
+        />
+        <datalist id="edit-type-list">
+          {ALGORITHM_CATEGORIES.map((t) => (
+            <option key={t} value={t} />
+          ))}
+        </datalist>
+      </div>
+
+      {/* 难度 */}
+      <div className={styles.fieldGroup}>
+        <label className={styles.fieldLabel}>难度</label>
+        <div className={styles.starRating}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              className={`${styles.starBtn} ${star <= (form.difficulty || 3) ? styles.starActive : ''}`}
+              onClick={() => setForm(prev => ({ ...prev, difficulty: star }))}
+              aria-label={`${star}星`}
+            >
+              {star <= (form.difficulty || 3) ? '★' : '☆'}
+            </button>
+          ))}
+          <span className={styles.starLabel}>{form.difficulty || 3}/5</span>
+        </div>
+      </div>
+
       {/* 基础层 */}
       <div className={styles.tierSection} style={{ borderLeftColor: '#6366f1' }}>
         <h4 className={styles.tierTitle}>📘 基础</h4>

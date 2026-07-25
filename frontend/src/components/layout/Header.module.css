@@ -65,33 +65,6 @@
   text-overflow: ellipsis;
 }
 
-.statsRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.statChip {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 1px 8px;
-  background: rgba(99, 102, 241, 0.06);
-  border: 1px solid rgba(99, 102, 241, 0.12);
-  border-radius: 10px;
-}
-
-.statIcon {
-  font-size: 0.7rem;
-  line-height: 1;
-}
-
-.statVal {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--color-primary-light);
-}
-
 .settingsBtn {
   width: 36px;
   height: 36px;
@@ -124,27 +97,5 @@
 
   .nickname {
     font-size: 0.75rem;
-  }
-
-  .statsRow {
-    gap: 4px;
-  }
-
-  .statChip {
-    padding: 1px 6px;
-  }
-
-  .statVal {
-    font-size: 0.65rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .statsRow {
-    gap: 3px;
-  }
-
-  .statIcon {
-    font-size: 0.6rem;
   }
 }

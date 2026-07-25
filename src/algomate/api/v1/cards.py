@@ -120,6 +120,7 @@ def _card_to_response(card: Card) -> dict:
         "id": card.id,
         "name": card.name,
         "algorithm_type": card.algorithm_type,
+        "difficulty": card.difficulty,
         "durability": card.durability,
         "review_level": card.review_level,
         "next_review_date": card.next_review_date.isoformat() if card.next_review_date else None,
@@ -141,6 +142,7 @@ def _card_to_response(card: Card) -> dict:
 
 
 EDITABLE_FIELDS = {
+    "algorithm_type", "difficulty",
     "basic_content", "practical_content", "advanced_content",
     "my_notes", "visual_links",
 }

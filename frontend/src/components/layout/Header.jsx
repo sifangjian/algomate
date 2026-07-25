@@ -17,20 +17,6 @@ export default function Header() {
         <div className={styles.userSection} role="region" aria-label="用户信息">
           <div className={styles.userInfo}>
             <span className={styles.nickname}>{user.nickname}</span>
-            <div className={styles.statsRow}>
-              <span className={styles.statChip}>
-                <span className={styles.statIcon}>🎴</span>
-                <span className={styles.statVal}>{user.totalCards ?? 0}</span>
-              </span>
-              <span className={styles.statChip}>
-                <span className={styles.statIcon}>🔥</span>
-                <span className={styles.statVal}>{user.streakDays ?? 0}天</span>
-              </span>
-              <span className={styles.statChip}>
-                <span className={styles.statIcon}>⚔️</span>
-                <span className={styles.statVal}>{user.totalReviews ?? 0}</span>
-              </span>
-            </div>
           </div>
 
           <button

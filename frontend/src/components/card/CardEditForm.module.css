@@ -33,6 +33,53 @@
     color: var(--color-text-secondary);
 }
 
+.fieldInput {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color var(--transition-fast);
+    font-family: inherit;
+}
+
+.fieldInput:focus {
+    border-color: var(--color-primary);
+}
+
+.starRating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.starBtn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: var(--color-text-muted);
+    transition: transform var(--transition-fast);
+    line-height: 1;
+}
+
+.starBtn:hover {
+    transform: scale(1.2);
+}
+
+.starBtn.starActive {
+    color: #f59e0b;
+}
+
+.starLabel {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-left: 8px;
+}
+
 .fieldLabelRow {
     display: flex;
     align-items: center;

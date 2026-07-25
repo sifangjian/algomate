@@ -90,10 +90,7 @@ describe('AlgorithmMap', () => {
       cardGraph: null,
       learningPath: [],
       selectedCard: null,
-      emptyCards: [],
       fetchCardGraph: vi.fn(),
-      fetchEmptyCards: vi.fn(),
-      cleanupEmptyCards: vi.fn(),
       addPrerequisite: vi.fn(),
       removePrerequisite: vi.fn(),
     })

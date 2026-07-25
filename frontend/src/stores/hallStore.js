@@ -11,7 +11,6 @@ export const useHallStore = create((set, get) => ({
   loading: false,
   selectedCard: null,
   cardGraph: null,
-  emptyCards: [],
 
   fetchNpcs: async () => {
     set({ loading: true })
@@ -86,30 +85,6 @@ export const useHallStore = create((set, get) => ({
     }
   },
 
-  fetchEmptyCards: async () => {
-    try {
-      const data = await cardService.getEmptyCards()
-      set({ emptyCards: data.data?.empty_cards || data.empty_cards || [] })
-    } catch (err) {
-      console.error('Failed to fetch empty cards:', err)
-      set({ emptyCards: [] })
-    }
-  },
-
-  cleanupEmptyCards: async () => {
-    try {
-      const data = await cardService.cleanupEmptyCards()
-      // Refresh graph and empty cards after cleanup
-      const graphData = await cardService.getGraph()
-      const emptyData = await cardService.getEmptyCards()
-      set({ cardGraph: graphData.data || graphData, emptyCards: emptyData.data?.empty_cards || emptyData.empty_cards || [] })
-      return data
-    } catch (err) {
-      console.error('Failed to cleanup empty cards:', err)
-      throw err
-    }
-  },
-
   addPrerequisite: async (cardId, prerequisiteCardId) => {
     try {
       await cardService.addPrerequisite(cardId, prerequisiteCardId)
@@ -142,6 +117,5 @@ export const useHallStore = create((set, get) => ({
     loading: false,
     selectedCard: null,
     cardGraph: null,
-    emptyCards: [],
   }),
 }))

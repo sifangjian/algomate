@@ -99,7 +99,6 @@ describe('HallPage 集成测试', () => {
       loading: false,
       selectedCard: null,
       cardGraph: null,
-      emptyCards: [],
     })
     vi.clearAllMocks()
   })

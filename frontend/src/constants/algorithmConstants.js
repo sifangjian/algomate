@@ -1,17 +1,17 @@
 export const ALGORITHM_ICONS = {
-  Search: '🔍',
-  Sorting: '📊',
-  'Dynamic Programming': '🎯',
-  Graph: '🕸️',
-  Tree: '🌲',
-  Recursion: '🔄',
-  Array: '📋',
-  String: '📝',
-  Greedy: '💰',
-  Math: '🔢',
+  搜索: '🔍',
+  排序: '📊',
+  动态规划: '🎯',
+  图论: '🕸️',
+  树: '🌲',
+  递归: '🔄',
+  数组: '📋',
+  字符串: '📝',
+  贪心: '💰',
+  数学: '🔢',
 }
 
 export const ALGORITHM_CATEGORIES = [
-  'Search', 'Sorting', 'Dynamic Programming', 'Graph',
-  'Tree', 'Recursion', 'Array', 'String', 'Greedy', 'Math',
+  '搜索', '排序', '动态规划', '图论',
+  '树', '递归', '数组', '字符串', '贪心', '数学',
 ]

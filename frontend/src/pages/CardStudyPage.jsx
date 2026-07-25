@@ -1,9 +1,12 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useHallStore } from '../stores/hallStore'
+import { useCardStore } from '../stores/cardStore'
 import { cardService } from '../services/cardService'
 import MarkdownRenderer from '../components/ui/MarkdownRenderer'
 import PrerequisiteSelector from '../components/hall/PrerequisiteSelector'
+import CardEditForm from '../components/card/CardEditForm'
+import { showToast } from '../components/ui/Toast/index'
 import styles from './CardStudyPage.module.css'
 
 function parseJSON(value) {
@@ -86,8 +89,12 @@ export default function CardStudyPage() {
   const { cardId } = useParams()
   const navigate = useNavigate()
   const { selectedCard, fetchCardById, clearSelectedCard } = useHallStore()
+  const { deleteCard } = useCardStore()
   const [loading, setLoading] = useState(true)
   const [cardPrerequisites, setCardPrerequisites] = useState([])
+  const [isEditing, setIsEditing] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (cardId) {
@@ -109,6 +116,37 @@ export default function CardStudyPage() {
   }, [selectedCard?.id])
 
   const handleBack = () => navigate('/')
+
+  const handleEdit = useCallback(() => {
+    setIsEditing(true)
+  }, [])
+
+  const handleEditCancel = useCallback(() => {
+    setIsEditing(false)
+  }, [])
+
+  const handleDeleteRequest = useCallback(() => {
+    setDeleteConfirmOpen(true)
+  }, [])
+
+  const handleDeleteCancel = useCallback(() => {
+    setDeleteConfirmOpen(false)
+  }, [])
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!selectedCard) return
+    setIsDeleting(true)
+    try {
+      await deleteCard(selectedCard.id)
+      showToast(`卡牌「${selectedCard.name}」已删除`, 'success')
+      navigate('/')
+    } catch (err) {
+      showToast(`删除失败: ${err.message}`, 'error')
+    } finally {
+      setIsDeleting(false)
+      setDeleteConfirmOpen(false)
+    }
+  }, [selectedCard, deleteCard, navigate])
 
   if (loading) {
     return (
@@ -149,106 +187,134 @@ export default function CardStudyPage() {
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={handleBack}>← 返回</button>
         <h1 className={styles.title}>{card.algorithm_type || card.name}</h1>
-      </div>
-
-      <div className={styles.content}>
-        {allEmpty ? (
-          <div className={styles.emptyHint}>暂无学习内容</div>
-        ) : (
-          <>
-            {/* 基础维度 */}
-            {!basicEmpty && (
-              <section className={styles.dimension} style={{ borderLeftColor: '#6366f1' }}>
-                <div className={styles.dimensionHeader}>
-                  <span>📘 基础</span>
-                </div>
-                <div className={styles.dimensionBody}>
-                  {basic.concept_definition && (
-                    <FieldRow label="概念定义">
-                      <MarkdownRenderer content={basic.concept_definition} className={styles.mdContent} />
-                    </FieldRow>
-                  )}
-                  {basic.features && (
-                    <FieldRow label="特点">
-                      <MarkdownRenderer content={basic.features} className={styles.mdContent} />
-                    </FieldRow>
-                  )}
-                  {basic.confusing_concepts && (
-                    <FieldRow label="易混淆概念">
-                      <div className={styles.highlightBlock}>
-                        <MarkdownRenderer content={basic.confusing_concepts} className={styles.mdContent} />
-                      </div>
-                    </FieldRow>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {/* 实战维度 */}
-            {!practicalEmpty && (
-              <section className={styles.dimension} style={{ borderLeftColor: '#10b981' }}>
-                <div className={styles.dimensionHeader}>
-                  <span>⚔️ 实战</span>
-                </div>
-                <div className={styles.dimensionBody}>
-                  {practical.examples?.length > 0 && (
-                    <div className={styles.examplesList}>
-                      {practical.examples.map((ex, i) => (
-                        <ExampleCard key={i} example={ex} index={i} />
-                      ))}
-                    </div>
-                  )}
-                  {practical.applicable_scenarios && (
-                    <FieldRow label="适用场景">
-                      <MarkdownRenderer content={practical.applicable_scenarios} className={styles.mdContent} />
-                    </FieldRow>
-                  )}
-                  {practical.precautions && (
-                    <FieldRow label="注意事项">
-                      <MarkdownRenderer content={practical.precautions} className={styles.mdContent} />
-                    </FieldRow>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {/* 进阶维度 */}
-            {!advancedEmpty && (
-              <section className={styles.dimension} style={{ borderLeftColor: '#8b5cf6' }}>
-                <div className={styles.dimensionHeader}>
-                  <span>🚀 进阶</span>
-                </div>
-                <div className={styles.dimensionBody}>
-                  {advanced.common_mistakes && (
-                    <div className={styles.warningBlock}>
-                      <span className={styles.warningLabel}>⚠️ 易错点</span>
-                      <MarkdownRenderer content={advanced.common_mistakes} className={styles.mdContent} />
-                    </div>
-                  )}
-                  {advanced.extensions && (
-                    <FieldRow label="拓展方向">
-                      <MarkdownRenderer content={advanced.extensions} className={styles.mdContent} />
-                    </FieldRow>
-                  )}
-                  {advanced.advanced_solutions && (
-                    <FieldRow label="高级解法">
-                      <MarkdownRenderer content={advanced.advanced_solutions} className={styles.mdContent} />
-                    </FieldRow>
-                  )}
-                  {card.my_notes && (
-                    <FieldRow label="个人笔记">
-                      <blockquote className={styles.noteBlock}>
-                        <MarkdownRenderer content={card.my_notes} className={styles.mdContent} />
-                      </blockquote>
-                    </FieldRow>
-                  )}
-                </div>
-              </section>
-            )}
-          </>
+        {!isEditing && (
+          <div className={styles.headerActions}>
+            <button className={styles.editBtn} onClick={handleEdit}>✏️ 编辑</button>
+            <button className={styles.deleteBtn} onClick={handleDeleteRequest}>🗑️ 删除</button>
+          </div>
         )}
       </div>
-      <PrerequisiteSelector cardId={card.id} currentPrerequisites={cardPrerequisites} />
+
+      {isEditing ? (
+        <div className={styles.content}>
+          <CardEditForm card={card} onSave={() => setIsEditing(false)} onCancel={handleEditCancel} />
+        </div>
+      ) : (
+        <>
+          <div className={styles.content}>
+            {allEmpty ? (
+              <div className={styles.emptyHint}>暂无学习内容</div>
+            ) : (
+              <>
+                {/* 基础维度 */}
+                {!basicEmpty && (
+                  <section className={styles.dimension} style={{ borderLeftColor: '#6366f1' }}>
+                    <div className={styles.dimensionHeader}>
+                      <span>📘 基础</span>
+                    </div>
+                    <div className={styles.dimensionBody}>
+                      {basic.concept_definition && (
+                        <FieldRow label="概念定义">
+                          <MarkdownRenderer content={basic.concept_definition} className={styles.mdContent} />
+                        </FieldRow>
+                      )}
+                      {basic.features && (
+                        <FieldRow label="特点">
+                          <MarkdownRenderer content={basic.features} className={styles.mdContent} />
+                        </FieldRow>
+                      )}
+                      {basic.confusing_concepts && (
+                        <FieldRow label="易混淆概念">
+                          <div className={styles.highlightBlock}>
+                            <MarkdownRenderer content={basic.confusing_concepts} className={styles.mdContent} />
+                          </div>
+                        </FieldRow>
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                {/* 实战维度 */}
+                {!practicalEmpty && (
+                  <section className={styles.dimension} style={{ borderLeftColor: '#10b981' }}>
+                    <div className={styles.dimensionHeader}>
+                      <span>⚔️ 实战</span>
+                    </div>
+                    <div className={styles.dimensionBody}>
+                      {practical.examples?.length > 0 && (
+                        <div className={styles.examplesList}>
+                          {practical.examples.map((ex, i) => (
+                            <ExampleCard key={i} example={ex} index={i} />
+                          ))}
+                        </div>
+                      )}
+                      {practical.applicable_scenarios && (
+                        <FieldRow label="适用场景">
+                          <MarkdownRenderer content={practical.applicable_scenarios} className={styles.mdContent} />
+                        </FieldRow>
+                      )}
+                      {practical.precautions && (
+                        <FieldRow label="注意事项">
+                          <MarkdownRenderer content={practical.precautions} className={styles.mdContent} />
+                        </FieldRow>
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                {/* 进阶维度 */}
+                {!advancedEmpty && (
+                  <section className={styles.dimension} style={{ borderLeftColor: '#8b5cf6' }}>
+                    <div className={styles.dimensionHeader}>
+                      <span>🚀 进阶</span>
+                    </div>
+                    <div className={styles.dimensionBody}>
+                      {advanced.common_mistakes && (
+                        <div className={styles.warningBlock}>
+                          <span className={styles.warningLabel}>⚠️ 易错点</span>
+                          <MarkdownRenderer content={advanced.common_mistakes} className={styles.mdContent} />
+                        </div>
+                      )}
+                      {advanced.extensions && (
+                        <FieldRow label="拓展方向">
+                          <MarkdownRenderer content={advanced.extensions} className={styles.mdContent} />
+                        </FieldRow>
+                      )}
+                      {advanced.advanced_solutions && (
+                        <FieldRow label="高级解法">
+                          <MarkdownRenderer content={advanced.advanced_solutions} className={styles.mdContent} />
+                        </FieldRow>
+                      )}
+                      {card.my_notes && (
+                        <FieldRow label="个人笔记">
+                          <blockquote className={styles.noteBlock}>
+                            <MarkdownRenderer content={card.my_notes} className={styles.mdContent} />
+                          </blockquote>
+                        </FieldRow>
+                      )}
+                    </div>
+                  </section>
+                )}
+              </>
+            )}
+          </div>
+          <PrerequisiteSelector cardId={card.id} currentPrerequisites={cardPrerequisites} />
+        </>
+      )}
+      {deleteConfirmOpen && (
+        <div className={styles.confirmOverlay}>
+          <div className={styles.confirmDialog}>
+            <h3>确认删除</h3>
+            <p>确定要删除「{card.name}」卡牌吗？此操作不可撤销。</p>
+            <div className={styles.confirmActions}>
+              <button className={styles.cancelBtn} onClick={handleDeleteCancel}>取消</button>
+              <button className={styles.dangerBtn} onClick={handleDeleteConfirm} disabled={isDeleting}>
+                {isDeleting ? '删除中...' : '确认删除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

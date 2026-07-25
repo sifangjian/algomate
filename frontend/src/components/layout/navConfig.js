@@ -1,13 +1,13 @@
 export const navItems = [
     {
         path: '/',
-        icon: '🏛️',
-        label: '修炼',
+        icon: '🗺️',
+        label: '图鉴',
         exact: true,
     },
     {
-        path: '/workshop',
-        icon: '🎴',
-        label: '图鉴',
+        path: '/practice',
+        icon: '⚔️',
+        label: '修炼',
     },
 ]

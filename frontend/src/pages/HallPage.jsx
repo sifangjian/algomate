@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHallStore } from '../stores/hallStore'
 import HallHeader from '../components/hall/HallHeader'
 import AlgorithmMap from '../components/hall/AlgorithmMap'
+import CreateCardModal from '../components/card/CreateCardModal'
 import LoadingScreen from '../components/ui/Loading/LoadingScreen'
 import styles from './HallPage.module.css'
 
@@ -20,7 +21,9 @@ function loadDialogueSession() {
 export default function HallPage() {
   const navigate = useNavigate()
   const redirectedRef = useRef(false)
-  const { npcs, learningPath, loading, fetchNpcs, fetchStats, fetchAlgorithmInfo, fetchCardGraph } = useHallStore()
+  const { loading, fetchNpcs, fetchStats, fetchAlgorithmInfo, fetchCardGraph } = useHallStore()
+
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   useEffect(() => {
     if (redirectedRef.current) return
@@ -36,14 +39,25 @@ export default function HallPage() {
     fetchCardGraph()
   }, [fetchNpcs, fetchStats, fetchAlgorithmInfo, fetchCardGraph, navigate])
 
+  const handleCreateCard = useCallback(() => {
+    setCreateModalOpen(true)
+  }, [])
+
+  const handleCardCreated = useCallback(() => {
+    setCreateModalOpen(false)
+    fetchAlgorithmInfo()
+    fetchCardGraph()
+  }, [fetchAlgorithmInfo, fetchCardGraph])
+
   return (
     <div className={styles.hallPage}>
-      <HallHeader />
-      {loading ? (
-        <LoadingScreen />
-      ) : (
-        <AlgorithmMap />
-      )}
+      <HallHeader onCreateCard={handleCreateCard} />
+      {loading ? <LoadingScreen /> : <AlgorithmMap />}
+      <CreateCardModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreated={handleCardCreated}
+      />
     </div>
   )
 }

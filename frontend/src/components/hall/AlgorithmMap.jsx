@@ -32,6 +32,8 @@ export default function AlgorithmMap() {
 
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
   const [isDragging, setIsDragging] = useState(false)
+  const [hoveredNode, setHoveredNode] = useState(null)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
   useEffect(() => { transformRef.current = transform }, [transform])
 
@@ -225,6 +227,15 @@ export default function AlgorithmMap() {
                   className={styles.nodeGroup}
                   transform={`translate(${node.x} ${node.y})`}
                   onClick={() => handleNodeClick(node)}
+                  onMouseEnter={() => {
+                    setHoveredNode(node)
+                    const rect = svgRef.current.getBoundingClientRect()
+                    const scale = transform.scale
+                    const x = transform.x + node.x * scale
+                    const y = transform.y + node.y * scale
+                    setTooltipPos({ x: rect.left + x, y: rect.top + y - 10 })
+                  }}
+                  onMouseLeave={() => setHoveredNode(null)}
                 >
                   <rect
                     className={`${styles.nodeRect} ${isEmpty ? styles.emptyNode : ''}`}
@@ -277,6 +288,38 @@ export default function AlgorithmMap() {
         </div>
         <div className={styles.hint}>拖拽移动 · 滚轮缩放</div>
       </div>
+      {hoveredNode && (
+        <div
+          className={styles.nodeTooltip}
+          style={{
+            left: tooltipPos.x,
+            top: tooltipPos.y,
+            position: 'fixed',
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <div className={styles.tooltipTitle}>{hoveredNode.name}</div>
+          <div className={styles.tooltipRow}>
+            <span className={styles.tooltipLabel}>类型</span>
+            <span className={styles.tooltipValue}>{hoveredNode.algorithm_type || '未分类'}</span>
+          </div>
+          {hoveredNode.durability != null && (
+            <div className={styles.tooltipRow}>
+              <span className={styles.tooltipLabel}>耐久</span>
+              <span className={styles.tooltipValue}>{Math.round(hoveredNode.durability)}%</span>
+            </div>
+          )}
+          {hoveredNode.review_level != null && (
+            <div className={styles.tooltipRow}>
+              <span className={styles.tooltipLabel}>等级</span>
+              <span className={styles.tooltipValue}>Lv.{hoveredNode.review_level}</span>
+            </div>
+          )}
+          {hoveredNode.is_empty && (
+            <div className={styles.tooltipEmpty}>空卡牌</div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

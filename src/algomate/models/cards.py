@@ -22,6 +22,7 @@ class Card(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(200), nullable=False)
     algorithm_type = Column(String(100), nullable=False, default="")
+    difficulty = Column(Integer, default=3, nullable=False)
     durability = Column(Integer, default=80, nullable=False)
     review_level = Column(Integer, default=0, nullable=False)
     next_review_date = Column(DateTime, nullable=True)
@@ -145,6 +146,8 @@ class CardCreate(BaseModel):
 
 
 class CardUpdate(BaseModel):
+    algorithm_type: Optional[str] = Field(None, description="算法类型")
+    difficulty: Optional[int] = Field(None, ge=1, le=5, description="难度(1-5)")
     basic_content: Optional[Union[str, dict]] = Field(None, description="基础内容（JSON）")
     practical_content: Optional[Union[str, dict]] = Field(None, description="实战内容（JSON）")
     advanced_content: Optional[Union[str, dict]] = Field(None, description="进阶内容（JSON）")
@@ -159,6 +162,7 @@ class CardResponse(BaseModel):
     id: int
     name: str
     algorithm_type: Optional[str] = None
+    difficulty: int = 3
     durability: int
     review_level: int = 0
     next_review_date: Optional[datetime] = None

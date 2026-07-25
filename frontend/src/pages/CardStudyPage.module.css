@@ -393,4 +393,121 @@
     .title {
         font-size: 1rem;
     }
+    .headerActions {
+        gap: 6px;
+    }
+    .editBtn, .deleteBtn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+}
+
+/* 编辑和删除按钮 */
+.headerActions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.editBtn {
+    padding: 6px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.editBtn:hover {
+    border-color: #888;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.deleteBtn {
+    padding: 6px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: transparent;
+    color: #e06060;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.deleteBtn:hover {
+    border-color: #e06060;
+    background: rgba(224, 96, 96, 0.1);
+}
+
+/* 删除确认弹窗 */
+.confirmOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.confirmDialog {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 320px;
+    color: #ddd;
+}
+
+.confirmDialog h3 {
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: 18px;
+}
+
+.confirmDialog p {
+    margin: 0 0 20px;
+    color: #aaa;
+    line-height: 1.5;
+}
+
+.confirmActions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.cancelBtn {
+    padding: 8px 16px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    border-color: #888;
+    color: #fff;
+}
+
+.dangerBtn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #e06060;
+    color: #fff;
+    cursor: pointer;
+}
+
+.dangerBtn:hover {
+    background: #c04040;
+}
+
+.dangerBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

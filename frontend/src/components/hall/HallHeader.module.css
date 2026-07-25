@@ -16,19 +16,23 @@
   margin: 0;
 }
 
-.cleanupBtn {
-  padding: 8px 16px;
-  border: 1px solid #555;
-  background: transparent;
-  color: #aaa;
-  border-radius: 6px;
+.createBtn {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 14px;
+  transition: all var(--transition-fast);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  white-space: nowrap;
 }
 
-.cleanupBtn:hover {
-  border-color: #888;
-  color: #ddd;
+.createBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
 }
 
 .searchRow {

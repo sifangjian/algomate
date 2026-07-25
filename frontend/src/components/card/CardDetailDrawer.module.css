@@ -236,6 +236,16 @@
     border-color: var(--color-danger) !important;
 }
 
+.createBtn {
+    transition: all var(--transition-fast);
+    margin-left: auto;
+}
+
+.createBtn:hover {
+    color: var(--color-primary-light) !important;
+    border-color: var(--color-primary) !important;
+}
+
 .confirmOverlay {
     position: absolute;
     inset: 0;
