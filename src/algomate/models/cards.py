@@ -139,7 +139,7 @@ class CardCreate(BaseModel):
     advanced_content: Optional[Union[str, dict]] = Field("{}", description="进阶内容（JSON）")
     my_notes: Optional[str] = Field("", description="个人笔记")
     visual_links: Optional[str] = Field(None, description="可视化链接")
-    prerequisites: Optional[List[str]] = Field(None, description="前置算法节点列表")
+    prerequisites: Optional[List[int]] = Field(None, description="前置卡牌ID列表")
 
     class Config:
         from_attributes = True

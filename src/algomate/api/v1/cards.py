@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException, Query
 from algomate.data.database import Database
 from algomate.models.cards import Card, CardCreate, CardUpdate, _normalize_content
 from algomate.models.card_links import CardLink, LinkCreate, LinkResponse
-from algomate.models.topic_prerequisites import TopicPrerequisite
 from algomate.core.game.durability import compute_card_status
 from algomate.config.algorithm_types import ALGORITHM_TYPES
 from collections import deque
@@ -426,19 +425,22 @@ async def create_card(card_data: CardCreate):
         session.commit()
         session.refresh(card)
 
-        # 若提供了前置节点，写入动态依赖表
+        # 若提供了前置卡牌ID，创建 prerequisite 类型的 CardLink
         if card_data.prerequisites:
-            for prereq in card_data.prerequisites:
-                if not prereq or not prereq.strip():
+            for prereq_id in card_data.prerequisites:
+                prereq_card = session.query(Card).filter(Card.id == prereq_id).first()
+                if not prereq_card:
                     continue
-                existing = session.query(TopicPrerequisite).filter(
-                    TopicPrerequisite.topic == card.algorithm_type,
-                    TopicPrerequisite.prerequisite == prereq.strip(),
+                existing_link = session.query(CardLink).filter(
+                    CardLink.source_card_id == prereq_id,
+                    CardLink.target_card_id == card.id,
+                    CardLink.link_type == "prerequisite",
                 ).first()
-                if not existing:
-                    session.add(TopicPrerequisite(
-                        topic=card.algorithm_type,
-                        prerequisite=prereq.strip(),
+                if not existing_link:
+                    session.add(CardLink(
+                        source_card_id=prereq_id,
+                        target_card_id=card.id,
+                        link_type="prerequisite",
                     ))
             session.commit()
 
