@@ -66,7 +66,6 @@ function makeCard(overrides = {}) {
       extensions: '左闭右开写法',
       advanced_solutions: '与线性搜索对比',
     }),
-    my_notes: '二分查找是高效搜索算法',
     visual_links: null,
     ...overrides,
   }
@@ -106,7 +105,6 @@ describe('DimensionSection', () => {
   it('hides dimension items for empty/null values', () => {
     const card = makeCard({
       advanced_content: JSON.stringify({ common_mistakes: '', extensions: '', advanced_solutions: '' }),
-      my_notes: undefined,
     })
     render(<DimensionSection card={card} />)
     expect(screen.queryByText('易错点')).not.toBeInTheDocument()

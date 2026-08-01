@@ -67,7 +67,6 @@ export default function KnowledgeReview({ task, onComplete, onBack }) {
   const hasBasic = !isEmpty(basic.concept_definition) || !isEmpty(basic.features) || !isEmpty(basic.confusing_concepts)
   const hasPractical = !isEmpty(practical.examples) || !isEmpty(practical.applicable_scenarios) || !isEmpty(practical.precautions)
   const hasAdvanced = !isEmpty(advanced.common_mistakes) || !isEmpty(advanced.extensions) || !isEmpty(advanced.advanced_solutions)
-  const hasNotes = !isEmpty(card.my_notes)
 
   return (
     <div className={styles.container}>
@@ -128,21 +127,6 @@ export default function KnowledgeReview({ task, onComplete, onBack }) {
             <ContentBlock icon="❌" label="常见错误" content={advanced.common_mistakes} />
             <ContentBlock icon="🔄" label="拓展方向" content={advanced.extensions} />
             <ContentBlock icon="⚡" label="高级解法" content={advanced.advanced_solutions} />
-          </div>
-        </div>
-      )}
-
-      {/* 个人笔记 */}
-      {hasNotes && (
-        <div className={`${styles.tier} ${styles.tierNotes}`}>
-          <div className={styles.tierHeader}>
-            <span className={styles.tierIcon}>📝</span>
-            <span>我的心得</span>
-          </div>
-          <div className={styles.tierBody}>
-            <div className={styles.contentBody}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{card.my_notes}</ReactMarkdown>
-            </div>
           </div>
         </div>
       )}

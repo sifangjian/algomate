@@ -217,8 +217,7 @@ class QuestionGenerator:
                 context_parts.append(f"核心概念：{card.core_concept}")
             if card.key_points:
                 context_parts.append(f"关键要点：{card.key_points}")
-            if card.my_notes:
-                context_parts.append(f"我的心得：{card.my_notes}")
+            
             
             if context_parts:
                 context = "\n".join(context_parts)

@@ -213,7 +213,7 @@ describe('DailyReview', () => {
           concept_definition: '二分查找是一种搜索算法',
           features: '确定左右边界\n计算中间值',
         },
-        my_notes: '二分查找总结',
+        
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -231,7 +231,7 @@ describe('DailyReview', () => {
           concept_definition: '二分查找是一种搜索算法',
           features: '确定左右边界\n计算中间值',
         },
-        my_notes: '二分查找总结',
+        
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -251,7 +251,6 @@ describe('DailyReview', () => {
           concept_definition: '二分查找内容',
           features: '',
         },
-        my_notes: '',
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -273,7 +272,6 @@ describe('DailyReview', () => {
           concept_definition: '二分查找内容',
           features: '',
         },
-        my_notes: '',
       })
       render(<DailyReview />)
       await waitFor(() => {
@@ -394,7 +392,6 @@ describe('DailyReview', () => {
           concept_definition: '二分查找内容',
           features: '',
         },
-        my_notes: '',
       })
       render(<DailyReview />)
       await waitFor(() => {

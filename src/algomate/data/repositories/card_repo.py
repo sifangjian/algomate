@@ -54,8 +54,7 @@ class CardRepository:
                 pattern = f"%{keyword}%"
                 query = query.filter(
                     (Card.name.like(pattern))
-                    | (Card.basic_content.like(pattern))
-                    | (Card.practical_content.like(pattern))
+                    | (Card.content.like(pattern))
                 )
             cards = query.order_by(Card.created_at.desc()).all()
 
@@ -179,7 +178,7 @@ class CardRepository:
             return session.query(Card).filter(
                 (Card.name.like(pattern))
                 | (Card.algorithm_type.like(pattern))
-                | (Card.basic_content.like(pattern))
+                | (Card.content.like(pattern))
             ).order_by(Card.created_at.desc()).limit(limit).all()
         finally:
             session.close()
@@ -279,7 +278,7 @@ class CardRepository:
             cards = session.query(Card).all()
             links = session.query(CardLink).all()
             nodes = [
-                {"id": c.id, "name": c.name, "algorithm_type": c.algorithm_type}
+                {"id": c.id, "name": c.name, "card_type": c.card_type, "algorithm_type": c.algorithm_type}
                 for c in cards
             ]
             edges = [

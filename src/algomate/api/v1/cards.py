@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
@@ -35,6 +36,56 @@ def _parse_json_field(value) -> dict:
         return {}
 
 
+def _sync_content_links(session, card):
+    """根据卡牌 content 中的关联字段同步 CardLink 记录。
+
+    技巧卡：content.related_problems → 链接到题目卡
+    题目卡：content.core_skills → 链接到技巧卡
+    """
+    content = _parse_json_field(card.content)
+    if not content:
+        return
+
+    # 确定要解析的关联字段
+    link_fields = []
+    if card.card_type == 'tip':
+        link_fields = content.get('related_problems', [])
+    elif card.card_type == 'problem':
+        link_fields = content.get('core_skills', [])
+
+    # 从 [[Card Name]] 格式提取卡牌名称并查找 ID
+    target_ids = set()
+    for item in link_fields:
+        match = re.match(r'^\[\[(.+?)\]\]', item)
+        if not match:
+            continue
+        card_name = match.group(1)
+        target_card = session.query(Card).filter(Card.name == card_name).first()
+        if target_card:
+            target_ids.add(target_card.id)
+
+    # 获取当前已存在的 related 链接
+    existing_links = session.query(CardLink).filter(
+        CardLink.source_card_id == card.id,
+        CardLink.link_type == 'related',
+    ).all()
+    existing_target_ids = {link.target_card_id for link in existing_links}
+
+    # 新增不存在的链接
+    for target_id in target_ids:
+        if target_id not in existing_target_ids:
+            session.add(CardLink(
+                source_card_id=card.id,
+                target_card_id=target_id,
+                link_type='related',
+            ))
+
+    # 删除已移除的链接
+    for link in existing_links:
+        if link.target_card_id not in target_ids:
+            session.delete(link)
+
+
 def _is_empty_content(value) -> bool:
     """Check if a content field is empty"""
     if value is None or value == "":
@@ -54,10 +105,7 @@ def _is_empty_content(value) -> bool:
 
 def _is_card_empty(card):
     """Check if a card has no meaningful content."""
-    for field in ('basic_content', 'practical_content', 'advanced_content'):
-        if not _is_empty_content(getattr(card, field, None)):
-            return False
-    if card.my_notes and card.my_notes.strip():
+    if not _is_empty_content(card.content):
         return False
     return True
 
@@ -72,12 +120,7 @@ def _find_empty_cards(session):
 
     empty_cards = []
     for card in all_cards:
-        is_empty = (
-            _is_empty_content(card.basic_content)
-            and _is_empty_content(card.practical_content)
-            and _is_empty_content(card.advanced_content)
-            and (card.my_notes is None or card.my_notes == "")
-        )
+        is_empty = _is_empty_content(card.content)
         if not is_empty:
             continue
         algo_type = card.algorithm_type
@@ -118,6 +161,7 @@ def _card_to_response(card: Card) -> dict:
     return {
         "id": card.id,
         "name": card.name,
+        "card_type": card.card_type,
         "algorithm_type": card.algorithm_type,
         "difficulty": card.difficulty,
         "durability": card.durability,
@@ -130,10 +174,7 @@ def _card_to_response(card: Card) -> dict:
         "dialogue_id": card.dialogue_id,
         "topic": card.topic,
         "status": compute_card_status(card.durability, card.pending_retake),
-        "basic_content": _parse_json_field(card.basic_content),
-        "practical_content": _parse_json_field(card.practical_content),
-        "advanced_content": _parse_json_field(card.advanced_content),
-        "my_notes": card.my_notes,
+        "content": _parse_json_field(card.content),
         "visual_links": card.visual_links,
         "created_at": card.created_at.isoformat() if card.created_at else None,
         "updated_at": card.updated_at.isoformat() if card.updated_at else None,
@@ -142,8 +183,7 @@ def _card_to_response(card: Card) -> dict:
 
 EDITABLE_FIELDS = {
     "algorithm_type", "difficulty",
-    "basic_content", "practical_content", "advanced_content",
-    "my_notes", "visual_links",
+    "content", "visual_links",
 }
 
 
@@ -158,6 +198,7 @@ async def get_graph():
             {
                 "id": c.id,
                 "name": c.name,
+                "card_type": c.card_type,
                 "algorithm_type": c.algorithm_type,
                 "durability": c.durability,
                 "review_level": c.review_level,
@@ -211,8 +252,7 @@ async def get_cards(
             keyword_pattern = f"%{keyword}%"
             query = query.filter(
                 (Card.name.ilike(keyword_pattern))
-                | (Card.basic_content.ilike(keyword_pattern))
-                | (Card.practical_content.ilike(keyword_pattern))
+                | (Card.content.ilike(keyword_pattern))
             )
 
         cards = query.order_by(Card.created_at.desc()).all()
@@ -237,6 +277,7 @@ async def get_empty_cards():
             {
                 "id": card.id,
                 "name": card.name,
+                "card_type": card.card_type,
                 "algorithm_type": card.algorithm_type,
                 "created_at": card.created_at.isoformat() if card.created_at else None,
             }
@@ -257,7 +298,7 @@ async def cleanup_empty_cards():
     try:
         empty_cards = _find_empty_cards(session)
         deleted_cards = [
-            {"id": card.id, "name": card.name, "algorithm_type": card.algorithm_type}
+            {"id": card.id, "name": card.name, "card_type": card.card_type, "algorithm_type": card.algorithm_type}
             for card in empty_cards
         ]
         for card in empty_cards:
@@ -308,7 +349,7 @@ async def update_card(card_id: int, card_update: CardUpdate):
         has_changes = False
         for key, value in update_data.items():
             current_val = getattr(card, key, None)
-            if key in ("basic_content", "practical_content", "advanced_content"):
+            if key == "content":
                 new_val = _normalize_content(value, None)
                 cur_val = current_val or "{}"
             else:
@@ -322,10 +363,16 @@ async def update_card(card_id: int, card_update: CardUpdate):
             error_response(40002, "内容未变更", 400)
 
         for key, value in update_data.items():
-            if key in ("basic_content", "practical_content", "advanced_content"):
+            if key == "content":
                 setattr(card, key, _normalize_content(value, None))
             else:
                 setattr(card, key, value)
+
+        session.commit()
+        session.refresh(card)
+
+        # 同步内容中的卡牌关联关系到 CardLink 表
+        _sync_content_links(session, card)
 
         session.commit()
         session.refresh(card)
@@ -348,6 +395,11 @@ async def delete_card(card_id: int):
         card = session.query(Card).filter(Card.id == card_id).first()
         if not card:
             error_response(40404, "卡牌不存在", 404)
+
+        # 断开循环引用后再删除
+        card.dialogue_id = None
+        card.dialogue = None
+        session.flush()
 
         session.delete(card)
         session.commit()
@@ -410,15 +462,13 @@ async def create_card(card_data: CardCreate):
     try:
         card = Card(
             name=card_data.name,
+            card_type=card_data.card_type or "tip",
             algorithm_type=card_data.algorithm_type or "",
             durability=card_data.durability,
             npc_id=card_data.npc_id,
             dialogue_id=card_data.dialogue_id,
             topic=card_data.topic or "",
-            basic_content=_normalize_content(card_data.basic_content, None),
-            practical_content=_normalize_content(card_data.practical_content, None),
-            advanced_content=_normalize_content(card_data.advanced_content, None),
-            my_notes=card_data.my_notes or "",
+            content=_normalize_content(card_data.content, None),
             visual_links=card_data.visual_links,
         )
         session.add(card)
@@ -469,17 +519,17 @@ async def polish_card(request: dict):
         client = ChatClient(api_key=config.LLM_API_KEY)
 
         FIELD_LABELS = {
-            "concept_definition": "概念定义",
-            "features": "特点",
-            "confusing_concepts": "易混淆概念",
-            "applicable_scenarios": "适用场景",
-            "precautions": "注意事项",
-            "common_mistakes": "易错点",
-            "extensions": "拓展方向",
-            "advanced_solutions": "高级解法",
-            "problem": "题目描述",
-            "principle": "原理说明",
-            "my_notes": "个人笔记",
+            "one_line_definition": "一句话定义",
+            "trigger_condition": "触发条件",
+            "core_ideas": "核心思路",
+            "complexity": "复杂度",
+            "related_problems": "关联题目",
+            "related_tips": "关联技巧",
+            "pitfall_guide": "避坑指南",
+            "one_line_problem": "一句话题干",
+            "core_skills": "核心考点",
+            "solution_approach": "解法思路",
+            "core_code_snippet": "核心代码片段",
         }
         label = FIELD_LABELS.get(field_type, field_type)
 

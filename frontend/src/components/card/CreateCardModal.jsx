@@ -14,6 +14,7 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
     const [form, setForm] = useState({
         name: '',
         algorithm_type: '',
+        card_type: 'tip',
         difficulty: 3,
         noteContent: '',
         prerequisites: [],
@@ -35,6 +36,7 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
         setForm({
             name: '',
             algorithm_type: '',
+            card_type: 'tip',
             difficulty: 3,
             noteContent: '',
             prerequisites: [],
@@ -104,6 +106,7 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
         try {
             const payload = {
                 name: form.name.trim(),
+                card_type: form.card_type,
                 algorithm_type: form.algorithm_type.trim() || null,
                 difficulty: form.difficulty,
             }
@@ -155,30 +158,59 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
                 </div>
 
                 <div className={styles.formField}>
+                    <label className={styles.fieldLabel}>卡牌类型</label>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: 4 }}>
+                        <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                                type="radio"
+                                name="card_type"
+                                value="tip"
+                                checked={form.card_type === 'tip'}
+                                onChange={() => handleFieldChange('card_type', 'tip')}
+                            />
+                            💡 技巧卡
+                        </label>
+                        <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                                type="radio"
+                                name="card_type"
+                                value="problem"
+                                checked={form.card_type === 'problem'}
+                                onChange={() => handleFieldChange('card_type', 'problem')}
+                            />
+                            📝 题目卡
+                        </label>
+                    </div>
+                </div>
+
+                <div className={styles.formField}>
                     <label className={styles.fieldLabel}>前置节点（可选，用于在算法地图中建立依赖关系）</label>
                     <div className={styles.prereqSelector}>
+                        {allCards.length === 0 && (
+                            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', padding: '8px' }}>
+                                暂无卡牌，请先创建其他卡牌
+                            </div>
+                        )}
                         {allCards.map((card) => (
-                            <label key={card.id} className={`${styles.prereqChip} ${form.prerequisites.includes(card.id) ? styles.prereqChipActive : ''}`}>
-                                <input
-                                    type="checkbox"
-                                    checked={form.prerequisites.includes(card.id)}
-                                    onChange={(e) => {
-                                        setForm(prev => ({
-                                            ...prev,
-                                            prerequisites: e.target.checked
-                                                ? [...prev.prerequisites, card.id]
-                                                : prev.prerequisites.filter(p => p !== card.id),
-                                        }))
-                                    }}
-                                    style={{ display: 'none' }}
-                                />
+                            <div
+                                key={card.id}
+                                className={`${styles.prereqChip} ${form.prerequisites.includes(card.id) ? styles.prereqChipActive : ''}`}
+                                onClick={() => {
+                                    setForm(prev => ({
+                                        ...prev,
+                                        prerequisites: prev.prerequisites.includes(card.id)
+                                            ? prev.prerequisites.filter(p => p !== card.id)
+                                            : [...prev.prerequisites, card.id],
+                                    }))
+                                }}
+                            >
                                 <span>{card.name}</span>
                                 {card.algorithm_type && (
                                     <span style={{ marginLeft: 4, fontSize: '0.75em', opacity: 0.7 }}>
                                         ({card.algorithm_type})
                                     </span>
                                 )}
-                            </label>
+                            </div>
                         ))}
                     </div>
                 </div>

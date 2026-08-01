@@ -172,7 +172,6 @@ async def save_learning_note(note_data: dict):
         new_card = card_repo.create(
             name=note_data.get("title") or "未命名卡牌",
             algorithm_type=note_data.get("algorithm_type") or "",
-            my_notes=note_data.get("content") or "",
         )
         return {"id": new_card.id, "message": "卡牌保存成功"}
     except Exception as e:

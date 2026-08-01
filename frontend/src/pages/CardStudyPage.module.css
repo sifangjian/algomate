@@ -511,3 +511,70 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* 触发条件 */
+.triggerCondition {
+    background: rgba(96, 165, 250, 0.1);
+    border: 1px solid rgba(96, 165, 250, 0.25);
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: #93c5fd;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+/* 卡片链接 */
+.cardLink {
+    color: #60a5fa;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px dashed rgba(96, 165, 250, 0.3);
+    transition: all 0.15s;
+}
+
+.cardLink:hover {
+    color: #93c5fd;
+    border-bottom-color: #93c5fd;
+}
+
+/* 链接标签 */
+.linkTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: rgba(96, 165, 250, 0.1);
+    border: 1px solid rgba(96, 165, 250, 0.2);
+    border-radius: 16px;
+    font-size: 0.8rem;
+    color: #93c5fd;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+}
+
+.linkTag:hover {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.4);
+}
+
+/* 代码片段 */
+.codeBlock {
+    background: #1a1a2e;
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 0;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #c8c8c8;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.codeBlock code {
+    background: none;
+    padding: 0;
+    color: inherit;
+}

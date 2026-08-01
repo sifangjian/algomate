@@ -159,7 +159,6 @@ async def get_leetcode_recommendation(card_id: int):
         if not card:
             raise HTTPException(status_code=404, detail="卡牌不存在")
 
-        note_content = card.my_notes or ""
         algorithm_type = card.algorithm_type or ""
 
         difficulty_map = {1: "easy", 2: "easy", 3: "medium", 4: "medium", 5: "hard"}
@@ -167,7 +166,7 @@ async def get_leetcode_recommendation(card_id: int):
 
         generator = QuestionGenerator()
         result = generator.generate_leetcode_challenge(
-            note_content=note_content,
+            note_content="",
             difficulty=difficulty,
             algorithm_type=algorithm_type,
         )

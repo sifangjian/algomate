@@ -99,9 +99,7 @@ export default function DimensionSection({ card }) {
         </TierSection>
       )}
 
-      {card.my_notes && (
-        <FieldItem label="个人笔记" icon="📝" value={card.my_notes} />
-      )}
+      
     </div>
   )
 }
