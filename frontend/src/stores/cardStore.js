@@ -7,7 +7,6 @@ export const useCardStore = create((set, get) => ({
   loading: false,
   endangeredCount: 0,
   pendingRetakeCount: 0,
-  retakeInfo: null,
   filters: {
     algorithm_type: '',
     status: '',
@@ -110,13 +109,6 @@ export const useCardStore = create((set, get) => ({
     return result
   },
 
-  setRetakeInfo: (cardId, dialogueId, npcId) =>
-    set({
-      retakeInfo: { cardId, dialogueId, npcId },
-    }),
-
-  clearRetakeInfo: () => set({ retakeInfo: null }),
-
   // 图谱相关
   fetchGraphData: async () => {
     try {
@@ -165,7 +157,6 @@ export const useCardStore = create((set, get) => ({
       loading: false,
       endangeredCount: 0,
       pendingRetakeCount: 0,
-      retakeInfo: null,
       graphData: { nodes: [], edges: [] },
       linkedCards: {},
       filters: {

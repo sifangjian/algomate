@@ -55,10 +55,9 @@ async def complete_review_v1(card_id: int, review_data: dict):
     from algomate.review.review_plan_service import ReviewPlanService
     from algomate.models.cards import Card
     from algomate.data.database import Database
-    from algomate.core.guide.service import GuideService
 
     review_type = review_data.get("review_type", "content_review")
-    valid_types = ["content_review", "quick_quiz", "leetcode_challenge"]
+    valid_types = ["content_review", "quick_quiz"]
     if review_type not in valid_types:
         raise HTTPException(status_code=400, detail="修炼形式参数不合法")
 
@@ -78,115 +77,8 @@ async def complete_review_v1(card_id: int, review_data: dict):
     if result is None:
         raise HTTPException(status_code=404, detail="卡牌不存在")
 
-    remaining_endangered = result.get("remaining_endangered", 0)
-
-    session = db.get_session()
-    try:
-        due_tasks_count = session.query(Card).filter(
-            Card.next_review_date <= date.today(),
-            Card.pending_retake == False,
-        ).count()
-        has_due_tasks = due_tasks_count > 0
-    finally:
-        session.close()
-
-    guide_service = GuideService()
-    guide = guide_service.generate_guides(
-        scene="after_review",
-        remaining_endangered=remaining_endangered,
-        has_due_tasks=has_due_tasks,
-    )
-    result["guide"] = guide.model_dump()
-
     return {
         "code": 200,
         "message": "success",
         "data": result
     }
-
-
-@router.post("/{card_id}/quiz")
-async def generate_review_quiz_v1(card_id: int, quiz_data: dict = None):
-    from algomate.core.agent.question_generator import QuestionGenerator
-    from algomate.models.cards import Card
-    from algomate.data.database import Database
-
-    db = Database.get_instance()
-    session = db.get_session()
-    try:
-        card = session.query(Card).filter(Card.id == card_id).first()
-        if not card:
-            raise HTTPException(status_code=404, detail="卡牌不存在")
-    finally:
-        session.close()
-
-    count = 2
-    if quiz_data:
-        count = quiz_data.get("count", 2)
-
-    try:
-        generator = QuestionGenerator()
-        questions = generator.generate_review_quiz(card_id, count)
-
-        return {
-            "code": 200,
-            "message": "success",
-            "data": {
-                "card_id": card_id,
-                "questions": questions,
-            }
-        }
-    except Exception as e:
-        error_msg = str(e).lower()
-        logger.error("generate_review_quiz_v1 failed: %s", e, exc_info=True)
-        if "timeout" in error_msg:
-            raise HTTPException(status_code=504, detail="AI服务响应超时")
-        if "rate limit" in error_msg or "429" in error_msg:
-            raise HTTPException(status_code=429, detail="请求过于频繁，请稍后再试")
-        raise HTTPException(status_code=500, detail="AI服务异常")
-
-
-@router.post("/{card_id}/leetcode")
-async def get_leetcode_recommendation(card_id: int):
-    from algomate.core.agent.question_generator import QuestionGenerator
-    from algomate.models.cards import Card
-    from algomate.data.database import Database
-
-    db = Database.get_instance()
-    session = db.get_session()
-    try:
-        card = session.query(Card).filter(Card.id == card_id).first()
-        if not card:
-            raise HTTPException(status_code=404, detail="卡牌不存在")
-
-        algorithm_type = card.algorithm_type or ""
-
-        difficulty_map = {1: "easy", 2: "easy", 3: "medium", 4: "medium", 5: "hard"}
-        difficulty = difficulty_map.get(getattr(card, 'difficulty', 3), "medium")
-
-        generator = QuestionGenerator()
-        result = generator.generate_leetcode_challenge(
-            note_content="",
-            difficulty=difficulty,
-            algorithm_type=algorithm_type,
-        )
-
-        return {
-            "code": 200,
-            "message": "success",
-            "data": {
-                "card_id": card_id,
-                "card_name": card.name,
-                "title": result.get("leetcode_title", ""),
-                "url": result.get("leetcode_url", ""),
-                "difficulty": result.get("leetcode_difficulty", ""),
-                "description": result.get("leetcode_description", result.get("content", "")),
-            }
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("get_leetcode_recommendation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="获取LeetCode推荐失败")
-    finally:
-        session.close()

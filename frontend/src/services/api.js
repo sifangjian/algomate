@@ -23,7 +23,7 @@ api.interceptors.response.use(
     if (!error.response) {
       if (error.code === 'ECONNABORTED') {
         console.error('Request Timeout:', error.message)
-        throw new Error('请求超时，AI正在思考中，请稍后重试')
+        throw new Error('请求超时，请稍后重试')
       }
       console.error('Network Error:', error.message)
       throw new Error('网络连接失败，请检查网络')
@@ -56,7 +56,7 @@ api.interceptors.response.use(
       case 500:
         throw new Error(data?.detail || '服务器繁忙，请稍后再试')
       case 504:
-        throw new Error(data?.detail || 'AI服务响应超时，请稍后重试')
+        throw new Error(data?.detail || '服务响应超时，请稍后重试')
       default:
         throw new Error(
           data?.message || data?.error || data?.detail || `请求失败 (${status})`

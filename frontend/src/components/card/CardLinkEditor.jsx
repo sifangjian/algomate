@@ -5,7 +5,6 @@ import styles from './CardLinkEditor.module.css'
 
 const LINK_TYPES = [
   { value: 'related', label: '关联' },
-  { value: 'prerequisite', label: '前置知识' },
   { value: 'comparison', label: '对比' },
   { value: 'keyword', label: '关键词' },
 ]

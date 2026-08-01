@@ -3,7 +3,6 @@ Algomate 主程序模块
 
 算法修习助手主程序入口，负责：
 - 应用初始化和配置
-- AI 组件的初始化
 - 修炼调度器的启动和管理
 - 日志系统配置
 - FastAPI 服务器管理（后端 API）
@@ -25,13 +24,8 @@ from pathlib import Path
 
 from algomate.config.settings import AppConfig
 from .data.database import Database
-from .core.agent.chat_client import ChatClient
-from .core.agent.content_analyzer import ContentAnalyzer
-from .core.agent.question_generator import QuestionGenerator
-from .core.agent.weak_point_analyzer import WeakPointAnalyzer
 from .core.memory.forgetting_curve import ForgettingCurveEngine
 from .core.scheduler.review_scheduler import ReviewScheduler
-from .core.scheduler.email_sender import EmailSender
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +64,6 @@ class AlgomateApp:
     Attributes:
         config: 应用配置
         db: 数据库实例
-        chat_client: AI 对话客户端
-        content_analyzer: 内容分析器
-        question_generator: 试炼生成器
-        weak_point_analyzer: 薄弱点分析器
         forgetting_curve: 遗忘曲线算法
         review_scheduler: 修炼调度器
     """
@@ -87,49 +77,18 @@ class AlgomateApp:
         self.config = config or AppConfig.load()
         setup_logging(self.config)
         self.db = Database.get_instance(self.config)
-        self.chat_client = None
-        self.content_analyzer = None
-        self.question_generator = None
-        self.weak_point_analyzer = None
-        self.forgetting_curve = None
+        self.forgetting_curve = ForgettingCurveEngine()
         self.review_scheduler = None
         self.api_server = None
         self.api_server_thread = None
 
-        if self.config.LLM_API_KEY:
-            self._init_ai_components()
-
         self._init_api_server()
 
-    def _init_ai_components(self):
-        """初始化 AI 组件
-
-        当配置了大模型 API Key 时，初始化相关 AI 组件。
-        """
-        self.chat_client = ChatClient(
-            api_key=self.config.LLM_API_KEY,
-            model=self.config.LLM_MODEL,
-            base_url=self.config.LLM_BASE_URL,
-        )
-        print("="*50)
-        print(self.chat_client.get_graph_diagram())
-        print("="*50)
-        logger.info(f"🤖 AI组件初始化完成 | 模型: {self.config.LLM_MODEL} | API Base URL: {self.config.LLM_BASE_URL}")
-        self.content_analyzer = ContentAnalyzer(self.chat_client)
-        self.question_generator = QuestionGenerator(self.chat_client)
-        self.weak_point_analyzer = WeakPointAnalyzer(self.db)
-        self.forgetting_curve = ForgettingCurveEngine()
-        logger.info("AI components initialized")
-
     def start_review_scheduler(self):
-        """启动修炼调度器
-
-        如果配置启用了修炼提醒，则启动定时调度任务。
-        """
-        if self.config.REVIEW_ENABLED:
-            self.review_scheduler = ReviewScheduler(db=self.db, config=self.config)
-            self.review_scheduler.start()
-            logger.info("Review scheduler started")
+        """启动修炼调度器"""
+        self.review_scheduler = ReviewScheduler(db=self.db, config=self.config)
+        self.review_scheduler.start()
+        logger.info("Review scheduler started")
 
     def _init_api_server(self):
         """初始化 FastAPI 服务器
@@ -244,65 +203,10 @@ class AlgomateApp:
         logger.info("Application stopped")
 
 
-def run_interactive_chat(chat_client: ChatClient):
-    """运行交互式对话
-
-    提供命令行界面，让用户与 AI 进行多轮对话。
-    图内部维护完整的状态和消息历史。
-
-    Args:
-        chat_client: 聊天客户端实例
-    """
-    print("\n" + "="*50)
-    print("欢迎使用 Algomate 算法修习助手！")
-    print("输入您的问题，按回车发送。输入 'quit' 或 'exit' 退出。")
-    print("="*50 + "\n")
-
-    state = None
-
-    while True:
-        try:
-            user_input = input("你: ").strip()
-
-            if not user_input:
-                continue
-
-            if user_input.lower() in ["quit", "exit", "退出"]:
-                print("\n感谢使用 Algomate，再见！")
-                break
-
-            from langchain_core.messages import HumanMessage
-
-            if state is None:
-                state = chat_client.invoke_task(
-                    messages=[HumanMessage(content=user_input)]
-                )
-            else:
-                state["messages"].append(HumanMessage(content=user_input))
-                state["should_continue"] = True
-                state = chat_client.invoke_task(state=state)
-
-            response = state.get("result", "")
-            if hasattr(response, 'content'):
-                response = response.content
-            print(f"AI: {response}\n")
-
-            if not state.get("should_continue", True):
-                print("\n对话已结束，再见！")
-                break
-
-        except KeyboardInterrupt:
-            print("\n\n操作已取消，再见！")
-            break
-        except Exception as e:
-            print(f"\n发生错误: {e}")
-            logger.error(f"Chat error: {e}")
-
-
 def main():
     """应用入口函数
 
-    创建应用实例，启动全部服务（API 服务器 + 修炼调度器 + 交互式对话）。
+    创建应用实例，启动全部服务（API 服务器 + 修炼调度器）。
     """
     import argparse
 
@@ -310,7 +214,7 @@ def main():
     parser.add_argument(
         "--api-only",
         action="store_true",
-        help="仅启动后端 API 服务（不启动交互式对话）"
+        help="仅启动后端 API 服务（不启动修炼调度器）"
     )
     args = parser.parse_args()
 
@@ -323,18 +227,13 @@ def main():
         app.start()
         logger.info("Algomate started successfully")
 
-        if app.chat_client:
-            run_interactive_chat(app.chat_client)
-        else:
-            print("AI 组件未初始化（可能未配置 API Key），仅运行调度器模式")
-            print("按 Ctrl+C 退出...")
-
-            try:
-                while True:
-                    import time
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                pass
+        print("系统运行中，按 Ctrl+C 退出...")
+        try:
+            while True:
+                import time
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
 
         app.stop()
 

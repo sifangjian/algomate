@@ -8,13 +8,47 @@ from fastapi import APIRouter, HTTPException, Query
 from algomate.data.database import Database
 from algomate.models.cards import Card, CardCreate, CardUpdate, _normalize_content
 from algomate.models.card_links import CardLink, LinkCreate, LinkResponse
-from algomate.core.game.durability import compute_card_status
+from algomate.core.memory.card_status import compute_card_status
 from algomate.config.algorithm_types import ALGORITHM_TYPES
 from collections import deque
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/cards", tags=["卡牌工坊"])
 logger = logging.getLogger(__name__)
+
+# 数据迁移：将已有 problem 卡片的 related 链接更新为 tip_related
+_migrated = False
+
+
+def _migrate_old_links():
+    global _migrated
+    if _migrated:
+        return
+    _migrated = True
+    try:
+        db = Database.get_instance()
+        session = db.get_session()
+        try:
+            # 查找 source 为 problem 卡片的 related 链接
+            links_to_update = session.query(CardLink).join(
+                Card, CardLink.source_card_id == Card.id
+            ).filter(
+                Card.card_type == 'problem',
+                CardLink.link_type == 'related',
+            ).all()
+            for link in links_to_update:
+                link.link_type = 'tip_related'
+            if links_to_update:
+                session.commit()
+                logger.info(f"迁移了 {len(links_to_update)} 条旧链接: related → tip_related")
+        finally:
+            session.close()
+    except Exception as e:
+        logger.warning(f"链接迁移失败（非关键错误，可忽略）: {e}")
+
+
+# 在模块加载时运行迁移
+_migrate_old_links()
 
 
 def success_response(data=None, message="success"):
@@ -39,51 +73,54 @@ def _parse_json_field(value) -> dict:
 def _sync_content_links(session, card):
     """根据卡牌 content 中的关联字段同步 CardLink 记录。
 
-    技巧卡：content.related_problems → 链接到题目卡
-    题目卡：content.core_skills → 链接到技巧卡
+    技巧卡：content.related_problems → 链接到题目卡 (link_type='related')
+    技巧卡：content.related_tips → 链接到其他技巧卡 (link_type='tip_related')
+    题目卡：content.core_skills → 链接到技巧卡 (link_type='tip_related')
     """
     content = _parse_json_field(card.content)
     if not content:
         return
 
-    # 确定要解析的关联字段
-    link_fields = []
+    # 确定要解析的关联字段及对应的 link_type
+    link_definitions = []
     if card.card_type == 'tip':
-        link_fields = content.get('related_problems', [])
+        link_definitions.append(('related', content.get('related_problems', [])))
+        link_definitions.append(('tip_related', content.get('related_tips', [])))
     elif card.card_type == 'problem':
-        link_fields = content.get('core_skills', [])
+        link_definitions.append(('tip_related', content.get('core_skills', [])))
 
-    # 从 [[Card Name]] 格式提取卡牌名称并查找 ID
-    target_ids = set()
-    for item in link_fields:
-        match = re.match(r'^\[\[(.+?)\]\]', item)
-        if not match:
-            continue
-        card_name = match.group(1)
-        target_card = session.query(Card).filter(Card.name == card_name).first()
-        if target_card:
-            target_ids.add(target_card.id)
+    for link_type, link_fields in link_definitions:
+        # 从 [[Card Name]] 格式提取卡牌名称并查找 ID
+        target_ids = set()
+        for item in link_fields:
+            match = re.match(r'^\[\[(.+?)\]\]', item)
+            if not match:
+                continue
+            card_name = match.group(1)
+            target_card = session.query(Card).filter(Card.name == card_name).first()
+            if target_card:
+                target_ids.add(target_card.id)
 
-    # 获取当前已存在的 related 链接
-    existing_links = session.query(CardLink).filter(
-        CardLink.source_card_id == card.id,
-        CardLink.link_type == 'related',
-    ).all()
-    existing_target_ids = {link.target_card_id for link in existing_links}
+        # 获取当前已存在的该类型链接
+        existing_links = session.query(CardLink).filter(
+            CardLink.source_card_id == card.id,
+            CardLink.link_type == link_type,
+        ).all()
+        existing_target_ids = {link.target_card_id for link in existing_links}
 
-    # 新增不存在的链接
-    for target_id in target_ids:
-        if target_id not in existing_target_ids:
-            session.add(CardLink(
-                source_card_id=card.id,
-                target_card_id=target_id,
-                link_type='related',
-            ))
+        # 新增不存在的链接
+        for target_id in target_ids:
+            if target_id not in existing_target_ids:
+                session.add(CardLink(
+                    source_card_id=card.id,
+                    target_card_id=target_id,
+                    link_type=link_type,
+                ))
 
-    # 删除已移除的链接
-    for link in existing_links:
-        if link.target_card_id not in target_ids:
-            session.delete(link)
+        # 删除已移除的链接
+        for link in existing_links:
+            if link.target_card_id not in target_ids:
+                session.delete(link)
 
 
 def _is_empty_content(value) -> bool:
@@ -170,9 +207,6 @@ def _card_to_response(card: Card) -> dict:
         "review_count": card.review_count,
         "last_reviewed": card.last_reviewed.isoformat() if card.last_reviewed else None,
         "pending_retake": card.pending_retake,
-        "npc_id": card.npc_id,
-        "dialogue_id": card.dialogue_id,
-        "topic": card.topic,
         "status": compute_card_status(card.durability, card.pending_retake),
         "content": _parse_json_field(card.content),
         "visual_links": card.visual_links,
@@ -396,11 +430,6 @@ async def delete_card(card_id: int):
         if not card:
             error_response(40404, "卡牌不存在", 404)
 
-        # 断开循环引用后再删除
-        card.dialogue_id = None
-        card.dialogue = None
-        session.flush()
-
         session.delete(card)
         session.commit()
         return success_response(data=None)
@@ -464,35 +493,14 @@ async def create_card(card_data: CardCreate):
             name=card_data.name,
             card_type=card_data.card_type or "tip",
             algorithm_type=card_data.algorithm_type or "",
+            difficulty=card_data.difficulty or 3,
             durability=card_data.durability,
-            npc_id=card_data.npc_id,
-            dialogue_id=card_data.dialogue_id,
-            topic=card_data.topic or "",
             content=_normalize_content(card_data.content, None),
             visual_links=card_data.visual_links,
         )
         session.add(card)
         session.commit()
         session.refresh(card)
-
-        # 若提供了前置卡牌ID，创建 prerequisite 类型的 CardLink
-        if card_data.prerequisites:
-            for prereq_id in card_data.prerequisites:
-                prereq_card = session.query(Card).filter(Card.id == prereq_id).first()
-                if not prereq_card:
-                    continue
-                existing_link = session.query(CardLink).filter(
-                    CardLink.source_card_id == prereq_id,
-                    CardLink.target_card_id == card.id,
-                    CardLink.link_type == "prerequisite",
-                ).first()
-                if not existing_link:
-                    session.add(CardLink(
-                        source_card_id=prereq_id,
-                        target_card_id=card.id,
-                        link_type="prerequisite",
-                    ))
-            session.commit()
 
         return success_response(data=_card_to_response(card))
     except Exception as e:
@@ -501,54 +509,6 @@ async def create_card(card_data: CardCreate):
         raise HTTPException(status_code=500, detail=f"创建卡牌失败: {str(e)}")
     finally:
         session.close()
-
-
-@router.post("/polish")
-async def polish_card(request: dict):
-    from algomate.core.agent.chat_client import ChatClient
-    from algomate.config.settings import AppConfig
-
-    content = request.get("content", "")
-    field_type = request.get("type", "")
-
-    if not content.strip():
-        raise HTTPException(status_code=400, detail="内容不能为空")
-
-    try:
-        config = AppConfig.load()
-        client = ChatClient(api_key=config.LLM_API_KEY)
-
-        FIELD_LABELS = {
-            "one_line_definition": "一句话定义",
-            "trigger_condition": "触发条件",
-            "core_ideas": "核心思路",
-            "complexity": "复杂度",
-            "related_problems": "关联题目",
-            "related_tips": "关联技巧",
-            "pitfall_guide": "避坑指南",
-            "one_line_problem": "一句话题干",
-            "core_skills": "核心考点",
-            "solution_approach": "解法思路",
-            "core_code_snippet": "核心代码片段",
-        }
-        label = FIELD_LABELS.get(field_type, field_type)
-
-        system_prompt = f"""你是算法知识整理师。请润色以下算法卡牌的「{label}」内容。
-要求：
-1. 保持技术准确性
-2. 使表述更清晰、结构化
-3. 保留原文的核心信息
-4. 直接返回润色后的内容，不要额外解释"""
-
-        result = client.chat(
-            messages=[{"role": "user", "content": content}],
-            system_prompt=system_prompt,
-        )
-
-        return success_response(data={"polished_content": result.strip()})
-    except Exception as e:
-        logger.error("polish_card failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"AI润色失败: {str(e)}")
 
 
 # --- 链接管理端点 ---

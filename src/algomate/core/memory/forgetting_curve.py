@@ -162,7 +162,7 @@ class ForgettingCurveEngine:
         now = datetime.now()
 
         if last_reviewed is None:
-            interval_days = self.get_review_interval(review_level + 1) if review_level < self.max_level else self.intervals[-1]
+            interval_days = self.get_review_interval(review_level)
             next_review = created_at + timedelta(days=interval_days)
         else:
             interval_days = self.get_review_interval(review_level)
@@ -189,12 +189,8 @@ class ForgettingCurveEngine:
         now = datetime.now()
 
         if last_reviewed is None:
-            if review_level == 0:
-                interval_days = self.get_review_interval(1)
-                next_review_date = (created_at + timedelta(days=interval_days)).date()
-            else:
-                interval_days = self.get_review_interval(review_level)
-                next_review_date = (created_at + timedelta(days=interval_days)).date()
+            interval_days = self.get_review_interval(review_level)
+            next_review_date = (created_at + timedelta(days=interval_days)).date()
         else:
             interval_days = self.get_review_interval(review_level)
             next_review_date = (last_reviewed + timedelta(days=interval_days)).date()

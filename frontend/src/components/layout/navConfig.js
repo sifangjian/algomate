@@ -6,8 +6,9 @@ export const navItems = [
         exact: true,
     },
     {
-        path: '/practice',
+        path: '/review',
         icon: '⚔️',
         label: '修炼',
+        exact: false,
     },
 ]

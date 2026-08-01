@@ -9,29 +9,6 @@ router = APIRouter(prefix="/stats", tags=["统计"])
 logger = logging.getLogger(__name__)
 
 
-@router.get("/overview")
-async def get_stats_overview():
-    from algomate.data.database import Database
-    from algomate.data.repositories.progress_repo import ProgressRepository
-    from algomate.core.game.realm_unlock import Realm
-
-    db = Database.get_instance()
-    session = db.get_session()
-    try:
-        total_cards = session.query(Card).count()
-    finally:
-        session.close()
-
-    progress_repo = ProgressRepository(db)
-    consecutive_days = progress_repo.get_consecutive_days()
-
-    return {
-        "total_cards": total_cards,
-        "total_realms": len(Realm),
-        "consecutive_days": consecutive_days,
-    }
-
-
 @router.get("")
 async def get_hall_stats():
     from algomate.data.database import Database

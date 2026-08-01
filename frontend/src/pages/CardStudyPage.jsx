@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, memo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useHallStore } from '../stores/hallStore'
 import { useCardStore } from '../stores/cardStore'
 import { cardService } from '../services/cardService'
 import MarkdownRenderer from '../components/ui/MarkdownRenderer'
 import CodeBlock from '../components/ui/CodeBlock'
-import PrerequisiteSelector from '../components/hall/PrerequisiteSelector'
+
 import CardEditForm from '../components/card/CardEditForm'
 import { showToast } from '../components/ui/Toast/index'
 import styles from './CardStudyPage.module.css'
@@ -164,10 +164,10 @@ function CardLink({ text }) {
 export default function CardStudyPage() {
     const { cardId } = useParams()
     const navigate = useNavigate()
+    const location = useLocation()
     const { selectedCard, fetchCardById, clearSelectedCard, setSelectedCard: setHallSelectedCard } = useHallStore()
     const { deleteCard, updateCard } = useCardStore()
     const [loading, setLoading] = useState(true)
-    const [cardPrerequisites, setCardPrerequisites] = useState([])
     const [isEditing, setIsEditing] = useState(false)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
@@ -175,21 +175,16 @@ export default function CardStudyPage() {
     useEffect(() => {
         if (cardId) {
             setLoading(true)
-            fetchCardById(cardId).finally(() => setLoading(false))
+            fetchCardById(cardId).finally(() => {
+                setLoading(false)
+                // 检查是否从创建卡牌跳转过来，自动进入编辑模式
+                if (location.state?.autoEdit) {
+                    setIsEditing(true)
+                }
+            })
         }
         return () => clearSelectedCard()
-    }, [cardId, fetchCardById, clearSelectedCard])
-
-    useEffect(() => {
-        if (selectedCard?.id) {
-            cardService.getLinks(selectedCard.id).then(links => {
-                const prereqs = (Array.isArray(links) ? links : [])
-                    .filter(l => l.link_type === 'prerequisite' && l.direction === 'incoming')
-                    .map(l => ({ id: l.source_card_id, name: l.source_card_name }))
-                setCardPrerequisites(prereqs)
-            }).catch(() => { })
-        }
-    }, [selectedCard?.id])
+    }, [cardId, fetchCardById, clearSelectedCard, location.state?.autoEdit])
 
     const handleBack = () => navigate('/')
 
@@ -384,7 +379,6 @@ export default function CardStudyPage() {
                             </section>
                         )}
                     </div>
-                    <PrerequisiteSelector cardId={card.id} currentPrerequisites={cardPrerequisites} />
                 </>
             )}
             {deleteConfirmOpen && (

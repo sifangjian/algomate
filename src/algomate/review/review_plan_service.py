@@ -471,10 +471,10 @@ class ReviewPlanService:
                     "current_step": "get_first_card",
                     "message": "欢迎开始算法修习之旅！",
                     "next_action": {
-                        "text": "获取第一张卡牌",
-                        "description": "与NPC对话，获取您的第一张算法卡牌",
-                        "action": "navigate_to_npc",
-                        "icon": "🃏"
+                        "text": "查看图鉴",
+                        "description": "查看图鉴，了解算法体系",
+                        "action": "view_hall",
+                        "icon": "🗺️"
                     },
                     "suggestions": [
                         {

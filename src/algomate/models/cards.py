@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from typing import Optional, List, Union, Any, Dict
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel, Field
 
@@ -29,9 +29,7 @@ class Card(Base):
     review_count = Column(Integer, default=0, nullable=False)
     last_reviewed = Column(DateTime, nullable=True)
     pending_retake = Column(Boolean, default=False, nullable=False)
-    npc_id = Column(Integer, ForeignKey("npcs.id"), nullable=False, default=1)
-    dialogue_id = Column(Integer, ForeignKey("dialogue_records.id"), nullable=True)
-    topic = Column(String(100), nullable=False, default="")
+    
 
     visual_links = Column(Text, nullable=True)
 
@@ -41,13 +39,7 @@ class Card(Base):
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
-    questions = relationship("Question", back_populates="card", cascade="all, delete-orphan")
-    answer_records = relationship("AnswerRecord", back_populates="card", cascade="all, delete-orphan")
     review_records = relationship("ReviewRecord", back_populates="card", cascade="all, delete-orphan")
-    npc = relationship("NPC", back_populates="cards")
-    dialogue = relationship("DialogueRecord", foreign_keys=[dialogue_id])
-    dialogue_records = relationship("DialogueRecord", back_populates="card", cascade="all, delete-orphan", foreign_keys="[DialogueRecord.card_id]")
-    battle_records = relationship("BattleRecord", back_populates="card", cascade="all, delete-orphan")
     outgoing_links = relationship("CardLink", foreign_keys="[CardLink.source_card_id]", cascade="all, delete-orphan", back_populates="source_card")
     incoming_links = relationship("CardLink", foreign_keys="[CardLink.target_card_id]", cascade="all, delete-orphan", back_populates="target_card")
 
@@ -129,13 +121,10 @@ class CardCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="卡牌名称")
     card_type: Optional[str] = Field("tip", description="卡牌类型：tip（技巧卡）/ problem（题目卡）")
     algorithm_type: Optional[str] = Field("", description="算法类型")
+    difficulty: Optional[int] = Field(3, ge=1, le=5, description="难度(1-5)")
     durability: int = Field(default=80, ge=0, le=100, description="耐久度")
-    npc_id: Optional[int] = Field(1, description="关联NPC ID")
-    dialogue_id: Optional[int] = Field(None, description="关联对话ID")
-    topic: Optional[str] = Field("", description="主题")
     content: Optional[Union[str, dict]] = Field("{}", description="新版结构化内容（JSON）")
     visual_links: Optional[str] = Field(None, description="可视化链接")
-    prerequisites: Optional[List[int]] = Field(None, description="前置卡牌ID列表")
 
     class Config:
         from_attributes = True
@@ -163,9 +152,7 @@ class CardResponse(BaseModel):
     review_count: int = 0
     last_reviewed: Optional[datetime] = None
     pending_retake: bool = False
-    npc_id: Optional[int] = None
-    dialogue_id: Optional[int] = None
-    topic: Optional[str] = None
+    
     status: str
     content: Optional[dict] = None
     visual_links: Optional[str] = None

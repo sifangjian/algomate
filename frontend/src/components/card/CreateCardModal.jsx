@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useCardStore } from '../../stores/cardStore'
 import { cardService } from '../../services/cardService'
 import Input from '../ui/Input/Input'
@@ -17,20 +17,11 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
         card_type: 'tip',
         difficulty: 3,
         noteContent: '',
-        prerequisites: [],
     })
     const [errors, setErrors] = useState({})
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [polishingField, setPolishingField] = useState(null)
     const [polishPreview, setPolishPreview] = useState(null)
-    const [allCards, setAllCards] = useState([])
-
-    useEffect(() => {
-        if (!open) return
-        cardService.getAll().then(data => {
-            setAllCards(data?.cards || [])
-        })
-    }, [open])
 
     const resetForm = useCallback(() => {
         setForm({
@@ -39,7 +30,6 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
             card_type: 'tip',
             difficulty: 3,
             noteContent: '',
-            prerequisites: [],
         })
         setErrors({})
         setPolishingField(null)
@@ -104,16 +94,12 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
         if (!validate()) return
         setIsSubmitting(true)
         try {
-            const payload = {
+            const newCard = await cardService.createCard({
                 name: form.name.trim(),
                 card_type: form.card_type,
                 algorithm_type: form.algorithm_type.trim() || null,
                 difficulty: form.difficulty,
-            }
-            if (form.prerequisites && form.prerequisites.length > 0) {
-                payload.prerequisites = form.prerequisites
-            }
-            const newCard = await cardService.createCard(payload)
+            })
             addCard(newCard)
             showToast(`卡牌「${newCard.name}」创建成功！`, 'success')
             onCreated?.(newCard)
@@ -180,38 +166,6 @@ export default function CreateCardModal({ open, onClose, onCreated }) {
                             />
                             📝 题目卡
                         </label>
-                    </div>
-                </div>
-
-                <div className={styles.formField}>
-                    <label className={styles.fieldLabel}>前置节点（可选，用于在算法地图中建立依赖关系）</label>
-                    <div className={styles.prereqSelector}>
-                        {allCards.length === 0 && (
-                            <div style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', padding: '8px' }}>
-                                暂无卡牌，请先创建其他卡牌
-                            </div>
-                        )}
-                        {allCards.map((card) => (
-                            <div
-                                key={card.id}
-                                className={`${styles.prereqChip} ${form.prerequisites.includes(card.id) ? styles.prereqChipActive : ''}`}
-                                onClick={() => {
-                                    setForm(prev => ({
-                                        ...prev,
-                                        prerequisites: prev.prerequisites.includes(card.id)
-                                            ? prev.prerequisites.filter(p => p !== card.id)
-                                            : [...prev.prerequisites, card.id],
-                                    }))
-                                }}
-                            >
-                                <span>{card.name}</span>
-                                {card.algorithm_type && (
-                                    <span style={{ marginLeft: 4, fontSize: '0.75em', opacity: 0.7 }}>
-                                        ({card.algorithm_type})
-                                    </span>
-                                )}
-                            </div>
-                        ))}
                     </div>
                 </div>
 

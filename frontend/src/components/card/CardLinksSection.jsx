@@ -5,7 +5,6 @@ import styles from './CardLinksSection.module.css'
 
 const LINK_TYPE_LABELS = {
   related: '关联',
-  prerequisite: '前置',
   comparison: '对比',
   keyword: '关键词',
 }

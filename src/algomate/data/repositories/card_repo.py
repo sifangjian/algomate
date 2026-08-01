@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from algomate.models.cards import Card
 from algomate.models.card_links import CardLink
-from algomate.core.game.durability import compute_card_status
+from algomate.core.memory.card_status import compute_card_status
 from ..database import Database
 
 

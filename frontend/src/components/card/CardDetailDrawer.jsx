@@ -1,17 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 import { useCardStore } from '../../stores/cardStore'
-import { getRealmIdByNpcId } from '../../services/npcService'
 import { showToast } from '../ui/Toast/index'
 import Button from '../ui/Button/Button'
 import DimensionSection from '../card/DimensionSection'
 import VisualLinksSection from '../card/VisualLinksSection'
-import DialogueHistorySection from '../card/DialogueHistorySection'
 import CardLinksSection from '../card/CardLinksSection'
 import KnowledgeGraph from '../card/KnowledgeGraph'
 import CardEditForm from '../card/CardEditForm'
-import RetakeButton from '../card/RetakeButton'
 import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
 import styles from './CardDetailDrawer.module.css'
 
@@ -32,7 +28,6 @@ function getStatusClass(status) {
 }
 
 export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCreateCard }) {
-  const navigate = useNavigate()
   const { selectedCard, deleteCard, graphData, fetchGraphData } = useCardStore()
   const [isEditing, setIsEditing] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -91,25 +86,6 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
     }
   }, [selectedCard, deleteCard, onClose])
 
-  const handleReview = useCallback(() => {
-    if (selectedCard) {
-      navigate(`/boss/battle?cardId=${selectedCard.id}`)
-    }
-  }, [selectedCard, navigate])
-
-  const handlePractice = useCallback(() => {
-    if (!selectedCard?.dialogue_id) {
-      showToast('该卡牌无关联修习记录', 'warning')
-      return
-    }
-    const realmId = selectedCard.realm_id || getRealmIdByNpcId(selectedCard.npc_id)
-    if (!realmId) {
-      showToast('无法定位导师所在秘境', 'error')
-      return
-    }
-    navigate(`/npc/${realmId}?dialogueId=${selectedCard.dialogue_id}`)
-  }, [selectedCard, navigate])
-
   const handleOpenGraph = useCallback(async () => {
     await fetchGraphData()
     setShowGraph(true)
@@ -117,9 +93,9 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
 
   const handleGraphNodeClick = useCallback((node) => {
     if (selectedCard?.id !== node.id) {
-      navigate(`/cards?cardId=${node.id}`)
+      window.location.href = `/study/${node.id}`
     }
-  }, [selectedCard, navigate])
+  }, [selectedCard])
 
   if (!open || !selectedCard) return null
 
@@ -227,13 +203,27 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
               <DimensionSection card={selectedCard} />
               <VisualLinksSection visualLinks={selectedCard.visual_links} />
               <CardLinksSection card={selectedCard} />
-              <DialogueHistorySection card={selectedCard} />
             </>
           )}
 
           {!isEditing && selectedCard.pending_retake && (
             <div className={styles.retakeSection}>
-              <RetakeButton card={selectedCard} />
+              <Button
+                variant="ghost"
+                size="sm"
+                className={styles.retakeBtn}
+                onClick={async () => {
+                  try {
+                    const { cardService } = await import('../../services/cardService')
+                    await cardService.retakeCard(selectedCard.id)
+                    showToast(`开始重修「${selectedCard.name}」`, 'success')
+                  } catch (err) {
+                    showToast(`重修失败: ${err.message}`, 'error')
+                  }
+                }}
+              >
+                🔄 重修
+              </Button>
             </div>
           )}
         </div>
@@ -242,14 +232,6 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
           <div className={styles.footer}>
             <Button variant="ghost" onClick={handleEdit} className={styles.editBtn}>
               ✏️ 编辑
-            </Button>
-            {selectedCard.dialogue_id && (
-              <Button variant="ghost" onClick={handlePractice} className={styles.practiceBtn}>
-                📖 修炼
-              </Button>
-            )}
-            <Button variant="primary" onClick={handleReview} className={styles.reviewBtn}>
-              ⚔️ 挑战
             </Button>
             <Button variant="ghost" onClick={handleOpenGraph} className={styles.graphBtn}>
               🕸️ 图谱

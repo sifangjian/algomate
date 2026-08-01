@@ -36,11 +36,6 @@ export const cardService = {
     return result.data
   },
 
-  polishCard: async (data) => {
-    const result = await api.post('/v1/cards/polish', data)
-    return result.data
-  },
-
   // 链接管理
   getLinks: async (cardId) => {
     const result = await api.get(`/v1/cards/${cardId}/links`)
@@ -62,17 +57,6 @@ export const cardService = {
     return result.data
   },
 
-  // 前置关联
-  addPrerequisite: async (cardId, prerequisiteCardId) => {
-    const result = await api.post(`/v1/cards/${cardId}/prerequisites`, { prerequisite_card_id: prerequisiteCardId })
-    return result.data
-  },
-
-  removePrerequisite: async (cardId, prerequisiteCardId) => {
-    const result = await api.delete(`/v1/cards/${cardId}/prerequisites/${prerequisiteCardId}`)
-    return result.data
-  },
-
   // 复习相关
   startReview: (cardId) => api.post(`/v1/dashboard/review/start/${cardId}`),
 
@@ -91,8 +75,4 @@ export const cardService = {
   getTodayReviewTasks: () => api.get('/v1/reviews/today'),
 
   completeReviewV1: (cardId, reviewType) => api.post(`/v1/reviews/${cardId}/complete`, { review_type: reviewType }),
-
-  generateReviewQuiz: (cardId, count = 2) => api.post(`/v1/reviews/${cardId}/quiz`, { count }),
-
-  getLeetCodeRecommendation: (cardId) => api.post(`/v1/reviews/${cardId}/leetcode`),
 }

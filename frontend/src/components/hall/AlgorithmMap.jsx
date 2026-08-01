@@ -18,7 +18,7 @@ const COLORS = {
   emptyNodeText: '#888888',
   typeText: '#999999',
   link: '#555555',
-  prerequisiteLink: '#e0a060',
+  tipRelatedLink: '#60a5fa',
   grid: '#2a2a2a',
 }
 
@@ -179,11 +179,11 @@ export default function AlgorithmMap() {
     <div className={styles.mapContainer}>
       <svg ref={svgRef} className={`${styles.mapSvg} ${isDragging ? styles.dragging : ''}`} onMouseDown={handleMouseDown}>
         <defs>
-          <marker id="arrowPrerequisite" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-            <path d="M0,0 L8,4 L0,8 Z" fill={COLORS.prerequisiteLink} />
-          </marker>
           <marker id="arrowRelated" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
             <path d="M0,0 L8,4 L0,8 Z" fill={COLORS.link} />
+          </marker>
+          <marker id="arrowTipRelated" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+            <path d="M0,0 L8,4 L0,8 Z" fill={COLORS.tipRelatedLink} />
           </marker>
         </defs>
 
@@ -195,7 +195,6 @@ export default function AlgorithmMap() {
               const s = nodeMap[link.source.id || link.source]
               const t = nodeMap[link.target.id || link.target]
               if (!s || !t) return null
-              const isPrereq = link.link_type === 'prerequisite'
               const dx = t.x - s.x
               const dy = t.y - s.y
               const dist = Math.sqrt(dx * dx + dy * dy)
@@ -206,12 +205,13 @@ export default function AlgorithmMap() {
               const sy = s.y + uy * (NODE_HEIGHT / 2)
               const tx = t.x - ux * (NODE_WIDTH / 2)
               const ty = t.y - uy * (NODE_HEIGHT / 2)
+              const isTipRelated = link.link_type === 'tip_related'
               return (
                 <line
                   key={`link-${i}`}
                   x1={sx} y1={sy} x2={tx} y2={ty}
-                  className={isPrereq ? styles.prerequisiteLink : styles.relatedLink}
-                  markerEnd={isPrereq ? 'url(#arrowPrerequisite)' : 'url(#arrowRelated)'}
+                  className={isTipRelated ? styles.tipRelatedLink : styles.relatedLink}
+                  markerEnd={isTipRelated ? "url(#arrowTipRelated)" : "url(#arrowRelated)"}
                 />
               )
             })}
@@ -275,12 +275,12 @@ export default function AlgorithmMap() {
 
       <div className={styles.legend}>
         <div className={styles.legendItem}>
-          <span className={styles.prerequisiteLegend}></span>
-          <span>前置关联</span>
+          <span className={styles.relatedLegend}></span>
+          <span>题目关联</span>
         </div>
         <div className={styles.legendItem}>
-          <span className={styles.relatedLegend}></span>
-          <span>相关关联</span>
+          <span className={styles.tipRelatedLegend}></span>
+          <span>技巧关联</span>
         </div>
         <div className={styles.legendItem}>
           <span className={styles.emptyLegend}></span>

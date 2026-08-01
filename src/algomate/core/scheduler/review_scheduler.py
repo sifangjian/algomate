@@ -25,8 +25,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from algomate.data.database import Database
 from algomate.models.cards import Card
 from algomate.core.memory.forgetting_curve import ForgettingCurveEngine
-from algomate.core.game.durability import DurabilityManager, DurabilityAction
-from algomate.core.game.difficulty import DifficultyManager, DifficultyLevel
+from algomate.core.memory.durability import DurabilityManager, DurabilityAction
+from algomate.core.memory.difficulty import DifficultyManager, DifficultyLevel
 from algomate.config.settings import AppConfig
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,6 @@ class TaskType(str, Enum):
     """任务类型枚举"""
     CRITICAL_REVIEW = "critical_review"
     FORGETTING_CURVE_REVIEW = "forgetting_curve_review"
-    LEETCODE_CHALLENGE = "leetcode_challenge"
 
 
 PRIORITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -217,46 +216,17 @@ class ReviewScheduler:
                         max_durability=getattr(card, 'max_durability', 100),
                         review_level=getattr(card, 'review_level', 0),
                         next_review_date=card.next_review_date.date() if card.next_review_date else None,
-                        review_types=["content_review", "quiz_review"],
+                        review_types=["content_review"],
                     ))
                     task_counter += 1
-            
+
             daily_task_count = self.difficulty_manager.get_daily_task_count()
-            
-            if len(tasks) < daily_task_count:
-                remaining_slots = daily_task_count - len(tasks)
-                
-                non_critical_cards = [
-                    card for card in all_cards
-                    if card not in critical_cards and card not in due_cards
-                ]
-                
-                non_critical_cards.sort(key=lambda c: c.durability)
-                
-                for card in non_critical_cards[:remaining_slots]:
-                    tasks.append(ReviewTask(
-                        task_id=f"review_{task_counter}",
-                        task_type=TaskType.LEETCODE_CHALLENGE,
-                        card_id=card.id,
-                        card_name=card.name,
-                        card_algorithm_type=card.algorithm_type,
-                        card_durability=card.durability,
-                        priority="low",
-                        reason="LeetCode挑战",
-                        due_date=date.today(),
-                        algorithm_type=getattr(card, 'algorithm_type', ''),
-                        max_durability=getattr(card, 'max_durability', 100),
-                        review_level=getattr(card, 'review_level', 0),
-                        next_review_date=card.next_review_date.date() if card.next_review_date else None,
-                        review_types=["leetcode_challenge"],
-                    ))
-                    task_counter += 1
-            
+
             tasks.sort(key=lambda t: (
                 PRIORITY_ORDER.get(t.priority, 3),
                 t.card_durability
             ))
-            
+
             return tasks[:daily_task_count]
         finally:
             session.close()
@@ -335,7 +305,6 @@ class ReviewScheduler:
                     new_durability, is_critical, needs_retake = self.durability_manager.update_durability(
                         current_durability=card.durability,
                         action=DurabilityAction.DAILY_DECAY,
-                        difficulty=self.difficulty_manager.current_difficulty.value
                     )
                     
                     card.durability = new_durability
