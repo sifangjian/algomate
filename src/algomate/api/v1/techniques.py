@@ -1,0 +1,360 @@
+import json
+import logging
+from datetime import datetime, date
+from typing import Optional, List
+
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
+from sqlalchemy import desc
+
+from algomate.data.database import Database
+from algomate.models.technique_card import TechniqueCard
+from algomate.models.cards import Card
+
+router = APIRouter(prefix="/techniques", tags=["技巧卡片"])
+logger = logging.getLogger(__name__)
+
+
+class TechniqueCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200, description="技巧名称")
+    category: str = Field("algorithm", description="分类: data_structure/algorithm/template")
+    use_cases: str = Field("", description="适用场景")
+    code_template: str = Field("", description="标准代码模板")
+    memory_anchors: str = Field("", description="记忆锚点/关键词")
+    proficiency: int = Field(1, ge=1, le=5, description="熟练度 1-5")
+    algorithm_type: str = Field("", description="算法类型（用于复习卡片）")
+
+
+class TechniqueUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    use_cases: Optional[str] = None
+    code_template: Optional[str] = None
+    memory_anchors: Optional[str] = None
+    proficiency: Optional[int] = None
+    algorithm_type: Optional[str] = None
+
+
+class TechniqueResponse(BaseModel):
+    id: int
+    card_id: int
+    name: str
+    category: str
+    use_cases: str
+    code_template: str
+    memory_anchors: str
+    proficiency: int
+    review_interval: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    solution_count: int = 0
+    review_status: str = "normal"  # normal / due / critical
+    next_review_date: Optional[datetime] = None
+    algorithm_type: str = ""
+
+    class Config:
+        from_attributes = True
+
+
+class TechniqueDetailResponse(TechniqueResponse):
+    solutions: List[dict] = []
+
+    class Config:
+        from_attributes = True
+
+
+class SelfReviewRequest(BaseModel):
+    self_rating: str = Field(..., description="自评等级: forgot/struggled/passed/mastered")
+
+
+def _compute_review_status(card: Optional[Card]) -> str:
+    if not card:
+        return "normal"
+    if card.durability < 30:
+        return "critical"
+    if card.next_review_date and card.next_review_date.date() <= date.today():
+        return "due"
+    return "normal"
+
+
+def _technique_to_response(t: TechniqueCard, card: Optional[Card] = None) -> TechniqueResponse:
+    return TechniqueResponse(
+        id=t.id,
+        card_id=t.card_id,
+        name=t.name,
+        category=t.category,
+        use_cases=t.use_cases or "",
+        code_template=t.code_template or "",
+        memory_anchors=t.memory_anchors or "",
+        proficiency=t.proficiency,
+        review_interval=t.review_interval,
+        created_at=t.created_at,
+        updated_at=t.updated_at,
+        solution_count=len(t.solutions) if t.solutions else 0,
+        review_status=_compute_review_status(card),
+        next_review_date=card.next_review_date if card else None,
+        algorithm_type=card.algorithm_type if card else "",
+    )
+
+
+@router.post("", response_model=TechniqueResponse)
+def create_technique(data: TechniqueCreate):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        # 同步创建 Card 复习记录
+        review_card = Card(
+            name=data.name,
+            algorithm_type=data.algorithm_type or "",
+            difficulty=3,
+            durability=80,
+            review_level=0,
+            card_type="tip",
+            content="{}",
+        )
+        session.add(review_card)
+        session.flush()
+
+        technique = TechniqueCard(
+            card_id=review_card.id,
+            name=data.name,
+            category=data.category,
+            use_cases=data.use_cases,
+            code_template=data.code_template,
+            memory_anchors=data.memory_anchors,
+            proficiency=data.proficiency,
+            review_interval=1,
+        )
+        session.add(technique)
+        session.commit()
+        session.refresh(technique)
+        logger.info(f"Created technique card: {technique.name} (id={technique.id})")
+        return _technique_to_response(technique, review_card)
+    finally:
+        session.close()
+
+
+@router.get("", response_model=List[TechniqueResponse])
+def list_techniques(
+    category: Optional[str] = Query(None, description="按分类筛选"),
+    due_only: Optional[bool] = Query(False, description="只显示待复习的"),
+    algorithm_type: Optional[str] = Query(None, description="按算法类型筛选（通过关联的 Card）"),
+):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        query = session.query(TechniqueCard)
+
+        if category:
+            query = query.filter(TechniqueCard.category == category)
+
+        techniques = query.order_by(desc(TechniqueCard.created_at)).all()
+
+        result = []
+        for t in techniques:
+            card = session.query(Card).filter(Card.id == t.card_id).first()
+            if algorithm_type and (not card or card.algorithm_type != algorithm_type):
+                continue
+            if due_only and _compute_review_status(card) == "normal":
+                continue
+            result.append(_technique_to_response(t, card))
+
+        # 待复习技巧优先
+        result.sort(key=lambda r: (
+            0 if r.review_status != "normal" else 1,
+            -r.solution_count,
+        ))
+
+        return result
+    finally:
+        session.close()
+
+
+@router.get("/{technique_id}", response_model=TechniqueDetailResponse)
+def get_technique(technique_id: int):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        technique = session.query(TechniqueCard).filter(TechniqueCard.id == technique_id).first()
+        if not technique:
+            raise HTTPException(status_code=404, detail="技巧卡片不存在")
+
+        card = session.query(Card).filter(Card.id == technique.card_id).first()
+
+        solutions = []
+        if technique.solutions:
+            for s in technique.solutions:
+                solutions.append({
+                    "id": s.id,
+                    "name": s.name,
+                    "time_complexity": s.time_complexity or "",
+                    "space_complexity": s.space_complexity or "",
+                    "problem_title": s.problem.title if s.problem else "",
+                    "problem_id": s.problem_id,
+                    "leetcode_link": s.problem.leetcode_link if s.problem and s.problem.leetcode_link else "",
+                })
+
+        return TechniqueDetailResponse(
+            id=technique.id,
+            card_id=technique.card_id,
+            name=technique.name,
+            category=technique.category,
+            use_cases=technique.use_cases or "",
+            code_template=technique.code_template or "",
+            memory_anchors=technique.memory_anchors or "",
+            proficiency=technique.proficiency,
+            review_interval=technique.review_interval,
+            created_at=technique.created_at,
+            updated_at=technique.updated_at,
+            solution_count=len(technique.solutions) if technique.solutions else 0,
+            review_status=_compute_review_status(card),
+            algorithm_type=card.algorithm_type if card else "",
+            solutions=solutions,
+        )
+    finally:
+        session.close()
+
+
+@router.put("/{technique_id}", response_model=TechniqueResponse)
+def update_technique(technique_id: int, data: TechniqueUpdate):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        technique = session.query(TechniqueCard).filter(TechniqueCard.id == technique_id).first()
+        if not technique:
+            raise HTTPException(status_code=404, detail="技巧卡片不存在")
+
+        update_data = data.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(technique, key, value)
+
+        technique.updated_at = datetime.now()
+        session.commit()
+        session.refresh(technique)
+
+        card = session.query(Card).filter(Card.id == technique.card_id).first()
+        if card:
+            card.name = technique.name
+            if 'algorithm_type' in update_data:
+                card.algorithm_type = update_data['algorithm_type']
+            session.commit()
+
+        logger.info(f"Updated technique card: {technique.name} (id={technique.id})")
+        return _technique_to_response(technique, card)
+    finally:
+        session.close()
+
+
+@router.delete("/{technique_id}")
+def delete_technique(technique_id: int):
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        technique = session.query(TechniqueCard).filter(TechniqueCard.id == technique_id).first()
+        if not technique:
+            raise HTTPException(status_code=404, detail="技巧卡片不存在")
+
+        card_id = technique.card_id
+        session.delete(technique)
+        # 同时删除关联的 Card 复习记录
+        card = session.query(Card).filter(Card.id == card_id).first()
+        if card:
+            session.delete(card)
+        session.commit()
+        logger.info(f"Deleted technique card: {technique.name} (id={technique.id})")
+        return {"message": "删除成功"}
+    finally:
+        session.close()
+
+
+# --- 自评复习 ---
+
+@router.post("/{technique_id}/review")
+def self_review(technique_id: int, data: SelfReviewRequest):
+    """自评复习：用户练习后自评，系统根据自评+遗忘曲线计算下次复习安排"""
+    if data.self_rating not in ("forgot", "struggled", "passed", "mastered"):
+        raise HTTPException(status_code=400, detail="自评等级无效，可选: forgot/struggled/passed/mastered")
+
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        technique = session.query(TechniqueCard).filter(TechniqueCard.id == technique_id).first()
+        if not technique:
+            raise HTTPException(status_code=404, detail="技巧卡片不存在")
+
+        card = session.query(Card).filter(Card.id == technique.card_id).first()
+        if not card:
+            raise HTTPException(status_code=404, detail="复习卡片不存在")
+
+        # 根据自评等级调整耐久度和复习等级
+        rating = data.self_rating
+        if rating == "forgot":
+            card.durability = max(0, card.durability - 30)
+            # review_level 不变，间隔缩短
+            new_interval = max(1, technique.review_interval // 2)
+        elif rating == "struggled":
+            card.durability = max(0, card.durability - 10)
+            # review_level 不变，间隔不变
+            new_interval = technique.review_interval
+        elif rating == "passed":
+            card.durability = min(100, card.durability + 10)
+            card.review_level += 1
+            # 间隔按遗忘曲线延长（约1.5倍）
+            new_interval = max(1, int(technique.review_interval * 1.5))
+        elif rating == "mastered":
+            card.durability = min(100, card.durability + 25)
+            card.review_level += 2
+            # 间隔大幅延长（约2.5倍）
+            new_interval = max(1, int(technique.review_interval * 2.5))
+
+        # 更新技巧卡的复习间隔
+        technique.review_interval = new_interval
+        technique.proficiency = min(5, technique.proficiency + (1 if rating in ("passed", "mastered") else 0))
+
+        # 更新 Card 记录
+        card.last_reviewed = datetime.now()
+        from datetime import timedelta
+        card.next_review_date = datetime.now() + timedelta(days=new_interval)
+        card.pending_retake = False
+        card.review_count = (card.review_count or 0) + 1
+
+        session.commit()
+        logger.info(f"Self-review for technique {technique_id}: rating={rating}, new_interval={new_interval}d")
+
+        return {
+            "message": "自评完成",
+            "self_rating": rating,
+            "new_durability": card.durability,
+            "new_review_level": card.review_level,
+            "new_interval_days": new_interval,
+            "next_review_date": card.next_review_date.isoformat(),
+            "review_status": _compute_review_status(card),
+        }
+    finally:
+        session.close()
+
+
+# --- 反向链接：技巧关联的解法 ---
+@router.get("/{technique_id}/backlinks")
+def get_technique_backlinks(technique_id: int):
+    """查询引用了该技巧的解法列表"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        technique = session.query(TechniqueCard).filter(TechniqueCard.id == technique_id).first()
+        if not technique:
+            raise HTTPException(status_code=404, detail="技巧卡片不存在")
+
+        solutions = []
+        if technique.solutions:
+            for s in technique.solutions:
+                solutions.append({
+                    "id": s.id,
+                    "name": s.name,
+                    "problem_id": s.problem_id,
+                    "problem_title": s.problem.title if s.problem else "",
+                })
+
+        return {"solutions": solutions}
+    finally:
+        session.close()

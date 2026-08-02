@@ -12,8 +12,6 @@ export const useCardStore = create((set, get) => ({
     status: '',
     keyword: '',
   },
-  graphData: { nodes: [], edges: [] },
-  linkedCards: {},
 
   setCards: (cards) => set({ cards }),
 
@@ -109,47 +107,6 @@ export const useCardStore = create((set, get) => ({
     return result
   },
 
-  // 图谱相关
-  fetchGraphData: async () => {
-    try {
-      const data = await cardService.getGraph()
-      set({ graphData: data || { nodes: [], edges: [] } })
-      return data
-    } catch {
-      return null
-    }
-  },
-
-  fetchLinkedCards: async (cardId) => {
-    try {
-      const data = await cardService.getLinks(cardId)
-      set((state) => ({
-        linkedCards: { ...state.linkedCards, [cardId]: data || [] },
-      }))
-      return data
-    } catch {
-      return []
-    }
-  },
-
-  addCardLink: async (cardId, targetId, linkType, sourceKeyword) => {
-    const result = await cardService.addLink(cardId, {
-      target_card_id: targetId,
-      link_type: linkType || 'related',
-      source_keyword: sourceKeyword || null,
-    })
-    // 刷新链接列表
-    get().fetchLinkedCards(cardId)
-    return result
-  },
-
-  removeCardLink: async (linkId, cardId) => {
-    await cardService.removeLink(linkId)
-    if (cardId) {
-      get().fetchLinkedCards(cardId)
-    }
-  },
-
   resetCards: () =>
     set({
       cards: [],
@@ -157,8 +114,6 @@ export const useCardStore = create((set, get) => ({
       loading: false,
       endangeredCount: 0,
       pendingRetakeCount: 0,
-      graphData: { nodes: [], edges: [] },
-      linkedCards: {},
       filters: {
         algorithm_type: '',
         status: '',

@@ -5,13 +5,20 @@
 """
 
 from algomate.models.cards import Card, CardUpdate, CardResponse
-from algomate.models.card_links import CardLink
 from algomate.models.review_records import ReviewRecord
+from algomate.models.problem_card import ProblemCard, ProblemStatus
+from algomate.models.solution_card import SolutionCard
+from algomate.models.technique_card import TechniqueCard
+from algomate.models.solution_technique import SolutionTechnique
 
 __all__ = [
     "Card",
     "CardUpdate",
     "CardResponse",
-    "CardLink",
     "ReviewRecord",
+    "ProblemCard",
+    "ProblemStatus",
+    "SolutionCard",
+    "TechniqueCard",
+    "SolutionTechnique",
 ]

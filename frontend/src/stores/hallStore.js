@@ -6,7 +6,8 @@ export const useHallStore = create((set, get) => ({
   algorithmInfo: null,
   loading: false,
   selectedCard: null,
-  cardGraph: null,
+  overview: null,
+  overviewLoading: false,
 
   fetchAlgorithmInfo: async () => {
     try {
@@ -46,13 +47,18 @@ export const useHallStore = create((set, get) => ({
     }
   },
 
-  fetchCardGraph: async () => {
+  fetchTopicOverview: async () => {
+    set({ overviewLoading: true })
     try {
-      const data = await cardService.getGraph()
-      set({ cardGraph: data.data || data })
+      const data = await cardService.getOverview()
+      set({ overview: data })
+      return data
     } catch (err) {
-      console.error('Failed to fetch card graph:', err)
-      set({ cardGraph: null })
+      console.error('Failed to fetch overview:', err)
+      set({ overview: null })
+      return null
+    } finally {
+      set({ overviewLoading: false })
     }
   },
 
@@ -60,6 +66,6 @@ export const useHallStore = create((set, get) => ({
     algorithmInfo: null,
     loading: false,
     selectedCard: null,
-    cardGraph: null,
+    overview: null,
   }),
 }))

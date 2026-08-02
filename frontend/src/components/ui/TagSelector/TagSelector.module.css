@@ -1,0 +1,106 @@
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.inputWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color, #3a3a3a);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--color-bg-elevated, #1a1a2e);
+  cursor: text;
+  min-height: 38px;
+  align-items: center;
+  transition: border-color 0.15s;
+}
+
+.inputWrapper:focus-within {
+  border-color: var(--color-primary, #6366f1);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+  font-size: 0.78rem;
+  color: var(--color-primary-light, #a5b4fc);
+  white-space: nowrap;
+}
+
+.removeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--color-primary-light, #a5b4fc);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  line-height: 1;
+  border-radius: 50%;
+  transition: all 0.1s;
+}
+
+.removeBtn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  color: #fff;
+}
+
+.input {
+  flex: 1;
+  min-width: 80px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary, #e0e0e0);
+  font-size: 0.85rem;
+  padding: 2px 0;
+  font-family: inherit;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted, #666);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--color-bg-elevated, #1a1a2e);
+  border: 1px solid var(--border-color, #3a3a3a);
+  border-radius: var(--radius-sm, 4px);
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.option {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--color-text-primary, #e0e0e0);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.option:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.noResult {
+  padding: 12px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--color-text-muted, #666);
+}

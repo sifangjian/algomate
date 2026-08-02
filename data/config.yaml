@@ -3,7 +3,6 @@ VERSION: 0.1.0
 DATA_DIR: /app/data
 DB_PATH: /app/data/algomate.db
 LOG_PATH: /app/logs/algomate.log
-REVIEW_TIME: 09:00
 REVIEW_INTERVALS:
 - 1
 - 3

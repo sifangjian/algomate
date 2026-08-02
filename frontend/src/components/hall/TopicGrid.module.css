@@ -1,0 +1,148 @@
+.topicGrid {
+  padding: 0 0 var(--spacing-xl, 24px) 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.reviewBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast, 0.15s);
+}
+
+.reviewBanner:hover {
+  opacity: 0.9;
+}
+
+.reviewBanner.due {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.reviewBanner.critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.bannerLink {
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.topicCard {
+  background: var(--color-bg-secondary, #2a2a2a);
+  border: 1px solid var(--color-border, #3a3a3a);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.15s);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.topicCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary, #6366f1);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+}
+
+.topicIcon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.topicName {
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-primary, #e0e0e0);
+  margin-bottom: 8px;
+}
+
+.topicStats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #999);
+  margin-bottom: 10px;
+}
+
+.topicStats span {
+  white-space: nowrap;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badgeDue {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.badgeCritical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--color-text-secondary, #999);
+  font-size: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reviewBanner {
+    font-size: 0.85rem;
+    padding: 12px 16px;
+  }
+
+  .topicCard {
+    padding: 16px;
+  }
+}

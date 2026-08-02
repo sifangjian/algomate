@@ -1,0 +1,344 @@
+.formContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.tabRow {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 16px;
+    gap: 0;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px 16px;
+    text-align: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    font-family: inherit;
+}
+
+.tab:hover {
+    color: var(--color-text-primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.tabActive {
+    composes: tab;
+    color: var(--color-primary, #6366f1);
+    border-bottom-color: var(--color-primary, #6366f1);
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.formLabel {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.formInput {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color var(--transition-fast);
+    font-family: inherit;
+}
+
+.formInput:focus {
+    border-color: var(--color-primary);
+}
+
+.formSelect {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color var(--transition-fast);
+    font-family: inherit;
+    cursor: pointer;
+    appearance: auto;
+}
+
+.formSelect:focus {
+    border-color: var(--color-primary);
+}
+
+.formTextarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+    outline: none;
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.5;
+    transition: border-color var(--transition-fast);
+    font-family: inherit;
+}
+
+.formTextarea:focus {
+    border-color: var(--color-primary);
+}
+
+.formTextareaCode {
+    composes: formTextarea;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+.formHint {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.buttonRow {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+.submitBtn {
+    padding: 10px 24px;
+    background: var(--color-primary, #6366f1);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.submitBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.submitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancelBtn {
+    padding: 10px 24px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.cancelBtn:hover:not(:disabled) {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--color-text-primary);
+}
+
+.cancelBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.errorMsg {
+    color: var(--color-danger, #ef4444);
+    font-size: 0.82rem;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: var(--radius-sm, 4px);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    margin: 0;
+}
+
+.loadingOverlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.techniqueManager {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.techniqueTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.techniqueTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: rgba(99, 102, 241, 0.10);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 14px;
+    font-size: 0.78rem;
+    color: var(--color-primary-light);
+}
+
+.techniqueTagRemove {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.techniqueTagRemove:hover {
+    color: var(--color-danger);
+}
+
+.techniqueSearch {
+    position: relative;
+}
+
+.techniqueDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--color-bg-elevated, #2a2a2a);
+    border: 1px solid var(--border-color, #3a3a3a);
+    border-radius: var(--radius-sm, 4px);
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 2px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.techniqueDropdownItem {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.techniqueDropdownItem:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.techniqueDropdownCat {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-left: 6px;
+}
+
+.techniqueDropdownEmpty {
+    padding: 10px 12px;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    text-align: center;
+}
+
+/* Complexity combobox */
+.complexityWrapper {
+    position: relative;
+}
+
+.complexityDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--color-bg-elevated, #2a2a2a);
+    border: 1px solid var(--border-color, #3a3a3a);
+    border-radius: var(--radius-sm, 4px);
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 2px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.complexityDropdownItem {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.complexityDropdownItem:hover {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.complexityDropdownItemActive {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--color-primary-light);
+}
+
+/* Two-column form row */
+.formRow {
+    display: flex;
+    gap: 12px;
+}
+
+.formRow > .formGroup {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .buttonRow {
+        flex-direction: column;
+    }
+
+    .tab {
+        font-size: 0.82rem;
+        padding: 8px 12px;
+    }
+}

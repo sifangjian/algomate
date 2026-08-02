@@ -4,16 +4,9 @@
 
 .titleRow {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: var(--spacing-lg, 20px);
-}
-
-.pageTitle {
-  font-size: var(--font-size-3xl, 28px);
-  font-weight: var(--font-weight-bold, 700);
-  color: var(--color-primary-light);
-  margin: 0;
 }
 
 .createBtn {
@@ -39,8 +32,4 @@
   margin-bottom: var(--spacing-md, 16px);
 }
 
-@media (max-width: 768px) {
-  .pageTitle {
-    font-size: var(--font-size-2xl, 24px);
-  }
-}
+

@@ -4,7 +4,6 @@ from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from algomate.models.cards import Card
-from algomate.models.card_links import CardLink
 from algomate.core.memory.card_status import compute_card_status
 from ..database import Database
 
@@ -204,92 +203,4 @@ class CardRepository:
         finally:
             session.close()
 
-    # --- 链接相关 ---
-
-    def get_linked_cards(self, card_id: int) -> List[dict]:
-        session = self.db.get_session()
-        try:
-            outgoing = session.query(CardLink).filter(CardLink.source_card_id == card_id).all()
-            incoming = session.query(CardLink).filter(CardLink.target_card_id == card_id).all()
-            result = []
-            for link in outgoing:
-                target = session.query(Card).filter(Card.id == link.target_card_id).first()
-                result.append({
-                    "link_id": link.id,
-                    "card_id": link.target_card_id,
-                    "card_name": target.name if target else "未知",
-                    "link_type": link.link_type,
-                    "source_keyword": link.source_keyword,
-                    "direction": "outgoing",
-                })
-            for link in incoming:
-                source = session.query(Card).filter(Card.id == link.source_card_id).first()
-                result.append({
-                    "link_id": link.id,
-                    "card_id": link.source_card_id,
-                    "card_name": source.name if source else "未知",
-                    "link_type": link.link_type,
-                    "source_keyword": link.source_keyword,
-                    "direction": "incoming",
-                })
-            return result
-        finally:
-            session.close()
-
-    def add_link(self, source_id: int, target_id: int, link_type: str = "related",
-                 source_keyword: Optional[str] = None) -> Optional[CardLink]:
-        session = self.db.get_session()
-        try:
-            existing = session.query(CardLink).filter(
-                CardLink.source_card_id == source_id,
-                CardLink.target_card_id == target_id,
-                CardLink.link_type == link_type,
-            ).first()
-            if existing:
-                return None
-            link = CardLink(
-                source_card_id=source_id,
-                target_card_id=target_id,
-                link_type=link_type,
-                source_keyword=source_keyword,
-            )
-            session.add(link)
-            session.commit()
-            session.refresh(link)
-            return link
-        finally:
-            session.close()
-
-    def remove_link(self, link_id: int) -> bool:
-        session = self.db.get_session()
-        try:
-            link = session.query(CardLink).filter(CardLink.id == link_id).first()
-            if link is None:
-                return False
-            session.delete(link)
-            session.commit()
-            return True
-        finally:
-            session.close()
-
-    def get_graph_data(self) -> dict:
-        session = self.db.get_session()
-        try:
-            cards = session.query(Card).all()
-            links = session.query(CardLink).all()
-            nodes = [
-                {"id": c.id, "name": c.name, "card_type": c.card_type, "algorithm_type": c.algorithm_type}
-                for c in cards
-            ]
-            edges = [
-                {
-                    "source": l.source_card_id,
-                    "target": l.target_card_id,
-                    "link_type": l.link_type,
-                    "source_keyword": l.source_keyword,
-                }
-                for l in links
-            ]
-            return {"nodes": nodes, "edges": edges}
-        finally:
-            session.close()
+    

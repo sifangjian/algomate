@@ -40,8 +40,6 @@ class Card(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     review_records = relationship("ReviewRecord", back_populates="card", cascade="all, delete-orphan")
-    outgoing_links = relationship("CardLink", foreign_keys="[CardLink.source_card_id]", cascade="all, delete-orphan", back_populates="source_card")
-    incoming_links = relationship("CardLink", foreign_keys="[CardLink.target_card_id]", cascade="all, delete-orphan", back_populates="target_card")
 
     # --- 向后兼容 @property ---
     # question_generator.py, bosses.py, review_plan_service.py 等仍用旧字段名读取

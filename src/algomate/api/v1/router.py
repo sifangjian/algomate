@@ -7,6 +7,10 @@ from algomate.api.v1.dashboard import router as dashboard_router
 from algomate.api.v1.tasks import router as tasks_router
 from algomate.api.v1.progress import router as progress_router
 from algomate.api.v1.algorithm_info import router as algorithm_info_router
+from algomate.api.v1.problems import router as problems_router
+from algomate.api.v1.solutions import router as solutions_router
+from algomate.api.v1.techniques import router as techniques_router
+from algomate.api.v1.overview import router as overview_router
 
 router = APIRouter()
 
@@ -17,3 +21,7 @@ router.include_router(dashboard_router)
 router.include_router(tasks_router)
 router.include_router(progress_router)
 router.include_router(algorithm_info_router)
+router.include_router(problems_router)
+router.include_router(solutions_router)
+router.include_router(techniques_router)
+router.include_router(overview_router)

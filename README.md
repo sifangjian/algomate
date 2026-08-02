@@ -1,13 +1,13 @@
-# AlgoMate 算法大陆
+# AlgoMate 算法修习助手
 
 <div align="center">
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**在算法大陆的冒险中，成为算法大师**
+**个人算法学习管理工具 — 题解记录 + 遗忘曲线复习**
 
 </div>
 
@@ -15,83 +15,145 @@
 
 ## 项目概述
 
-**AlgoMate 算法大陆** 是一款基于 AI Agent 的游戏化算法修习助手，帮助用户对抗遗忘曲线，真正掌握算法技巧并熟练用于实战。
+**AlgoMate** 是一款面向算法学习者的个人管理工具，帮助你系统化地记录 LeetCode 题解、沉淀算法技巧，并通过基于艾宾浩斯遗忘曲线的间隔复习机制巩固记忆。
 
 ### 核心价值
 
-- 🎮 **游戏化修习**：卡牌收集、Boss 挑战、等级成长让修习不再枯燥
-- 🧠 **对抗遗忘**：基于艾宾浩斯遗忘曲线理论的科学修炼机制
-- 🤖 **AI 导师**：通过对话问答修习算法技巧
-- ⚔️ **个性化出题**：AI 根据你的薄弱点针对性生成 Boss
+- **系统化记录**：题解、解法、技巧三层结构，知识体系清晰可追溯
+- **对抗遗忘**：基于艾宾浩斯遗忘曲线的自评复习，科学安排复习节奏
+- **知识关联**：解法与技巧多对多关联，构建算法知识网络
+- **自主掌控**：自评驱动复习计划，灵活适配个人学习节奏
 
 ***
 
-## 核心功能
+## 功能特性
 
-AlgoMate 包含 **4 大功能模块**，形成完整的学习闭环：
+### 卡牌系统
 
-### F01 卡牌系统 🎴
+三种类型的卡牌构成完整的学习闭环：
 
-卡牌是算法技巧的完整知识载体，包含 10 个内容维度：核心概念、要点列表、代码模板、复杂度分析、适用场景、常见变体、典型题目、常见坑点、对比辨析、我的心得。
+| 卡牌类型 | 说明 | 参与遗忘曲线 |
+|---------|------|------------|
+| **题目卡** | LeetCode 题目索引，记录题目状态（未做/通过/最优） | 否 |
+| **解法卡** | 具体解法，包含复杂度、突破口、思路、代码、易错点 | 否 |
+| **技巧卡** | 原子化算法技巧，沉淀可复用的解题模式 | **是** |
 
-### F02 NPC 对话修习 🤖
+### 主题网格
 
-与 8 位领域专家 NPC 进行气泡式对话，学习特定算法技巧，对话结束后 AI 自动生成卡牌。
+首页按 33 种算法类型组织展示，每种类型统计题目数、解法数、技巧数，以及待复习和濒危技巧数量，一目了然掌握学习进度。
 
-### F03 Boss 挑战 ⚔️
+### 主题详情
 
-挑战 Boss 完成算法试炼，包含选择题、简答题、LeetCode 挑战三种题型，击败 Boss 可提升卡牌耐久度。
+进入具体算法类型，分栏展示关联的题目、解法、技巧卡片，支持分屏查看关联卡片详情。
 
-### F04 遗忘曲线修炼 📧
+### 遗忘曲线复习
 
-基于艾宾浩斯遗忘曲线，系统自动生成每日修炼任务，修炼节点：1天、3天、7天、14天、30天、60天。
+仅技巧卡参与遗忘曲线复习，间隔天数遵循 `[1, 3, 7, 14, 30, 60]` 天：
+- 用户自评四个等级：**忘了 / 吃力 / 通过 / 精通**
+- 系统根据自评动态调整耐久度和下次复习间隔
+- 耐久度系统：成功 +20，失败 -5，每日衰减 -2
+- 耐久度低于 30 标记为濒危，归零时需重修
+
+### 耐久度机制
+
+每张卡牌拥有耐久度（0-100），反映对该知识的掌握程度：
+- **修炼成功**：耐久度 +20
+- **修炼失败**：耐久度 -5
+- **每日衰减**：耐久度 -2（创建后 3 天宽限期）
+- **濒危状态**：耐久度 < 30
+- **重修状态**：耐久度 = 0，需通过重修恢复
+
+### 算法分类体系
+
+内置 33 种算法类型，按 10 大类别组织（基础数据结构、搜索、树、图、回溯、贪心、DP、分治排序、数学位运算），包含完整的前置依赖关系和推荐学习路径。
 
 ***
 
 ## 快速开始
 
-### Docker 部署（推荐）
+### 环境要求
 
-**环境要求**：Docker 20.10+、Docker Compose 2.0+
+- Python 3.11+
+- Node.js 18+
+- uv
+
+### 安装与启动
 
 ```bash
 # 1. 克隆项目
 git clone git@github.com:sifangjian/algomate.git
 cd algomate
 
-# 2. 配置环境变量
+# 2. 安装依赖
+uv sync
+cd frontend && npm install && cd ..
+
+# 3. 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件，填入 LLM_API_KEY
 
-# 3. 一键启动
-docker compose up -d
-
-# 4. 查看日志
-docker compose logs -f
+# 4. 启动开发服务器
+python scripts/dev.py
 ```
 
-访问：<http://localhost:3000>
-
-**停止服务**：
-
-```bash
-docker compose down          # 停止服务
-docker compose down -v       # 停止并清空数据
-```
-
+访问：
+- 前端：http://localhost:3000
+- 后端 API：http://localhost:8000
+- API 文档：http://localhost:8000/docs
 
 ***
 
-## 贡献指南
+## 技术栈
 
-欢迎提交 Issue 和 Pull Request！
+### 后端
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'feat: 添加某个新功能'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+| 技术 | 用途 |
+|------|------|
+| Python 3.11+ | 编程语言 |
+| FastAPI | Web 框架 |
+| SQLAlchemy 2.0 | ORM |
+| SQLite | 数据库 |
+| APScheduler | 定时任务调度 |
+| PyYAML | 配置管理 |
 
+### 前端
+
+| 技术 | 用途 |
+|------|------|
+| React 18 | UI 框架 |
+| Vite | 构建工具 |
+| React Router | 路由 |
+| Zustand | 状态管理 |
+| Axios | HTTP 客户端 |
+| CodeMirror | 代码编辑器 |
+| Chart.js | 数据可视化 |
+| react-markdown | Markdown 渲染 |
+
+***
+
+## 项目结构
+
+```
+algomate/
+├── src/algomate/          # 后端源代码
+│   ├── main.py            # 应用入口 + FastAPI 实例
+│   ├── api/v1/            # RESTful API 路由
+│   ├── models/            # 数据模型
+│   ├── core/              # 核心逻辑（遗忘曲线、耐久度、调度）
+│   ├── review/            # 修炼计划服务
+│   ├── config/            # 配置管理
+│   ├── data/              # 数据层
+│   └── utils/             # 工具函数
+├── frontend/              # 前端源代码
+│   └── src/
+│       ├── pages/         # 页面
+│       ├── components/    # 组件
+│       ├── stores/        # 状态管理
+│       ├── services/      # API 服务
+│       └── hooks/         # 自定义 Hooks
+├── tests/                 # 后端测试
+├── data/                  # 数据库 + 配置文件
+└── scripts/               # 开发工具脚本
+```
 
 ***
 
@@ -105,22 +167,3 @@ docker compose down -v       # 停止并清空数据
 
 - **问题反馈**：[GitHub Issues](https://github.com/sifangjian/algomate/issues)
 - **讨论交流**：[GitHub Discussions](https://github.com/sifangjian/algomate/discussions)
-
-***
-
-## 致谢
-
-- [FastAPI](https://fastapi.tiangolo.com/) - 现代、快速的 Web 框架
-- [React](https://react.dev/) - 用于构建用户界面的 JavaScript 库
-- [LangChain](https://www.langchain.com/) - LLM 应用开发框架
-- [智谱 AI](https://www.bigmodel.cn/) - 提供 GLM-4 API
-
-***
-
-<div align="center">
-
-**如果这个项目对你有帮助，请给一个 ⭐️ Star 支持一下！**
-
-Made with ❤️ by AlgoMate Team
-
-</div>

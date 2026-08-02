@@ -1,0 +1,242 @@
+.detailPage {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 82px - 40px);
+    position: relative;
+    background: var(--color-bg-primary);
+    overflow: hidden;
+}
+
+.singleCard {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.splitView {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.panelLeft {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.panelRight {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.divider {
+    width: 6px;
+    cursor: col-resize;
+    background: var(--border-color);
+    flex-shrink: 0;
+    position: relative;
+    transition: background var(--transition-fast);
+}
+
+.divider:hover {
+    background: var(--color-primary);
+}
+
+.dividerActive {
+    background: var(--color-primary);
+}
+
+.editButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--color-primary-light);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    margin-left: auto;
+}
+
+.editButton:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.closeCompare {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    padding: 6px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-card);
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.closeCompare:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.backButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.backButton:hover {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-text-muted);
+    color: var(--color-text-primary);
+}
+
+.loadingState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    min-height: 60vh;
+}
+
+.errorState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
+    min-height: 60vh;
+    color: var(--color-text-muted);
+}
+
+.errorTitle {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.errorMessage {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--color-bg-secondary);
+    flex-shrink: 0;
+}
+
+.compareInfo {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    margin-left: auto;
+}
+
+.deleteButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border: 1px solid var(--color-danger, #ef4444);
+    border-radius: var(--radius-sm);
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--color-danger, #ef4444);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.deleteButton:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--color-danger, #ef4444);
+}
+
+.deleteOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.deleteDialog {
+    background: var(--color-bg-primary, #1a1a2e);
+    border: 1px solid var(--border-color, #3a3a3a);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.deleteDialog h3 {
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    color: var(--color-text-primary, #e0e0e0);
+}
+
+.deleteDialog p {
+    margin: 0 0 20px;
+    font-size: 0.88rem;
+    color: var(--color-text-secondary, #999);
+    line-height: 1.5;
+}
+
+.deleteDialogButtons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.deleteConfirmBtn {
+    padding: 8px 20px;
+    background: var(--color-danger, #ef4444);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+    font-family: inherit;
+}
+
+.deleteConfirmBtn:hover {
+    opacity: 0.9;
+}
