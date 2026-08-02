@@ -56,6 +56,7 @@ function mapCardToFormData(cardType, data) {
             return {
                 problem_id: data.problem_id || '',
                 name: data.name || '',
+                algorithm_type: data.algorithm_type || '',
                 time_complexity: data.time_complexity || '',
                 space_complexity: data.space_complexity || '',
                 breakthrough: data.breakthrough || '',
@@ -137,7 +138,7 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
 
     const validate = useCallback(() => {
         const current = formData[activeTab]
-        if (activeTab === 'problem' && !current.title?.trim()) {
+        if (activeTab === 'problem' && !current.problemTitle?.trim()) {
             setError('请输入标题')
             return false
         }

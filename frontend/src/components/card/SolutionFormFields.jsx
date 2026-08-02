@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { cardService } from '../../services/cardService'
+import { ALGORITHM_TYPES } from '../../constants/algorithmConstants'
 import ComplexityInput from './ComplexityInput'
+import TagSelector from '../ui/TagSelector/TagSelector'
 import CodeEditor from '../ui/CodeEditor'
 import styles from './CreateCardForm.module.css'
 
@@ -115,6 +117,17 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
                         )}
                     </div>
                 </div>
+            </div>
+
+            <div className={styles.formGroup}>
+                <label className={styles.formLabel}>算法类型</label>
+                <TagSelector
+                    value={formData.algorithm_type ? [formData.algorithm_type] : []}
+                    onChange={(tags) => handleChange('algorithm_type', tags.length > 0 ? tags[0] : '')}
+                    placeholder="搜索或选择算法类型..."
+                    options={ALGORITHM_TYPES}
+                />
+                <span className={styles.formHint}>设置解法所属的算法类型，用于主题归类</span>
             </div>
 
             <div className={styles.formRow}>

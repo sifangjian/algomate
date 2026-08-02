@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class SolutionCreate(BaseModel):
     problem_id: int = Field(..., description="关联的题目 ID")
     name: str = Field(..., min_length=1, max_length=200, description="解法名称")
+    algorithm_type: str = Field("", description="算法类型，作为快速归类，未关联技巧时使用")
     time_complexity: str = Field("", description="时间复杂度")
     space_complexity: str = Field("", description="空间复杂度")
     breakthrough: str = Field("", description="突破口")
@@ -28,6 +29,7 @@ class SolutionCreate(BaseModel):
 
 class SolutionUpdate(BaseModel):
     name: Optional[str] = None
+    algorithm_type: Optional[str] = None
     time_complexity: Optional[str] = None
     space_complexity: Optional[str] = None
     breakthrough: Optional[str] = None
@@ -40,6 +42,7 @@ class SolutionResponse(BaseModel):
     id: int
     problem_id: int
     name: str
+    algorithm_type: str = ""
     time_complexity: str
     space_complexity: str
     breakthrough: str
@@ -76,6 +79,7 @@ def _solution_to_response(s: SolutionCard) -> SolutionResponse:
         id=s.id,
         problem_id=s.problem_id,
         name=s.name,
+        algorithm_type=s.algorithm_type or "",
         time_complexity=s.time_complexity or "",
         space_complexity=s.space_complexity or "",
         breakthrough=s.breakthrough or "",
@@ -103,6 +107,7 @@ def create_solution(data: SolutionCreate):
         solution = SolutionCard(
             problem_id=data.problem_id,
             name=data.name,
+            algorithm_type=data.algorithm_type,
             time_complexity=data.time_complexity,
             space_complexity=data.space_complexity,
             breakthrough=data.breakthrough,

@@ -10,35 +10,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 开发环境启动
 ```bash
-# 启动前后端（推荐）
-python scripts/dev.py
+# 构建并启动所有服务（推荐）
+docker compose up --build
 
 # 仅后端（FastAPI，端口 8000）
-python scripts/dev.py --backend
+docker compose up --build backend
 
 # 仅前端（Vite，端口 3000）
-python scripts/dev.py --frontend
+docker compose up --build frontend
 
-# 或直接用 uvicorn
-cd src && uv run uvicorn algomate.main:app --reload
+# 后台启动
+docker compose up -d
 ```
 
 ### 测试
 ```bash
-# 运行全部后端测试
-uv run pytest
+# 运行全部后端测试（需先启动容器）
+docker compose exec backend uv run pytest
 
 # 运行单个测试文件
-uv run pytest tests/test_forgetting_curve_system.py
+docker compose exec backend uv run pytest tests/test_forgetting_curve_system.py
 
 # 运行匹配名称的测试
-uv run pytest tests/ -k "card"
+docker compose exec backend uv run pytest tests/ -k "card"
 
 # 前端测试
-cd frontend && npm test
+docker compose exec frontend npm test
 ```
 
 ### 依赖安装
+依赖在 Docker 构建时自动安装，无需手动执行。如需在本地安装：
+
 ```bash
 uv sync                    # 后端依赖
 cd frontend && npm install # 前端依赖
@@ -47,6 +49,24 @@ cd frontend && npm install # 前端依赖
 ### 环境配置
 ```bash
 cp .env.example .env       # 复制环境变量模板（无需额外配置）
+```
+
+### 其他常用 Docker 命令
+```bash
+# 查看服务日志
+docker compose logs -f
+
+# 停止所有服务
+docker compose down
+
+# 重新构建（依赖变更后重新安装）
+docker compose up --build
+
+# 进入后端容器
+docker compose exec backend /bin/bash
+
+# 进入前端容器
+docker compose exec frontend /bin/sh
 ```
 
 ## Architecture

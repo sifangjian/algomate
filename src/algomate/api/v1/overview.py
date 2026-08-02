@@ -72,21 +72,17 @@ def get_overview():
             }
 
         # 统计题目到各算法类型（通过 tags 匹配算法类型名）
+        # 注意：一道题目可能有多个算法类型标签，需要分别计入各类型的统计
         for p in all_problems:
             tags = _parse_tags(p.tags)
             for tag in tags:
                 if tag in topic_stats:
                     topic_stats[tag]["problem_count"] += 1
-                    break
 
-        # 统计解法到各算法类型（通过题目 tags 匹配）
+        # 统计解法到各算法类型（按手动设置的 algorithm_type 匹配）
         for s in all_solutions:
-            if s.problem and s.problem.tags:
-                tags = _parse_tags(s.problem.tags)
-                for tag in tags:
-                    if tag in topic_stats:
-                        topic_stats[tag]["solution_count"] += 1
-                        break
+            if s.algorithm_type and s.algorithm_type in topic_stats:
+                topic_stats[s.algorithm_type]["solution_count"] += 1
 
         # 统计技巧到各算法类型（通过 Card 的 algorithm_type 匹配）
         for t in all_techniques:
@@ -159,13 +155,16 @@ class TopicDetailResponse(BaseModel):
 
 @router.get("/topic/{algorithm_type}", response_model=TopicDetailResponse)
 def get_topic_detail(algorithm_type: str):
-    """获取某个算法类型下的所有卡片（题目、解法、技巧）"""
+    """获取某个算法类型下的所有卡片（题目、解法、技巧）
+
+    三种卡片独立按手动设置的算法类型匹配，无继承关系。
+    """
     db = Database.get_instance()
     session = db.get_session()
     try:
         today = date.today()
 
-        # 技巧卡片
+        # 技巧卡片（通过 Card.algorithm_type 匹配）
         techniques = []
         for t in session.query(TechniqueCard).all():
             card = session.query(Card).filter(Card.id == t.card_id).first()
@@ -185,9 +184,8 @@ def get_topic_detail(algorithm_type: str):
                 algorithm_type=card.algorithm_type or "",
             ))
 
-        # 题目卡片（通过 tags 匹配）
+        # 题目卡片（通过手动 tags 匹配）
         problems = []
-        problem_ids = set()
         for p in session.query(ProblemCard).all():
             tags = _parse_tags(p.tags)
             if algorithm_type not in tags:
@@ -200,43 +198,17 @@ def get_topic_detail(algorithm_type: str):
                 difficulty=p.difficulty,
                 solution_count=len(p.solutions) if p.solutions else 0,
             ))
-            problem_ids.add(p.id)
 
-        # 解法卡片（通过关联的题目）
+        # 解法卡片（通过手动 algorithm_type 匹配）
         solutions = []
-        seen_solution_ids = set()
-        for pid in problem_ids:
-            p = session.query(ProblemCard).filter(ProblemCard.id == pid).first()
-            if p and p.solutions:
-                for s in p.solutions:
-                    if s.id in seen_solution_ids:
-                        continue
-                    seen_solution_ids.add(s.id)
-                    solutions.append(TopicDetailCard(
-                        id=s.id,
-                        name=s.name,
-                        card_type="solution",
-                        problem_title=p.title,
-                        solution_count=len(s.techniques) if s.techniques else 0,
-                    ))
-
-        # 再补充：通过技巧关联的解法
-        for t in session.query(TechniqueCard).all():
-            card = session.query(Card).filter(Card.id == t.card_id).first()
-            if not card or card.algorithm_type != algorithm_type:
-                continue
-            if t.solutions:
-                for s in t.solutions:
-                    if s.id in seen_solution_ids:
-                        continue
-                    seen_solution_ids.add(s.id)
-                    solutions.append(TopicDetailCard(
-                        id=s.id,
-                        name=s.name,
-                        card_type="solution",
-                        problem_title=s.problem.title if s.problem else "",
-                        solution_count=len(s.techniques) if s.techniques else 0,
-                    ))
+        for s in session.query(SolutionCard).filter(SolutionCard.algorithm_type == algorithm_type).all():
+            solutions.append(TopicDetailCard(
+                id=s.id,
+                name=s.name,
+                card_type="solution",
+                problem_title=s.problem.title if s.problem else "",
+                solution_count=len(s.techniques) if s.techniques else 0,
+            ))
 
         return TopicDetailResponse(
             algorithm_type=algorithm_type,

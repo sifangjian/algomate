@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { ALGORITHM_TYPES } from '../../constants/algorithmConstants'
+import TagSelector from '../ui/TagSelector/TagSelector'
 import styles from './CreateCardForm.module.css'
 
 const DIFFICULTY_OPTIONS = [
@@ -70,6 +71,17 @@ export default function ProblemFormFields({ formData, onChange }) {
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                 </select>
+            </div>
+
+            <div className={styles.formGroup}>
+                <label className={styles.formLabel}>算法类型 *</label>
+                <TagSelector
+                    value={formData.tags || []}
+                    onChange={(tags) => handleChange('tags', tags)}
+                    placeholder="搜索或选择算法类型..."
+                    options={ALGORITHM_TYPES}
+                />
+                <span className={styles.formHint}>选择题目所属的算法类型，至少选择一个</span>
             </div>
         </>
     )
