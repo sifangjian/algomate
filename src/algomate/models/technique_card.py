@@ -20,6 +20,8 @@ class TechniqueCard(Base):
     memory_anchors = Column(Text, nullable=True, default="", comment="记忆锚点/关键词")
     proficiency = Column(Integer, nullable=False, default=1, comment="熟练度 1-5")
     review_interval = Column(Integer, nullable=False, default=1, comment="复习间隔天数")
+    notes = Column(Text, nullable=True, default="", comment="注意事项")
+    video_demo_link = Column(String(500), nullable=True, default="", comment="视频演示链接")
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 

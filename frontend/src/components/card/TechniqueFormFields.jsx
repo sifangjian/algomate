@@ -44,6 +44,7 @@ export default function TechniqueFormFields({ formData, onChange }) {
                     onChange={handleAlgoTypeChange}
                     placeholder="搜索或选择算法类型..."
                     options={ALGORITHM_TYPES}
+                    singleSelect={true}
                 />
             </div>
 
@@ -80,6 +81,26 @@ export default function TechniqueFormFields({ formData, onChange }) {
             </div>
 
             <div className={styles.formGroup}>
+                <label className={styles.formLabel}>难度</label>
+                <div className={styles.difficultySelector}>
+                    {[1, 2, 3, 4, 5].map((level) => (
+                        <button
+                            key={level}
+                            type="button"
+                            className={`${styles.difficultyBtn} ${(formData.difficulty ?? 3) === level ? styles.difficultyBtnActive : ''}`}
+                            onClick={() => handleChange('difficulty', level)}
+                            title={['极简', '简单', '中等', '困难', '极难'][level - 1]}
+                        >
+                            {level}
+                        </button>
+                    ))}
+                    <span className={styles.difficultyLabel}>
+                        {['极简', '简单', '中等', '困难', '极难'][(formData.difficulty ?? 3) - 1]}
+                    </span>
+                </div>
+            </div>
+
+            <div className={styles.formGroup}>
                 <label className={styles.formLabel}>熟练度</label>
                 <select
                     className={styles.formSelect}
@@ -90,6 +111,28 @@ export default function TechniqueFormFields({ formData, onChange }) {
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                 </select>
+            </div>
+
+            <div className={styles.formGroup}>
+                <label className={styles.formLabel}>注意事项</label>
+                <textarea
+                    className={styles.formTextarea}
+                    value={formData.notes || ''}
+                    onChange={(e) => handleChange('notes', e.target.value)}
+                    placeholder="记录使用此技巧时的注意事项、边界条件、易错点..."
+                    rows={3}
+                />
+            </div>
+
+            <div className={styles.formGroup}>
+                <label className={styles.formLabel}>视频演示链接</label>
+                <input
+                    className={styles.formInput}
+                    type="text"
+                    value={formData.video_demo_link || ''}
+                    onChange={(e) => handleChange('video_demo_link', e.target.value)}
+                    placeholder="https://www.bilibili.com/video/..."
+                />
             </div>
 
             </>

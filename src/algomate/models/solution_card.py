@@ -21,6 +21,7 @@ class SolutionCard(Base):
     approach = Column(Text, nullable=True, default="", comment="详细思路 Markdown")
     code = Column(Text, nullable=True, default="", comment="代码块")
     pitfalls = Column(Text, nullable=True, default="[]", comment="易错点 JSON 数组")
+    related_solution_ids = Column(Text, nullable=True, default="[]", comment="关联解法ID列表 JSON数组")
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 

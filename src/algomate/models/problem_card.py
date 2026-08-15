@@ -24,6 +24,9 @@ class ProblemCard(Base):
     leetcode_link = Column(String(500), nullable=True, default="", comment="原题链接")
     tags = Column(Text, nullable=True, default="[]", comment="标签 JSON 数组")
     my_status = Column(String(20), nullable=False, default="untried", comment="我的状态: untried/accepted/optimal")
+    notes = Column(Text, nullable=True, default="", comment="注意事项")
+    video_demo_link = Column(String(500), nullable=True, default="", comment="视频演示链接")
+    related_problem_ids = Column(Text, nullable=True, default="[]", comment="关联题目ID列表 JSON数组")
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 

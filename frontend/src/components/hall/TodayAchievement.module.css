@@ -1,0 +1,184 @@
+.container {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 28px;
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: all 0.5s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #6366f1);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 100% 0%; }
+}
+
+.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hasActivity {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 32px rgba(99, 102, 241, 0.15);
+}
+
+.noActivity {
+  background: linear-gradient(135deg, #1a1a2e 0%, #1e1e2e 100%);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.mainRow {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.streakSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.fireIcon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.streakText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.streakCount {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #f59e0b;
+  line-height: 1.1;
+  text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.streakLabel {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.statsRow {
+  display: flex;
+  gap: 32px;
+  flex: 1;
+  justify-content: space-around;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+
+.statIcon {
+  font-size: 1.2rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.messageRow {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.messageIcon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.messageText {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 18px 16px;
+    margin-bottom: 20px;
+  }
+
+  .mainRow {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .streakSection {
+    min-width: 100px;
+  }
+
+  .streakCount {
+    font-size: 1.5rem;
+  }
+
+  .statsRow {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .statValue {
+    font-size: 1.1rem;
+  }
+
+  .statLabel {
+    font-size: 0.65rem;
+  }
+
+  .divider {
+    display: none;
+  }
+}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useHallStore } from '../stores/hallStore'
 import HallHeader from '../components/hall/HallHeader'
 import TopicGrid from '../components/hall/TopicGrid'
+import TodayAchievement from '../components/hall/TodayAchievement'
 import CreateCardModal from '../components/card/CreateCardModal'
 import styles from './HallPage.module.css'
 
@@ -35,6 +36,7 @@ export default function HallPage() {
   return (
     <div className={styles.hallPage}>
       <HallHeader onCreateCard={handleCreateCard} />
+      <TodayAchievement />
       <TopicGrid />
       <CreateCardModal
         open={createModalOpen}

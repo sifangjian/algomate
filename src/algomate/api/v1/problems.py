@@ -20,6 +20,9 @@ class ProblemCreate(BaseModel):
     leetcode_link: str = Field("", description="原题链接")
     tags: List[str] = Field(default_factory=list, description="标签列表")
     my_status: str = Field("untried", description="我的状态: untried/accepted/optimal")
+    notes: str = Field("", description="注意事项")
+    video_demo_link: str = Field("", description="视频演示链接")
+    related_problem_ids: List[int] = Field(default_factory=list, description="关联题目ID列表")
 
 
 class ProblemUpdate(BaseModel):
@@ -28,6 +31,9 @@ class ProblemUpdate(BaseModel):
     leetcode_link: Optional[str] = None
     tags: Optional[List[str]] = None
     my_status: Optional[str] = None
+    notes: Optional[str] = None
+    video_demo_link: Optional[str] = None
+    related_problem_ids: Optional[List[int]] = None
 
 
 class ProblemResponse(BaseModel):
@@ -37,6 +43,9 @@ class ProblemResponse(BaseModel):
     leetcode_link: str
     tags: List[str]
     my_status: str
+    notes: str = ""
+    video_demo_link: str = ""
+    related_problem_ids: List[int] = []
     created_at: datetime
     updated_at: Optional[datetime] = None
     solution_count: int = 0
@@ -61,6 +70,15 @@ def _parse_tags(tags_json: Optional[str]) -> List[str]:
         return []
 
 
+def _parse_related_ids(ids_json: Optional[str]) -> List[int]:
+    if not ids_json:
+        return []
+    try:
+        return json.loads(ids_json)
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
 def _problem_to_response(p: ProblemCard) -> ProblemResponse:
     return ProblemResponse(
         id=p.id,
@@ -69,6 +87,9 @@ def _problem_to_response(p: ProblemCard) -> ProblemResponse:
         leetcode_link=p.leetcode_link or "",
         tags=_parse_tags(p.tags),
         my_status=p.my_status,
+        notes=p.notes or "",
+        video_demo_link=p.video_demo_link or "",
+        related_problem_ids=_parse_related_ids(p.related_problem_ids),
         created_at=p.created_at,
         updated_at=p.updated_at,
         solution_count=len(p.solutions) if hasattr(p, 'solutions') and p.solutions else 0,
@@ -86,6 +107,9 @@ def create_problem(data: ProblemCreate):
             leetcode_link=data.leetcode_link,
             tags=json.dumps(data.tags, ensure_ascii=False),
             my_status=data.my_status,
+            notes=data.notes,
+            video_demo_link=data.video_demo_link,
+            related_problem_ids=json.dumps(data.related_problem_ids, ensure_ascii=False),
         )
         session.add(problem)
         session.commit()
@@ -175,6 +199,9 @@ def get_problem(problem_id: int):
             leetcode_link=problem.leetcode_link or "",
             tags=_parse_tags(problem.tags),
             my_status=problem.my_status,
+            notes=problem.notes or "",
+            video_demo_link=problem.video_demo_link or "",
+            related_problem_ids=_parse_related_ids(problem.related_problem_ids),
             created_at=problem.created_at,
             updated_at=problem.updated_at,
             solution_count=len(problem.solutions) if problem.solutions else 0,
@@ -196,6 +223,8 @@ def update_problem(problem_id: int, data: ProblemUpdate):
         update_data = data.model_dump(exclude_unset=True)
         if "tags" in update_data and update_data["tags"] is not None:
             update_data["tags"] = json.dumps(update_data["tags"], ensure_ascii=False)
+        if "related_problem_ids" in update_data and update_data["related_problem_ids"] is not None:
+            update_data["related_problem_ids"] = json.dumps(update_data["related_problem_ids"], ensure_ascii=False)
 
         for key, value in update_data.items():
             setattr(problem, key, value)

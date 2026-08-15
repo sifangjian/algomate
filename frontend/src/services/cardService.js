@@ -142,6 +142,7 @@ export const cardService = {
   getReviewSchedule: (cardId) => api.get(`/v1/dashboard/review/schedule/${cardId}`),
   getTodayReviewPlan: () => api.get('/v1/dashboard/today-review'),
   getWeakPoints: (threshold) => api.get(`/v1/dashboard/weak-points?threshold=${threshold || 30}`),
+  getTodayStats: () => api.get('/v1/stats/today'),
   getReviewStats: () => api.get('/v1/dashboard/review/statistics'),
   getTodayReviewTasks: () => api.get('/v1/reviews/today'),
   completeReviewV1: (cardId, reviewType) => api.post(`/v1/reviews/${cardId}/complete`, { review_type: reviewType }),

@@ -8,6 +8,8 @@ export const useHallStore = create((set, get) => ({
   selectedCard: null,
   overview: null,
   overviewLoading: false,
+  todayStats: null,
+  todayStatsLoading: false,
 
   fetchAlgorithmInfo: async () => {
     try {
@@ -62,10 +64,26 @@ export const useHallStore = create((set, get) => ({
     }
   },
 
+  fetchTodayStats: async () => {
+    set({ todayStatsLoading: true })
+    try {
+      const data = await cardService.getTodayStats()
+      set({ todayStats: data?.data || null })
+      return data
+    } catch (err) {
+      console.error('Failed to fetch today stats:', err)
+      set({ todayStats: null })
+      return null
+    } finally {
+      set({ todayStatsLoading: false })
+    }
+  },
+
   resetHall: () => set({
     algorithmInfo: null,
     loading: false,
     selectedCard: null,
     overview: null,
+    todayStats: null,
   }),
 }))

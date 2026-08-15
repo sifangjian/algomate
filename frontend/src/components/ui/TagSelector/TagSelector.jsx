@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import styles from './TagSelector.module.css'
 
-export default function TagSelector({ value = [], onChange, placeholder = '选择标签...', options = [] }) {
+export default function TagSelector({ value = [], onChange, placeholder = '选择标签...', options = [], singleSelect = false }) {
   const [inputValue, setInputValue] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef(null)
@@ -30,14 +30,24 @@ export default function TagSelector({ value = [], onChange, placeholder = '选�
   }, [])
 
   const handleSelect = useCallback((tag) => {
-    onChange([...selectedTags, tag])
-    setInputValue('')
-    setIsOpen(true)
-  }, [onChange, selectedTags])
+    if (singleSelect) {
+      onChange([tag])
+      setInputValue('')
+      setIsOpen(false)
+    } else {
+      onChange([...selectedTags, tag])
+      setInputValue('')
+      setIsOpen(true)
+    }
+  }, [onChange, selectedTags, singleSelect])
 
   const handleRemove = useCallback((tag) => {
-    onChange(selectedTags.filter((t) => t !== tag))
-  }, [onChange, selectedTags])
+    if (singleSelect) {
+      onChange([])
+    } else {
+      onChange(selectedTags.filter((t) => t !== tag))
+    }
+  }, [onChange, selectedTags, singleSelect])
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Backspace' && inputValue === '' && selectedTags.length > 0) {

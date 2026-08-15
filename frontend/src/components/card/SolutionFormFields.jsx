@@ -21,6 +21,14 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
         }).catch(() => {})
     }, [])
 
+    const [allSolutions, setAllSolutions] = useState([])
+
+    useEffect(() => {
+        cardService.getSolutions().then(data => {
+            setAllSolutions(data || [])
+        }).catch(() => {})
+    }, [])
+
     // 如果提供了 problemId，自动设置
     useEffect(() => {
         if (problemId && !formData.problem_id) {
@@ -113,6 +121,75 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
                         {showDropdown && searchText && filteredTechniques.length === 0 && (
                             <div className={styles.techniqueDropdown}>
                                 <div className={styles.techniqueDropdownEmpty}>无匹配技巧</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className={styles.formGroup}>
+                <label className={styles.formLabel}>相关解法</label>
+                <div className={styles.techniqueManager}>
+                    {formData.related_solutions?.length > 0 && (
+                        <div className={styles.techniqueTags}>
+                            {formData.related_solutions.map((s) => (
+                                <span key={s.id} className={styles.techniqueTag}>
+                                    <span>{s.name}</span>
+                                    <button
+                                        type="button"
+                                        className={styles.techniqueTagRemove}
+                                        onClick={() => {
+                                            const updated = (formData.related_solutions || []).filter(item => item.id !== s.id)
+                                            handleChange('related_solutions', updated)
+                                            handleChange('related_solution_ids', updated.map(item => item.id))
+                                        }}
+                                    >
+                                        ✕
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    <div className={styles.techniqueSearch}>
+                        <input
+                            className={styles.formInput}
+                            type="text"
+                            value={formData.related_solution_search || ''}
+                            onChange={(e) => { handleChange('related_solution_search', e.target.value); handleChange('related_solution_show_dropdown', true) }}
+                            onFocus={() => handleChange('related_solution_show_dropdown', true)}
+                            placeholder="搜索解法..."
+                        />
+                        {formData.related_solution_show_dropdown && formData.related_solution_search && (
+                            <div className={styles.techniqueDropdown}>
+                                {(allSolutions || [])
+                                    .filter(s => 
+                                        !(formData.related_solution_ids || []).includes(s.id) &&
+                                        s.name.toLowerCase().includes((formData.related_solution_search || '').toLowerCase())
+                                    )
+                                    .slice(0, 10)
+                                    .map((s) => (
+                                        <button
+                                            key={s.id}
+                                            type="button"
+                                            className={styles.techniqueDropdownItem}
+                                            onClick={() => {
+                                                const updated = [...(formData.related_solutions || []), { id: s.id, name: s.name }]
+                                                handleChange('related_solutions', updated)
+                                                handleChange('related_solution_ids', updated.map(item => item.id))
+                                                handleChange('related_solution_search', '')
+                                                handleChange('related_solution_show_dropdown', false)
+                                            }}
+                                        >
+                                            {s.name} {s.problem_title ? `(${s.problem_title})` : ''}
+                                        </button>
+                                    ))
+                                }
+                                {formData.related_solution_show_dropdown && formData.related_solution_search && (allSolutions || []).filter(s => 
+                                    !(formData.related_solution_ids || []).includes(s.id) &&
+                                    s.name.toLowerCase().includes((formData.related_solution_search || '').toLowerCase())
+                                ).length === 0 && (
+                                    <div className={styles.techniqueDropdownEmpty}>无匹配解法</div>
+                                )}
                             </div>
                         )}
                     </div>

@@ -23,6 +23,9 @@ class TechniqueCreate(BaseModel):
     memory_anchors: str = Field("", description="记忆锚点/关键词")
     proficiency: int = Field(1, ge=1, le=5, description="熟练度 1-5")
     algorithm_type: str = Field("", description="算法类型（用于复习卡片）")
+    difficulty: int = Field(3, ge=1, le=5, description="难度 1-5")
+    notes: str = Field("", description="注意事项")
+    video_demo_link: str = Field("", description="视频演示链接")
 
 
 class TechniqueUpdate(BaseModel):
@@ -33,6 +36,9 @@ class TechniqueUpdate(BaseModel):
     memory_anchors: Optional[str] = None
     proficiency: Optional[int] = None
     algorithm_type: Optional[str] = None
+    difficulty: Optional[int] = None
+    notes: Optional[str] = None
+    video_demo_link: Optional[str] = None
 
 
 class TechniqueResponse(BaseModel):
@@ -45,6 +51,9 @@ class TechniqueResponse(BaseModel):
     memory_anchors: str
     proficiency: int
     review_interval: int
+    difficulty: int = 3
+    notes: str = ""
+    video_demo_link: str = ""
     created_at: datetime
     updated_at: Optional[datetime] = None
     solution_count: int = 0
@@ -88,6 +97,9 @@ def _technique_to_response(t: TechniqueCard, card: Optional[Card] = None) -> Tec
         memory_anchors=t.memory_anchors or "",
         proficiency=t.proficiency,
         review_interval=t.review_interval,
+        difficulty=card.difficulty if card else 3,
+        notes=t.notes or "",
+        video_demo_link=t.video_demo_link or "",
         created_at=t.created_at,
         updated_at=t.updated_at,
         solution_count=len(t.solutions) if t.solutions else 0,
@@ -106,7 +118,7 @@ def create_technique(data: TechniqueCreate):
         review_card = Card(
             name=data.name,
             algorithm_type=data.algorithm_type or "",
-            difficulty=3,
+            difficulty=data.difficulty,
             durability=80,
             review_level=0,
             card_type="tip",
@@ -124,6 +136,8 @@ def create_technique(data: TechniqueCreate):
             memory_anchors=data.memory_anchors,
             proficiency=data.proficiency,
             review_interval=1,
+            notes=data.notes,
+            video_demo_link=data.video_demo_link,
         )
         session.add(technique)
         session.commit()
@@ -204,6 +218,9 @@ def get_technique(technique_id: int):
             memory_anchors=technique.memory_anchors or "",
             proficiency=technique.proficiency,
             review_interval=technique.review_interval,
+            difficulty=card.difficulty if card else 3,
+            notes=technique.notes or "",
+            video_demo_link=technique.video_demo_link or "",
             created_at=technique.created_at,
             updated_at=technique.updated_at,
             solution_count=len(technique.solutions) if technique.solutions else 0,
@@ -237,6 +254,8 @@ def update_technique(technique_id: int, data: TechniqueUpdate):
             card.name = technique.name
             if 'algorithm_type' in update_data:
                 card.algorithm_type = update_data['algorithm_type']
+            if 'difficulty' in update_data:
+                card.difficulty = update_data['difficulty']
             session.commit()
 
         logger.info(f"Updated technique card: {technique.name} (id={technique.id})")

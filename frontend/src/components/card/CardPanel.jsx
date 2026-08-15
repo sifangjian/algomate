@@ -93,6 +93,39 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
         )}
       </div>
 
+      {data.notes && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>注意事项</h3>
+          <MarkdownRenderer content={data.notes} className={styles.textContent} />
+        </div>
+      )}
+
+      {data.video_demo_link && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>视频演示</h3>
+          <a href={data.video_demo_link} target="_blank" rel="noopener noreferrer" className={styles.externalLink}>
+            🔗 观看视频演示
+          </a>
+        </div>
+      )}
+
+      {data.related_problem_ids?.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>相关题目</h3>
+          <div className={styles.techniquesRow}>
+            {data.related_problem_ids.map((pid) => (
+              <button
+                key={pid}
+                className={styles.techniqueLink}
+                onClick={() => onNavigate('problem', pid)}
+              >
+                #{pid}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className={styles.section}>
           <h3 className={styles.sectionTitle}>
             解法 ({data.solutions?.length || 0})
@@ -346,6 +379,23 @@ function SolutionCard({ data, onNavigate }) {
           </div>
         </div>
       )}
+
+      {data.related_solution_ids?.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>相关解法</h3>
+          <div className={styles.techniquesRow}>
+            {data.related_solution_ids.map((sid) => (
+              <button
+                key={sid}
+                className={styles.techniqueLink}
+                onClick={() => onNavigate('solution', sid)}
+              >
+                #{sid}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -422,6 +472,22 @@ function TechniqueCard({ data, onNavigate }) {
         <div className={styles.section}>
           <h3 className={styles.sectionTitle}>记忆锚点</h3>
           <MarkdownRenderer content={data.memory_anchors} className={styles.textContent} />
+        </div>
+      )}
+
+      {data.notes && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>注意事项</h3>
+          <MarkdownRenderer content={data.notes} className={styles.textContent} />
+        </div>
+      )}
+
+      {data.video_demo_link && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>视频演示</h3>
+          <a href={data.video_demo_link} target="_blank" rel="noopener noreferrer" className={styles.externalLink}>
+            🔗 观看视频演示
+          </a>
         </div>
       )}
 

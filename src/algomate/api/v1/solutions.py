@@ -25,6 +25,7 @@ class SolutionCreate(BaseModel):
     approach: str = Field("", description="详细思路 Markdown")
     code: str = Field("", description="代码块")
     pitfalls: List[str] = Field(default_factory=list, description="易错点列表")
+    related_solution_ids: List[int] = Field(default_factory=list, description="关联解法ID列表")
 
 
 class SolutionUpdate(BaseModel):
@@ -36,6 +37,7 @@ class SolutionUpdate(BaseModel):
     approach: Optional[str] = None
     code: Optional[str] = None
     pitfalls: Optional[List[str]] = None
+    related_solution_ids: Optional[List[int]] = None
 
 
 class SolutionResponse(BaseModel):
@@ -49,6 +51,7 @@ class SolutionResponse(BaseModel):
     approach: str
     code: str
     pitfalls: List[str]
+    related_solution_ids: List[int] = []
     created_at: datetime
     updated_at: Optional[datetime] = None
     technique_count: int = 0
@@ -74,6 +77,15 @@ def _parse_pitfalls(pitfalls_json: Optional[str]) -> List[str]:
         return []
 
 
+def _parse_related_ids(ids_json: Optional[str]) -> List[int]:
+    if not ids_json:
+        return []
+    try:
+        return json.loads(ids_json)
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
 def _solution_to_response(s: SolutionCard) -> SolutionResponse:
     return SolutionResponse(
         id=s.id,
@@ -86,6 +98,7 @@ def _solution_to_response(s: SolutionCard) -> SolutionResponse:
         approach=s.approach or "",
         code=s.code or "",
         pitfalls=_parse_pitfalls(s.pitfalls),
+        related_solution_ids=_parse_related_ids(s.related_solution_ids),
         created_at=s.created_at,
         updated_at=s.updated_at,
         technique_count=len(s.techniques) if s.techniques else 0,
@@ -114,6 +127,7 @@ def create_solution(data: SolutionCreate):
             approach=data.approach,
             code=data.code,
             pitfalls=json.dumps(data.pitfalls, ensure_ascii=False),
+            related_solution_ids=json.dumps(data.related_solution_ids, ensure_ascii=False),
         )
         session.add(solution)
         session.commit()
@@ -168,12 +182,14 @@ def get_solution(solution_id: int):
             id=solution.id,
             problem_id=solution.problem_id,
             name=solution.name,
+            algorithm_type=solution.algorithm_type or "",
             time_complexity=solution.time_complexity or "",
             space_complexity=solution.space_complexity or "",
             breakthrough=solution.breakthrough or "",
             approach=solution.approach or "",
             code=solution.code or "",
             pitfalls=_parse_pitfalls(solution.pitfalls),
+            related_solution_ids=_parse_related_ids(solution.related_solution_ids),
             created_at=solution.created_at,
             updated_at=solution.updated_at,
             technique_count=len(solution.techniques) if solution.techniques else 0,
@@ -196,6 +212,8 @@ def update_solution(solution_id: int, data: SolutionUpdate):
         update_data = data.model_dump(exclude_unset=True)
         if "pitfalls" in update_data and update_data["pitfalls"] is not None:
             update_data["pitfalls"] = json.dumps(update_data["pitfalls"], ensure_ascii=False)
+        if "related_solution_ids" in update_data and update_data["related_solution_ids"] is not None:
+            update_data["related_solution_ids"] = json.dumps(update_data["related_solution_ids"], ensure_ascii=False)
 
         for key, value in update_data.items():
             setattr(solution, key, value)
@@ -270,12 +288,14 @@ def link_technique(solution_id: int, data: LinkTechniqueRequest):
             id=solution.id,
             problem_id=solution.problem_id,
             name=solution.name,
+            algorithm_type=solution.algorithm_type or "",
             time_complexity=solution.time_complexity or "",
             space_complexity=solution.space_complexity or "",
             breakthrough=solution.breakthrough or "",
             approach=solution.approach or "",
             code=solution.code or "",
             pitfalls=_parse_pitfalls(solution.pitfalls),
+            related_solution_ids=_parse_related_ids(solution.related_solution_ids),
             created_at=solution.created_at,
             updated_at=solution.updated_at,
             technique_count=len(solution.techniques) if solution.techniques else 0,

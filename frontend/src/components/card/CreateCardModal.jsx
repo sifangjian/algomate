@@ -19,6 +19,12 @@ const INITIAL_FORM_DATA = {
         leetcode_link: '',
         tags: [],
         my_status: '',
+        notes: '',
+        video_demo_link: '',
+        related_problems: [],
+        related_problem_ids: [],
+        related_search: '',
+        related_show_dropdown: false,
     },
     solution: {
         problem_id: '',
@@ -29,6 +35,12 @@ const INITIAL_FORM_DATA = {
         approach: '',
         code: '',
         pitfalls: '',
+        technique_ids: [],
+        techniques: [],
+        related_solutions: [],
+        related_solution_ids: [],
+        related_solution_search: '',
+        related_solution_show_dropdown: false,
     },
     technique: {
         name: '',
@@ -38,6 +50,9 @@ const INITIAL_FORM_DATA = {
         memory_anchors: '',
         proficiency: '',
         algorithm_type: '',
+        difficulty: 3,
+        notes: '',
+        video_demo_link: '',
     },
 }
 
@@ -51,6 +66,10 @@ function mapCardToFormData(cardType, data) {
                 leetcode_link: data.leetcode_link || '',
                 tags: data.tags || [],
                 my_status: data.my_status || '',
+                notes: data.notes || '',
+                video_demo_link: data.video_demo_link || '',
+                related_problems: data.related_problems || [],
+                related_problem_ids: data.related_problem_ids || [],
             }
         case 'solution':
             return {
@@ -65,6 +84,8 @@ function mapCardToFormData(cardType, data) {
                 pitfalls: Array.isArray(data.pitfalls) ? data.pitfalls.join('\n') : '',
                 techniques: data.techniques || [],
                 technique_ids: (data.techniques || []).map(t => t.id),
+                related_solutions: data.related_solutions || [],
+                related_solution_ids: data.related_solution_ids || [],
             }
         case 'technique':
             return {
@@ -75,6 +96,9 @@ function mapCardToFormData(cardType, data) {
                 memory_anchors: data.memory_anchors || '',
                 proficiency: data.proficiency != null ? String(data.proficiency) : '',
                 algorithm_type: data.algorithm_type || '',
+                difficulty: data.difficulty ?? 3,
+                notes: data.notes || '',
+                video_demo_link: data.video_demo_link || '',
             }
         default:
             return {}
@@ -187,6 +211,9 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
                         if (typeof data.tags === 'string') {
                             data.tags = data.tags.split(',').map((t) => t.trim()).filter(Boolean)
                         }
+                        delete data.related_problems
+                        delete data.related_search
+                        delete data.related_show_dropdown
                         result = await cardService.updateProblem(editData.id, data)
                         break
                     case 'solution': {
@@ -197,6 +224,9 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
                         const techniqueIds = data.technique_ids
                         delete data.technique_ids
                         delete data.techniques
+                        delete data.related_solutions
+                        delete data.related_solution_search
+                        delete data.related_solution_show_dropdown
 
                         result = await cardService.updateSolution(editData.id, data)
 
@@ -241,6 +271,9 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
                         if (typeof data.tags === 'string') {
                             data.tags = data.tags.split(',').map((t) => t.trim()).filter(Boolean)
                         }
+                        delete data.related_problems
+                        delete data.related_search
+                        delete data.related_show_dropdown
                         result = await cardService.createProblem(data)
                         break
                     case 'solution':
@@ -248,6 +281,9 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
                         if (typeof data.pitfalls === 'string') {
                             data.pitfalls = data.pitfalls.split('\n').map(p => p.trim()).filter(Boolean)
                         }
+                        delete data.related_solutions
+                        delete data.related_solution_search
+                        delete data.related_solution_show_dropdown
                         result = await cardService.createSolution(data)
                         break
                     case 'technique':
