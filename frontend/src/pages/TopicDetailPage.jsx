@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { cardService } from '../services/cardService'
 import { ALGORITHM_ICONS } from '../constants/algorithmConstants'
+import { Icon } from '../components/ui/Icons'
 import styles from './TopicDetailPage.module.css'
 
 function findIcon(topicName) {
@@ -10,7 +11,7 @@ function findIcon(topicName) {
       return icon
     }
   }
-  return '📚'
+  return 'book'
 }
 
 const DIFFICULTY_CLASSES = {
@@ -102,7 +103,9 @@ export default function TopicDetailPage() {
       <div className={styles.toolbar}>
         <button className={styles.backButton} onClick={handleBack}>← 返回</button>
         <div className={styles.topicHeader}>
-          <span className={styles.topicIcon}>{findIcon(decodedType)}</span>
+          <span className={styles.topicIcon}>
+            <Icon name={findIcon(decodedType)} size={20} color="var(--accent)" />
+          </span>
           <h2 className={styles.pageTitle}>{decodedType}</h2>
         </div>
         <span className={styles.count}>{totalCards} 张卡片</span>

@@ -1,0 +1,14 @@
+.avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.avatarText {
+    color: var(--accent);
+}

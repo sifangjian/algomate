@@ -1,7 +1,7 @@
 .section {
     margin-top: 20px;
     border: 1px solid rgba(107, 114, 128, 0.25);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     overflow: hidden;
     background: rgba(107, 114, 128, 0.03);
 }
@@ -15,9 +15,9 @@
     background: rgba(107, 114, 128, 0.06);
     border: none;
     cursor: pointer;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     font-size: 0.9rem;
-    transition: background var(--transition-fast);
+    transition: background var(--transition-base);
     gap: 10px;
 }
 
@@ -27,7 +27,7 @@
 
 .title {
     font-weight: 600;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     flex: 1;
     text-align: left;
 }
@@ -39,14 +39,14 @@
     border-radius: 10px;
     font-size: 0.72rem;
     font-weight: 600;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     flex-shrink: 0;
 }
 
 .toggle {
     font-size: 0.7rem;
-    color: var(--color-text-muted);
-    transition: transform var(--transition-fast);
+    color: var(--text-muted);
+    transition: transform var(--transition-base);
 }
 
 .toggleOpen {
@@ -67,10 +67,10 @@
     padding: 12px 14px;
     background: rgba(15, 15, 26, 0.5);
     border: 1px solid rgba(107, 114, 128, 0.15);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     opacity: 0.75;
     filter: grayscale(40%);
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
 }
 
 .cardItem:hover {
@@ -96,7 +96,7 @@
 .cardName {
     font-size: 0.88rem;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -105,10 +105,10 @@
 
 .cardCategory {
     font-size: 0.72rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
 }
 
 .cardMeta {
     font-size: 0.75rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
 }

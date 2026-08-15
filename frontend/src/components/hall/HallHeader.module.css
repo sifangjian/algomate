@@ -1,35 +1,32 @@
 .hallHeader {
-  margin-bottom: var(--spacing-2xl, 32px);
+    margin-bottom: 16px;
 }
 
 .titleRow {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: var(--spacing-lg, 20px);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
 .createBtn {
-  padding: 8px 18px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
-  color: white;
-  border: none;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
-  white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color var(--transition-base);
 }
 
 .createBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+    border-color: var(--border-hover);
 }
 
 .searchRow {
-  margin-bottom: var(--spacing-md, 16px);
+    margin-bottom: 12px;
 }
-
-

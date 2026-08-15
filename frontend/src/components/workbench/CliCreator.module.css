@@ -1,0 +1,84 @@
+.cliContainer {
+    border: 1px solid transparent;
+    transition: border-color var(--transition-base);
+    padding: 16px;
+}
+
+.cliContainer:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.cliContainer:active,
+.cliContainer:focus-within {
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.cliLog {
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.8;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logLine {
+    display: flex;
+    gap: 8px;
+    color: var(--text-secondary);
+}
+
+.logLine.system {
+    color: var(--text-muted);
+}
+
+.logLine.prompt {
+    color: var(--text-primary);
+}
+
+.logLine.input {
+    color: var(--text-secondary);
+}
+
+.logLine.success {
+    color: var(--status-normal);
+}
+
+.promptSymbol {
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.logText {
+    word-break: break-all;
+}
+
+.cliInput {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+}
+
+.inputPrompt {
+    color: var(--accent);
+    font-size: 14px;
+}
+
+.inputField {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    caret-color: var(--accent);
+}
+
+.inputField::placeholder {
+    color: var(--text-muted);
+    font-size: 12px;
+}

@@ -4,9 +4,9 @@
   padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
   background: rgba(99, 102, 241, 0.1);
   border: 1px solid rgba(99, 102, 241, 0.25);
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 0;
   font-size: var(--font-size-xs, 12px);
-  color: var(--color-primary-light);
+  color: var(--text-accent);
   font-weight: var(--font-weight-medium, 500);
   align-self: flex-start;
 }

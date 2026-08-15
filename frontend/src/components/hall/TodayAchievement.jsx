@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useHallStore } from '../../stores/hallStore'
+import { Icon } from '../ui/Icons'
 import styles from './TodayAchievement.module.css'
 
 function getMotivationalMessage(totalNew, streakDays) {
@@ -38,7 +39,11 @@ export default function TodayAchievement() {
     <div className={`${styles.container} ${visible ? styles.visible : ''} ${hasActivity ? styles.hasActivity : styles.noActivity}`}>
       <div className={styles.mainRow}>
         <div className={styles.streakSection}>
-          <span className={styles.fireIcon}>{streak_days > 0 ? '🔥' : '🕯️'}</span>
+          {streak_days > 0 ? (
+            <Icon name="flame" size={24} color="#f97316" />
+          ) : (
+            <Icon name="flame" size={24} color="var(--text-muted)" />
+          )}
           <div className={styles.streakText}>
             <span className={styles.streakCount}>{streak_days}</span>
             <span className={styles.streakLabel}>天连续学习</span>
@@ -49,22 +54,22 @@ export default function TodayAchievement() {
 
         <div className={styles.statsRow}>
           <div className={styles.statItem}>
-            <span className={styles.statIcon}>📝</span>
+            <Icon name="book" size={16} color="#60a5fa" />
             <span className={styles.statValue}>{new_problems}</span>
             <span className={styles.statLabel}>新题目</span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statIcon}>💡</span>
+            <Icon name="lightbulb" size={16} color="#4ade80" />
             <span className={styles.statValue}>{new_solutions}</span>
             <span className={styles.statLabel}>新解法</span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statIcon}>🎯</span>
+            <Icon name="target" size={16} color="#fbbf24" />
             <span className={styles.statValue}>{new_techniques}</span>
             <span className={styles.statLabel}>新技巧</span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statIcon}>✅</span>
+            <Icon name="check" size={16} color="#4ade80" />
             <span className={styles.statValue}>{reviews_completed}</span>
             <span className={styles.statLabel}>已完成复习</span>
           </div>
@@ -72,7 +77,7 @@ export default function TodayAchievement() {
       </div>
 
       <div className={styles.messageRow}>
-        <span className={styles.messageIcon}>💪</span>
+        <Icon name="flex" size={16} color="var(--accent)" />
         <span className={styles.messageText}>{message}</span>
       </div>
     </div>

@@ -1,0 +1,68 @@
+.algorithmMap {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    padding: 16px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.edge {
+    stroke: var(--border-hover);
+    stroke-width: 1.5;
+}
+
+.node {
+    cursor: pointer;
+}
+
+.nodeCircle {
+    fill: var(--bg-elevated);
+    stroke: var(--border-default);
+    stroke-width: 2;
+}
+
+.nodeText {
+    fill: var(--text-primary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+}
+
+.legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legendDot {
+    width: 8px;
+    height: 8px;
+    display: inline-block;
+}
+
+.legendDot.prerequisite {
+    background: var(--accent);
+}
+
+.legendDot.related {
+    background: var(--status-warning);
+}
+
+.legendDot.empty {
+    background: var(--text-muted);
+}

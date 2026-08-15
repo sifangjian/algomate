@@ -1,0 +1,130 @@
+.topTabs {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    margin-left: var(--sidebar-width, 240px);
+    padding: 0 16px;
+    background: var(--bg-base);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 16px;
+    transition: margin-left var(--transition-base);
+}
+
+.tabsLeft {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 100%;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+    padding: 0 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: color var(--transition-base), border-color var(--transition-base);
+}
+
+.tab:hover {
+    color: var(--text-primary);
+}
+
+.tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+}
+
+.tabIcon {
+    font-size: 15px;
+}
+
+.tabLabel {
+    font-size: 14px;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.tabsRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.searchBox {
+    display: flex;
+    align-items: center;
+    width: 445px;
+    height: 28px;
+    background: var(--bg-elevated);
+    border: 1px solid transparent;
+    padding: 0 10px;
+    transition: border-color var(--transition-base);
+}
+
+.searchBox:focus-within {
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.searchIcon {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-right: 8px;
+    font-family: var(--font-mono);
+}
+
+.searchInput {
+    flex: 1;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+}
+
+.searchInput::placeholder {
+    color: var(--text-muted);
+}
+
+.settingsBtn {
+    width: 28px;
+    height: 28px;
+    background: var(--bg-elevated);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: border-color var(--transition-base), color var(--transition-base);
+}
+
+.settingsBtn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .searchBox {
+        width: 180px;
+    }
+
+    .tabLabel {
+        display: none;
+    }
+}

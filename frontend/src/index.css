@@ -1,40 +1,35 @@
 :root {
-    --color-bg-primary: #0f0f1a;
-    --color-bg-secondary: #1a1a2e;
-    --color-bg-card: #16213e;
-    --color-bg-elevated: #1f2b47;
+    --bg-base: #181818;
+    --bg-panel: #181818;
+    --bg-panel-hover: #262626;
+    --bg-elevated: #242424;
+    --bg-sidebar: #1a1a1a;
+    --bg-statusbar: #131313;
 
-    --color-primary: #6366f1;
-    --color-primary-light: #818cf8;
-    --color-primary-dark: #4f46e5;
-    --color-accent: #f59e0b;
-    --color-accent-light: #fbbf24;
-    --color-success: #10b981;
-    --color-danger: #ef4444;
-    --color-warning: #f59e0b;
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 48px;
 
-    --color-text-primary: #e2e8f0;
-    --color-text-secondary: #94a3b8;
-    --color-text-muted: #64748b;
+    --border-subtle: rgba(255, 255, 255, 0.05);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.6);
+    --border-active: rgba(255, 255, 255, 0.8);
 
-    --border-color: #2d3748;
-    --border-glow: rgba(99, 102, 241, 0.3);
+    --text-primary: #d4d4d4;
+    --text-secondary: #8a8a8a;
+    --text-muted: #555555;
+    --text-accent: #b8b8ff;
 
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+    --accent: #818cf8;
+    --accent-dim: rgba(129, 140, 248, 0.12);
 
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
+    --status-normal: #4ade80;
+    --status-warning: #d4a017;
+    --status-critical: #e55555;
 
-    --transition-fast: 150ms ease;
-    --transition-normal: 250ms ease;
-    --transition-slow: 400ms ease;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-    --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
+    --transition-base: 120ms ease;
 }
 
 * {
@@ -49,9 +44,15 @@ html {
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--color-bg-primary);
-    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    background-color: var(--bg-base);
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px, 24px 24px;
+    background-position: 0 0, 0 0, 12px 12px;
+    color: var(--text-primary);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -64,13 +65,13 @@ body {
 }
 
 a {
-    color: var(--color-primary-light);
+    color: var(--accent);
     text-decoration: none;
-    transition: color var(--transition-fast);
+    transition: color var(--transition-base);
 }
 
 a:hover {
-    color: var(--color-accent);
+    color: var(--text-accent);
 }
 
 ::-webkit-scrollbar {
@@ -78,16 +79,15 @@ a:hover {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--color-bg-secondary);
+    background: var(--bg-base);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--color-text-muted);
-    border-radius: 3px;
+    background: var(--border-default);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-secondary);
+    background: var(--border-hover);
 }
 
 input,
@@ -96,6 +96,36 @@ select,
 button {
     font-family: inherit;
     font-size: inherit;
+}
+
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    position: relative;
+}
+
+.page-container {
+    animation: fadeIn 300ms ease forwards;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
 }
 
 @keyframes fadeIn {
@@ -108,138 +138,24 @@ button {
     }
 }
 
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes scaleIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes pulse-glow {
-
-    0%,
-    100% {
-        box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
-    }
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -200% 0;
-    }
-
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-5px);
-    }
-}
-
-@keyframes confetti-fall {
-    0% {
-        transform: translateY(-100%) rotate(0deg);
-        opacity: 1;
-    }
-
-    100% {
-        transform: translateY(100vh) rotate(720deg);
-        opacity: 0;
-    }
-}
-
-.app-wrapper {
+.app-body {
     display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    flex: 1;
+    position: relative;
 }
 
 .main-content {
     flex: 1;
-    width: 100%;
-    margin: 0 auto;
-    padding: 20px 16px;
-    padding-top: 82px;
+    margin-left: var(--sidebar-width);
+    padding: 0;
+    display: block;
+    position: relative;
+    transition: margin-left var(--transition-base);
 }
 
 @media (max-width: 768px) {
     .main-content {
-        padding-left: 16px;
+        margin-left: 0;
         padding-bottom: 70px;
-        padding-top: 72px;
     }
-}
-
-.page-container {
-    animation: fadeIn 300ms ease forwards;
-}
-
-.page-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--color-text-primary), var(--color-primary-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 8px;
-}
-
-.page-subtitle {
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-    margin-bottom: 24px;
 }

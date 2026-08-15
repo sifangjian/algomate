@@ -13,8 +13,8 @@
     bottom: 0;
     width: 440px;
     max-width: 90vw;
-    background: var(--color-bg-secondary);
-    border-left: 1px solid var(--border-color);
+    background: var(--bg-elevated);
+    border-left: 1px solid var(--border-default);
     display: flex;
     flex-direction: column;
     animation: slideInRight 0.3s ease;
@@ -25,7 +25,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-default);
     flex-shrink: 0;
 }
 
@@ -44,7 +44,7 @@
 .headerName {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -60,16 +60,16 @@
     border: none;
     background: none;
     cursor: pointer;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     font-size: 1rem;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
+    border-radius: 0;
+    transition: all var(--transition-base);
     flex-shrink: 0;
 }
 
 .closeBtn:hover {
     background: rgba(239, 68, 68, 0.1);
-    color: var(--color-danger);
+    color: var(--status-critical);
 }
 
 .body {
@@ -94,7 +94,7 @@
     border: 1px solid rgba(99, 102, 241, 0.25);
     border-radius: 14px;
     font-size: 0.75rem;
-    color: var(--color-primary-light);
+    color: var(--text-accent);
 }
 
 .statusBadge {
@@ -106,19 +106,19 @@
 
 .statusNormal {
     background: rgba(16, 185, 129, 0.12);
-    color: var(--color-success);
+    color: var(--status-normal);
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .statusEndangered {
     background: rgba(239, 68, 68, 0.12);
-    color: var(--color-danger);
+    color: var(--status-critical);
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .statusPendingRetake {
     background: rgba(107, 114, 128, 0.12);
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     border: 1px solid rgba(107, 114, 128, 0.25);
 }
 
@@ -136,7 +136,7 @@
     padding: 12px 8px;
     background: rgba(15, 15, 26, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius-md);
+    border-radius: 0;
 }
 
 .statIcon {
@@ -147,13 +147,13 @@
 .statValue {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     line-height: 1.3;
 }
 
 .statDesc {
     font-size: 0.68rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
 }
 
 .durBar {
@@ -178,31 +178,31 @@
     flex-wrap: wrap;
     gap: 4px;
     font-size: 0.78rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     padding: 4px 0;
 }
 
 .infoDot {
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     margin: 0 2px;
 }
 
 .retakeSection {
     padding-top: 8px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-default);
 }
 
 .footer {
     display: flex;
     gap: 10px;
     padding: 16px 20px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-default);
     flex-shrink: 0;
 }
 
 .reviewBtn {
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
-    transition: box-shadow var(--transition-fast);
+    transition: box-shadow var(--transition-base);
 }
 
 .reviewBtn:hover {
@@ -210,40 +210,40 @@
 }
 
 .editBtn {
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
 }
 
 .editBtn:hover {
-    color: var(--color-primary-light) !important;
-    border-color: var(--color-primary) !important;
+    color: var(--text-accent) !important;
+    border-color: var(--accent) !important;
 }
 
 .practiceBtn {
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
 }
 
 .practiceBtn:hover {
-    color: var(--color-success) !important;
-    border-color: var(--color-success) !important;
+    color: var(--status-normal) !important;
+    border-color: var(--status-normal) !important;
 }
 
 .deleteBtn {
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
 }
 
 .deleteBtn:hover {
-    color: var(--color-danger) !important;
-    border-color: var(--color-danger) !important;
+    color: var(--status-critical) !important;
+    border-color: var(--status-critical) !important;
 }
 
 .createBtn {
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     margin-left: auto;
 }
 
 .createBtn:hover {
-    color: var(--color-primary-light) !important;
-    border-color: var(--color-primary) !important;
+    color: var(--text-accent) !important;
+    border-color: var(--accent) !important;
 }
 
 .confirmOverlay {
@@ -258,9 +258,9 @@
 }
 
 .confirmDialog {
-    background: var(--color-bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     padding: 24px;
     max-width: 360px;
     width: 100%;
@@ -272,13 +272,13 @@
 .confirmDialog h3 {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     margin: 0;
 }
 
 .confirmDialog p {
     font-size: 0.88rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     margin: 0;
     line-height: 1.5;
     white-space: pre-line;

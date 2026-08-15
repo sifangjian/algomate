@@ -7,7 +7,7 @@
 .tierSection {
     border-left: 3px solid #6366f1;
     padding: 12px;
-    border-radius: var(--radius-md, 8px);
+    border-radius: 0;
     background: rgba(15, 15, 26, 0.2);
     display: flex;
     flex-direction: column;
@@ -17,7 +17,7 @@
 .tierTitle {
     font-size: 0.9rem;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -30,23 +30,23 @@
 .fieldLabel {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
 .fieldInput {
     padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm, 4px);
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
     font-size: 0.88rem;
     outline: none;
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-base);
     font-family: inherit;
 }
 
 .fieldInput:focus {
-    border-color: var(--color-primary);
+    border-color: var(--accent);
 }
 
 .starRating {
@@ -61,8 +61,8 @@
     font-size: 1.4rem;
     cursor: pointer;
     padding: 2px 4px;
-    color: var(--color-text-muted);
-    transition: transform var(--transition-fast);
+    color: var(--text-muted);
+    transition: transform var(--transition-base);
     line-height: 1;
 }
 
@@ -76,7 +76,7 @@
 
 .starLabel {
     font-size: 0.78rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     margin-left: 8px;
 }
 
@@ -112,12 +112,12 @@
     padding: 8px;
     background: rgba(168, 85, 247, 0.05);
     border: 1px dashed rgba(168, 85, 247, 0.3);
-    border-radius: var(--radius-sm, 4px);
+    border-radius: 0;
 }
 
 .polishContent {
     font-size: 0.82rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     white-space: pre-wrap;
     word-break: break-word;
     margin: 0 0 6px 0;
@@ -152,21 +152,21 @@
 
 .fieldTextarea {
     padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm, 4px);
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
     font-size: 0.85rem;
     outline: none;
     resize: vertical;
     min-height: 60px;
     line-height: 1.5;
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-base);
     font-family: inherit;
 }
 
 .fieldTextarea:focus {
-    border-color: var(--color-primary);
+    border-color: var(--accent);
 }
 
 .examplesEditor {
@@ -201,7 +201,7 @@
     justify-content: flex-end;
     margin-top: 8px;
     padding-top: 14px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-default);
 }
 
 @media (max-width: 768px) {

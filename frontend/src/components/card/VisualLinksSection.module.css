@@ -7,7 +7,7 @@
 .sectionTitle {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -24,17 +24,17 @@
     padding: 10px 14px;
     background: rgba(99, 102, 241, 0.05);
     border: 1px solid rgba(99, 102, 241, 0.15);
-    border-radius: var(--radius-md);
-    color: var(--color-text-secondary);
+    border-radius: 0;
+    color: var(--text-secondary);
     font-size: 0.85rem;
     text-decoration: none;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
 }
 
 .linkItem:hover {
     background: rgba(99, 102, 241, 0.12);
     border-color: rgba(99, 102, 241, 0.3);
-    color: var(--color-primary-light);
+    color: var(--text-accent);
 }
 
 .linkIcon {
@@ -52,10 +52,10 @@
 
 .linkArrow {
     font-size: 0.8rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     flex-shrink: 0;
 }
 
 .linkItem:hover .linkArrow {
-    color: var(--color-primary-light);
+    color: var(--text-accent);
 }

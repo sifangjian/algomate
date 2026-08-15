@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { useCardStore } from '../../stores/cardStore'
 import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
+import { Icon } from '../ui/Icons'
 import styles from './EndangeredBanner.module.css'
 
 function EndangeredBanner({ onCardClick }) {
@@ -13,7 +14,7 @@ function EndangeredBanner({ onCardClick }) {
   return (
     <div className={styles.banner} role="alert">
       <div className={styles.bannerHeader}>
-        <span className={styles.bannerIcon}>⚠️</span>
+        <Icon name="alertTriangle" size={16} color="var(--status-critical)" />
         <span className={styles.bannerText}>
           有 <strong className={styles.bannerCount}>{endangeredCount}</strong> 张卡牌濒危，请及时修炼！
         </span>
@@ -28,7 +29,9 @@ function EndangeredBanner({ onCardClick }) {
               onClick={() => onCardClick?.(card)}
               title={`点击修炼「${card.name}」`}
             >
-              <span className={styles.cardIcon}>{ALGORITHM_ICONS[card.algorithm_type] || '📜'}</span>
+              <span className={styles.cardIcon}>
+                <Icon name={ALGORITHM_ICONS[card.algorithm_type] || 'book'} size={14} color="var(--accent)" />
+              </span>
               <span className={styles.cardName}>{card.name}</span>
               <span className={styles.cardPulse} />
               <span className={styles.cardAction}>去修炼 →</span>

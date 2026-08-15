@@ -1,51 +1,38 @@
-import { useState, useCallback, memo } from 'react'
+import { useState } from 'react'
 import { useCardStore } from '../../stores/cardStore'
 import RetakeButton from './RetakeButton'
-import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
 import styles from './PendingRetakeSection.module.css'
 
-function PendingRetakeSection({ onCardClick }) {
-  const [isOpen, setIsOpen] = useState(true)
-  const { pendingRetakeCount, cards } = useCardStore()
+export default function PendingRetakeSection({ onCardClick }) {
+  const store = useCardStore()
+  const pendingRetakeCount = store?.pendingRetakeCount
+  const cards = store?.cards
+  const [collapsed, setCollapsed] = useState(false)
 
-  const pendingRetakeCards = cards.filter((c) => c.status === 'pending_retake')
+  if (!pendingRetakeCount || pendingRetakeCount === 0) {
+    return null
+  }
 
-  const handleToggle = useCallback(() => {
-    setIsOpen((prev) => !prev)
-  }, [])
-
-  if (!pendingRetakeCount || pendingRetakeCount <= 0) return null
+  const pendingCards = (cards || []).filter(c => c.status === 'pending_retake')
 
   return (
-    <div className={styles.section}>
-      <button className={styles.header} onClick={handleToggle}>
-        <span className={styles.title}>
-          🔒 待重修卡牌 ({pendingRetakeCount})
-        </span>
-        <span className={styles.tag}>待重修</span>
-        <span className={`${styles.toggle} ${isOpen ? styles.toggleOpen : ''}`}>
-          ▼
-        </span>
+    <div className={styles.pendingRetakeSection}>
+      <button
+        className={styles.header}
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <span className={styles.title}>待重修卡牌 ({pendingRetakeCount})</span>
       </button>
-      {isOpen && (
-        <div className={styles.cardGrid}>
-          {pendingRetakeCards.map((card) => (
+      {!collapsed && (
+        <div className={styles.cardList}>
+          {pendingCards.map((card) => (
             <div key={card.id} className={styles.cardItem}>
-              <div className={styles.cardHeader}>
-                <span className={styles.cardIcon}>
-                  {ALGORITHM_ICONS[card.algorithm_type] || '📜'}
-                </span>
-                <div className={styles.cardInfo}>
-                  <h4 className={styles.cardName}>{card.name}</h4>
-                  {card.algorithm_type && (
-                    <span className={styles.cardCategory}>
-                      {card.algorithm_type}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className={styles.cardMeta}>
-                <span>耐久 {card.durability}/{card.max_durability || 100}</span>
+              <div className={styles.cardInfo} onClick={() => onCardClick?.(card)}>
+                <span className={styles.cardName}>{card.name}</span>
+                <span className={styles.retakeTag}>待重修</span>
+                {card.durability !== undefined && (
+                  <span className={styles.durability}>耐久度: {card.durability}/{card.max_durability || 5}</span>
+                )}
               </div>
               <RetakeButton card={card} />
             </div>
@@ -55,5 +42,3 @@ function PendingRetakeSection({ onCardClick }) {
     </div>
   )
 }
-
-export default memo(PendingRetakeSection)

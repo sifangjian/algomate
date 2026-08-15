@@ -1,0 +1,36 @@
+.greeting {
+    margin-bottom: 28px;
+}
+
+.title {
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    line-height: 1.2;
+}
+
+.meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.metaItem {
+    color: var(--text-secondary);
+}
+
+.metaSep {
+    color: var(--border-default);
+}
+
+.statusWarning {
+    color: var(--status-warning);
+}
+
+.statusNormal {
+    color: var(--status-normal);
+}

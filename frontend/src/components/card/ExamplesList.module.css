@@ -5,7 +5,7 @@
 }
 
 .exampleItem {
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -20,7 +20,7 @@
   border: none;
   cursor: pointer;
   font-size: 14px;
-  color: var(--color-text-primary, #e2e8f0);
+  color: var(--text-primary);
 }
 
 .exampleHeader:hover {
@@ -83,7 +83,7 @@
 }
 
 .solutionItem {
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -98,7 +98,7 @@
   border: none;
   cursor: pointer;
   font-size: 13px;
-  color: var(--color-text-primary, #e2e8f0);
+  color: var(--text-primary);
 }
 
 .solutionHeader:hover {
@@ -115,7 +115,7 @@
   font-size: 11px;
   padding: 1px 6px;
   background: rgba(99, 102, 241, 0.15);
-  color: var(--color-primary-light, #a5b4fc);
+  color: var(--text-accent);
   border-radius: 4px;
   font-family: monospace;
 }

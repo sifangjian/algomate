@@ -9,7 +9,7 @@
 .cardTitle {
     font-size: 1.5rem;
     font-weight: 800;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     margin: 0;
     line-height: 1.3;
 }
@@ -24,46 +24,47 @@
 .badge {
     display: inline-flex;
     align-items: center;
-    padding: 3px 12px;
-    border-radius: 14px;
-    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 0;
+    font-size: 11px;
     font-weight: 600;
+    font-family: var(--font-mono);
     white-space: nowrap;
 }
 
 .badgeEasy {
     background: rgba(16, 185, 129, 0.12);
-    color: var(--color-success);
+    color: var(--status-normal);
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .badgeMedium {
     background: rgba(245, 158, 11, 0.12);
-    color: var(--color-accent);
+    color: var(--accent);
     border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .badgeHard {
     background: rgba(239, 68, 68, 0.12);
-    color: var(--color-danger);
+    color: var(--status-critical);
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .badgeNormal {
     background: rgba(16, 185, 129, 0.12);
-    color: var(--color-success);
+    color: var(--status-normal);
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .badgeDue {
     background: rgba(245, 158, 11, 0.12);
-    color: var(--color-accent);
+    color: var(--accent);
     border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .badgeCritical {
     background: rgba(239, 68, 68, 0.12);
-    color: var(--color-danger);
+    color: var(--status-critical);
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
@@ -77,7 +78,7 @@
 .sectionTitle {
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     margin: 0;
@@ -86,23 +87,24 @@
 .tag {
     display: inline-flex;
     align-items: center;
-    padding: 2px 10px;
-    background: rgba(99, 102, 241, 0.10);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: 12px;
-    font-size: 0.75rem;
-    color: var(--color-primary-light);
+    padding: 2px 8px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    border-radius: 0;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-accent);
     white-space: nowrap;
 }
 
 .linkItem {
     padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     cursor: pointer;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     font-size: 0.88rem;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     background: transparent;
     text-align: left;
     width: 100%;
@@ -110,13 +112,13 @@
 
 .linkItem:hover {
     background: rgba(99, 102, 241, 0.08);
-    border-color: var(--color-primary);
-    color: var(--color-primary-light);
+    border-color: var(--accent);
+    color: var(--text-accent);
 }
 
 .codeBlock {
-    background: #1a1a2e;
-    border-radius: 8px;
+    background: var(--bg-elevated);
+    border-radius: 0;
     padding: 14px 16px;
     overflow-x: auto;
     margin: 0;
@@ -139,19 +141,19 @@
     align-items: center;
     gap: 6px;
     padding: 10px 20px;
-    background: var(--color-primary);
+    background: var(--accent);
     color: #fff;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
 }
 
 .selfReviewBtn:hover {
-    background: var(--color-primary-dark);
-    box-shadow: var(--shadow-glow);
+    background: var(--accent);
+    box-shadow: none;
 }
 
 .selfReviewBtn:disabled {
@@ -168,33 +170,33 @@
 
 .ratingBtn {
     padding: 10px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-card);
-    color: var(--color-text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
+    background: var(--bg-panel);
+    color: var(--text-primary);
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     text-align: left;
 }
 
 .ratingBtn:hover {
-    border-color: var(--color-primary);
+    border-color: var(--accent);
     background: rgba(99, 102, 241, 0.08);
 }
 
 .ratingBtnActive {
-    border-color: var(--color-primary);
+    border-color: var(--accent);
     background: rgba(99, 102, 241, 0.15);
-    color: var(--color-primary-light);
+    color: var(--text-accent);
 }
 
 .reviewResult {
     padding: 12px 16px;
     background: rgba(16, 185, 129, 0.1);
     border: 1px solid rgba(16, 185, 129, 0.25);
-    border-radius: var(--radius-md);
-    color: var(--color-success);
+    border-radius: 0;
+    color: var(--status-normal);
     font-size: 0.88rem;
     line-height: 1.6;
 }
@@ -204,12 +206,12 @@
     align-items: center;
     justify-content: center;
     padding: 40px;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     font-size: 0.9rem;
 }
 
 .externalLink {
-    color: var(--color-primary-light);
+    color: var(--text-accent);
     text-decoration: none;
     font-size: 0.82rem;
     display: inline-flex;
@@ -219,7 +221,7 @@
 
 .externalLink:hover {
     text-decoration: underline;
-    color: var(--color-accent);
+    color: var(--accent);
 }
 
 .starsRow {
@@ -229,18 +231,18 @@
 }
 
 .starFilled {
-    color: var(--color-accent);
+    color: var(--accent);
     font-size: 1.1rem;
 }
 
 .starEmpty {
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     font-size: 1.1rem;
     opacity: 0.3;
 }
 
 .textContent {
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     font-size: 0.88rem;
     line-height: 1.7;
     white-space: pre-wrap;
@@ -268,10 +270,10 @@
 .pitfallItem {
     padding: 6px 12px;
     background: rgba(239, 68, 68, 0.06);
-    border-left: 3px solid var(--color-danger);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    border-left: 3px solid var(--status-critical);
+    border-radius: 0 0 0 0;
     font-size: 0.85rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     line-height: 1.5;
 }
 
@@ -280,12 +282,12 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 14px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     cursor: pointer;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     font-size: 0.85rem;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     background: transparent;
     text-align: left;
     width: 100%;
@@ -293,7 +295,7 @@
 
 .solutionLink:hover {
     background: rgba(99, 102, 241, 0.08);
-    border-color: var(--color-primary);
+    border-color: var(--accent);
 }
 
 .solutionLinkName {
@@ -302,11 +304,12 @@
 }
 
 .solutionLinkComplexity {
-    font-size: 0.72rem;
+    font-size: 11px;
+    font-family: var(--font-mono);
     padding: 2px 8px;
-    border-radius: 10px;
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--color-success);
+    border-radius: 0;
+    background: rgba(74, 222, 128, 0.1);
+    color: var(--status-normal);
     margin-left: 8px;
     white-space: nowrap;
 }
@@ -315,14 +318,15 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 12px;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: 16px;
-    font-size: 0.8rem;
-    color: var(--color-primary-light);
+    padding: 2px 8px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    border-radius: 0;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-accent);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     text-decoration: none;
 }
 
@@ -351,14 +355,14 @@
 
 .statusText {
     font-size: 0.85rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     padding: 4px 0;
 }
 
 /* Solution card with inline preview */
 .solutionCard {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     overflow: hidden;
 }
 
@@ -368,8 +372,8 @@
     justify-content: space-between;
     padding: 10px 14px;
     cursor: pointer;
-    transition: background var(--transition-fast);
-    background: var(--color-bg-secondary);
+    transition: background var(--transition-base);
+    background: var(--bg-elevated);
 }
 
 .solutionHeader:hover {
@@ -386,7 +390,7 @@
 
 .collapseIcon {
     font-size: 0.7rem;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     margin-left: 8px;
 }
 
@@ -395,7 +399,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-default);
 }
 
 .solutionField {
@@ -407,7 +411,7 @@
 .solutionFieldLabel {
     font-size: 0.72rem;
     font-weight: 700;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -415,36 +419,38 @@
 /* Compare selection */
 .compareSelectBtn {
     padding: 2px 8px;
-    font-size: 0.72rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     background: transparent;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     white-space: nowrap;
 }
 
 .compareSelectBtn:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary-light);
+    border-color: var(--accent);
+    color: var(--text-accent);
 }
 
 .compareSelectBtnActive {
     background: rgba(99, 102, 241, 0.12);
-    border-color: var(--color-primary);
-    color: var(--color-primary-light);
+    border-color: var(--accent);
+    color: var(--text-accent);
 }
 
 .compareBtn {
     padding: 4px 12px;
-    font-size: 0.75rem;
-    border: 1px solid var(--color-danger);
-    border-radius: 4px;
-    background: rgba(239, 68, 68, 0.08);
-    color: var(--color-danger);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    border: 1px solid var(--status-critical);
+    border-radius: 0;
+    background: rgba(229, 85, 85, 0.08);
+    color: var(--status-critical);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     margin-left: 8px;
 }
 
@@ -453,8 +459,8 @@
 }
 
 .comparePanel {
-    border: 1px solid var(--color-primary);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent);
+    border-radius: 0;
     padding: 14px;
     background: rgba(99, 102, 241, 0.04);
 }
@@ -472,22 +478,22 @@
     flex-direction: column;
     gap: 8px;
     padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
+    background: var(--bg-elevated);
 }
 
 .compareColumnHeader {
     font-weight: 700;
     font-size: 0.85rem;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     padding-bottom: 6px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-default);
 }
 
 .compareField {
     font-size: 0.82rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     line-height: 1.5;
 }
 
@@ -506,19 +512,19 @@
     width: 26px;
     height: 26px;
     padding: 0;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     background: transparent;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     cursor: pointer;
-    font-size: 0.75rem;
-    transition: all var(--transition-fast);
+    font-size: 12px;
+    transition: all var(--transition-base);
     line-height: 1;
 }
 
 .solutionActionBtn:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary-light);
+    border-color: var(--accent);
+    color: var(--text-accent);
     background: rgba(99, 102, 241, 0.08);
 }
 
@@ -527,15 +533,15 @@
     align-items: center;
     gap: 4px;
     padding: 3px 10px;
-    border: 1px dashed var(--color-primary);
-    border-radius: 4px;
+    border: 1px dashed var(--accent);
+    border-radius: 0;
     background: transparent;
-    color: var(--color-primary-light);
-    font-size: 0.75rem;
+    color: var(--text-accent);
+    font-size: 12px;
+    font-family: var(--font-mono);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
     margin-left: 8px;
-    font-family: inherit;
 }
 
 .addSolutionBtn:hover {
@@ -555,25 +561,24 @@
 }
 
 .solutionDeleteDialog {
-    background: var(--color-bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     padding: 24px;
     max-width: 400px;
     width: 90%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .solutionDeleteDialog h3 {
     margin: 0 0 12px;
     font-size: 1.1rem;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
 }
 
 .solutionDeleteDialog p {
     margin: 0 0 20px;
     font-size: 0.88rem;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     line-height: 1.5;
 }
 
@@ -585,10 +590,10 @@
 
 .solutionDeleteCancelBtn {
     padding: 8px 20px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
     background: transparent;
-    color: var(--color-text-primary);
+    color: var(--text-primary);
     font-size: 0.85rem;
     cursor: pointer;
     font-family: inherit;
@@ -596,10 +601,10 @@
 
 .solutionDeleteConfirmBtn {
     padding: 8px 20px;
-    background: var(--color-danger, #ef4444);
+    background: var(--status-critical);
     color: #fff;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;

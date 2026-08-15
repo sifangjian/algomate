@@ -10,10 +10,10 @@
   align-items: center;
   gap: 4px;
   padding: 4px var(--spacing-sm, 8px);
-  border-radius: var(--radius-full, 9999px);
+  border-radius: 0;
   background: rgba(99, 102, 241, 0.1);
   border: 1px solid rgba(99, 102, 241, 0.25);
-  color: var(--color-primary-light);
+  color: var(--text-accent);
   font-size: var(--font-size-xs, 12px);
   white-space: nowrap;
   transition: all 0.2s ease;
@@ -22,7 +22,7 @@
 .specialtyTag.hasCard {
   background: rgba(99, 102, 241, 0.2);
   border-color: rgba(99, 102, 241, 0.4);
-  color: var(--color-primary);
+  color: var(--accent);
   font-weight: var(--font-weight-medium, 500);
 }
 
@@ -33,7 +33,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--accent);
   color: white;
   font-size: 10px;
   font-weight: bold;

@@ -1,78 +1,71 @@
-.createForm {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+.createCardModal {
+    width: 520px;
+    max-width: 90vw;
+    max-height: 90vh;
 }
 
-.formField {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.formSection {
+    margin-bottom: 18px;
+}
+
+.formSectionTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.field {
+    margin-bottom: 12px;
 }
 
 .fieldLabel {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
 }
 
-.fieldInput {
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
-    font-size: 0.88rem;
-    outline: none;
-    transition: border-color var(--transition-fast);
+.fieldRequired {
+    color: var(--status-critical);
 }
 
-.fieldInput:focus {
-    border-color: var(--color-primary);
+.typeSelector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
-.starRating {
+.typeButton {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color var(--transition-base), color var(--transition-base);
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 6px;
 }
 
-.starBtn {
-    background: none;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-    padding: 2px 4px;
-    color: var(--color-text-muted);
-    transition: transform var(--transition-fast);
-    line-height: 1;
+.typeButton:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
 }
 
-.starBtn:hover {
-    transform: scale(1.2);
+.typeButtonActive {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
-.starBtn.starActive {
-    color: #f59e0b;
-}
-
-.starLabel {
-    font-size: 0.78rem;
-    color: var(--color-text-muted);
-    margin-left: 8px;
-}
-
-.createActions {
+.modalFooter {
     display: flex;
-    gap: 10px;
     justify-content: flex-end;
-    margin-top: 8px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border-color);
-}
-
-@media (max-width: 768px) {
-    .createActions {
-        flex-direction: column;
-    }
+    gap: 10px;
 }

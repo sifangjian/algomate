@@ -1,11 +1,20 @@
 .hallPage {
-  min-height: 100vh;
-  background: var(--color-bg-primary);
-  padding: var(--spacing-xl, 24px) var(--spacing-3xl, 48px);
+    min-height: calc(100vh - 44px - 24px);
+    padding: 28px 160px 40px 250px;
+}
+
+.content {
+    max-width: 100%;
+}
+
+@media (max-width: 1280px) {
+    .hallPage {
+        padding: 20px 24px 40px 24px;
+    }
 }
 
 @media (max-width: 768px) {
-  .hallPage {
-    padding: var(--spacing-md, 16px);
-  }
+    .hallPage {
+        padding: 16px;
+    }
 }

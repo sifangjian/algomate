@@ -8,9 +8,9 @@
   flex-wrap: wrap;
   gap: 4px;
   padding: 6px 8px;
-  border: 1px solid var(--border-color, #3a3a3a);
-  border-radius: var(--radius-sm, 4px);
-  background: var(--color-bg-elevated, #1a1a2e);
+  border: 1px solid var(--border-default);
+  border-radius: 0;
+  background: var(--bg-elevated);
   cursor: text;
   min-height: 38px;
   align-items: center;
@@ -18,7 +18,7 @@
 }
 
 .inputWrapper:focus-within {
-  border-color: var(--color-primary, #6366f1);
+  border-color: var(--accent);
 }
 
 .tag {
@@ -30,7 +30,7 @@
   border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: 12px;
   font-size: 0.78rem;
-  color: var(--color-primary-light, #a5b4fc);
+  color: var(--text-accent);
   white-space: nowrap;
 }
 
@@ -42,7 +42,7 @@
   height: 16px;
   border: none;
   background: transparent;
-  color: var(--color-primary-light, #a5b4fc);
+  color: var(--text-accent);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 0;
@@ -62,14 +62,14 @@
   border: none;
   outline: none;
   background: transparent;
-  color: var(--color-text-primary, #e0e0e0);
+  color: var(--text-primary);
   font-size: 0.85rem;
   padding: 2px 0;
   font-family: inherit;
 }
 
 .input::placeholder {
-  color: var(--color-text-muted, #666);
+  color: var(--text-muted);
 }
 
 .dropdown {
@@ -79,9 +79,9 @@
   right: 0;
   max-height: 240px;
   overflow-y: auto;
-  background: var(--color-bg-elevated, #1a1a2e);
-  border: 1px solid var(--border-color, #3a3a3a);
-  border-radius: var(--radius-sm, 4px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 0;
   z-index: 100;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
@@ -89,7 +89,7 @@
 .option {
   padding: 8px 12px;
   font-size: 0.85rem;
-  color: var(--color-text-primary, #e0e0e0);
+  color: var(--text-primary);
   cursor: pointer;
   transition: background 0.1s;
 }
@@ -102,5 +102,5 @@
   padding: 12px;
   text-align: center;
   font-size: 0.82rem;
-  color: var(--color-text-muted, #666);
+  color: var(--text-muted);
 }

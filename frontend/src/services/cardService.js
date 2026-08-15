@@ -145,5 +145,13 @@ export const cardService = {
   getTodayStats: () => api.get('/v1/stats/today'),
   getReviewStats: () => api.get('/v1/dashboard/review/statistics'),
   getTodayReviewTasks: () => api.get('/v1/reviews/today'),
+  getTodayTasks: () => api.get('/v1/tasks/today'),
+  getProgressStats: () => api.get('/v1/progress/stats'),
+  getDashboardStats: () => api.get('/v1/dashboard/stats'),
+  getUpcomingTasks: () => api.get('/v1/tasks/upcoming'),
   completeReviewV1: (cardId, reviewType) => api.post(`/v1/reviews/${cardId}/complete`, { review_type: reviewType }),
+  update: async (id, data) => { return await api.put(`/v1/cards/${id}`, data); },
+  delete: async (id) => { return await api.delete(`/v1/cards/${id}`); },
+  retakeCard: async (cardId) => { return await api.post(`/v1/cards/${cardId}/retake`); },
+  getGraph: async () => { return await api.get(`/v1/overview/graph`); },
 }

@@ -1,0 +1,75 @@
+.monitor {
+    padding: 4px 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    background: transparent;
+    padding: 0;
+}
+
+.statusCard {
+    padding: 16px 14px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border: 1px solid transparent;
+    transition: border-color var(--transition-base);
+}
+
+.statusCard:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.statusCard:active {
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.statusValue {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+}
+
+.statusLabel {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.statusDot {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 6px;
+    height: 6px;
+}
+
+.statusDot.normal {
+    background: var(--status-normal);
+}
+
+.statusDot.warning {
+    background: var(--status-warning);
+}
+
+.statusDot.critical {
+    background: var(--status-critical);
+}
+
+.statusCard.warning .statusValue {
+    color: var(--status-warning);
+}
+
+.statusCard.critical .statusValue {
+    color: var(--status-critical);
+}
+
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

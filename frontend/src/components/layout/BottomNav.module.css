@@ -7,9 +7,9 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background: var(--color-bg-secondary);
+    background: var(--bg-elevated);
     padding: 6px 0 max(6px, env(safe-area-inset-bottom));
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-default);
 }
 
 .navItem {
@@ -21,22 +21,22 @@
     border: none;
     background: none;
     cursor: pointer;
-    color: var(--color-text-muted);
+    color: var(--text-muted);
     text-decoration: none;
     font-size: 0.7rem;
     position: relative;
-    transition: all var(--transition-fast);
-    border-radius: var(--radius-sm);
+    transition: all var(--transition-base);
+    border-radius: 0;
     min-width: 60px;
 }
 
 .navItem:hover {
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     background: rgba(99, 102, 241, 0.08);
 }
 
 .navItem.active {
-    color: var(--color-primary-light);
+    color: var(--text-accent);
 }
 
 .navItem.active::before {
@@ -47,14 +47,14 @@
     transform: translateX(-50%);
     width: 24px;
     height: 3px;
-    background: var(--color-primary);
+    background: var(--accent);
     border-radius: 0 0 3px 3px;
 }
 
 .navIcon {
     font-size: 1.3rem;
     line-height: 1;
-    transition: transform var(--transition-fast);
+    transition: transform var(--transition-base);
 }
 
 .navItem:hover .navIcon {
@@ -82,7 +82,7 @@
     height: 18px;
     padding: 0 5px;
     border-radius: 9px;
-    background: var(--color-danger);
+    background: var(--status-critical);
     color: white;
     font-size: 0.6rem;
     font-weight: 700;

@@ -1,57 +1,44 @@
-.container {
-  min-height: calc(100vh - 120px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  text-align: center;
-  padding: 40px 20px;
+.notFound {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 16px;
 }
 
-.errorCode {
-  font-size: 120px;
-  font-weight: 900;
-  color: var(--color-primary);
-  text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.1);
-  line-height: 1;
-  animation: float 3s ease-in-out infinite;
+.code {
+    font-size: 72px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    letter-spacing: -4px;
 }
 
-.title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
+.message {
+    font-size: 18px;
+    color: var(--text-primary);
 }
 
 .description {
-  font-size: 16px;
-  color: var(--color-text-secondary);
-  max-width: 400px;
-  line-height: 1.6;
-  margin: 0;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
 }
 
-.homeButton {
-  margin-top: 8px;
+.homeLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 14px;
+    transition: border-color var(--transition-base);
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@media (max-width: 768px) {
-  .errorCode {
-    font-size: 80px;
-  }
-
-  .title {
-    font-size: 22px;
-  }
+.homeLink:hover {
+    border-color: var(--border-hover);
 }

@@ -9,6 +9,7 @@ import CardLinksSection from '../card/CardLinksSection'
 import KnowledgeGraph from '../card/KnowledgeGraph'
 import CardEditForm from '../card/CardEditForm'
 import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
+import { Icon } from '../ui/Icons'
 import styles from './CardDetailDrawer.module.css'
 
 function getStatusLabel(status) {
@@ -113,12 +114,12 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <span className={styles.headerIcon}>
-              {ALGORITHM_ICONS[selectedCard.algorithm_type] || '📜'}
+              <Icon name={ALGORITHM_ICONS[selectedCard.algorithm_type] || 'book'} size={16} color="var(--accent)" />
             </span>
             <h2 className={styles.headerName}>{selectedCard.name}</h2>
           </div>
           <button className={styles.closeBtn} onClick={onClose} aria-label="关闭">
-            ✕
+            <Icon name="x" size={16} />
           </button>
         </div>
 
@@ -134,7 +135,7 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
 
           <div className={styles.statsRow}>
             <div className={styles.statItem}>
-              <span className={styles.statIcon}>🛡️</span>
+              <span className={styles.statIcon}><Icon name="shield" size={14} /></span>
               <span className={styles.statValue}>{durPercent}%</span>
               <span className={styles.statDesc}>
                 {selectedCard.durability > 60 ? '状态良好' : selectedCard.durability >= 30 ? '需要关注' : '濒危警告'}
@@ -154,7 +155,7 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
               </div>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statIcon}>⭐</span>
+              <span className={styles.statIcon}><Icon name="star" size={14} /></span>
               <span className={styles.statValue}>
                 {'★'.repeat(selectedCard.difficulty)}{'☆'.repeat(5 - selectedCard.difficulty)}
               </span>
@@ -164,7 +165,7 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
             </div>
             {selectedCard.review_level != null && (
               <div className={styles.statItem}>
-                <span className={styles.statIcon}>⚔️</span>
+                <span className={styles.statIcon}><Icon name="sword" size={14} /></span>
                 <span className={styles.statValue}>Lv.{selectedCard.review_level}</span>
                 <span className={styles.statDesc}>
                   {selectedCard.review_level <= 1 ? '初窥门径'
@@ -176,7 +177,7 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
               </div>
             )}
             <div className={styles.statItem}>
-              <span className={styles.statIcon}>📖</span>
+              <span className={styles.statIcon}><Icon name="book" size={14} /></span>
               <span className={styles.statValue}>{selectedCard.review_count || 0}</span>
               <span className={styles.statDesc}>次修炼</span>
             </div>
@@ -184,10 +185,10 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
 
           {!isEditing && (
             <div className={styles.infoRow}>
-              <span>📅 {new Date(selectedCard.created_at).toLocaleDateString()}</span>
+              <span><Icon name="calendar" size={12} /> {new Date(selectedCard.created_at).toLocaleDateString()}</span>
               <span className={styles.infoDot}>·</span>
               <span>
-                🕐 {selectedCard.last_reviewed ? new Date(selectedCard.last_reviewed).toLocaleDateString() : '从未修炼'}
+                <Icon name="clock" size={12} /> {selectedCard.last_reviewed ? new Date(selectedCard.last_reviewed).toLocaleDateString() : '从未修炼'}
               </span>
             </div>
           )}
@@ -222,7 +223,7 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
                   }
                 }}
               >
-                🔄 重修
+                <Icon name="refresh" size={14} /> 重修
               </Button>
             </div>
           )}
@@ -231,16 +232,16 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
         {!isEditing && (
           <div className={styles.footer}>
             <Button variant="ghost" onClick={handleEdit} className={styles.editBtn}>
-              ✏️ 编辑
+              <Icon name="pencil" size={14} /> 编辑
             </Button>
             <Button variant="ghost" onClick={handleOpenGraph} className={styles.graphBtn}>
-              🕸️ 图谱
+              <Icon name="graph" size={14} /> 图谱
             </Button>
             <Button variant="ghost" onClick={() => onCreateCard?.()} className={styles.createBtn}>
-              ➕ 创建新卡牌
+              <Icon name="plus" size={14} /> 创建新卡牌
             </Button>
             <Button variant="ghost" onClick={handleDeleteRequest} className={styles.deleteBtn}>
-              🗑️ 删除
+              <Icon name="trash" size={14} /> 删除
             </Button>
           </div>
         )}

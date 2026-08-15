@@ -1,5 +1,5 @@
 .exampleEditor {
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -10,7 +10,7 @@
   gap: 8px;
   padding: 8px 12px;
   background: rgba(15, 15, 26, 0.4);
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .exampleIndex {
@@ -22,12 +22,12 @@
 
 .titleInput {
   flex: 1;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 13px;
   background: rgba(15, 15, 26, 0.5);
-  color: var(--color-text-primary, #e2e8f0);
+  color: var(--text-primary);
 }
 
 .titleInput:focus {
@@ -74,7 +74,7 @@
 }
 
 .textarea {
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   padding: 8px;
   font-size: 13px;
@@ -82,7 +82,7 @@
   resize: vertical;
   font-family: inherit;
   background: rgba(15, 15, 26, 0.5);
-  color: var(--color-text-primary, #e2e8f0);
+  color: var(--text-primary);
 }
 
 .textarea:focus {
@@ -123,7 +123,7 @@
 }
 
 .solutionEditor {
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -134,17 +134,17 @@
   gap: 8px;
   padding: 6px 10px;
   background: rgba(15, 15, 26, 0.3);
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .solutionNameInput {
   flex: 1;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   padding: 3px 8px;
   font-size: 12px;
   background: rgba(15, 15, 26, 0.5);
-  color: var(--color-text-primary, #e2e8f0);
+  color: var(--text-primary);
 }
 
 .solutionNameInput:focus {
@@ -166,14 +166,14 @@
 }
 
 .complexityInput {
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
   padding: 3px 8px;
   font-size: 12px;
   font-family: monospace;
   width: 100px;
   background: rgba(15, 15, 26, 0.5);
-  color: var(--color-text-primary, #e2e8f0);
+  color: var(--text-primary);
 }
 
 .complexityInput:focus {

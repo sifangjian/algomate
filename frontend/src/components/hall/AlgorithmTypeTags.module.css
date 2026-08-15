@@ -7,29 +7,29 @@
 
 .typeTag {
   padding: var(--spacing-xs, 4px) var(--spacing-md, 16px);
-  border-radius: var(--radius-full, 9999px);
-  border: 1px solid var(--border-color);
-  background: var(--color-bg-card);
-  color: var(--color-text-secondary);
+  border-radius: 0;
+  border: 1px solid var(--border-default);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
   font-size: var(--font-size-sm, 14px);
   cursor: pointer;
   transition: all 0.15s ease-out;
 }
 
 .typeTag:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary-light);
+  border-color: var(--accent);
+  color: var(--text-accent);
 }
 
 .typeTagActive {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--accent);
+  border-color: var(--accent);
   color: #ffffff;
 }
 
 .typeTagActive:hover {
-  background: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
+  background: var(--accent);
+  border-color: var(--accent);
   color: #ffffff;
 }
 

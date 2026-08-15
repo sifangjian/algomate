@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useHallStore } from '../../stores/hallStore'
 import { ALGORITHM_ICONS } from '../../constants/algorithmConstants'
+import { Icon } from '../ui/Icons'
 import styles from './TopicGrid.module.css'
 
 function findIcon(topicName) {
@@ -10,7 +11,7 @@ function findIcon(topicName) {
       return icon
     }
   }
-  return '📚'
+  return 'book'
 }
 
 export default function TopicGrid() {
@@ -75,7 +76,9 @@ export default function TopicGrid() {
               className={styles.topicCard}
               onClick={() => handleTopicClick(topic.key)}
             >
-              <div className={styles.topicIcon}>{icon}</div>
+              <div className={styles.topicIcon}>
+                <Icon name={icon} size={24} color="var(--accent)" />
+              </div>
               <div className={styles.topicName}>{topic.name}</div>
               <div className={styles.topicStats}>
                 <span>题目 {topic.problem_count}</span>
