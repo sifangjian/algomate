@@ -152,6 +152,26 @@ def list_problems(
         session.close()
 
 
+@router.get("/search", response_model=List[ProblemResponse])
+def search_problems(
+    q: str = Query(..., min_length=1, description="搜索关键词"),
+):
+    """模糊搜索题目（按标题匹配）"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        kw = f"%{q}%"
+        problems = (
+            session.query(ProblemCard)
+            .filter(ProblemCard.title.ilike(kw))
+            .order_by(ProblemCard.title)
+            .all()
+        )
+        return [_problem_to_response(p) for p in problems]
+    finally:
+        session.close()
+
+
 @router.get("/{problem_id}", response_model=ProblemDetailResponse)
 def get_problem(problem_id: int):
     db = Database.get_instance()

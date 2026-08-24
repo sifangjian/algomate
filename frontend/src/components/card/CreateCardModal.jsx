@@ -28,6 +28,7 @@ const INITIAL_FORM_DATA = {
     },
     solution: {
         problem_id: '',
+        problem_title: '',
         name: '',
         time_complexity: '',
         space_complexity: '',
@@ -74,6 +75,7 @@ function mapCardToFormData(cardType, data) {
         case 'solution':
             return {
                 problem_id: data.problem_id || '',
+                problem_title: data.problem_title || '',
                 name: data.name || '',
                 algorithm_type: data.algorithm_type || '',
                 time_complexity: data.time_complexity || '',
@@ -168,7 +170,7 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
         }
         if (activeTab === 'solution') {
             if (!current.problem_id) {
-                setError('请输入关联题目 ID')
+                setError('请搜索并选择关联的题目')
                 return false
             }
             if (!current.name?.trim()) {

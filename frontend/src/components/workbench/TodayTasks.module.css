@@ -79,3 +79,32 @@
     background: rgba(74, 222, 128, 0.1);
     border: 1px solid rgba(74, 222, 128, 0.3);
 }
+
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.loadingPulse {
+    animation: pulse 1.5s ease-in-out infinite;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    min-height: 1em;
+    display: inline-block;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+}

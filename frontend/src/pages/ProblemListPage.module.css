@@ -42,9 +42,36 @@
     color: var(--text-muted);
 }
 
+.filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.filterBtn {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color var(--transition-base), color var(--transition-base), background var(--transition-base);
+}
+
+.filterBtn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.filterBtnActive {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 8px;
 }
 
@@ -63,32 +90,41 @@
 
 .cardHeader {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     margin-bottom: 8px;
+    gap: 8px;
 }
 
 .cardName {
     font-size: 14px;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--text-primary);
+    line-height: 1.4;
 }
 
-.badge {
+.difficultyBadge {
     display: inline-block;
     padding: 2px 8px;
     font-size: 11px;
     font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.badgeDue {
-    background: rgba(212, 160, 23, 0.1);
-    color: var(--status-warning);
+.difficultyEasy {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
 }
 
-.badgeCritical {
-    background: rgba(229, 85, 85, 0.1);
-    color: var(--status-critical);
+.difficultyMedium {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.difficultyHard {
+    background: rgba(244, 67, 54, 0.1);
+    color: #f44336;
 }
 
 .cardMeta {
@@ -96,29 +132,46 @@
     gap: 10px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     margin-bottom: 6px;
+    align-items: center;
 }
 
-.metaCategory {
-    color: var(--accent);
+.statusTag {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 11px;
 }
 
-.metaProficiency {
-    color: #d4a017;
+.statusUntried {
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
 }
 
-.metaSolutions {
-    color: var(--status-normal);
+.statusAccepted {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
 }
 
-.cardDesc {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    border-left: 2px solid var(--accent-dim);
-    padding-left: 10px;
-    margin-top: 4px;
+.statusOptimal {
+    color: #ffc107;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.tag {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
 }
 
 .loadingState {
@@ -131,6 +184,18 @@
     text-align: center;
     padding: 40px;
     color: var(--status-critical);
+}
+
+.errorTitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.errorMessage {
+    font-size: 14px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
 }
 
 .emptyState {

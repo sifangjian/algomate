@@ -7,24 +7,7 @@ import PanelSection from '../components/workbench/PanelSection'
 import CliCreator from '../components/workbench/CliCreator'
 import StatusMonitor from '../components/workbench/StatusMonitor'
 import TodayTasks from '../components/workbench/TodayTasks'
-import CreateCardModal from '../components/card/CreateCardModal'
 import styles from './HallPage.module.css'
-
-const DEFAULT_STATS = {
-    dueCount: 5,
-    completedCount: 1,
-    totalCards: 0,
-    dueToday: 5,
-    endangered: 2,
-    streakDays: 0,
-    weeklyProgress: '0/7',
-    accuracy: 0,
-    totalReviews: 0,
-    newToday: 0,
-    nextReviewDays: null,
-}
-
-const DEFAULT_TASKS = []
 
 function mapTaskStatus(s) {
     const map = { pending: 'PENDING', in_progress: 'IN_PROGRESS', done: 'DONE' }
@@ -40,9 +23,9 @@ export default function HallPage() {
     const navigate = useNavigate()
     const { fetchAlgorithmInfo, fetchTopicOverview } = useHallStore()
 
-    const [createModalOpen, setCreateModalOpen] = useState(false)
-    const [stats, setStats] = useState(DEFAULT_STATS)
-    const [tasks, setTasks] = useState(DEFAULT_TASKS)
+    const [loading, setLoading] = useState(true)
+    const [stats, setStats] = useState(null)
+    const [tasks, setTasks] = useState(null)
 
     useEffect(() => {
         fetchAlgorithmInfo()
@@ -51,13 +34,16 @@ export default function HallPage() {
         let cancelled = false
 
         async function fetchData() {
+            setLoading(true)
             try {
-                const [todayTasks, dashboardStats, progressStats, overview, upcoming] = await Promise.allSettled([
+                const [todayTasks, dashboardStats, progressStats, overview, upcoming, todayStats, hallStats] = await Promise.allSettled([
                     cardService.getTodayTasks?.(),
                     cardService.getDashboardStats?.(),
                     cardService.getProgressStats?.(),
                     cardService.getOverview?.(),
                     cardService.getUpcomingTasks?.(),
+                    cardService.getTodayStats?.(),
+                    cardService.getHallStats?.(),
                 ])
 
                 if (cancelled) return
@@ -67,19 +53,26 @@ export default function HallPage() {
                 const progData = progressStats.status === 'fulfilled' ? progressStats.value : null
                 const overviewData = overview.status === 'fulfilled' ? overview.value : null
                 const upcomingData = upcoming.status === 'fulfilled' ? upcoming.value : null
+                const todayStatsData = todayStats.status === 'fulfilled' ? todayStats.value : null
+                const hallStatsData = hallStats.status === 'fulfilled' ? hallStats.value : null
+
+                const totalCards = (overviewData?.total_problems ?? 0) + (overviewData?.total_solutions ?? 0) + (overviewData?.total_techniques ?? 0)
+                const nextReviewDays = upcomingData?.upcoming?.length > 0
+                    ? Math.max(0, Math.ceil((new Date(upcomingData.upcoming[0].review_date) - new Date()) / (1000 * 60 * 60 * 24)))
+                    : null
 
                 setStats({
-                    dueCount: dashData?.due_count ?? DEFAULT_STATS.dueCount,
-                    completedCount: dashData?.completed_count ?? DEFAULT_STATS.completedCount,
-                    totalCards: overviewData?.total_cards ?? DEFAULT_STATS.totalCards,
-                    dueToday: dashData?.due_count ?? DEFAULT_STATS.dueToday,
-                    endangered: dashData?.endangered_count ?? DEFAULT_STATS.endangered,
-                    streakDays: progData?.streak_days ?? DEFAULT_STATS.streakDays,
-                    weeklyProgress: dashData?.weekly_progress ?? DEFAULT_STATS.weeklyProgress,
-                    accuracy: progData?.accuracy_rate ?? DEFAULT_STATS.accuracy,
-                    totalReviews: dashData?.total_review_count ?? DEFAULT_STATS.totalReviews,
-                    newToday: dashData?.new_today ?? DEFAULT_STATS.newToday,
-                    nextReviewDays: upcomingData?.days_until_next ?? null,
+                    dueCount: dashData?.due_today_count ?? 0,
+                    completedCount: dashData?.completed_today ?? 0,
+                    totalCards: totalCards,
+                    dueToday: dashData?.due_today_count ?? 0,
+                    endangered: hallStatsData?.data?.endangered_cards ?? 0,
+                    streakDays: todayStatsData?.data?.streak_days ?? 0,
+                    weeklyProgress: `${dashData?.weekly_review_days ?? 0}/7`,
+                    accuracy: progData?.accuracy_rate ?? 0,
+                    totalReviews: dashData?.total_review_count ?? 0,
+                    newToday: todayStatsData?.data?.total_new ?? 0,
+                    nextReviewDays: nextReviewDays,
                 })
 
                 const taskList = taskData?.tasks || taskData?.data?.tasks || []
@@ -91,6 +84,8 @@ export default function HallPage() {
                 })))
             } catch (err) {
                 console.error('Failed to fetch hall data:', err)
+            } finally {
+                if (!cancelled) setLoading(false)
             }
         }
 
@@ -98,48 +93,27 @@ export default function HallPage() {
         return () => { cancelled = true }
     }, [fetchAlgorithmInfo, fetchTopicOverview])
 
-    useEffect(() => {
-        const handler = () => setCreateModalOpen(true)
-        window.addEventListener('open-create-card', handler)
-        return () => window.removeEventListener('open-create-card', handler)
-    }, [])
-
-    const handleCreateCard = useCallback(() => {
-        setCreateModalOpen(true)
-    }, [])
-
-    const handleCardCreated = useCallback((newCard) => {
-        setCreateModalOpen(false)
-        fetchAlgorithmInfo()
-        fetchTopicOverview()
-        if (newCard?.id) {
-            const cardType = newCard.title ? 'problem' : newCard.problem_id ? 'solution' : 'technique'
-            navigate(`/card/${cardType}/${newCard.id}`, { state: { autoEdit: true } })
-        }
-    }, [fetchAlgorithmInfo, fetchTopicOverview, navigate])
+    const handleTaskClick = useCallback((task) => {
+        navigate(`/card/${task.type}/${task.id}`)
+    }, [navigate])
 
     return (
         <div className={styles.hallPage}>
             <div className={styles.content}>
-                <GreetingSection stats={stats} />
+                <GreetingSection loading={loading} stats={stats} />
 
                 <PanelSection number="01" title="session.input — 创建卡片 · 输入 /new 开始" path="/cli">
-                    <CliCreator onCreateCard={handleCreateCard} />
+                    <CliCreator />
                 </PanelSection>
 
                 <PanelSection number="02" title="system.status — 9 项指标 · 系统状态" path="/status">
-                    <StatusMonitor stats={stats} />
+                    <StatusMonitor loading={loading} stats={stats} />
                 </PanelSection>
 
-                <PanelSection number="03" title={`today.tasks — ${tasks.length} 项 · 今日任务列表`} path="/tasks">
-                    <TodayTasks tasks={tasks} />
+                <PanelSection number="03" title={`today.tasks — ${tasks?.length ?? 0} 项 · 今日任务列表`} path="/tasks">
+                    <TodayTasks loading={loading} tasks={tasks} />
                 </PanelSection>
             </div>
-            <CreateCardModal
-                open={createModalOpen}
-                onClose={() => setCreateModalOpen(false)}
-                onCreated={handleCardCreated}
-            />
         </div>
     )
 }

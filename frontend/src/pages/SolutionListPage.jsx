@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { cardService } from '../services/cardService'
-import { getCategoryName } from '../constants/algorithmConstants'
-import styles from './TechniqueListPage.module.css'
+import styles from './SolutionListPage.module.css'
 
-export default function TechniqueListPage() {
-  const [searchParams] = useSearchParams()
+export default function SolutionListPage() {
   const navigate = useNavigate()
-  const topic = searchParams.get('topic') || ''
-  const dueOnly = searchParams.get('due_only') === 'true'
-
-  const [techniques, setTechniques] = useState([])
+  const [solutions, setSolutions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -20,23 +15,20 @@ export default function TechniqueListPage() {
       setLoading(true)
       setError(null)
       try {
-        const params = {}
-        if (topic) params.algorithm_type = topic
-        if (dueOnly) params.due_only = true
-        const data = await cardService.getTechniques(params)
-        if (!cancelled) setTechniques(data || [])
+        const data = await cardService.getSolutions()
+        if (!cancelled) setSolutions(data || [])
       } catch (err) {
-        if (!cancelled) setError(err.message || '加载技巧列表失败')
+        if (!cancelled) setError(err.message || '加载解法列表失败')
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
     load()
     return () => { cancelled = true }
-  }, [topic, dueOnly])
+  }, [])
 
-  const handleTechniqueClick = useCallback((id) => {
-    navigate(`/card/technique/${id}`)
+  const handleSolutionClick = useCallback((id) => {
+    navigate(`/card/solution/${id}`)
   }, [navigate])
 
   const handleBack = useCallback(() => {
@@ -73,38 +65,45 @@ export default function TechniqueListPage() {
     <div className={styles.page}>
       <div className={styles.toolbar}>
         <button className={styles.backButton} onClick={handleBack}>← 返回</button>
-        <h2 className={styles.pageTitle}>{topic} — 技巧列表</h2>
-        <span className={styles.count}>{techniques.length} 个技巧</span>
+        <h2 className={styles.pageTitle}>解法列表</h2>
+        <span className={styles.count}>{solutions.length} 个解法</span>
       </div>
 
-      {techniques.length === 0 ? (
+      {solutions.length === 0 ? (
         <div className={styles.emptyState}>
-          暂无技巧，去创建第一个技巧卡吧
+          暂无解法，去创建第一个解法吧
         </div>
       ) : (
         <div className={styles.grid}>
-          {techniques.map((tech) => (
+          {solutions.map((solution) => (
             <div
-              key={tech.id}
+              key={solution.id}
               className={styles.card}
-              onClick={() => handleTechniqueClick(tech.id)}
+              onClick={() => handleSolutionClick(solution.id)}
             >
               <div className={styles.cardHeader}>
-                <span className={styles.cardName}>{tech.name}</span>
-                {tech.review_status !== 'normal' && (
-                  <span className={`${styles.badge} ${styles[`badge${tech.review_status}`]}`}>
-                    {tech.review_status === 'due' ? '待复习' : '濒危'}
+                <span className={styles.cardName}>{solution.name}</span>
+                {solution.technique_count > 0 && (
+                  <span className={styles.techniqueCount}>
+                    {solution.technique_count} 个技巧
                   </span>
                 )}
               </div>
               <div className={styles.cardMeta}>
-                <span className={styles.metaCategory}>{getCategoryName(tech.name)}</span>
-                <span className={styles.metaProficiency}>熟练度: {'★'.repeat(tech.proficiency)}{'☆'.repeat(5 - tech.proficiency)}</span>
-                <span className={styles.metaSolutions}>{tech.solution_count} 个解法</span>
+                {solution.problem_title && (
+                  <span className={styles.problemTitle} title={solution.problem_title}>
+                    {solution.problem_title}
+                  </span>
+                )}
               </div>
-              {tech.use_cases && (
-                <div className={styles.cardDesc}>{tech.use_cases}</div>
-              )}
+              <div className={styles.cardFooter}>
+                {solution.algorithm_type && (
+                  <span className={styles.algorithmTag}>{solution.algorithm_type}</span>
+                )}
+                <span className={styles.complexity}>
+                  {solution.time_complexity || '—'} / {solution.space_complexity || '—'}
+                </span>
+              </div>
             </div>
           ))}
         </div>

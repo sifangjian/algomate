@@ -44,7 +44,7 @@
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 8px;
 }
 
@@ -63,32 +63,28 @@
 
 .cardHeader {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     margin-bottom: 8px;
+    gap: 8px;
 }
 
 .cardName {
     font-size: 14px;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--text-primary);
+    line-height: 1.4;
 }
 
-.badge {
+.techniqueCount {
     display: inline-block;
     padding: 2px 8px;
     font-size: 11px;
     font-weight: 600;
-}
-
-.badgeDue {
-    background: rgba(212, 160, 23, 0.1);
-    color: var(--status-warning);
-}
-
-.badgeCritical {
-    background: rgba(229, 85, 85, 0.1);
-    color: var(--status-critical);
+    white-space: nowrap;
+    flex-shrink: 0;
+    background: var(--accent-dim);
+    color: var(--accent);
 }
 
 .cardMeta {
@@ -96,29 +92,39 @@
     gap: 10px;
     font-family: var(--font-mono);
     font-size: 12px;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
 }
 
-.metaCategory {
+.problemTitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.cardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.algorithmTag {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 11px;
     color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(129, 140, 248, 0.2);
 }
 
-.metaProficiency {
-    color: #d4a017;
-}
-
-.metaSolutions {
+.complexity {
+    font-family: var(--font-mono);
+    font-size: 11px;
     color: var(--status-normal);
-}
-
-.cardDesc {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.5;
-    border-left: 2px solid var(--accent-dim);
-    padding-left: 10px;
-    margin-top: 4px;
 }
 
 .loadingState {
@@ -131,6 +137,18 @@
     text-align: center;
     padding: 40px;
     color: var(--status-critical);
+}
+
+.errorTitle {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.errorMessage {
+    font-size: 14px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
 }
 
 .emptyState {

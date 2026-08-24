@@ -1,13 +1,6 @@
 import { Icon } from '../ui/Icons'
 import styles from './TodayTasks.module.css'
 
-const defaultTasks = [
-    { id: 1, name: 'LRU Cache 实现', type: 'problem', status: 'PENDING' },
-    { id: 2, name: '快速幂算法模板', type: 'solution', status: 'IN_PROGRESS' },
-    { id: 3, name: '滑动窗口最大值', type: 'technique', status: 'DONE' },
-    { id: 4, name: '二叉树 Morris 遍历', type: 'technique', status: 'PENDING' },
-]
-
 const typeLabels = {
     problem: '题目',
     solution: '解法',
@@ -32,8 +25,30 @@ const statusBadges = {
     DONE: { label: '已完成', className: 'done' },
 }
 
-export default function TodayTasks({ tasks }) {
-    const list = tasks || defaultTasks
+export default function TodayTasks({ loading, tasks }) {
+    const list = tasks || []
+
+    if (loading) {
+        return (
+            <div className={styles.tasks}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className={styles.taskRow}>
+                        <span className={`${styles.taskIndex} ${styles.loadingPulse}`}>&nbsp;</span>
+                        <span className={`${styles.taskName} ${styles.loadingPulse}`}>&nbsp;</span>
+                        <span className={`${styles.taskType} ${styles.loadingPulse}`}>&nbsp;</span>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
+    if (list.length === 0) {
+        return (
+            <div className={styles.tasks}>
+                <div className={styles.emptyState}>今日暂无任务</div>
+            </div>
+        )
+    }
 
     return (
         <div className={styles.tasks}>

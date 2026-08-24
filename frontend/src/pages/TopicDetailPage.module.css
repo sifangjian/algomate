@@ -109,40 +109,20 @@
 .cardGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1px;
-    background: var(--border-subtle);
-    border: 1px solid var(--border-subtle);
+    gap: 8px;
 }
 
 .card {
     background: var(--bg-panel);
     padding: 14px;
     cursor: pointer;
-    transition: background var(--transition-base);
+    transition: border-color var(--transition-base), background var(--transition-base);
+    border: none;
 }
 
 .card:hover {
     background: var(--bg-panel-hover);
-}
-
-.cardProblem {
-    border-left: 2px solid var(--status-warning);
-}
-
-.cardSolution {
-    border-left: 2px solid var(--accent);
-}
-
-.cardTechnique {
-    border-left: 2px solid var(--status-normal);
-}
-
-.cardCritical {
-    border-left-color: var(--status-critical) !important;
-}
-
-.cardDue {
-    border-left-color: var(--status-warning) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .cardHeader {

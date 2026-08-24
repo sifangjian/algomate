@@ -1,15 +1,9 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { navItems } from './navConfig'
 import { Icon } from '../ui/Icons'
+import { cardService } from '../../services/cardService'
 import styles from './SideNav.module.css'
-
-const recentActivities = [
-    { time: '14:32', action: '新建技巧', target: '滑动窗口', type: 'technique' },
-    { time: '13:05', action: '复习完成', target: 'DFS 遍历', type: 'review' },
-    { time: '11:48', action: '新建解法', target: '快速幂', type: 'solution' },
-    { time: '10:20', action: '濒危技巧', target: '回溯剪枝', type: 'warning' },
-    { time: '09:15', action: '新建题目', target: 'LC.209', type: 'problem' },
-]
 
 const typeColors = {
     problem: '#60a5fa',
@@ -20,6 +14,26 @@ const typeColors = {
 }
 
 export default function SideNav({ onCreateCard, stats, collapsed }) {
+    const [recentActivities, setRecentActivities] = useState([])
+
+    useEffect(() => {
+        let cancelled = false
+        async function fetchRecentActivities() {
+            try {
+                const res = await cardService.getRecentActivities()
+                if (!cancelled) {
+                    setRecentActivities(res?.activities || [])
+                }
+            } catch (err) {
+                console.error('Failed to fetch recent activities:', err)
+                if (!cancelled) {
+                    setRecentActivities([])
+                }
+            }
+        }
+        fetchRecentActivities()
+        return () => { cancelled = true }
+    }, [])
     const todayStats = stats || {
         due: 5,
         endangered: 2,

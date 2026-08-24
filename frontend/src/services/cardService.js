@@ -33,6 +33,10 @@ export const cardService = {
     return await api.get(`/v1/problems${query ? `?${query}` : ''}`)
   },
 
+  searchProblems: async (q) => {
+    return await api.get(`/v1/problems/search?q=${encodeURIComponent(q)}`)
+  },
+
   getProblem: async (id) => {
     return await api.get(`/v1/problems/${id}`)
   },
@@ -143,6 +147,7 @@ export const cardService = {
   getTodayReviewPlan: () => api.get('/v1/dashboard/today-review'),
   getWeakPoints: (threshold) => api.get(`/v1/dashboard/weak-points?threshold=${threshold || 30}`),
   getTodayStats: () => api.get('/v1/stats/today'),
+  getHallStats: () => api.get('/v1/stats'),
   getReviewStats: () => api.get('/v1/dashboard/review/statistics'),
   getTodayReviewTasks: () => api.get('/v1/reviews/today'),
   getTodayTasks: () => api.get('/v1/tasks/today'),
@@ -154,4 +159,10 @@ export const cardService = {
   delete: async (id) => { return await api.delete(`/v1/cards/${id}`); },
   retakeCard: async (cardId) => { return await api.post(`/v1/cards/${cardId}/retake`); },
   getGraph: async () => { return await api.get(`/v1/overview/graph`); },
+  getRecentActivities: async () => { return await api.get('/v1/overview/recent'); },
+
+  // === 搜索 API ===
+  searchCards: async (keyword) => {
+    return await api.get(`/v1/overview/search?keyword=${encodeURIComponent(keyword)}`)
+  },
 }

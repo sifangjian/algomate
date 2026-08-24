@@ -1,9 +1,9 @@
 import json
 import logging
-from datetime import date
+from datetime import date, datetime
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from sqlalchemy import desc
 
@@ -12,6 +12,7 @@ from algomate.models.cards import Card
 from algomate.models.problem_card import ProblemCard
 from algomate.models.solution_card import SolutionCard
 from algomate.models.technique_card import TechniqueCard
+from algomate.models.review_records import ReviewRecord
 from algomate.config.algorithm_types import ALGORITHM_TYPES
 
 router = APIRouter(prefix="/overview", tags=["主题概览"])
@@ -153,6 +154,83 @@ class TopicDetailResponse(BaseModel):
     techniques: List[TopicDetailCard] = []
 
 
+class RecentActivity(BaseModel):
+    time: str
+    action: str
+    target: str
+    type: str  # technique / problem / solution / review
+
+
+class RecentActivitiesResponse(BaseModel):
+    activities: List[RecentActivity]
+
+
+@router.get("/recent", response_model=RecentActivitiesResponse)
+def get_recent_activities():
+    """获取最近 5 条活动记录（新建技巧、新建题目、新建解法、复习完成）"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        activities: list[dict] = []
+
+        # 技巧卡片
+        for t in session.query(TechniqueCard).order_by(TechniqueCard.created_at.desc()).limit(10).all():
+            activities.append({
+                "_sort": t.created_at,
+                "time": t.created_at.strftime("%H:%M"),
+                "action": "新建技巧",
+                "target": t.name,
+                "type": "technique",
+            })
+
+        # 题目卡片
+        for p in session.query(ProblemCard).order_by(ProblemCard.created_at.desc()).limit(10).all():
+            activities.append({
+                "_sort": p.created_at,
+                "time": p.created_at.strftime("%H:%M"),
+                "action": "新建题目",
+                "target": p.title,
+                "type": "problem",
+            })
+
+        # 解法卡片
+        for s in session.query(SolutionCard).order_by(SolutionCard.created_at.desc()).limit(10).all():
+            activities.append({
+                "_sort": s.created_at,
+                "time": s.created_at.strftime("%H:%M"),
+                "action": "新建解法",
+                "target": s.name,
+                "type": "solution",
+            })
+
+        # 复习记录（已完成且有完成时间）
+        for r in (
+            session.query(ReviewRecord)
+            .filter(ReviewRecord.status == "completed", ReviewRecord.completed_at.isnot(None))
+            .order_by(ReviewRecord.completed_at.desc())
+            .limit(10)
+            .all()
+        ):
+            card_name = r.card.name if r.card else ""
+            activities.append({
+                "_sort": r.completed_at,
+                "time": r.completed_at.strftime("%H:%M"),
+                "action": "复习完成",
+                "target": card_name,
+                "type": "review",
+            })
+
+        # 按时间降序取前 5
+        activities.sort(key=lambda a: a["_sort"], reverse=True)
+        top5 = activities[:5]
+
+        return RecentActivitiesResponse(
+            activities=[RecentActivity(**a) for a in top5]
+        )
+    finally:
+        session.close()
+
+
 @router.get("/topic/{algorithm_type}", response_model=TopicDetailResponse)
 def get_topic_detail(algorithm_type: str):
     """获取某个算法类型下的所有卡片（题目、解法、技巧）
@@ -216,5 +294,54 @@ def get_topic_detail(algorithm_type: str):
             solutions=solutions,
             techniques=techniques,
         )
+    finally:
+        session.close()
+
+
+@router.get("/search")
+def search_cards(
+    keyword: str = Query(..., description="搜索关键词"),
+):
+    """统一搜索：根据关键词模糊匹配题目、解法、技巧的名称"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        kw = f"%{keyword}%"
+
+        # 搜索题目
+        problems = []
+        for p in session.query(ProblemCard).filter(ProblemCard.title.ilike(kw)).all():
+            problems.append({
+                "id": p.id,
+                "name": p.title,
+                "card_type": "problem",
+                "difficulty": p.difficulty,
+            })
+
+        # 搜索解法
+        solutions = []
+        for s in session.query(SolutionCard).filter(SolutionCard.name.ilike(kw)).all():
+            solutions.append({
+                "id": s.id,
+                "name": s.name,
+                "card_type": "solution",
+                "problem_title": s.problem.title if s.problem else "",
+            })
+
+        # 搜索技巧
+        techniques = []
+        for t in session.query(TechniqueCard).filter(TechniqueCard.name.ilike(kw)).all():
+            techniques.append({
+                "id": t.id,
+                "name": t.name,
+                "card_type": "technique",
+                "category": t.category,
+            })
+
+        return {
+            "problems": problems,
+            "solutions": solutions,
+            "techniques": techniques,
+        }
     finally:
         session.close()

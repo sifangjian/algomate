@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { cardService } from '../../services/cardService'
 import { ALGORITHM_TYPES } from '../../constants/algorithmConstants'
 import ComplexityInput from './ComplexityInput'
@@ -11,6 +11,15 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
     const [searchText, setSearchText] = useState('')
     const [showDropdown, setShowDropdown] = useState(false)
 
+    const [allSolutions, setAllSolutions] = useState([])
+
+    // 题目搜索
+    const [problemSearch, setProblemSearch] = useState('')
+    const [problemSearchResults, setProblemSearchResults] = useState([])
+    const [showProblemDropdown, setShowProblemDropdown] = useState(false)
+    const [searchingProblem, setSearchingProblem] = useState(false)
+    const searchTimerRef = useRef(null)
+
     const handleChange = useCallback((field, value) => {
         onChange(field, value)
     }, [onChange])
@@ -20,8 +29,6 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
             setAllTechniques(data || [])
         }).catch(() => {})
     }, [])
-
-    const [allSolutions, setAllSolutions] = useState([])
 
     useEffect(() => {
         cardService.getSolutions().then(data => {
@@ -35,6 +42,57 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
             onChange('problem_id', problemId)
         }
     }, [problemId, formData.problem_id, onChange])
+
+    // 如果 problemId 变化但已有 problem_title，则显示在搜索框中
+    useEffect(() => {
+        if (problemId && formData.problem_title) {
+            setProblemSearch(formData.problem_title)
+        }
+    }, [problemId, formData.problem_title])
+
+    // 模糊搜索题目（防抖 300ms）
+    useEffect(() => {
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current)
+        }
+        if (!problemSearch.trim()) {
+            setProblemSearchResults([])
+            setShowProblemDropdown(false)
+            return
+        }
+        searchTimerRef.current = setTimeout(async () => {
+            setSearchingProblem(true)
+            try {
+                const results = await cardService.searchProblems(problemSearch.trim())
+                setProblemSearchResults(results || [])
+                setShowProblemDropdown(true)
+            } catch {
+                setProblemSearchResults([])
+            } finally {
+                setSearchingProblem(false)
+            }
+        }, 300)
+        return () => {
+            if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+        }
+    }, [problemSearch])
+
+    // 选择题目
+    const selectProblem = useCallback((problem) => {
+        onChange('problem_id', problem.id)
+        onChange('problem_title', problem.title)
+        setProblemSearch(problem.title)
+        setShowProblemDropdown(false)
+    }, [onChange])
+
+    // 清除已选题目
+    const clearProblem = useCallback(() => {
+        onChange('problem_id', '')
+        onChange('problem_title', '')
+        setProblemSearch('')
+        setProblemSearchResults([])
+        setShowProblemDropdown(false)
+    }, [onChange])
 
     const currentTechniques = formData.techniques || []
     const currentTechniqueIds = new Set(currentTechniques.map(t => t.id))
@@ -63,6 +121,67 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
 
     return (
         <>
+            {/* 关联题目搜索 */}
+            <div className={styles.formGroup}>
+                <label className={styles.formLabel}>关联题目 *</label>
+                {formData.problem_id ? (
+                    <div className={styles.techniqueManager}>
+                        <div className={styles.techniqueTags}>
+                            <span className={styles.techniqueTag}>
+                                <span>{formData.problem_title || `题目 #${formData.problem_id}`}</span>
+                                <button
+                                    type="button"
+                                    className={styles.techniqueTagRemove}
+                                    onClick={clearProblem}
+                                >
+                                    ✕
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className={styles.techniqueSearch}>
+                        <input
+                            className={styles.formInput}
+                            type="text"
+                            value={problemSearch}
+                            onChange={(e) => { setProblemSearch(e.target.value); setShowProblemDropdown(true) }}
+                            onFocus={() => { if (problemSearchResults.length > 0) setShowProblemDropdown(true) }}
+                            placeholder="搜索题目名称..."
+                        />
+                        {searchingProblem && (
+                            <div className={styles.techniqueDropdown}>
+                                <div className={styles.techniqueDropdownEmpty}>搜索中...</div>
+                            </div>
+                        )}
+                        {!searchingProblem && showProblemDropdown && problemSearchResults.length > 0 && (
+                            <div className={styles.techniqueDropdown}>
+                                {problemSearchResults.slice(0, 10).map((p) => (
+                                    <button
+                                        key={p.id}
+                                        type="button"
+                                        className={styles.techniqueDropdownItem}
+                                        onClick={() => selectProblem(p)}
+                                    >
+                                        {p.title}
+                                        {p.difficulty && (
+                                            <span className={styles.techniqueDropdownCat}>
+                                                {p.difficulty === 'easy' ? '简单' : p.difficulty === 'medium' ? '中等' : '困难'}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {!searchingProblem && showProblemDropdown && problemSearch.trim() && problemSearchResults.length === 0 && (
+                            <div className={styles.techniqueDropdown}>
+                                <div className={styles.techniqueDropdownEmpty}>无匹配题目</div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
             <div className={styles.formGroup}>
                 <label className={styles.formLabel}>解法名称 *</label>
                 <input

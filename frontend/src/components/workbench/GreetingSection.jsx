@@ -17,11 +17,20 @@ function formatDate(date) {
     return `${y}-${m}-${d} · ${weekdays[date.getDay()]} · ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
-export default function GreetingSection({ stats }) {
+export default function GreetingSection({ loading, stats }) {
     const now = new Date()
-    const data = stats || {
-        dueCount: 5,
-        completedCount: 1,
+    const dueCount = stats?.dueCount ?? 0
+    const completedCount = stats?.completedCount ?? 0
+
+    if (loading) {
+        return (
+            <div className={styles.greeting}>
+                <h1 className={`${styles.title} ${styles.loadingPulse}`}>&nbsp;</h1>
+                <div className={styles.meta}>
+                    <span className={`${styles.metaItem} ${styles.loadingPulse}`}>&nbsp;</span>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -33,11 +42,11 @@ export default function GreetingSection({ stats }) {
                 <span className={styles.metaItem}>{formatDate(now)}</span>
                 <span className={styles.metaSep}>|</span>
                 <span className={styles.metaItem}>
-                    <span className={styles.statusWarning}>{data.dueCount}</span> 项待办
+                    <span className={styles.statusWarning}>{dueCount}</span> 项待办
                 </span>
                 <span className={styles.metaSep}>|</span>
                 <span className={styles.metaItem}>
-                    <span className={styles.statusNormal}>{data.completedCount}</span> 项完成
+                    <span className={styles.statusNormal}>{completedCount}</span> 项完成
                 </span>
             </div>
         </div>
