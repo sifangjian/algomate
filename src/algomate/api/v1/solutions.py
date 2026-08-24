@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc
 
 from algomate.data.database import Database
+from algomate.models.activity_log import ActivityLog
 from algomate.models.solution_card import SolutionCard
 from algomate.models.solution_technique import SolutionTechnique
 
@@ -132,6 +133,17 @@ def create_solution(data: SolutionCreate):
         session.add(solution)
         session.commit()
         session.refresh(solution)
+
+        log_entry = ActivityLog(
+            type="auto_create",
+            card_type="solution",
+            card_name=solution.name,
+            card_id=solution.id,
+            content=f"创建解法卡片: {solution.name}",
+        )
+        session.add(log_entry)
+        session.commit()
+
         logger.info(f"Created solution card: {solution.name} (id={solution.id})")
         return _solution_to_response(solution)
     finally:
@@ -178,6 +190,16 @@ def get_solution(solution_id: int):
                     "review_status": review_status,
                 })
 
+        log_entry = ActivityLog(
+            type="auto_view",
+            card_type="solution",
+            card_name=solution.name,
+            card_id=solution.id,
+            content=f"查看解法卡片: {solution.name}",
+        )
+        session.add(log_entry)
+        session.commit()
+
         return SolutionDetailResponse(
             id=solution.id,
             problem_id=solution.problem_id,
@@ -215,12 +237,31 @@ def update_solution(solution_id: int, data: SolutionUpdate):
         if "related_solution_ids" in update_data and update_data["related_solution_ids"] is not None:
             update_data["related_solution_ids"] = json.dumps(update_data["related_solution_ids"], ensure_ascii=False)
 
+        changed_fields = {}
+        for key, value in update_data.items():
+            old_val = getattr(solution, key)
+            if old_val != value:
+                changed_fields[key] = {"old": old_val, "new": value}
+
         for key, value in update_data.items():
             setattr(solution, key, value)
 
         solution.updated_at = datetime.now()
         session.commit()
         session.refresh(solution)
+
+        if changed_fields:
+            log_entry = ActivityLog(
+                type="auto_update",
+                card_type="solution",
+                card_name=solution.name,
+                card_id=solution.id,
+                content=f"修改解法卡片: {solution.name}",
+                details={"changed_fields": changed_fields},
+            )
+            session.add(log_entry)
+            session.commit()
+
         logger.info(f"Updated solution card: {solution.name} (id={solution.id})")
         return _solution_to_response(solution)
     finally:

@@ -10,6 +10,7 @@ from algomate.models.problem_card import ProblemCard, ProblemStatus
 from algomate.models.solution_card import SolutionCard
 from algomate.models.technique_card import TechniqueCard
 from algomate.models.solution_technique import SolutionTechnique
+from algomate.models.activity_log import ActivityLog, ActivityLogResponse
 
 __all__ = [
     "Card",
@@ -21,4 +22,6 @@ __all__ = [
     "SolutionCard",
     "TechniqueCard",
     "SolutionTechnique",
+    "ActivityLog",
+    "ActivityLogResponse",
 ]

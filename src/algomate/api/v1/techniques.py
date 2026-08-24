@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc
 
 from algomate.data.database import Database
+from algomate.models.activity_log import ActivityLog
 from algomate.models.technique_card import TechniqueCard
 from algomate.models.cards import Card
 
@@ -142,6 +143,17 @@ def create_technique(data: TechniqueCreate):
         session.add(technique)
         session.commit()
         session.refresh(technique)
+
+        log_entry = ActivityLog(
+            type="auto_create",
+            card_type="technique",
+            card_name=technique.name,
+            card_id=technique.id,
+            content=f"创建技巧卡片: {technique.name}",
+        )
+        session.add(log_entry)
+        session.commit()
+
         logger.info(f"Created technique card: {technique.name} (id={technique.id})")
         return _technique_to_response(technique, review_card)
     finally:
@@ -208,6 +220,16 @@ def get_technique(technique_id: int):
                     "leetcode_link": s.problem.leetcode_link if s.problem and s.problem.leetcode_link else "",
                 })
 
+        log_entry = ActivityLog(
+            type="auto_view",
+            card_type="technique",
+            card_name=technique.name,
+            card_id=technique.id,
+            content=f"查看技巧卡片: {technique.name}",
+        )
+        session.add(log_entry)
+        session.commit()
+
         return TechniqueDetailResponse(
             id=technique.id,
             card_id=technique.card_id,
@@ -242,6 +264,13 @@ def update_technique(technique_id: int, data: TechniqueUpdate):
             raise HTTPException(status_code=404, detail="技巧卡片不存在")
 
         update_data = data.model_dump(exclude_unset=True)
+
+        changed_fields = {}
+        for key, value in update_data.items():
+            old_val = getattr(technique, key)
+            if old_val != value:
+                changed_fields[key] = {"old": old_val, "new": value}
+
         for key, value in update_data.items():
             setattr(technique, key, value)
 
@@ -256,6 +285,18 @@ def update_technique(technique_id: int, data: TechniqueUpdate):
                 card.algorithm_type = update_data['algorithm_type']
             if 'difficulty' in update_data:
                 card.difficulty = update_data['difficulty']
+            session.commit()
+
+        if changed_fields:
+            log_entry = ActivityLog(
+                type="auto_update",
+                card_type="technique",
+                card_name=technique.name,
+                card_id=technique.id,
+                content=f"修改技巧卡片: {technique.name}",
+                details={"changed_fields": changed_fields},
+            )
+            session.add(log_entry)
             session.commit()
 
         logger.info(f"Updated technique card: {technique.name} (id={technique.id})")

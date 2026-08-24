@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import desc
 
 from algomate.data.database import Database
+from algomate.models.activity_log import ActivityLog
 from algomate.models.problem_card import ProblemCard, ProblemStatus
 
 router = APIRouter(prefix="/problems", tags=["题目卡片"])
@@ -114,6 +115,17 @@ def create_problem(data: ProblemCreate):
         session.add(problem)
         session.commit()
         session.refresh(problem)
+
+        log_entry = ActivityLog(
+            type="auto_create",
+            card_type="problem",
+            card_name=problem.title,
+            card_id=problem.id,
+            content=f"创建题目卡片: {problem.title}",
+        )
+        session.add(log_entry)
+        session.commit()
+
         logger.info(f"Created problem card: {problem.title} (id={problem.id})")
         return _problem_to_response(problem)
     finally:
@@ -212,6 +224,16 @@ def get_problem(problem_id: int):
                     "techniques": techniques_list,
                 })
 
+        log_entry = ActivityLog(
+            type="auto_view",
+            card_type="problem",
+            card_name=problem.title,
+            card_id=problem.id,
+            content=f"查看题目卡片: {problem.title}",
+        )
+        session.add(log_entry)
+        session.commit()
+
         return ProblemDetailResponse(
             id=problem.id,
             title=problem.title,
@@ -246,12 +268,31 @@ def update_problem(problem_id: int, data: ProblemUpdate):
         if "related_problem_ids" in update_data and update_data["related_problem_ids"] is not None:
             update_data["related_problem_ids"] = json.dumps(update_data["related_problem_ids"], ensure_ascii=False)
 
+        changed_fields = {}
+        for key, value in update_data.items():
+            old_val = getattr(problem, key)
+            if old_val != value:
+                changed_fields[key] = {"old": old_val, "new": value}
+
         for key, value in update_data.items():
             setattr(problem, key, value)
 
         problem.updated_at = datetime.now()
         session.commit()
         session.refresh(problem)
+
+        if changed_fields:
+            log_entry = ActivityLog(
+                type="auto_update",
+                card_type="problem",
+                card_name=problem.title,
+                card_id=problem.id,
+                content=f"修改题目卡片: {problem.title}",
+                details={"changed_fields": changed_fields},
+            )
+            session.add(log_entry)
+            session.commit()
+
         logger.info(f"Updated problem card: {problem.title} (id={problem.id})")
         return _problem_to_response(problem)
     finally:

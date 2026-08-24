@@ -4,7 +4,7 @@ import { cardService } from '../services/cardService'
 import { useHallStore } from '../stores/hallStore'
 import GreetingSection from '../components/workbench/GreetingSection'
 import PanelSection from '../components/workbench/PanelSection'
-import CliCreator from '../components/workbench/CliCreator'
+import ActivityLog from '../components/workbench/ActivityLog'
 import StatusMonitor from '../components/workbench/StatusMonitor'
 import TodayTasks from '../components/workbench/TodayTasks'
 import styles from './HallPage.module.css'
@@ -102,8 +102,8 @@ export default function HallPage() {
             <div className={styles.content}>
                 <GreetingSection loading={loading} stats={stats} />
 
-                <PanelSection number="01" title="session.input — 创建卡片 · 输入 /new 开始" path="/cli">
-                    <CliCreator />
+                <PanelSection number="01" title="system.log — 历程轨迹" path="/logs">
+                    <ActivityLog />
                 </PanelSection>
 
                 <PanelSection number="02" title="system.status — 9 项指标 · 系统状态" path="/status">

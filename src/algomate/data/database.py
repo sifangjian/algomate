@@ -20,6 +20,7 @@ def _ensure_models_imported():
         from algomate.models import (
             Card, ReviewRecord,
             ProblemCard, SolutionCard, TechniqueCard, SolutionTechnique,
+            ActivityLog,
         )
         _models_imported = True
 

@@ -1,0 +1,338 @@
+/* ActivityLog.module.css - 系统活动日志组件样式 */
+
+/* 容器样式 - 继承原有 CLI 风格 */
+.container {
+    border: 1px solid transparent;
+    transition: border-color var(--transition-base);
+    padding: 16px;
+}
+
+.container:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.container:active,
+.container:focus-within {
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* 工具栏：日期导航 + 排序 */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.dateNav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navBtn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+    padding: 3px 10px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    transition: all 0.15s;
+    border-radius: 0;
+}
+
+.navBtn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    color: var(--text-primary);
+}
+
+.dateLabel {
+    color: var(--text-primary);
+    font-size: 12px;
+    min-width: 120px;
+    text-align: center;
+}
+
+.sortBtn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-muted);
+    padding: 3px 10px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    transition: all 0.15s;
+    border-radius: 0;
+}
+
+.sortBtn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    color: var(--text-primary);
+}
+
+/* 日志列表区域 */
+.logList {
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.8;
+    margin-bottom: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 时间轴样式 */
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* 日志条目 */
+.logEntry {
+    display: flex;
+    gap: 10px;
+    padding: 4px 0;
+    position: relative;
+    color: var(--text-secondary);
+}
+
+/* 时间轴圆点 */
+.logDot {
+    position: absolute;
+    left: -14px;
+    top: 10px;
+    width: 7px;
+    height: 7px;
+    border-radius: 0;
+    border: 1px solid;
+    background: var(--bg-primary);
+    flex-shrink: 0;
+}
+
+/* 日志时间戳 */
+.logTime {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 11px;
+    min-width: 60px;
+    padding-top: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 日志内容区域 */
+.logContent {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+}
+
+/* 日志头部：类型标签 + 卡片信息 */
+.logHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 日志类型标签 */
+.logTypeTag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 0 6px;
+    border: 1px solid;
+    flex-shrink: 0;
+}
+
+/* 卡片信息 [类型] 名称 */
+.logCardInfo {
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 日志文本 */
+.logText {
+    word-break: break-all;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* ===== 修改字段详情 ===== */
+.changedFields {
+    margin-top: 4px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.changedField {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.changedField + .changedField {
+    margin-top: 2px;
+    padding-top: 2px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.fieldName {
+    color: var(--text-muted);
+    font-weight: 500;
+    min-width: 48px;
+    flex-shrink: 0;
+}
+
+.fieldOld {
+    color: var(--status-error, #e74c3c);
+    text-decoration: line-through;
+    opacity: 0.7;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fieldArrow {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.fieldNew {
+    color: var(--status-normal);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== 日志类型颜色 ===== */
+
+/* 自动记录 - 创建 */
+.logEntry.autoCreate {
+    color: var(--status-normal);
+}
+.logEntry.autoCreate .logDot {
+    border-color: var(--status-normal);
+    background: var(--status-normal);
+}
+.logTypeTag.autoCreate {
+    border-color: var(--status-normal);
+    color: var(--status-normal);
+}
+
+/* 自动记录 - 查看 */
+.logEntry.autoView {
+    color: #5bc0de;
+}
+.logEntry.autoView .logDot {
+    border-color: #5bc0de;
+    background: #5bc0de;
+}
+.logTypeTag.autoView {
+    border-color: #5bc0de;
+    color: #5bc0de;
+}
+
+/* 自动记录 - 修改 */
+.logEntry.autoUpdate {
+    color: #f0ad4e;
+}
+.logEntry.autoUpdate .logDot {
+    border-color: #f0ad4e;
+    background: #f0ad4e;
+}
+.logTypeTag.autoUpdate {
+    border-color: #f0ad4e;
+    color: #f0ad4e;
+}
+
+/* 手动记录 */
+.logEntry.manualNote {
+    color: var(--text-primary);
+}
+.logEntry.manualNote .logDot {
+    border-color: var(--accent);
+    background: var(--accent);
+}
+.logTypeTag.manualNote {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* 空状态 */
+.emptyState {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 2;
+}
+
+/* 加载状态 */
+.loading {
+    text-align: center;
+    padding: 16px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+/* 输入框区域 */
+.inputWrapper {
+    position: relative;
+    margin-top: 12px;
+}
+
+.cliInput {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+}
+
+.inputPrompt {
+    color: var(--accent);
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.inputField {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    caret-color: var(--accent);
+}
+
+.inputField::placeholder {
+    color: var(--text-muted);
+    font-size: 12px;
+}

@@ -16,6 +16,7 @@ services:
       # 挂载代码目录，修改代码后重启容器即可生效
       - .:/app
     environment:
+      - TZ=Asia/Shanghai
       - APP_ENV=production
       - DATABASE_URL=sqlite:///app/data/algomate.db
     env_file:
@@ -38,6 +39,7 @@ services:
     depends_on:
       - backend
     environment:
+      - TZ=Asia/Shanghai
       # 使用Docker服务名称（backend）作为主机名
       - VITE_API_URL=http://backend:8000
 

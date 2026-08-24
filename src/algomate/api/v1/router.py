@@ -11,6 +11,7 @@ from algomate.api.v1.problems import router as problems_router
 from algomate.api.v1.solutions import router as solutions_router
 from algomate.api.v1.techniques import router as techniques_router
 from algomate.api.v1.overview import router as overview_router
+from algomate.api.v1.activity_logs import router as activity_logs_router
 
 router = APIRouter()
 
@@ -25,3 +26,4 @@ router.include_router(problems_router)
 router.include_router(solutions_router)
 router.include_router(techniques_router)
 router.include_router(overview_router)
+router.include_router(activity_logs_router)
