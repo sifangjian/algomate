@@ -75,8 +75,6 @@ def _create_card(session, **overrides):
         "pending_retake": False,
         "review_level": 0,
         "review_count": 0,
-        "npc_id": 1,
-        "topic": "",
         "created_at": datetime.now(),
     }
     defaults.update(overrides)

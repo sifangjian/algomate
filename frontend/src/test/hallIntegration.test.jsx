@@ -30,6 +30,12 @@ vi.mock('../services/api', () => ({
   },
 }))
 
+vi.mock('../services/activityLogService', () => ({
+  activityLogService: {
+    getLogs: vi.fn().mockResolvedValue([]),
+  },
+}))
+
 vi.mock('../components/ui/Loading/LoadingScreen', () => ({
   default: () => React.createElement('div', { 'data-testid': 'loading' }, 'Loading...'),
 }))
@@ -108,7 +114,7 @@ describe('HallPage 集成测试', () => {
       renderHallPage()
 
       await waitFor(() => {
-        expect(screen.getByText(/session\.input/)).toBeInTheDocument()
+        expect(screen.getByText(/system\.log/)).toBeInTheDocument()
       })
       expect(screen.getByText(/system\.status/)).toBeInTheDocument()
       expect(screen.getByText(/today\.tasks/)).toBeInTheDocument()

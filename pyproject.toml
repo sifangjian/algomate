@@ -8,7 +8,7 @@ license = { text = "MIT" }
 authors = [
     { name = "Your Name", email = "your.email@example.com" }
 ]
-keywords = ["algorithm", "learning", "agent", "spaced-repetition"]
+keywords = ["algorithm", "learning", "spaced-repetition"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Education",
@@ -19,11 +19,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "requests>=2.31.0",
     "sqlalchemy>=2.0.0",
     "apscheduler>=3.10.0",
     "pyyaml>=6.0",
-    "markdown>=3.5.0",
     "python-dotenv>=1.0.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.23.0",
@@ -32,8 +30,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
-    "pytest-cov>=4.1",
-    "playwright>=1.59.0",
 ]
 
 [project.urls]

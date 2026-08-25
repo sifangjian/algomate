@@ -47,8 +47,6 @@ def _add_card(session, name="test_card", algorithm_type="", review_level=0,
         durability=durability,
         pending_retake=pending_retake,
         next_review_date=next_review_date,
-        npc_id=1,
-        topic="",
     )
     session.add(card)
     session.commit()

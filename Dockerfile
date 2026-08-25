@@ -11,7 +11,7 @@ ENV UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv && \
     uv venv /opt/venv && \
     . /opt/venv/bin/activate && \
-    uv sync --active --no-install-project --frozen
+    uv sync --active --no-install-project --frozen --extra dev
 
 # 阶段2: 运行环境
 FROM python:3.11-slim
