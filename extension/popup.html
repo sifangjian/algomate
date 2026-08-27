@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; }
+    body { width: 360px; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; margin: 0; padding: 12px; color: #1f2328; }
+    h1 { font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+    .field { margin-bottom: 8px; }
+    .field label { font-weight: 600; display: block; margin-bottom: 3px; color: #57606a; }
+    .val { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 6px 8px; max-height: 90px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+    input[type="text"], textarea { width: 100%; border: 1px solid #d0d7de; border-radius: 6px; padding: 6px 8px; font: inherit; }
+    textarea { min-height: 70px; resize: vertical; }
+    .tags span { display: inline-block; background: #ddf4ff; color: #0969da; border-radius: 10px; padding: 1px 8px; margin: 2px 3px 0 0; font-size: 12px; }
+    .btn { width: 100%; border: none; border-radius: 6px; padding: 9px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #1f883d; color: #fff; }
+    .btn-primary:hover { background: #1a7f37; }
+    .btn-primary:disabled { background: #94d3a2; cursor: not-allowed; }
+    .status { margin-top: 8px; font-size: 12px; min-height: 16px; }
+    .status.ok { color: #1a7f37; }
+    .status.err { color: #cf222e; }
+    .status.warn { color: #9a6700; }
+    hr { border: none; border-top: 1px solid #d0d7de; margin: 10px 0; }
+    .hint { color: #57606a; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <h1>📥 导入到 AlgoMate</h1>
+
+  <div class="field">
+    <label>题目</label>
+    <div class="val" id="f-title">（抓取中…）</div>
+  </div>
+
+  <div class="field">
+    <label>难度</label>
+    <div class="val" id="f-difficulty">—</div>
+  </div>
+
+  <div class="field">
+    <label>标签（自动建技巧卡草稿）</label>
+    <div class="tags" id="f-tags"></div>
+  </div>
+
+  <div class="field">
+    <label>代码（来自 LeetCode，可编辑）</label>
+    <textarea id="f-code" class="val" style="max-height:120px;"></textarea>
+    <div class="hint" id="f-lang"></div>
+  </div>
+
+  <hr />
+
+  <div class="field">
+    <label>心得体会 / 我的总结（你自己填，不搬运）</label>
+    <textarea id="f-notes" placeholder="例如：双指针的核心是缩小搜索空间；注意 left/right 移动条件…"></textarea>
+  </div>
+
+  <button class="btn btn-primary" id="btn-import" disabled>确认并导入到 AlgoMate</button>
+  <div class="status" id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

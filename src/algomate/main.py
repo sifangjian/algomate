@@ -136,8 +136,10 @@ class AlgomateApp:
 
         self.api_app.add_middleware(
             CORSMiddleware,
-            allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-            allow_credentials=True,
+            # Dev 阶段临时放开 CORS，便于 Chrome 扩展直接调用
+            # TODO: 正式部署时收紧为前端域名列表
+            allow_origins=["*"],
+            allow_credentials=False,
             allow_methods=["*"],
             allow_headers=["*"],
         )

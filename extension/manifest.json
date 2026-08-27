@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "AlgoMate LeetCode 一键导入",
+  "version": "0.1.0",
+  "description": "在 LeetCode 题目页抓取题目信息，预览并一键导入到本地 AlgoMate 系统",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://leetcode.cn/*",
+    "https://leetcode.com/*",
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "导入当前 LeetCode 题目到 AlgoMate"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://leetcode.cn/problems/*",
+        "https://leetcode.com/problems/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

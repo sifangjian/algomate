@@ -41,6 +41,7 @@ class ImportRequest(BaseModel):
         default_factory=list,
         description="由 tags 派生的技巧类别，用于自动建技巧卡草稿（空壳，内容由用户后补）",
     )
+    user_notes: str = Field("", description="用户自行填写的心得体会/总结（不搬运，由用户本人录入）")
 
 
 class ImportResponse(BaseModel):
@@ -101,6 +102,8 @@ def import_from_leetcode(data: ImportRequest):
         if existing:
             problem = existing
             problem.my_status = "accepted"
+            if data.user_notes:
+                problem.notes = data.user_notes
         else:
             problem = ProblemCard(
                 title=data.title,
@@ -109,6 +112,7 @@ def import_from_leetcode(data: ImportRequest):
                 leetcode_link=data.leetcode_link,
                 tags=json.dumps(data.tags, ensure_ascii=False),
                 my_status="accepted",
+                notes=data.user_notes,
             )
             session.add(problem)
             session.flush()
