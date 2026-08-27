@@ -14,6 +14,7 @@ class SolutionCard(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     problem_id = Column(Integer, ForeignKey("problem_cards.id", ondelete="CASCADE"), nullable=False, comment="关联的题目 ID")
     name = Column(String(200), nullable=False, comment="解法名称，如 '哈希表法'")
+    language = Column(String(50), nullable=True, default="", comment="编程语言，如 python/javascript/cpp，来自 LeetCode 导入")
     algorithm_type = Column(String(100), nullable=True, default="", comment="算法类型，未关联技巧时手动设置，优先从关联技巧继承")
     time_complexity = Column(String(100), nullable=True, default="", comment="时间复杂度")
     space_complexity = Column(String(100), nullable=True, default="", comment="空间复杂度")

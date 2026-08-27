@@ -20,6 +20,7 @@ class ProblemCard(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(200), nullable=False, comment="题目全称，如 '645. 错误的集合'")
+    leetcode_slug = Column(String(200), nullable=True, default=None, index=True, comment="LeetCode 题目唯一标识(slug)，用于一键导入去重")
     difficulty = Column(String(20), nullable=False, default="medium", comment="难度: easy/medium/hard")
     leetcode_link = Column(String(500), nullable=True, default="", comment="原题链接")
     tags = Column(Text, nullable=True, default="[]", comment="标签 JSON 数组")

@@ -23,6 +23,7 @@
 - **对抗遗忘**：基于艾宾浩斯遗忘曲线的自评复习，科学安排复习节奏
 - **知识关联**：解法与技巧多对多关联，构建算法知识网络
 - **自主掌控**：自评驱动复习计划，灵活适配个人学习节奏
+- **活动日志**：自动与手动记录学习轨迹（创建、查看、更新卡片及笔记），方便回顾当日/阶段进展
 
 ***
 
@@ -67,31 +68,57 @@
 
 内置 33 种算法类型，按 10 大类别组织（基础数据结构、搜索、树、图、回溯、贪心、DP、分治排序、数学位运算），包含完整的前置依赖关系和推荐学习路径。
 
+### 活动日志
+
+系统自动记录学习行为（创建/查看/更新卡片），也支持手动添加笔记。可在前端「活动」相关视图按日期、类型筛选回顾，便于追踪学习轨迹。
+
 ***
 
 ## 快速开始
 
 ### 环境要求
 
-- Python 3.11+
-- Node.js 18+
-- uv
+- Docker 与 Docker Compose（推荐，免去本地装 Python/Node）
+- 或：Python 3.11+、Node.js 18+、uv、npm
 
-### 安装与启动
+### 方式一：Docker Compose 一键启动（推荐）
 
 ```bash
 # 1. 克隆项目
-git clone git@github.com:sifangjian/algomate.git
-cd algomate
+git clone git@github.com:sifangjian/algomate-helper.git
+cd algomate-helper
 
-# 2. 安装依赖
+# 2. 配置环境变量（默认无需额外配置）
+cp .env.example .env
+
+# 3. 构建并启动全部服务（前端 + 后端）
+docker compose up --build -d
+
+# 查看日志
+docker compose logs -f
+
+# 停止服务
+docker compose down
+```
+
+访问：
+- 前端：http://localhost:3000
+- 后端 API：http://localhost:8000
+- API 文档：http://localhost:8000/docs
+
+> 后端端口默认映射到宿主机 8000（见 `docker-compose.yml` 的 `BACKEND_PORT`），方便本地直接访问 API 文档与调试。
+
+### 方式二：本地开发（不使用 Docker）
+
+```bash
+# 1. 安装依赖
 uv sync
 cd frontend && npm install && cd ..
 
-# 3. 配置环境变量
+# 2. 配置环境变量
 cp .env.example .env
 
-# 4. 启动开发服务器
+# 3. 启动开发服务器（前后端同时启动）
 python scripts/dev.py
 ```
 
@@ -112,7 +139,7 @@ python scripts/dev.py
 | FastAPI | Web 框架 |
 | SQLAlchemy 2.0 | ORM |
 | SQLite | 数据库 |
-| APScheduler | 定时任务调度 |
+| APScheduler | 定时任务调度（每日 09:00 生成修炼任务） |
 | PyYAML | 配置管理 |
 
 ### 前端
@@ -125,34 +152,38 @@ python scripts/dev.py
 | Zustand | 状态管理 |
 | Axios | HTTP 客户端 |
 | CodeMirror | 代码编辑器 |
-| Chart.js | 数据可视化 |
 | react-markdown | Markdown 渲染 |
+| react-force-graph-2d | 知识关联图可视化 |
 
 ***
 
 ## 项目结构
 
 ```
-algomate/
+algomate-helper/
 ├── src/algomate/          # 后端源代码
-│   ├── main.py            # 应用入口 + FastAPI 实例
+│   ├── main.py            # 应用入口 + FastAPI 实例（AlgomateApp 类）
 │   ├── api/v1/            # RESTful API 路由
-│   ├── models/            # 数据模型
+│   ├── models/            # 数据模型（含 activity_log 活动日志）
 │   ├── core/              # 核心逻辑（遗忘曲线、耐久度、调度）
 │   ├── review/            # 修炼计划服务
-│   ├── config/            # 配置管理
-│   ├── data/              # 数据层
+│   ├── config/            # 配置管理（AppConfig + 算法分类）
+│   ├── data/              # 数据层（Database 单例 + Repository）
 │   └── utils/             # 工具函数
 ├── frontend/              # 前端源代码
 │   └── src/
-│       ├── pages/         # 页面
-│       ├── components/    # 组件
-│       ├── stores/        # 状态管理
-│       ├── services/      # API 服务
-│       └── hooks/         # 自定义 Hooks
+│       ├── pages/         # 页面（首页/题目/解法/技巧/复习/主题详情）
+│       ├── components/     # 组件（card/hall/layout/ui 等）
+│       ├── stores/         # 状态管理（cardStore/hallStore/uiStore）
+│       ├── services/       # API 服务（axios 封装）
+│       ├── hooks/          # 自定义 Hooks
+│       └── constants/      # 常量
 ├── tests/                 # 后端测试
 ├── data/                  # 数据库 + 配置文件
-└── scripts/               # 开发工具脚本
+├── scripts/               # 开发工具脚本（dev.py 统一启动）
+├── Dockerfile             # 后端 Docker 构建
+├── docker-compose.yml     # Docker Compose 配置（backend + frontend）
+└── .env.example           # 环境变量示例
 ```
 
 ***
@@ -165,5 +196,5 @@ algomate/
 
 ## 联系方式
 
-- **问题反馈**：[GitHub Issues](https://github.com/sifangjian/algomate/issues)
-- **讨论交流**：[GitHub Discussions](https://github.com/sifangjian/algomate/discussions)
+- **问题反馈**：[GitHub Issues](https://github.com/sifangjian/algomate-helper/issues)
+- **讨论交流**：[GitHub Discussions](https://github.com/sifangjian/algomate-helper/discussions)
