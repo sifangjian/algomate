@@ -94,7 +94,7 @@ async function doImport() {
     code: $('f-code').value,
     language: d.language || '',
     techniques: collectTechniques(),
-    user_notes: $('f-notes').value,
+    notes: $('f-notes').value,
   };
   try {
     const r = await fetch(BACKEND, {
@@ -104,12 +104,21 @@ async function doImport() {
     });
     const j = await r.json();
     if (r.ok) {
+      const extra = j.is_new_problem
+        ? ''
+        : `（已存在该题，本次追加第 ${j.existing_solution_count + 1} 条解法）`;
       setStatus(
         (j.is_new_problem ? '导入成功（新建题卡）' : '已存在该题，追加解法') +
-          ` · 技巧卡 ${j.technique_ids.length} 张`,
+          ` · 技巧卡 ${j.technique_ids.length} 张` + extra,
         'ok'
       );
       btn.textContent = '已导入 ✓';
+      // 引导去系统补写突破口/思路（破题思路已由你填写，这里提示可继续完善）
+      const tip = document.createElement('div');
+      tip.className = 'hint';
+      tip.style.marginTop = '6px';
+      tip.innerHTML = '可在系统中为解法补充「突破口 / 思路 / 易错点」，让卡片更完整。';
+      statusEl.parentNode.insertBefore(tip, statusEl.nextSibling);
     } else {
       setStatus('导入失败: ' + JSON.stringify(j), 'err');
       btn.disabled = false;

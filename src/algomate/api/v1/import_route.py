@@ -61,6 +61,7 @@ class ImportResponse(BaseModel):
     solution_id: int
     technique_ids: List[int] = []
     is_new_problem: bool = True
+    existing_solution_count: int = 0
     message: str = ""
 
 
@@ -113,6 +114,10 @@ def import_from_leetcode(data: ImportRequest):
                 problem.notes = data.notes
             # 标签作为算法分类属性，重复导入时同步刷新
             problem.tags = json.dumps(data.tags, ensure_ascii=False)
+            from algomate.models.solution_card import SolutionCard as _SC
+            existing_solution_count = (
+                session.query(_SC).filter(_SC.problem_id == problem.id).count()
+            )
         else:
             problem = ProblemCard(
                 title=data.title,
@@ -181,6 +186,7 @@ def import_from_leetcode(data: ImportRequest):
             solution_id=solution.id,
             technique_ids=technique_ids,
             is_new_problem=is_new_problem,
+            existing_solution_count=existing_solution_count if not is_new_problem else 0,
             message=msg,
         )
     finally:
