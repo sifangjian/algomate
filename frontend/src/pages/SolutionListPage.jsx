@@ -97,9 +97,6 @@ export default function SolutionListPage() {
                 )}
               </div>
               <div className={styles.cardFooter}>
-                {solution.algorithm_type && (
-                  <span className={styles.algorithmTag}>{solution.algorithm_type}</span>
-                )}
                 <span className={styles.complexity}>
                   {solution.time_complexity || '—'} / {solution.space_complexity || '—'}
                 </span>

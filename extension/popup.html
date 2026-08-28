@@ -24,6 +24,11 @@
     .status.ok { color: #1a7f37; }
     .status.err { color: #cf222e; }
     .status.warn { color: #9a6700; }
+    .field-row { display: flex; gap: 8px; }
+    .field-row .field { flex: 1; }
+    .conflict-box { border: 1px solid #d0d7de; border-radius: 6px; padding: 8px; margin-top: 8px; background: #fff; }
+    .conflict-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; }
+    .conflict-row .btn-add { width: auto; margin: 0; }
     hr { border: none; border-top: 1px solid #d0d7de; margin: 10px 0; }
     .hint { color: #57606a; font-size: 11px; }
     .tech-item { border: 1px solid #d0d7de; border-radius: 6px; padding: 6px; margin-bottom: 6px; background: #fff; }
@@ -54,6 +59,32 @@
     <div class="hint" id="f-lang"></div>
   </div>
 
+  <div class="field">
+    <label>突破口（做完题后最清晰，建议此刻填写）</label>
+    <textarea id="f-breakthrough" placeholder="本解法的切入角度，如：哈希表存差值一遍扫描"></textarea>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>时间复杂度</label>
+      <input type="text" id="f-time" placeholder="O(n)" />
+    </div>
+    <div class="field">
+      <label>空间复杂度</label>
+      <input type="text" id="f-space" placeholder="O(1)" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label>易错点（每行一条）</label>
+    <textarea id="f-pitfalls" placeholder="如：注意返回下标而非值&#10;注意 left&lt;right 边界"></textarea>
+  </div>
+
+  <div class="field">
+    <label>变体题 slug（同考点，逗号分隔，手动填）</label>
+    <input type="text" id="f-variants" placeholder="如：3sum,4sum" />
+  </div>
+
   <hr />
 
   <div class="field">
@@ -65,7 +96,7 @@
     <label>技巧总结（可多条，每条生成一张技巧卡）</label>
     <div id="f-techniques"></div>
     <button type="button" class="btn btn-add" id="btn-add-tech">+ 添加一条技巧</button>
-    <div class="hint">从本题提炼的可迁移经验，如「哈希表存差值一遍扫描」「注意边界 left&lt;right」</div>
+    <div class="hint">从本题提炼的可迁移经验，如「哈希表存差值一遍扫描」；可附标准代码模板</div>
   </div>
 
   <button class="btn btn-primary" id="btn-import" disabled>确认并导入到 AlgoMate</button>

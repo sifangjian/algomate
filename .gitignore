@@ -81,6 +81,7 @@ venv/
 ENV/
 env/
 .uvtools
+.venv-e2e/
 
 # OS
 .DS_Store

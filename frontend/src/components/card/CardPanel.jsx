@@ -78,9 +78,6 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
             {DIFFICULTY_LABELS[data.difficulty] || data.difficulty}
           </span>
         )}
-        {data.my_status && (
-          <span className={styles.statusText}>{data.my_status}</span>
-        )}
         {data.leetcode_link && (
           <a
             href={data.leetcode_link}
@@ -106,23 +103,6 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
           <a href={data.video_demo_link} target="_blank" rel="noopener noreferrer" className={styles.externalLink}>
             🔗 观看视频演示
           </a>
-        </div>
-      )}
-
-      {data.related_problem_ids?.length > 0 && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>相关题目</h3>
-          <div className={styles.techniquesRow}>
-            {data.related_problem_ids.map((pid) => (
-              <button
-                key={pid}
-                className={styles.techniqueLink}
-                onClick={() => onNavigate('problem', pid)}
-              >
-                #{pid}
-              </button>
-            ))}
-          </div>
         </div>
       )}
 
@@ -379,23 +359,6 @@ function SolutionCard({ data, onNavigate }) {
           </div>
         </div>
       )}
-
-      {data.related_solution_ids?.length > 0 && (
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>相关解法</h3>
-          <div className={styles.techniquesRow}>
-            {data.related_solution_ids.map((sid) => (
-              <button
-                key={sid}
-                className={styles.techniqueLink}
-                onClick={() => onNavigate('solution', sid)}
-              >
-                #{sid}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </>
   )
 }
@@ -417,18 +380,6 @@ function TechniqueCard({ data, onNavigate }) {
       setReviewLoading(false)
     }
   }, [data.id])
-
-  const renderStars = (proficiency) => {
-    const stars = []
-    for (let i = 0; i < 5; i++) {
-      stars.push(
-        <span key={i} className={i < proficiency ? styles.starFilled : styles.starEmpty}>
-          ★
-        </span>
-      )
-    }
-    return stars
-  }
 
   return (
     <>

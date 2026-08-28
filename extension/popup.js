@@ -31,13 +31,14 @@ function renderPreview(data) {
 }
 
 // 动态添加一条技巧输入框
-function addTechniqueRow(name = '', summary = '') {
+function addTechniqueRow(name = '', summary = '', code_template = '') {
   const wrap = document.createElement('div');
   wrap.className = 'tech-item';
   wrap.innerHTML = `
     <button type="button" class="btn-del" title="删除">✕</button>
     <input type="text" class="tech-name" placeholder="技巧名称（如：哈希表存差值）" value="${name.replace(/"/g, '&quot;')}" />
     <textarea class="tech-summary" placeholder="一句话总结（可选）" style="min-height:38px;">${summary}</textarea>
+    <textarea class="tech-code" placeholder="标准代码模板（可选）" style="min-height:38px;">${code_template}</textarea>
   `;
   wrap.querySelector('.btn-del').addEventListener('click', () => wrap.remove());
   $('f-techniques').appendChild(wrap);
@@ -49,7 +50,8 @@ function collectTechniques() {
   document.querySelectorAll('#f-techniques .tech-item').forEach((row) => {
     const name = row.querySelector('.tech-name').value.trim();
     const summary = row.querySelector('.tech-summary').value.trim();
-    if (name) items.push({ name, summary });
+    const code_template = row.querySelector('.tech-code').value.trim();
+    if (name) items.push({ name, summary, code_template });
   });
   return items;
 }
@@ -78,12 +80,18 @@ async function collect() {
 }
 
 // 提交导入
-async function doImport() {
+async function doImport(updateSolutionId) {
   const d = window.__collected;
   if (!d) return;
   const btn = $('btn-import');
   btn.disabled = true;
   setStatus('正在导入…');
+
+  const pitfalls = $('f-pitfalls').value
+    .split('\n').map((s) => s.trim()).filter(Boolean);
+  const variants = $('f-variants').value
+    .split(',').map((s) => s.trim()).filter(Boolean);
+
   const payload = {
     slug: d.slug,
     title: d.title,
@@ -93,9 +101,16 @@ async function doImport() {
     tags: d.tags || [],
     code: $('f-code').value,
     language: d.language || '',
-    techniques: collectTechniques(),
     notes: $('f-notes').value,
+    breakthrough: $('f-breakthrough').value,
+    time_complexity: $('f-time').value,
+    space_complexity: $('f-space').value,
+    pitfalls,
+    variants,
+    techniques: collectTechniques(),
   };
+  if (updateSolutionId != null) payload.update_solution_id = updateSolutionId;
+
   try {
     const r = await fetch(BACKEND, {
       method: 'POST',
@@ -104,6 +119,16 @@ async function doImport() {
     });
     const j = await r.json();
     if (r.ok) {
+      if (j.already_exists) {
+        setStatus('已存在相同解法（代码与语言一致），未重复创建。', 'ok');
+        btn.textContent = '已存在 ✓';
+        return;
+      }
+      if (j.conflict) {
+        // 让用户选择：更新某条已有解法 / 新增一条
+        showConflictChoice(j);
+        return;
+      }
       const extra = j.is_new_problem
         ? ''
         : `（已存在该题，本次追加第 ${j.existing_solution_count + 1} 条解法）`;
@@ -113,7 +138,6 @@ async function doImport() {
         'ok'
       );
       btn.textContent = '已导入 ✓';
-      // 引导去系统补写突破口/思路（破题思路已由你填写，这里提示可继续完善）
       const tip = document.createElement('div');
       tip.className = 'hint';
       tip.style.marginTop = '6px';
@@ -127,6 +151,39 @@ async function doImport() {
     setStatus('请求失败: ' + e.message + '（确认后端 http://localhost:8000 已启动）', 'err');
     btn.disabled = false;
   }
+}
+
+// 冲突时展示选择 UI
+function showConflictChoice(j) {
+  const box = document.createElement('div');
+  box.className = 'conflict-box';
+  box.innerHTML = '<div class="hint">该题已有解法，请选择：</div>';
+  j.existing_solutions.forEach((sol) => {
+    const row = document.createElement('div');
+    row.className = 'conflict-row';
+    row.innerHTML = `<span>解法 #${sol.id}（${sol.language || '未知语言'}）${sol.breakthrough ? ' · ' + sol.breakthrough : ''}</span>`;
+    const upd = document.createElement('button');
+    upd.className = 'btn btn-add';
+    upd.textContent = '更新此解法';
+    upd.addEventListener('click', () => {
+      box.remove();
+      doImport(sol.id);
+    });
+    row.appendChild(upd);
+    box.appendChild(row);
+  });
+  const addNew = document.createElement('button');
+  addNew.className = 'btn btn-primary';
+  addNew.textContent = '仍要新增一条解法';
+  addNew.addEventListener('click', () => {
+    box.remove();
+    doImport(null); // 不带 update_solution_id => 新建
+  });
+  box.appendChild(addNew);
+
+  const btn = $('btn-import');
+  btn.disabled = false;
+  statusEl.parentNode.insertBefore(box, statusEl.nextSibling);
 }
 
 $('btn-add-tech').addEventListener('click', () => addTechniqueRow());

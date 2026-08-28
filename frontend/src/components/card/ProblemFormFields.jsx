@@ -11,13 +11,6 @@ const DIFFICULTY_OPTIONS = [
     { value: 'hard', label: 'Hard' },
 ]
 
-const STATUS_OPTIONS = [
-    { value: '', label: '选择状态' },
-    { value: 'untried', label: '未尝试' },
-    { value: 'accepted', label: '已通过' },
-    { value: 'optimal', label: '最优解' },
-]
-
 export default function ProblemFormFields({ formData, onChange }) {
     const [allProblems, setAllProblems] = useState([])
 
@@ -70,19 +63,6 @@ export default function ProblemFormFields({ formData, onChange }) {
             </div>
 
             <div className={styles.formGroup}>
-                <label className={styles.formLabel}>我的状态</label>
-                <select
-                    className={styles.formSelect}
-                    value={formData.my_status || ''}
-                    onChange={(e) => handleChange('my_status', e.target.value)}
-                >
-                    {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div className={styles.formGroup}>
                 <label className={styles.formLabel}>算法类型 *</label>
                 <TagSelector
                     value={formData.tags || []}
@@ -94,13 +74,24 @@ export default function ProblemFormFields({ formData, onChange }) {
             </div>
 
             <div className={styles.formGroup}>
-                <label className={styles.formLabel}>注意事项</label>
+                <label className={styles.formLabel}>破题思路（题目整体切入点）</label>
                 <textarea
                     className={styles.formTextarea}
                     value={formData.notes || ''}
                     onChange={(e) => handleChange('notes', e.target.value)}
-                    placeholder="记录解题时的注意事项、边界条件、易错点..."
+                    placeholder="记录破题思路、整体切入点..."
                     rows={3}
+                />
+            </div>
+
+            <div className={styles.formGroup}>
+                <label className={styles.formLabel}>变体题 slug（同考点，逗号分隔）</label>
+                <input
+                    className={styles.formInput}
+                    type="text"
+                    value={formData.variants || ''}
+                    onChange={(e) => handleChange('variants', e.target.value)}
+                    placeholder="如：3sum,4sum"
                 />
             </div>
 
@@ -113,77 +104,6 @@ export default function ProblemFormFields({ formData, onChange }) {
                     onChange={(e) => handleChange('video_demo_link', e.target.value)}
                     placeholder="https://www.bilibili.com/video/..."
                 />
-            </div>
-
-            <div className={styles.formGroup}>
-                <label className={styles.formLabel}>关联题目</label>
-                <div className={styles.techniqueManager}>
-                    {formData.related_problems?.length > 0 && (
-                        <div className={styles.techniqueTags}>
-                            {formData.related_problems.map((p) => (
-                                <span key={p.id} className={styles.techniqueTag}>
-                                    <span>{p.title}</span>
-                                    <button
-                                        type="button"
-                                        className={styles.techniqueTagRemove}
-                                        onClick={() => {
-                                            const updated = (formData.related_problems || []).filter(item => item.id !== p.id)
-                                            handleChange('related_problems', updated)
-                                            handleChange('related_problem_ids', updated.map(item => item.id))
-                                        }}
-                                    >
-                                        ✕
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                    <div className={styles.techniqueSearch}>
-                        <input
-                            className={styles.formInput}
-                            type="text"
-                            value={formData.related_search || ''}
-                            onChange={(e) => { handleChange('related_search', e.target.value); /* setShowDropdown(true) */ }}
-                            onFocus={() => handleChange('related_show_dropdown', true)}
-                            placeholder="搜索题目..."
-                        />
-                        {(formData.related_show_dropdown) && formData.related_search && (
-                            <div className={styles.techniqueDropdown}>
-                                {(allProblems || [])
-                                    .filter(p => 
-                                        !(formData.related_problem_ids || []).includes(p.id) &&
-                                        p.title.toLowerCase().includes((formData.related_search || '').toLowerCase())
-                                    )
-                                    .slice(0, 10)
-                                    .map((p) => (
-                                        <button
-                                            key={p.id}
-                                            type="button"
-                                            className={styles.techniqueDropdownItem}
-                                            onClick={() => {
-                                                const updated = [...(formData.related_problems || []), { id: p.id, title: p.title }]
-                                                handleChange('related_problems', updated)
-                                                handleChange('related_problem_ids', updated.map(item => item.id))
-                                                handleChange('related_search', '')
-                                                handleChange('related_show_dropdown', false)
-                                            }}
-                                        >
-                                            {p.title}
-                                        </button>
-                                    ))
-                                }
-                                {(formData.related_show_dropdown) && formData.related_search && (allProblems || []).filter(p => 
-                                    !(formData.related_problem_ids || []).includes(p.id) &&
-                                    p.title.toLowerCase().includes((formData.related_search || '').toLowerCase())
-                                ).length === 0 && (
-                                    <div className={styles.techniqueDropdown}>
-                                        <div className={styles.techniqueDropdownEmpty}>无匹配题目</div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
         </>
     )

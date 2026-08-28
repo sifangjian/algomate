@@ -4,7 +4,6 @@ export const cardService = {
   // === 旧版（保留兼容） ===
   getAll: async (params) => {
     const searchParams = new URLSearchParams()
-    if (params?.algorithm_type) searchParams.set('algorithm_type', params.algorithm_type)
     if (params?.status) searchParams.set('status', params.status)
     if (params?.keyword) searchParams.set('keyword', params.keyword)
     const query = searchParams.toString()
@@ -85,9 +84,7 @@ export const cardService = {
 
   getTechniques: async (params = {}) => {
     const searchParams = new URLSearchParams()
-    if (params.category) searchParams.set('category', params.category)
     if (params.due_only) searchParams.set('due_only', 'true')
-    if (params.algorithm_type) searchParams.set('algorithm_type', params.algorithm_type)
     const query = searchParams.toString()
     return await api.get(`/v1/techniques${query ? `?${query}` : ''}`)
   },
