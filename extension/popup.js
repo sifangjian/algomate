@@ -30,7 +30,7 @@ function renderPreview(data) {
   }
 }
 
-// 抓取当前标签页的题目信息
+// 通过 chrome.scripting 注入 collect.js 到当前题目页并取返回值
 async function collect() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !/leetcode\.(cn|com)/.test(tab.url || '')) {
@@ -38,12 +38,15 @@ async function collect() {
     return;
   }
   try {
-    const resp = await chrome.tabs.sendMessage(tab.id, { type: 'COLLECT' });
-    if (resp && resp.success) {
-      renderPreview(resp.data);
-      window.__collected = resp.data;
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['collect.js'],
+    });
+    if (result && result.result) {
+      renderPreview(result.result);
+      window.__collected = result.result;
     } else {
-      setStatus('抓取失败: ' + ((resp && resp.error) || '未知错误'), 'err');
+      setStatus('抓取返回为空，请刷新题目页后重试。', 'err');
     }
   } catch (e) {
     setStatus('抓取异常: ' + e.message + '（刷新题目页后重试）', 'err');

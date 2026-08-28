@@ -12,15 +12,5 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "导入当前 LeetCode 题目到 AlgoMate"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://leetcode.cn/problems/*",
-        "https://leetcode.com/problems/*"
-      ],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ]
+  }
 }
