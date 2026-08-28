@@ -17,26 +17,20 @@ logger = logging.getLogger(__name__)
 
 
 class TechniqueCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=200, description="技巧名称")
-    category: str = Field("algorithm", description="分类: data_structure/algorithm/template")
-    use_cases: str = Field("", description="适用场景")
+    name: str = Field(..., min_length=1, max_length=200, description="技巧名称（用户提炼）")
+    use_cases: str = Field("", description="适用场景 / 触发条件")
     code_template: str = Field("", description="标准代码模板")
     memory_anchors: str = Field("", description="记忆锚点/关键词")
-    proficiency: int = Field(1, ge=1, le=5, description="熟练度 1-5")
-    algorithm_type: str = Field("", description="算法类型（用于复习卡片）")
-    difficulty: int = Field(3, ge=1, le=5, description="难度 1-5")
+    difficulty: int = Field(3, ge=1, le=5, description="难度 1-5（用于复习调度）")
     notes: str = Field("", description="注意事项")
     video_demo_link: str = Field("", description="视频演示链接")
 
 
 class TechniqueUpdate(BaseModel):
     name: Optional[str] = None
-    category: Optional[str] = None
     use_cases: Optional[str] = None
     code_template: Optional[str] = None
     memory_anchors: Optional[str] = None
-    proficiency: Optional[int] = None
-    algorithm_type: Optional[str] = None
     difficulty: Optional[int] = None
     notes: Optional[str] = None
     video_demo_link: Optional[str] = None
@@ -46,12 +40,9 @@ class TechniqueResponse(BaseModel):
     id: int
     card_id: int
     name: str
-    category: str
     use_cases: str
     code_template: str
     memory_anchors: str
-    proficiency: int
-    review_interval: int
     difficulty: int = 3
     notes: str = ""
     video_demo_link: str = ""
@@ -60,7 +51,7 @@ class TechniqueResponse(BaseModel):
     solution_count: int = 0
     review_status: str = "normal"  # normal / due / critical
     next_review_date: Optional[datetime] = None
-    algorithm_type: str = ""
+    durability: int = 80
 
     class Config:
         from_attributes = True
@@ -92,12 +83,9 @@ def _technique_to_response(t: TechniqueCard, card: Optional[Card] = None) -> Tec
         id=t.id,
         card_id=t.card_id,
         name=t.name,
-        category=t.category,
         use_cases=t.use_cases or "",
         code_template=t.code_template or "",
         memory_anchors=t.memory_anchors or "",
-        proficiency=t.proficiency,
-        review_interval=t.review_interval,
         difficulty=card.difficulty if card else 3,
         notes=t.notes or "",
         video_demo_link=t.video_demo_link or "",
@@ -106,7 +94,7 @@ def _technique_to_response(t: TechniqueCard, card: Optional[Card] = None) -> Tec
         solution_count=len(t.solutions) if t.solutions else 0,
         review_status=_compute_review_status(card),
         next_review_date=card.next_review_date if card else None,
-        algorithm_type=card.algorithm_type if card else "",
+        durability=card.durability if card else 80,
     )
 
 
@@ -118,7 +106,6 @@ def create_technique(data: TechniqueCreate):
         # 同步创建 Card 复习记录
         review_card = Card(
             name=data.name,
-            algorithm_type=data.algorithm_type or "",
             difficulty=data.difficulty,
             durability=80,
             review_level=0,
@@ -131,12 +118,9 @@ def create_technique(data: TechniqueCreate):
         technique = TechniqueCard(
             card_id=review_card.id,
             name=data.name,
-            category=data.category,
             use_cases=data.use_cases,
             code_template=data.code_template,
             memory_anchors=data.memory_anchors,
-            proficiency=data.proficiency,
-            review_interval=1,
             notes=data.notes,
             video_demo_link=data.video_demo_link,
         )
@@ -162,25 +146,18 @@ def create_technique(data: TechniqueCreate):
 
 @router.get("", response_model=List[TechniqueResponse])
 def list_techniques(
-    category: Optional[str] = Query(None, description="按分类筛选"),
     due_only: Optional[bool] = Query(False, description="只显示待复习的"),
-    algorithm_type: Optional[str] = Query(None, description="按算法类型筛选（通过关联的 Card）"),
 ):
     db = Database.get_instance()
     session = db.get_session()
     try:
         query = session.query(TechniqueCard)
 
-        if category:
-            query = query.filter(TechniqueCard.category == category)
-
         techniques = query.order_by(desc(TechniqueCard.created_at)).all()
 
         result = []
         for t in techniques:
             card = session.query(Card).filter(Card.id == t.card_id).first()
-            if algorithm_type and (not card or card.algorithm_type != algorithm_type):
-                continue
             if due_only and _compute_review_status(card) == "normal":
                 continue
             result.append(_technique_to_response(t, card))
@@ -234,12 +211,9 @@ def get_technique(technique_id: int):
             id=technique.id,
             card_id=technique.card_id,
             name=technique.name,
-            category=technique.category,
             use_cases=technique.use_cases or "",
             code_template=technique.code_template or "",
             memory_anchors=technique.memory_anchors or "",
-            proficiency=technique.proficiency,
-            review_interval=technique.review_interval,
             difficulty=card.difficulty if card else 3,
             notes=technique.notes or "",
             video_demo_link=technique.video_demo_link or "",
@@ -247,7 +221,6 @@ def get_technique(technique_id: int):
             updated_at=technique.updated_at,
             solution_count=len(technique.solutions) if technique.solutions else 0,
             review_status=_compute_review_status(card),
-            algorithm_type=card.algorithm_type if card else "",
             solutions=solutions,
         )
     finally:
@@ -281,8 +254,6 @@ def update_technique(technique_id: int, data: TechniqueUpdate):
         card = session.query(Card).filter(Card.id == technique.card_id).first()
         if card:
             card.name = technique.name
-            if 'algorithm_type' in update_data:
-                card.algorithm_type = update_data['algorithm_type']
             if 'difficulty' in update_data:
                 card.difficulty = update_data['difficulty']
             session.commit()
@@ -346,30 +317,26 @@ def self_review(technique_id: int, data: SelfReviewRequest):
         if not card:
             raise HTTPException(status_code=404, detail="复习卡片不存在")
 
-        # 根据自评等级调整耐久度和复习等级
+        # 根据自评等级调整耐久度和复习等级（单一遗忘曲线机制，由 Card 承载）
+        from algomate.core.memory.forgetting_curve import ForgettingCurveEngine
+        engine = ForgettingCurveEngine()
+
         rating = data.self_rating
         if rating == "forgot":
             card.durability = max(0, card.durability - 30)
-            # review_level 不变，间隔缩短
-            new_interval = max(1, technique.review_interval // 2)
+            card.review_level = max(0, card.review_level - 1)
         elif rating == "struggled":
             card.durability = max(0, card.durability - 10)
-            # review_level 不变，间隔不变
-            new_interval = technique.review_interval
+            # review_level 不变
         elif rating == "passed":
             card.durability = min(100, card.durability + 10)
-            card.review_level += 1
-            # 间隔按遗忘曲线延长（约1.5倍）
-            new_interval = max(1, int(technique.review_interval * 1.5))
+            card.review_level = min(engine.max_level, card.review_level + 1)
         elif rating == "mastered":
             card.durability = min(100, card.durability + 25)
-            card.review_level += 2
-            # 间隔大幅延长（约2.5倍）
-            new_interval = max(1, int(technique.review_interval * 2.5))
+            card.review_level = min(engine.max_level, card.review_level + 2)
 
-        # 更新技巧卡的复习间隔
-        technique.review_interval = new_interval
-        technique.proficiency = min(5, technique.proficiency + (1 if rating in ("passed", "mastered") else 0))
+        # 间隔由遗忘曲线引擎按当前复习等级计算（不再使用技巧卡冗余字段）
+        new_interval = engine.get_review_interval(card.review_level)
 
         # 更新 Card 记录
         card.last_reviewed = datetime.now()

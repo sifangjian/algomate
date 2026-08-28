@@ -6,7 +6,7 @@
 
 from algomate.models.cards import Card, CardUpdate, CardResponse
 from algomate.models.review_records import ReviewRecord
-from algomate.models.problem_card import ProblemCard, ProblemStatus
+from algomate.models.problem_card import ProblemCard
 from algomate.models.solution_card import SolutionCard
 from algomate.models.technique_card import TechniqueCard
 from algomate.models.solution_technique import SolutionTechnique
@@ -18,7 +18,6 @@ __all__ = [
     "CardResponse",
     "ReviewRecord",
     "ProblemCard",
-    "ProblemStatus",
     "SolutionCard",
     "TechniqueCard",
     "SolutionTechnique",

@@ -53,17 +53,18 @@ export default function TodayTasks({ loading, tasks }) {
     return (
         <div className={styles.tasks}>
             {list.map((task, idx) => {
+                const key = task.task_id || task.id || idx
                 const badge = statusBadges[task.status] || statusBadges.PENDING
-                const typeColor = typeColors[task.type] || 'var(--text-secondary)'
+                const typeColor = typeColors[task.task_type] || typeColors[task.type] || 'var(--text-secondary)'
                 return (
-                    <div key={task.id} className={styles.taskRow}>
+                    <div key={key} className={styles.taskRow}>
                         <span className={styles.taskIndex}>{String(idx + 1).padStart(2, '0')}</span>
                         <span className={styles.taskTypeIcon} style={{ color: typeColor }}>
-                            <Icon name={typeIcons[task.type] || 'code'} size={14} color={typeColor} />
+                            <Icon name={typeIcons[task.task_type] || typeIcons[task.type] || 'code'} size={14} color={typeColor} />
                         </span>
-                        <span className={styles.taskName}>{task.name}</span>
+                        <span className={styles.taskName}>{task.card_name || task.name}</span>
                         <span className={styles.taskType} style={{ color: typeColor }}>
-                            {typeLabels[task.type] || task.type}
+                            {typeLabels[task.task_type] || task.task_type || task.type || '修炼'}
                         </span>
                         <span className={`${styles.taskStatus} ${styles[badge.className]}`}>
                             {badge.label}

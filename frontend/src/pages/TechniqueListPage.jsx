@@ -98,8 +98,6 @@ export default function TechniqueListPage() {
                 )}
               </div>
               <div className={styles.cardMeta}>
-                <span className={styles.metaCategory}>{getCategoryName(tech.name)}</span>
-                <span className={styles.metaProficiency}>熟练度: {'★'.repeat(tech.proficiency)}{'☆'.repeat(5 - tech.proficiency)}</span>
                 <span className={styles.metaSolutions}>{tech.solution_count} 个解法</span>
               </div>
               {tech.use_cases && (

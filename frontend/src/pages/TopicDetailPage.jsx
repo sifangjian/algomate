@@ -227,8 +227,10 @@ export default function TopicDetailPage() {
                     )}
                   </div>
                   <div className={styles.cardMeta}>
-                    {t.proficiency > 0 && (
-                      <span>熟练度: {'★'.repeat(t.proficiency)}{'☆'.repeat(5 - t.proficiency)}</span>
+                    {t.review_status === 'normal' ? (
+                      <span>复习正常</span>
+                    ) : (
+                      <span>{t.review_status === 'critical' ? '濒危' : '待复习'}</span>
                     )}
                   </div>
                 </div>

@@ -9,7 +9,7 @@ from sqlalchemy import desc
 
 from algomate.data.database import Database
 from algomate.models.activity_log import ActivityLog
-from algomate.models.problem_card import ProblemCard, ProblemStatus
+from algomate.models.problem_card import ProblemCard
 
 router = APIRouter(prefix="/problems", tags=["题目卡片"])
 logger = logging.getLogger(__name__)
@@ -19,9 +19,10 @@ class ProblemCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="题目全称，如 '645. 错误的集合'")
     difficulty: str = Field("medium", description="难度: easy/medium/hard")
     leetcode_link: str = Field("", description="原题链接")
-    tags: List[str] = Field(default_factory=list, description="标签列表")
-    my_status: str = Field("untried", description="我的状态: untried/accepted/optimal")
-    notes: str = Field("", description="注意事项")
+    tags: List[str] = Field(default_factory=list, description="标签列表（LeetCode 算法分类属性）")
+    notes: str = Field("", description="破题思路")
+    is_optimal: int = Field(0, ge=0, le=1, description="是否已有最优解: 0/1")
+    variants: List[str] = Field(default_factory=list, description="同考点变体题 slug 列表")
     video_demo_link: str = Field("", description="视频演示链接")
     related_problem_ids: List[int] = Field(default_factory=list, description="关联题目ID列表")
 
@@ -31,8 +32,9 @@ class ProblemUpdate(BaseModel):
     difficulty: Optional[str] = None
     leetcode_link: Optional[str] = None
     tags: Optional[List[str]] = None
-    my_status: Optional[str] = None
     notes: Optional[str] = None
+    is_optimal: Optional[int] = None
+    variants: Optional[List[str]] = None
     video_demo_link: Optional[str] = None
     related_problem_ids: Optional[List[int]] = None
 
@@ -43,8 +45,9 @@ class ProblemResponse(BaseModel):
     difficulty: str
     leetcode_link: str
     tags: List[str]
-    my_status: str
     notes: str = ""
+    is_optimal: int = 0
+    variants: List[str] = []
     video_demo_link: str = ""
     related_problem_ids: List[int] = []
     created_at: datetime
@@ -87,8 +90,9 @@ def _problem_to_response(p: ProblemCard) -> ProblemResponse:
         difficulty=p.difficulty,
         leetcode_link=p.leetcode_link or "",
         tags=_parse_tags(p.tags),
-        my_status=p.my_status,
         notes=p.notes or "",
+        is_optimal=p.is_optimal or 0,
+        variants=_parse_tags(p.variants),
         video_demo_link=p.video_demo_link or "",
         related_problem_ids=_parse_related_ids(p.related_problem_ids),
         created_at=p.created_at,
@@ -107,9 +111,9 @@ def create_problem(data: ProblemCreate):
             difficulty=data.difficulty,
             leetcode_link=data.leetcode_link,
             tags=json.dumps(data.tags, ensure_ascii=False),
-            my_status=data.my_status,
             notes=data.notes,
-            video_demo_link=data.video_demo_link,
+            is_optimal=data.is_optimal,
+            variants=json.dumps(data.variants, ensure_ascii=False),
             related_problem_ids=json.dumps(data.related_problem_ids, ensure_ascii=False),
         )
         session.add(problem)
@@ -135,7 +139,6 @@ def create_problem(data: ProblemCreate):
 @router.get("", response_model=List[ProblemResponse])
 def list_problems(
     tags: Optional[str] = Query(None, description="按标签筛选，逗号分隔"),
-    status: Optional[str] = Query(None, description="按状态筛选"),
     difficulty: Optional[str] = Query(None, description="按难度筛选"),
 ):
     db = Database.get_instance()
@@ -143,8 +146,6 @@ def list_problems(
     try:
         query = session.query(ProblemCard)
 
-        if status:
-            query = query.filter(ProblemCard.my_status == status)
         if difficulty:
             query = query.filter(ProblemCard.difficulty == difficulty)
 
@@ -202,7 +203,6 @@ def get_problem(problem_id: int):
                         techniques_list.append({
                             "id": tech.id,
                             "name": tech.name,
-                            "category": tech.category,
                         })
 
                 pitfalls_list = []
@@ -240,8 +240,9 @@ def get_problem(problem_id: int):
             difficulty=problem.difficulty,
             leetcode_link=problem.leetcode_link or "",
             tags=_parse_tags(problem.tags),
-            my_status=problem.my_status,
             notes=problem.notes or "",
+            is_optimal=problem.is_optimal or 0,
+            variants=_parse_tags(problem.variants),
             video_demo_link=problem.video_demo_link or "",
             related_problem_ids=_parse_related_ids(problem.related_problem_ids),
             created_at=problem.created_at,

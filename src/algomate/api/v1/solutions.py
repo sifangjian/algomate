@@ -19,40 +19,40 @@ logger = logging.getLogger(__name__)
 class SolutionCreate(BaseModel):
     problem_id: int = Field(..., description="关联的题目 ID")
     name: str = Field(..., min_length=1, max_length=200, description="解法名称")
-    algorithm_type: str = Field("", description="算法类型，作为快速归类，未关联技巧时使用")
+    language: str = Field("", description="编程语言，如 python/javascript/cpp")
+    is_optimal: int = Field(0, ge=0, le=1, description="是否最优解: 0/1")
     time_complexity: str = Field("", description="时间复杂度")
     space_complexity: str = Field("", description="空间复杂度")
     breakthrough: str = Field("", description="突破口")
     approach: str = Field("", description="详细思路 Markdown")
     code: str = Field("", description="代码块")
     pitfalls: List[str] = Field(default_factory=list, description="易错点列表")
-    related_solution_ids: List[int] = Field(default_factory=list, description="关联解法ID列表")
 
 
 class SolutionUpdate(BaseModel):
     name: Optional[str] = None
-    algorithm_type: Optional[str] = None
+    language: Optional[str] = None
+    is_optimal: Optional[int] = None
     time_complexity: Optional[str] = None
     space_complexity: Optional[str] = None
     breakthrough: Optional[str] = None
     approach: Optional[str] = None
     code: Optional[str] = None
     pitfalls: Optional[List[str]] = None
-    related_solution_ids: Optional[List[int]] = None
 
 
 class SolutionResponse(BaseModel):
     id: int
     problem_id: int
     name: str
-    algorithm_type: str = ""
+    language: str = ""
+    is_optimal: int = 0
     time_complexity: str
     space_complexity: str
     breakthrough: str
     approach: str
     code: str
     pitfalls: List[str]
-    related_solution_ids: List[int] = []
     created_at: datetime
     updated_at: Optional[datetime] = None
     technique_count: int = 0
@@ -78,28 +78,19 @@ def _parse_pitfalls(pitfalls_json: Optional[str]) -> List[str]:
         return []
 
 
-def _parse_related_ids(ids_json: Optional[str]) -> List[int]:
-    if not ids_json:
-        return []
-    try:
-        return json.loads(ids_json)
-    except (json.JSONDecodeError, TypeError):
-        return []
-
-
 def _solution_to_response(s: SolutionCard) -> SolutionResponse:
     return SolutionResponse(
         id=s.id,
         problem_id=s.problem_id,
         name=s.name,
-        algorithm_type=s.algorithm_type or "",
+        language=s.language or "",
+        is_optimal=s.is_optimal or 0,
         time_complexity=s.time_complexity or "",
         space_complexity=s.space_complexity or "",
         breakthrough=s.breakthrough or "",
         approach=s.approach or "",
         code=s.code or "",
         pitfalls=_parse_pitfalls(s.pitfalls),
-        related_solution_ids=_parse_related_ids(s.related_solution_ids),
         created_at=s.created_at,
         updated_at=s.updated_at,
         technique_count=len(s.techniques) if s.techniques else 0,
@@ -121,14 +112,14 @@ def create_solution(data: SolutionCreate):
         solution = SolutionCard(
             problem_id=data.problem_id,
             name=data.name,
-            algorithm_type=data.algorithm_type,
+            language=data.language,
+            is_optimal=data.is_optimal,
             time_complexity=data.time_complexity,
             space_complexity=data.space_complexity,
             breakthrough=data.breakthrough,
             approach=data.approach,
             code=data.code,
             pitfalls=json.dumps(data.pitfalls, ensure_ascii=False),
-            related_solution_ids=json.dumps(data.related_solution_ids, ensure_ascii=False),
         )
         session.add(solution)
         session.commit()
@@ -185,8 +176,6 @@ def get_solution(solution_id: int):
                 techniques.append({
                     "id": t.id,
                     "name": t.name,
-                    "category": t.category,
-                    "proficiency": t.proficiency,
                     "review_status": review_status,
                 })
 
@@ -204,14 +193,14 @@ def get_solution(solution_id: int):
             id=solution.id,
             problem_id=solution.problem_id,
             name=solution.name,
-            algorithm_type=solution.algorithm_type or "",
+            language=solution.language or "",
+            is_optimal=solution.is_optimal or 0,
             time_complexity=solution.time_complexity or "",
             space_complexity=solution.space_complexity or "",
             breakthrough=solution.breakthrough or "",
             approach=solution.approach or "",
             code=solution.code or "",
             pitfalls=_parse_pitfalls(solution.pitfalls),
-            related_solution_ids=_parse_related_ids(solution.related_solution_ids),
             created_at=solution.created_at,
             updated_at=solution.updated_at,
             technique_count=len(solution.techniques) if solution.techniques else 0,
@@ -234,8 +223,6 @@ def update_solution(solution_id: int, data: SolutionUpdate):
         update_data = data.model_dump(exclude_unset=True)
         if "pitfalls" in update_data and update_data["pitfalls"] is not None:
             update_data["pitfalls"] = json.dumps(update_data["pitfalls"], ensure_ascii=False)
-        if "related_solution_ids" in update_data and update_data["related_solution_ids"] is not None:
-            update_data["related_solution_ids"] = json.dumps(update_data["related_solution_ids"], ensure_ascii=False)
 
         changed_fields = {}
         for key, value in update_data.items():
@@ -323,20 +310,20 @@ def link_technique(solution_id: int, data: LinkTechniqueRequest):
         techniques = []
         if solution.techniques:
             for t in solution.techniques:
-                techniques.append({"id": t.id, "name": t.name, "category": t.category, "proficiency": t.proficiency})
+                techniques.append({"id": t.id, "name": t.name})
 
         return SolutionDetailResponse(
             id=solution.id,
             problem_id=solution.problem_id,
             name=solution.name,
-            algorithm_type=solution.algorithm_type or "",
+            language=solution.language or "",
+            is_optimal=solution.is_optimal or 0,
             time_complexity=solution.time_complexity or "",
             space_complexity=solution.space_complexity or "",
             breakthrough=solution.breakthrough or "",
             approach=solution.approach or "",
             code=solution.code or "",
             pitfalls=_parse_pitfalls(solution.pitfalls),
-            related_solution_ids=_parse_related_ids(solution.related_solution_ids),
             created_at=solution.created_at,
             updated_at=solution.updated_at,
             technique_count=len(solution.techniques) if solution.techniques else 0,
@@ -384,8 +371,6 @@ def get_solution_backlinks(solution_id: int):
                 techniques.append({
                     "id": t.id,
                     "name": t.name,
-                    "category": t.category,
-                    "proficiency": t.proficiency,
                 })
 
         return {"techniques": techniques}

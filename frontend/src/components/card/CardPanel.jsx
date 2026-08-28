@@ -435,14 +435,6 @@ function TechniqueCard({ data, onNavigate }) {
       <h1 className={styles.cardTitle}>{data.name}</h1>
 
       <div className={styles.cardMeta}>
-        {data.category && (
-          <span className={styles.badge} style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--color-primary-light)', border: '1px solid rgba(99,102,241,0.25)' }}>
-            {data.category}
-          </span>
-        )}
-        {data.proficiency != null && (
-          <span className={styles.starsRow}>{renderStars(data.proficiency)}</span>
-        )}
         {data.next_review_date ? (
           <span className={`${styles.badge} ${REVIEW_STATUS_CLASSES[data.review_status] || ''}`}>
             下次复习: {new Date(data.next_review_date).toLocaleDateString()}

@@ -157,7 +157,9 @@ export default function CardDetailDrawer({ open, onClose, onEdit, onDelete, onCr
             <div className={styles.statItem}>
               <span className={styles.statIcon}><Icon name="star" size={14} /></span>
               <span className={styles.statValue}>
-                {'★'.repeat(selectedCard.difficulty)}{'☆'.repeat(5 - selectedCard.difficulty)}
+                {typeof selectedCard.difficulty === 'number'
+                  ? '★'.repeat(selectedCard.difficulty) + '☆'.repeat(Math.max(0, 5 - selectedCard.difficulty))
+                  : '—'}
               </span>
               <span className={styles.statDesc}>
                 {['', '入门', '简单', '中等', '困难', '地狱'][selectedCard.difficulty] || ''}

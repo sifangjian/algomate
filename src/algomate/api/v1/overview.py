@@ -80,11 +80,6 @@ def get_overview():
                 if tag in topic_stats:
                     topic_stats[tag]["problem_count"] += 1
 
-        # 统计解法到各算法类型（按手动设置的 algorithm_type 匹配）
-        for s in all_solutions:
-            if s.algorithm_type and s.algorithm_type in topic_stats:
-                topic_stats[s.algorithm_type]["solution_count"] += 1
-
         # 统计技巧到各算法类型（通过 Card 的 algorithm_type 匹配）
         for t in all_techniques:
             card = session.query(Card).filter(Card.id == t.card_id).first()
@@ -142,8 +137,6 @@ class TopicDetailCard(BaseModel):
     difficulty: str = ""
     solution_count: int = 0
     review_status: str = "normal"
-    proficiency: int = 0
-    algorithm_type: str = ""
     problem_title: str = ""
 
 
@@ -258,8 +251,6 @@ def get_topic_detail(algorithm_type: str):
                 name=t.name,
                 card_type="technique",
                 review_status=review_status,
-                proficiency=t.proficiency,
-                algorithm_type=card.algorithm_type or "",
             ))
 
         # 题目卡片（通过手动 tags 匹配）
@@ -277,16 +268,23 @@ def get_topic_detail(algorithm_type: str):
                 solution_count=len(p.solutions) if p.solutions else 0,
             ))
 
-        # 解法卡片（通过手动 algorithm_type 匹配）
+        # 解法卡片（通过其关联技巧的 Card.algorithm_type 匹配）
         solutions = []
-        for s in session.query(SolutionCard).filter(SolutionCard.algorithm_type == algorithm_type).all():
-            solutions.append(TopicDetailCard(
-                id=s.id,
-                name=s.name,
-                card_type="solution",
-                problem_title=s.problem.title if s.problem else "",
-                solution_count=len(s.techniques) if s.techniques else 0,
-            ))
+        for s in session.query(SolutionCard).all():
+            matched = False
+            for t in s.techniques:
+                card = session.query(Card).filter(Card.id == t.card_id).first()
+                if card and card.algorithm_type == algorithm_type:
+                    matched = True
+                    break
+            if matched:
+                solutions.append(TopicDetailCard(
+                    id=s.id,
+                    name=s.name,
+                    card_type="solution",
+                    problem_title=s.problem.title if s.problem else "",
+                    solution_count=len(s.techniques) if s.techniques else 0,
+                ))
 
         return TopicDetailResponse(
             algorithm_type=algorithm_type,

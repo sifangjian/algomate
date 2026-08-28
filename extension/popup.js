@@ -1,4 +1,4 @@
-// popup.js — 预览抓取内容、填写心得、提交导入
+// popup.js — 预览抓取内容、填写心得与技巧、提交导入
 const BACKEND = 'http://localhost:8000/api/v1/import';
 
 const $ = (id) => document.getElementById(id);
@@ -26,8 +26,32 @@ function renderPreview(data) {
   if (!(data.slug || data.title)) {
     setStatus('未能从当前页面抓取题目，请确认在 LeetCode 题目页打开本插件。', 'warn');
   } else {
-    setStatus('抓取完成，请核对后填写心得并导入。', 'ok');
+    setStatus('抓取完成，请核对后填写心得与技巧并导入。', 'ok');
   }
+}
+
+// 动态添加一条技巧输入框
+function addTechniqueRow(name = '', summary = '') {
+  const wrap = document.createElement('div');
+  wrap.className = 'tech-item';
+  wrap.innerHTML = `
+    <button type="button" class="btn-del" title="删除">✕</button>
+    <input type="text" class="tech-name" placeholder="技巧名称（如：哈希表存差值）" value="${name.replace(/"/g, '&quot;')}" />
+    <textarea class="tech-summary" placeholder="一句话总结（可选）" style="min-height:38px;">${summary}</textarea>
+  `;
+  wrap.querySelector('.btn-del').addEventListener('click', () => wrap.remove());
+  $('f-techniques').appendChild(wrap);
+}
+
+// 收集技巧列表
+function collectTechniques() {
+  const items = [];
+  document.querySelectorAll('#f-techniques .tech-item').forEach((row) => {
+    const name = row.querySelector('.tech-name').value.trim();
+    const summary = row.querySelector('.tech-summary').value.trim();
+    if (name) items.push({ name, summary });
+  });
+  return items;
 }
 
 // 通过 chrome.scripting 注入 collect.js 到当前题目页并取返回值
@@ -69,7 +93,7 @@ async function doImport() {
     tags: d.tags || [],
     code: $('f-code').value,
     language: d.language || '',
-    technique_tags: d.tags || [],
+    techniques: collectTechniques(),
     user_notes: $('f-notes').value,
   };
   try {
@@ -82,7 +106,7 @@ async function doImport() {
     if (r.ok) {
       setStatus(
         (j.is_new_problem ? '导入成功（新建题卡）' : '已存在该题，追加解法') +
-          ` · 技巧草稿 ${j.technique_ids.length} 张`,
+          ` · 技巧卡 ${j.technique_ids.length} 张`,
         'ok'
       );
       btn.textContent = '已导入 ✓';
@@ -96,5 +120,6 @@ async function doImport() {
   }
 }
 
+$('btn-add-tech').addEventListener('click', () => addTechniqueRow());
 $('btn-import').addEventListener('click', doImport);
 collect();

@@ -118,10 +118,10 @@ export default function ProblemListPage() {
                 </span>
               </div>
               <div className={styles.cardMeta}>
-                <span className={`${styles.statusTag} ${styles[`status${problem.my_status.charAt(0).toUpperCase() + problem.my_status.slice(1)}`]}`}>
-                  {STATUS_LABELS[problem.my_status]}
-                </span>
                 <span>{problem.solution_count} 个解法</span>
+                {problem.is_optimal ? (
+                  <span className={styles.statusTag}>最优解</span>
+                ) : null}
               </div>
               {problem.tags && problem.tags.length > 0 && (
                 <div className={styles.tags}>

@@ -8,6 +8,7 @@
 配置支持 YAML 文件的序列化与反序列化。
 """
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -117,6 +118,12 @@ class AppConfig:
                 load_dotenv(env_path)
         except ImportError:
             pass
+
+        # 允许通过环境变量 ALGOMATE_DB_PATH 覆盖数据库路径（便于本地开发/测试）
+        if "ALGOMATE_DB_PATH" in os.environ:
+            return cls(DB_PATH=Path(os.environ["ALGOMATE_DB_PATH"]))
+        if "ALGOMATE_DATA_DIR" in os.environ:
+            return cls(DATA_DIR=Path(os.environ["ALGOMATE_DATA_DIR"]))
 
         if config_path is None:
             config_path = cls.DATA_DIR / "config.yaml"

@@ -33,7 +33,8 @@ class Card(Base):
 
     visual_links = Column(Text, nullable=True)
 
-    card_type = Column(String(10), default="tip", nullable=False)  # "tip" 或 "problem"
+    # 当前仅 "tip"（技巧卡）挂接遗忘曲线复习；题目卡/解法卡不参与复习，不创建 Card
+    card_type = Column(String(10), default="tip", nullable=False)
     content = Column(Text, default="{}", nullable=False)  # 新版结构化 JSON 内容
 
     created_at = Column(DateTime, default=datetime.now, nullable=False)
