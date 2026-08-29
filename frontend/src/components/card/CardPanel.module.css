@@ -75,6 +75,29 @@
     gap: 8px;
 }
 
+.variantRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.variantLink {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    color: var(--accent);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: background var(--transition-base), border-color var(--transition-base);
+}
+
+.variantLink:hover {
+    border-color: var(--accent);
+    background: var(--accent-subtle, rgba(37, 99, 235, 0.08));
+}
+
 .sectionTitle {
     font-size: 0.85rem;
     font-weight: 700;

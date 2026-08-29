@@ -49,6 +49,22 @@
     color: var(--text-secondary);
 }
 
+.checkboxLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.checkboxLabel input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
 .formInput {
     padding: 10px 12px;
     border: 1px solid var(--border-default);

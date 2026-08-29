@@ -106,6 +106,25 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
         </div>
       )}
 
+      {data.variants?.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>同考点变体题</h3>
+          <div className={styles.variantRow}>
+            {data.variants.map((v) => (
+              <a
+                key={v}
+                href={`https://leetcode.cn/problems/${v}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.variantLink}
+              >
+                {v}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className={styles.section}>
           <h3 className={styles.sectionTitle}>
             解法 ({data.solutions?.length || 0})

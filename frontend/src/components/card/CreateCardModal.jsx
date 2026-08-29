@@ -198,6 +198,9 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
                         if (typeof data.tags === 'string') {
                             data.tags = data.tags.split(',').map((t) => t.trim()).filter(Boolean)
                         }
+                        if (typeof data.variants === 'string') {
+                            data.variants = data.variants.split(',').map((t) => t.trim()).filter(Boolean)
+                        }
                         delete data.related_problems
                         delete data.related_search
                         delete data.related_show_dropdown
@@ -257,6 +260,9 @@ export default function CreateCardModal({ open, onClose, onCreated, editType, ed
                         }
                         if (typeof data.tags === 'string') {
                             data.tags = data.tags.split(',').map((t) => t.trim()).filter(Boolean)
+                        }
+                        if (typeof data.variants === 'string') {
+                            data.variants = data.variants.split(',').map((t) => t.trim()).filter(Boolean)
                         }
                         delete data.related_problems
                         delete data.related_search

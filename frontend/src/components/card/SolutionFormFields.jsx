@@ -304,6 +304,17 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
                 />
                 <span className={styles.formHint}>记录解题过程中的易错点</span>
             </div>
+
+            <div className={styles.formGroup}>
+                <label className={styles.checkboxLabel}>
+                    <input
+                        type="checkbox"
+                        checked={!!formData.is_optimal}
+                        onChange={(e) => handleChange('is_optimal', e.target.checked ? 1 : 0)}
+                    />
+                    标记此解法为最优解
+                </label>
+            </div>
         </>
     )
 }
