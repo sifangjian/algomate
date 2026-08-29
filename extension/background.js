@@ -1,17 +1,10 @@
-// background.js — 处理工具栏图标点击, 打开 sidePanel(侧边栏常驻形态)
-chrome.runtime.onInstalled.addListener(() => {
-  // 默认所有站点都可打开侧边栏(用户点击图标时针对当前 tab 打开)
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((e) => {
-    console.warn('[AlgoMate] setPanelBehavior failed', e);
-  });
-});
-
-// 兜底: 某些版本 openPanelOnActionClick 不生效时, 手动打开
+// background.js — 工具栏图标点击: 通知 content script 切换右侧面板
 chrome.action.onClicked.addListener(async (tab) => {
-  if (!tab?.windowId) return;
+  if (!tab?.id) return;
   try {
-    await chrome.sidePanel.open({ windowId: tab.windowId });
+    await chrome.tabs.sendMessage(tab.id, { type: 'toggle-panel' });
   } catch (e) {
-    console.warn('[AlgoMate] sidePanel.open failed', e);
+    // content script 未注入(非 LeetCode 页)时静默
+    console.warn('[AlgoMate] toggle-panel failed (非 LeetCode 页?)', e);
   }
 });
