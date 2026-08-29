@@ -292,9 +292,3 @@ function showConflictChoice(j) {
   btn.disabled = false;
   statusEl.parentNode.insertBefore(box, statusEl.nextSibling);
 }
-
-$('btn-add-tech').addEventListener('click', () => addTechniqueRow());
-$('btn-import').addEventListener('click', () => doImport());
-setupComplexityToggle('f-time-select', 'f-time');
-setupComplexityToggle('f-space-select', 'f-space');
-collect();
