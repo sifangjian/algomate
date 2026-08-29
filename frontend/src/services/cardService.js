@@ -48,6 +48,16 @@ export const cardService = {
     return await api.delete(`/v1/problems/${id}`)
   },
 
+  // 聚合变体题练习集（变体题复习法）
+  getVariantSet: async (id) => {
+    return await api.get(`/v1/problems/${id}/variant-set`)
+  },
+
+  // 记录一次变体题练习
+  recordVariantPractice: async (id, payload) => {
+    return await api.post(`/v1/problems/${id}/variant-practice`, payload)
+  },
+
   // === 解法卡片 API ===
   createSolution: async (data) => {
     return await api.post('/v1/solutions', data)

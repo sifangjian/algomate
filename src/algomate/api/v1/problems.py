@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ProblemCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="题目全称，如 '645. 错误的集合'")
+    leetcode_slug: Optional[str] = Field(None, description="LeetCode 题目唯一标识(slug)，用于一键导入去重与变体题关联")
     difficulty: str = Field("medium", description="难度: easy/medium/hard")
     leetcode_link: str = Field("", description="原题链接")
     tags: List[str] = Field(default_factory=list, description="标签列表（LeetCode 算法分类属性）")
@@ -42,8 +43,9 @@ class ProblemUpdate(BaseModel):
 class ProblemResponse(BaseModel):
     id: int
     title: str
+    leetcode_slug: Optional[str] = None
     difficulty: str
-    leetcode_link: str
+    leetcode_link: str = ""
     tags: List[str]
     notes: str = ""
     is_optimal: int = 0
@@ -87,6 +89,7 @@ def _problem_to_response(p: ProblemCard) -> ProblemResponse:
     return ProblemResponse(
         id=p.id,
         title=p.title,
+        leetcode_slug=p.leetcode_slug,
         difficulty=p.difficulty,
         leetcode_link=p.leetcode_link or "",
         tags=_parse_tags(p.tags),
@@ -108,6 +111,7 @@ def create_problem(data: ProblemCreate):
     try:
         problem = ProblemCard(
             title=data.title,
+            leetcode_slug=data.leetcode_slug,
             difficulty=data.difficulty,
             leetcode_link=data.leetcode_link,
             tags=json.dumps(data.tags, ensure_ascii=False),
@@ -313,5 +317,96 @@ def delete_problem(problem_id: int):
         session.commit()
         logger.info(f"Deleted problem card: {problem.title} (id={problem.id})")
         return {"message": "删除成功"}
+    finally:
+        session.close()
+
+
+class VariantPracticeRequest(BaseModel):
+    variant_slugs: List[str] = Field(default_factory=list, description="本次练习覆盖的变体题 slug 列表")
+    note: str = Field("", description="练习笔记")
+
+
+@router.get("/{problem_id}/variant-set")
+def get_variant_set(problem_id: int):
+    """聚合变体题练习集（变体题复习法）：主问题 + 各 variant slug 的系统内状态"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        problem = session.query(ProblemCard).filter(ProblemCard.id == problem_id).first()
+        if not problem:
+            raise HTTPException(status_code=404, detail="题目卡片不存在")
+
+        variant_slugs = _parse_tags(problem.variants)
+        items = []
+        for v in variant_slugs:
+            vp = session.query(ProblemCard).filter(ProblemCard.leetcode_slug == v).first()
+            if vp:
+                items.append({
+                    "slug": v,
+                    "in_system": True,
+                    "problem_id": vp.id,
+                    "title": vp.title,
+                    "difficulty": vp.difficulty,
+                    "solution_count": len(vp.solutions) if vp.solutions else 0,
+                    "leetcode_link": vp.leetcode_link or f"https://leetcode.cn/problems/{v}/",
+                })
+            else:
+                items.append({
+                    "slug": v,
+                    "in_system": False,
+                    "problem_id": None,
+                    "title": None,
+                    "difficulty": None,
+                    "solution_count": 0,
+                    "leetcode_link": f"https://leetcode.cn/problems/{v}/",
+                })
+
+        return {
+            "problem_id": problem.id,
+            "title": problem.title,
+            "slug": problem.leetcode_slug,
+            "leetcode_link": problem.leetcode_link or "",
+            "variants": items,
+            "total": len(items) + 1,
+        }
+    finally:
+        session.close()
+
+
+@router.post("/{problem_id}/variant-practice")
+def record_variant_practice(problem_id: int, data: VariantPracticeRequest):
+    """记录一次变体题练习（聚合复习法），写入活动日志供复习追溯"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        problem = session.query(ProblemCard).filter(ProblemCard.id == problem_id).first()
+        if not problem:
+            raise HTTPException(status_code=404, detail="题目卡片不存在")
+
+        log_entry = ActivityLog(
+            type="variant_practice",
+            card_type="problem",
+            card_id=problem.id,
+            card_name=problem.title,
+            content=f"变体题练习: {problem.title}",
+            details={
+                "variant_slugs": data.variant_slugs,
+                "variant_count": len(data.variant_slugs),
+                "note": data.note,
+            },
+        )
+        session.add(log_entry)
+        session.commit()
+        session.refresh(log_entry)
+
+        logger.info(f"Recorded variant practice for problem {problem.title} (id={problem.id})")
+        return {
+            "id": log_entry.id,
+            "type": log_entry.type,
+            "card_id": log_entry.card_id,
+            "content": log_entry.content,
+            "details": log_entry.details,
+            "created_at": log_entry.created_at.isoformat() if log_entry.created_at else None,
+        }
     finally:
         session.close()

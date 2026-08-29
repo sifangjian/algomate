@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { cardService } from '../../services/cardService'
 import CreateCardModal from './CreateCardModal'
+import VariantPracticeModal from './VariantPracticeModal'
 import { showToast } from '../ui/Toast/index'
 import CodeBlock from '../ui/CodeBlock'
 import MarkdownRenderer from '../ui/MarkdownRenderer'
@@ -18,6 +19,7 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
   const [solutionModal, setSolutionModal] = useState({ open: false })
   const [deleteSolutionId, setDeleteSolutionId] = useState(null)
   const [deleteSolutionName, setDeleteSolutionName] = useState('')
+  const [practiceOpen, setPracticeOpen] = useState(false)
 
   const toggleSolution = useCallback((solId) => {
     setCollapsedSolutions(prev => {
@@ -108,7 +110,12 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
 
       {data.variants?.length > 0 && (
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>同考点变体题</h3>
+          <div className={styles.sectionHead}>
+            <h3 className={styles.sectionTitle}>同考点变体题</h3>
+            <button className={styles.practiceBtn} onClick={() => setPracticeOpen(true)}>
+              开始变体练习
+            </button>
+          </div>
           <div className={styles.variantRow}>
             {data.variants.map((v) => (
               <a
@@ -124,6 +131,14 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
           </div>
         </div>
       )}
+
+      <VariantPracticeModal
+        open={practiceOpen}
+        problemId={data.id}
+        problemTitle={data.title}
+        onClose={() => setPracticeOpen(false)}
+        onSaved={() => showToast('已记录变体题练习')}
+      />
 
       <div className={styles.section}>
           <h3 className={styles.sectionTitle}>
