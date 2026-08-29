@@ -176,7 +176,12 @@ class ReviewScheduler:
         """
         session = self.db.get_session()
         try:
-            all_cards = session.query(Card).filter(Card.pending_retake == False).all()
+            # 修炼主单元是「题目卡」(card_type=problem)：程序性知识靠重做原题/变体巩固，
+            # 技巧卡不参与每日重做列表。因此只生成题卡任务。
+            all_cards = session.query(Card).filter(
+                Card.pending_retake == False,
+                Card.card_type == "problem",
+            ).all()
             
             tasks = []
             task_counter = 1
