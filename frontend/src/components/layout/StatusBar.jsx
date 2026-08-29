@@ -23,6 +23,7 @@ export default function StatusBar() {
                     completedToday: p?.completed_today ?? 0,
                     totalCards: p?.total_cards ?? 0,
                     totalPractice: p?.total_practice ?? 0,
+                    learningDays: p?.learning_days ?? 0,
                 })
             } catch {
                 setApiOk(false)
@@ -59,6 +60,8 @@ export default function StatusBar() {
                 <span className={styles.item}>卡牌 <b>{v(data?.totalCards)}</b> 张</span>
                 <span className={styles.sep}>·</span>
                 <span className={styles.item}>累计练习 <b>{v(data?.totalPractice)}</b> 次</span>
+                <span className={styles.sep}>·</span>
+                <span className={styles.item}>连续学习 <b>{v(data?.learningDays)}</b> 天</span>
             </div>
 
             <div className={styles.right}>

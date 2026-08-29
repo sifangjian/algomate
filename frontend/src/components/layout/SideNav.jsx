@@ -52,7 +52,6 @@ export default function SideNav({ onCreateCard, stats, collapsed }) {
             <div className={styles.statsPanel} onClick={() => navigate('/review')} role="button" title="查看今日修炼">
                 <div className={styles.statsHeader}>
                     <span className={styles.statsTitle}>今日修炼</span>
-                    <span className={styles.statsArrow}>→</span>
                 </div>
                 <div className={styles.statsRow}>
                     <div className={styles.statItem}>
@@ -104,12 +103,6 @@ export default function SideNav({ onCreateCard, stats, collapsed }) {
                 </div>
             </div>
 
-            <div className={styles.bottomInfo}>
-                <div className={styles.bottomRow}>
-                    <span className={styles.bottomLabel}>学习</span>
-                    <span className={styles.bottomValue}>{todayStats.learningDays} 天</span>
-                </div>
-            </div>
         </aside>
     )
 }

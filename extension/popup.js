@@ -10,26 +10,17 @@ function setStatus(msg, type) {
   statusEl.className = 'status' + (type ? ' ' + type : '');
 }
 
-// ===== 可拖拽 + 固定(pin) + 点击外部不关闭 =====
-let isPinned = false;
-function setupDraggable() {
-  const win = chrome.windows ? null : null; // popup 无 window API, 用 DOM 拖拽不可行, 改用固定 pin 逻辑
-  const pinBtn = $('btn-pin');
-  if (pinBtn) {
-    pinBtn.addEventListener('click', () => {
-      isPinned = !isPinned;
-      pinBtn.classList.toggle('pinned', isPinned);
-      pinBtn.textContent = isPinned ? '📌 已固定' : '📌 固定';
-      setStatus(isPinned ? '已固定：点击外部不会关闭窗口，内容保留。' : '已取消固定。', 'ok');
-    });
-  }
-  // 固定状态下拦截外部 mousedown 关闭: 使用 'mousedown' 阻止默认失焦关闭
-  if (typeof document !== 'undefined') {
-    document.addEventListener('mousedown', (e) => {
-      if (isPinned) e.stopPropagation();
-    }, true);
-  }
+// ===== 初始化 =====
+// 说明: 本扩展以 sidePanel(侧边栏) 形态运行。sidePanel 本身常驻、点击外部不关闭,
+// 因此无需"固定"按钮。点击工具栏图标即打开侧边栏(见 background.js)。
+function init() {
+  $('btn-add-tech').addEventListener('click', () => addTechniqueRow());
+  $('btn-import').addEventListener('click', () => doImport());
+  setupComplexityToggle('f-time-select', 'f-time');
+  setupComplexityToggle('f-space-select', 'f-space');
+  collect();
 }
+init();
 
 function renderPreview(data) {
   $('f-title').textContent = data.title || '（未识别到标题）';
@@ -306,5 +297,4 @@ $('btn-add-tech').addEventListener('click', () => addTechniqueRow());
 $('btn-import').addEventListener('click', () => doImport());
 setupComplexityToggle('f-time-select', 'f-time');
 setupComplexityToggle('f-space-select', 'f-space');
-setupDraggable();
 collect();

@@ -5,12 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * { box-sizing: border-box; }
-    body { width: 380px; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; margin: 0; padding: 12px; color: #1f2328; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; padding: 12px; color: #1f2328; min-width: 320px; }
     h1 { font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
-    .pop-header { display: flex; align-items: center; justify-content: space-between; }
-    .pop-toolbar { display: flex; gap: 4px; }
-    .pop-toolbar button { border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 5px; cursor: pointer; font-size: 12px; padding: 2px 7px; }
-    .pop-toolbar button.pinned { background: #0969da; color: #fff; border-color: #0969da; }
     .field { margin-bottom: 8px; }
     .field label { font-weight: 600; display: block; margin-bottom: 3px; color: #57606a; }
     .val { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 6px 8px; max-height: 90px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
@@ -41,16 +38,10 @@
     .hint { color: #57606a; font-size: 11px; }
     .tech-item { border: 1px solid #d0d7de; border-radius: 6px; padding: 6px; margin-bottom: 6px; background: #fff; }
     .tech-item input { margin-bottom: 4px; }
-    .dragging { opacity: 0.85; cursor: move; }
   </style>
 </head>
 <body>
-  <div class="pop-header">
-    <h1>📥 导入到 AlgoMate</h1>
-    <div class="pop-toolbar">
-      <button id="btn-pin" title="固定窗口（固定后点击外部不关闭）">📌 固定</button>
-    </div>
-  </div>
+  <h1>📥 导入到 AlgoMate</h1>
 
   <div class="field">
     <label>题目</label>

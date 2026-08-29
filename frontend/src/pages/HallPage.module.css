@@ -19,73 +19,78 @@
     }
 }
 
-.overviewGrid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.overviewCard {
+.focusCard {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 18px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.02);
-    cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.15s ease;
-}
-
-.overviewCard:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.18);
-}
-
-.overviewNum {
-    font-size: 28px;
-    font-weight: 700;
-    font-family: var(--font-mono, monospace);
-    line-height: 1;
-}
-
-.overviewLabel {
-    font-size: 12px;
-    color: var(--text-muted, #9898a8);
-}
-
-.warning .overviewNum {
-    color: #fbbf24;
-}
-
-.critical .overviewNum {
-    color: #ef4444;
-}
-
-.normal .overviewNum {
-    color: #4ade80;
-}
-
-.overviewFooter {
-    display: flex;
-    align-items: center;
     gap: 16px;
-    font-size: 12px;
-    color: var(--text-muted, #9898a8);
+    padding: 4px 2px;
+}
+
+.focusAdvice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary, #c9c9d6);
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.focusIcon {
+    font-size: 16px;
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+
+.focusMeta {
+    display: flex;
+    gap: 36px;
     flex-wrap: wrap;
 }
 
+.metaItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.metaLabel {
+    font-size: 11px;
+    color: var(--text-muted, #9898a8);
+}
+
+.metaValue {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    color: var(--text-primary, #e8e8ef);
+}
+
+.weeklyBar {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.weeklyFill {
+    height: 100%;
+    background: linear-gradient(90deg, #1f883d, #4ade80);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
 .reviewLink {
-    margin-left: auto;
+    align-self: flex-start;
     background: var(--accent, #0969da);
     color: #fff;
     border: none;
     border-radius: 6px;
-    padding: 6px 14px;
-    font-size: 12px;
+    padding: 8px 18px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
 }
