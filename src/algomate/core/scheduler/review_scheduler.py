@@ -14,16 +14,18 @@
 """
 
 import asyncio
+import json
 import logging
 
 from datetime import datetime, timedelta, date
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from algomate.data.database import Database
 from algomate.models.cards import Card
+from algomate.models.problem_card import ProblemCard
 from algomate.core.memory.forgetting_curve import ForgettingCurveEngine
 from algomate.core.memory.durability import DurabilityManager, DurabilityAction
 from algomate.core.memory.difficulty import DifficultyManager, DifficultyLevel
@@ -57,7 +59,13 @@ class ReviewTask:
     review_level: int = 0
     next_review_date: Optional[date] = None
     review_types: Optional[List[str]] = None
-    
+    # 题卡修炼扩展字段（题卡为主修炼单元时用于跳转/变体练习）
+    card_type: str = "tip"
+    leetcode_link: str = ""
+    has_variants: bool = False
+    variants: List[str] = field(default_factory=list)
+    problem_id: Optional[int] = None
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "task_id": self.task_id,
@@ -74,6 +82,11 @@ class ReviewTask:
             "review_level": self.review_level,
             "next_review_date": self.next_review_date.isoformat() if self.next_review_date else None,
             "review_types": self.review_types or [],
+            "card_type": self.card_type,
+            "leetcode_link": self.leetcode_link,
+            "has_variants": self.has_variants,
+            "variants": self.variants,
+            "problem_id": self.problem_id,
         }
 
 
@@ -224,8 +237,30 @@ class ReviewScheduler:
 
             tasks.sort(key=lambda t: (
                 PRIORITY_ORDER.get(t.priority, 3),
-                t.card_durability
+                t.card_durability,
             ))
+
+            # 题卡修炼扩展: 为 card_type=problem 的任务补 leetcode_link/variants,
+            # 并区分复习动作(题卡=重做原题+变体练习, 技巧卡=轻量自检)
+            for t in tasks:
+                card = session.query(Card).filter(Card.id == t.card_id).first()
+                if not card:
+                    continue
+                if card.card_type == "problem":
+                    pc = session.query(ProblemCard).filter(
+                        ProblemCard.card_id == t.card_id
+                    ).first()
+                    if pc:
+                        try:
+                            vs = json.loads(pc.variants) if pc.variants else []
+                        except (json.JSONDecodeError, TypeError):
+                            vs = []
+                        t.card_type = "problem"
+                        t.leetcode_link = pc.leetcode_link or ""
+                        t.has_variants = bool(vs)
+                        t.variants = vs
+                        t.problem_id = pc.id
+                        t.review_types = ["redone", "variant"] if vs else ["redone"]
 
             return tasks[:daily_task_count]
         finally:

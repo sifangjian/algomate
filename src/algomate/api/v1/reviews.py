@@ -29,7 +29,6 @@ async def get_today_review_tasks(target_date: str = None):
         task_list = []
         for task in tasks:
             task_dict = task.to_dict()
-            task_dict["review_types"] = ["content_review", "quick_quiz", "leetcode_challenge"]
             task_list.append(task_dict)
 
         return {
