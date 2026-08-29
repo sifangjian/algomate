@@ -40,6 +40,11 @@ export const cardService = {
     return await api.get(`/v1/problems/${id}`)
   },
 
+  // 题卡历史复习笔记(模块E: 重做时记录的边界遗漏/注意点)
+  getProblemReviewNotes: async (id) => {
+    return await api.get(`/v1/problems/${id}/review-notes`)
+  },
+
   updateProblem: async (id, data) => {
     return await api.put(`/v1/problems/${id}`, data)
   },

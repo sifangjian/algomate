@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { cardService } from '../../services/cardService'
 import CreateCardModal from './CreateCardModal'
 import VariantPracticeModal from './VariantPracticeModal'
@@ -20,6 +20,22 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
   const [deleteSolutionId, setDeleteSolutionId] = useState(null)
   const [deleteSolutionName, setDeleteSolutionName] = useState('')
   const [practiceOpen, setPracticeOpen] = useState(false)
+  const [reviewNotes, setReviewNotes] = useState([])
+
+  const loadReviewNotes = useCallback(async () => {
+    if (!data?.id) return
+    try {
+      const res = await cardService.getProblemReviewNotes(data.id)
+      const d = res?.data || res
+      setReviewNotes(d?.notes || [])
+    } catch (e) {
+      // 笔记非关键, 失败静默
+    }
+  }, [data?.id])
+
+  useEffect(() => {
+    loadReviewNotes()
+  }, [loadReviewNotes])
 
   const toggleSolution = useCallback((solId) => {
     setCollapsedSolutions(prev => {
@@ -137,8 +153,27 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
         problemId={data.id}
         problemTitle={data.title}
         onClose={() => setPracticeOpen(false)}
-        onSaved={() => showToast('已记录变体题练习')}
+        onSaved={() => { showToast('已记录变体题练习'); loadReviewNotes() }}
       />
+
+      {reviewNotes.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>最近复习笔记</h3>
+          <div className={styles.noteList}>
+            {reviewNotes.map((n, i) => (
+              <div key={i} className={styles.noteItem}>
+                <div className={styles.noteMeta}>
+                  <span className={styles.noteType}>{n.review_type === 'leetcode_redo' ? '重做原题' : '复习'}</span>
+                  {n.completed_at && (
+                    <span className={styles.noteTime}>{new Date(n.completed_at).toLocaleString()}</span>
+                  )}
+                </div>
+                <div className={styles.noteText}>{n.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={styles.section}>
           <h3 className={styles.sectionTitle}>

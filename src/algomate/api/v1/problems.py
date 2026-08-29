@@ -413,3 +413,43 @@ def record_variant_practice(problem_id: int, data: VariantPracticeRequest):
         }
     finally:
         session.close()
+
+
+@router.get("/{problem_id}/review-notes")
+def get_problem_review_notes(problem_id: int, limit: int = 10):
+    """模块E: 返回该题卡复习卡的历史复习笔记(ReviewRecord.note)。
+
+    用于题卡详情页展示「最近复习/重做时记录的边界遗漏与注意点」。
+    """
+    from algomate.models.cards import Card
+    from algomate.models.review_records import ReviewRecord
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        problem = session.query(ProblemCard).filter(ProblemCard.id == problem_id).first()
+        if not problem or not problem.card_id:
+            return {"problem_id": problem_id, "notes": []}
+        records = (
+            session.query(ReviewRecord)
+            .filter(ReviewRecord.card_id == problem.card_id)
+            .filter(ReviewRecord.note.isnot(None))
+            .filter(ReviewRecord.note != "")
+            .order_by(desc(ReviewRecord.id))
+            .limit(limit)
+            .all()
+        )
+        notes = [
+            {
+                "review_type": r.review_type,
+                "note": r.note,
+                "durability_after": r.durability_after,
+                "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+            }
+            for r in records
+        ]
+        return {"problem_id": problem_id, "notes": notes}
+    except Exception as e:
+        logger.error("get_problem_review_notes failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"查询复习笔记失败: {str(e)}")
+    finally:
+        session.close()
