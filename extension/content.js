@@ -3,50 +3,53 @@ const PANEL_ID = 'algomate-side-panel-iframe';
 const TOGGLE_ID = 'algomate-side-panel-toggle';
 
 function createPanel() {
-  if (document.getElementById(PANEL_ID)) return;
+  if (document.getElementById(PANEL_ID) || document.getElementById(TOGGLE_ID)) return;
 
-  const container = document.createElement('div');
-  container.id = 'algomate-side-panel';
-  container.style.cssText = [
-    'position:fixed',
-    'top:0',
-    'right:0',
-    'width:400px',
-    'height:100vh',
-    'z-index:2147483646',
-    'background:#fff',
-    'box-shadow:-2px 0 12px rgba(0,0,0,0.25)',
-    'display:flex',
-    'flex-direction:column',
-    'font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif',
-  ].join(';');
+  const toggle = document.createElement('div');
+  toggle.id = TOGGLE_ID;
+  toggle.textContent = '📥 AlgoMate';
+  toggle.style.cssText = 'position:fixed;right:0;top:160px;z-index:2147483646;' +
+    'cursor:pointer;background:#0969da;color:#fff;font-size:12px;padding:8px 6px;' +
+    'border-radius:6px 0 0 6px;writing-mode:vertical-rl;user-select:none;' +
+    'box-shadow:-2px 0 8px rgba(0,0,0,.2)';
+
+  const panel = document.createElement('div');
+  panel.id = 'algomate-side-panel';
+  panel.style.cssText = 'position:fixed;top:0;right:0;width:400px;height:100vh;z-index:2147483647;' +
+    'background:#fff;box-shadow:-4px 0 16px rgba(0,0,0,.25);display:none;';
 
   const iframe = document.createElement('iframe');
   iframe.id = PANEL_ID;
-  // 用 src 指向扩展内 popup.html
   iframe.src = chrome.runtime.getURL('popup.html');
-  iframe.style.cssText = 'width:100%;height:100%;border:0;';
+  iframe.style.cssText = 'width:100%;height:100%;border:none;';
+  iframe.onerror = () => { panel.dataset.err = 'iframe 加载失败(检查 manifest web_accessible_resources)'; };
+  panel.appendChild(iframe);
 
-  container.appendChild(iframe);
-  document.documentElement.appendChild(container);
-}
+  toggle.addEventListener('click', () => {
+    const show = panel.style.display === 'none' || !panel.style.display;
+    panel.style.display = show ? 'block' : 'none';
+    toggle.style.display = show ? 'none' : 'block';
+  });
 
-function removePanel() {
-  const c = document.getElementById('algomate-side-panel');
-  if (c) c.remove();
+  document.body.appendChild(panel);
+  document.body.appendChild(toggle);
+  window.__algomatePanel = panel;
+  window.__algomateToggle = toggle;
 }
 
 function togglePanel() {
-  if (document.getElementById('algomate-side-panel')) removePanel();
-  else createPanel();
+  const panel = document.getElementById('algomate-side-panel');
+  const toggle = document.getElementById(TOGGLE_ID);
+  if (!panel || !toggle) { createPanel(); return; }
+  const show = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = show ? 'block' : 'none';
+  toggle.style.display = show ? 'none' : 'block';
 }
 
-// 工具栏图标点击切换面板
-chrome.runtime.onMessage.addListener((msg, _sender, _sendResponse) => {
-  if (msg && msg.type === 'toggle-panel') togglePanel();
+// 进入 LeetCode 任意页即创建(默认隐藏, 仅显示右侧竖条)
+if (document.body) createPanel();
+else document.addEventListener('DOMContentLoaded', createPanel);
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg && msg.type === 'toggle-panel') { togglePanel(); sendResponse({ ok: true }); }
 });
-
-// 首次打开 LeetCode 题目页自动显示面板
-if (window.location.href.includes('/problems/')) {
-  createPanel();
-}
