@@ -1,10 +1,8 @@
-// background.js — 工具栏图标点击: 通知 content script 切换右侧面板
-chrome.action.onClicked.addListener(async (tab) => {
-  if (!tab?.id) return;
+// background.js — 默认点击工具栏图标即打开侧边栏(任意页面均可, 不受域名限制)
+chrome.runtime.onInstalled.addListener(async () => {
   try {
-    await chrome.tabs.sendMessage(tab.id, { type: 'toggle-panel' });
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   } catch (e) {
-    // content script 未注入(非 LeetCode 页)时静默
-    console.warn('[AlgoMate] toggle-panel failed (非 LeetCode 页?)', e);
+    console.warn('[AlgoMate] setPanelBehavior failed', e);
   }
 });
