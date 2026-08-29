@@ -143,6 +143,17 @@ async function doImport(updateSolutionId) {
       tip.style.marginTop = '6px';
       tip.innerHTML = '可在系统中为解法补充「突破口 / 思路 / 易错点」，让卡片更完整。';
       statusEl.parentNode.insertBefore(tip, statusEl.nextSibling);
+
+      // [3.1] 导入后引导去系统内补写：提供跳转刚建题卡的入口
+      const viewBtn = document.createElement('a');
+      viewBtn.className = 'btn btn-view';
+      viewBtn.textContent = '在 AlgoMate 中查看 →';
+      viewBtn.href = `http://localhost:3000/card/problem/${j.problem_id}`;
+      viewBtn.target = '_blank';
+      viewBtn.rel = 'noopener noreferrer';
+      viewBtn.style.marginTop = '8px';
+      viewBtn.style.display = 'inline-block';
+      statusEl.parentNode.insertBefore(viewBtn, tip.nextSibling);
     } else {
       setStatus('导入失败: ' + JSON.stringify(j), 'err');
       btn.disabled = false;
