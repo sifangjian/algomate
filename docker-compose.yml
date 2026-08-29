@@ -15,6 +15,10 @@ services:
     volumes:
       # 挂载代码目录，修改代码后重启容器即可生效
       - .:/app
+      # 数据库持久化：绑定挂载到宿主项目 data/ 目录，与本地 uv 启动路径一致
+      # （容器内 /app/data/algomate.db <-> 宿主 ./data/algomate.db），
+      # 便于数据备份与跨机器分发（直接拷贝 data/ 目录即可迁移）
+      - ./data:/app/data
     environment:
       - TZ=Asia/Shanghai
       - APP_ENV=production
@@ -42,7 +46,3 @@ services:
       - TZ=Asia/Shanghai
       # 使用Docker服务名称（backend）作为主机名
       - VITE_API_URL=http://backend:8000
-
-volumes:
-  algomate-data:
-    driver: local
