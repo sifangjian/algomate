@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cardService } from '../services/cardService'
+import VariantPracticeModal from '../components/card/VariantPracticeModal'
 import styles from './ReviewPage.module.css'
 
 const PRIORITY_LABELS = {
@@ -10,11 +11,18 @@ const PRIORITY_LABELS = {
   low: '低',
 }
 
+// 技巧卡：轻量自检（回忆/核对）
 const SELF_RATINGS = [
   { value: 'forgot', label: '忘了', color: '#f44336' },
   { value: 'struggled', label: '困难', color: '#ff9800' },
   { value: 'passed', label: '通过', color: '#4caf50' },
   { value: 'mastered', label: '熟练', color: '#2196f3' },
+]
+
+// 题卡：重做原题（程序性提取练习），用户自标记 AC / 卡住
+const REDONE_RATINGS = [
+  { value: 'redone_ac', label: '已 AC', color: '#4caf50' },
+  { value: 'redone_stuck', label: '卡住了', color: '#f44336' },
 ]
 
 export default function ReviewPage() {
@@ -26,6 +34,7 @@ export default function ReviewPage() {
   const [activeReview, setActiveReview] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [completedTasks, setCompletedTasks] = useState(new Set())
+  const [variantModal, setVariantModal] = useState(null) // { problemId, problemTitle }
 
   useEffect(() => {
     let cancelled = false
@@ -66,8 +75,8 @@ export default function ReviewPage() {
   const handleCompleteReview = useCallback(async (cardId, rating) => {
     setSubmitting(true)
     try {
-      // rating (forgot/struggled/passed/mastered) 作为 action 传给后端,
-      // 驱动遗忘曲线真实升降 (修复: 之前 rating 未传, 后端硬编码 success)
+      // 技巧卡: rating ∈ {forgot,struggled,passed,mastered} 轻量自检
+      // 题卡:   rating ∈ {redone_ac,redone_stuck} 重做原题标记, 驱动遗忘曲线真实升降
       await cardService.completeReview(cardId, rating)
       setCompletedTasks((prev) => new Set([...prev, cardId]))
       setActiveReview(null)
@@ -135,17 +144,22 @@ export default function ReviewPage() {
           {remainingTasks.map((task) => {
             const isActive = activeReview === task.card_id
             const isCompleted = completedTasks.has(task.card_id)
+            const isProblem = task.card_type === 'problem'
 
             return (
               <div
                 key={task.task_id}
-                className={`${styles.taskCard} ${isActive ? styles.taskCardActive : ''} ${isCompleted ? styles.taskCardCompleted : ''}`}
+                className={`${styles.taskCard} ${isActive ? styles.taskCardActive : ''} ${isCompleted ? styles.taskCardCompleted : ''} ${isProblem ? styles.taskCardProblem : ''}`}
               >
                 <div className={styles.taskHeader}>
                   <div className={styles.taskInfo}>
                     <span className={styles.taskName}>{task.card_name}</span>
-                    {task.card_algorithm_type && (
-                      <span className={styles.algorithmTag}>{task.card_algorithm_type}</span>
+                    {isProblem ? (
+                      <span className={`${styles.algorithmTag} ${styles.problemTag}`}>重做原题</span>
+                    ) : (
+                      task.card_algorithm_type && (
+                        <span className={styles.algorithmTag}>{task.card_algorithm_type}</span>
+                      )
                     )}
                   </div>
                   <span className={`${styles.priorityBadge} ${styles[`priority${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}`]}`}>
@@ -165,21 +179,47 @@ export default function ReviewPage() {
                   <div className={styles.taskReason}>{task.reason}</div>
                 )}
 
+                {isProblem && (
+                  <div className={styles.problemActions}>
+                    {task.leetcode_link && (
+                      <a
+                        className={styles.redoBtn}
+                        href={task.leetcode_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        去 LeetCode 重做 ↗
+                      </a>
+                    )}
+                    {task.has_variants && (
+                      <button
+                        className={styles.variantBtn}
+                        onClick={() => setVariantModal({ problemId: task.problem_id, problemTitle: task.card_name })}
+                        disabled={isActive}
+                      >
+                        变体练习 ({task.variants?.length || 0})
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {!isActive && !isCompleted && (
                   <button
                     className={styles.startBtn}
                     onClick={() => handleStartReview(task)}
                     disabled={activeReview !== null}
                   >
-                    开始修炼
+                    {isProblem ? '开始重做' : '开始修炼'}
                   </button>
                 )}
 
                 {isActive && (
                   <div className={styles.ratingSection}>
-                    <div className={styles.ratingLabel}>自评本次修炼效果：</div>
+                    <div className={styles.ratingLabel}>
+                      {isProblem ? '重做原题后自评：' : '自评本次修炼效果：'}
+                    </div>
                     <div className={styles.ratingBtns}>
-                      {SELF_RATINGS.map((rating) => (
+                      {(isProblem ? REDONE_RATINGS : SELF_RATINGS).map((rating) => (
                         <button
                           key={rating.value}
                           className={styles.ratingBtn}
@@ -197,6 +237,19 @@ export default function ReviewPage() {
             )
           })}
         </div>
+      )}
+
+      {variantModal && (
+        <VariantPracticeModal
+          open={!!variantModal}
+          problemId={variantModal.problemId}
+          problemTitle={variantModal.problemTitle}
+          onClose={() => setVariantModal(null)}
+          onSaved={() => {
+            setCompletedTasks((prev) => new Set([...prev, `variant-${variantModal.problemId}`]))
+            setVariantModal(null)
+          }}
+        />
       )}
     </div>
   )

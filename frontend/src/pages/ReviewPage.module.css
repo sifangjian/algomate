@@ -72,6 +72,65 @@
     pointer-events: none;
 }
 
+.taskCardProblem {
+    border-left-color: var(--accent);
+    background: var(--bg-elevated);
+}
+
+.problemTag {
+    color: var(--accent);
+    background: rgba(9, 105, 218, 0.1);
+    border-color: rgba(9, 105, 218, 0.3);
+}
+
+.problemActions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0 4px;
+}
+
+.redoBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0969da;
+    border: 1px solid #0969da;
+    color: #fff;
+    padding: 6px 16px;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background var(--transition-base), opacity var(--transition-base);
+}
+
+.redoBtn:hover {
+    background: #0860ca;
+    opacity: 0.9;
+}
+
+.variantBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border-hover);
+    color: var(--text-secondary);
+    padding: 6px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-base), opacity var(--transition-base);
+}
+
+.variantBtn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.variantBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .taskHeader {
     display: flex;
     align-items: flex-start;
