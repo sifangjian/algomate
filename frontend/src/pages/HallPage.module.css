@@ -45,52 +45,17 @@
     flex-shrink: 0;
 }
 
-.focusMeta {
-    display: flex;
-    gap: 36px;
-    flex-wrap: wrap;
-}
-
-.metaItem {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.metaLabel {
-    font-size: 11px;
-    color: var(--text-muted, #9898a8);
-}
-
-.metaValue {
-    font-size: 18px;
-    font-weight: 700;
-    font-family: var(--font-mono, monospace);
-    color: var(--text-primary, #e8e8ef);
-}
-
-.weeklyBar {
-    height: 8px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
-    overflow: hidden;
-}
-
-.weeklyFill {
-    height: 100%;
-    background: linear-gradient(90deg, #1f883d, #4ade80);
-    border-radius: 4px;
-    transition: width 0.4s ease;
-}
-
-.reviewLink {
+.focusCta {
     align-self: flex-start;
-    background: var(--accent, #0969da);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 18px;
+    margin-top: 4px;
     font-size: 13px;
     font-weight: 600;
+    color: var(--accent, #0969da);
     cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.focusCard:hover .focusCta {
+    opacity: 0.75;
+    text-decoration: underline;
 }

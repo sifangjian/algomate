@@ -306,6 +306,13 @@ def delete_problem(problem_id: int):
         if not problem:
             raise HTTPException(status_code=404, detail="题目卡片不存在")
 
+        # 题卡作为修炼主单元时挂有一张复习卡(Card)，需一并删除，否则孤儿 Card 仍被算入待复习
+        if problem.card_id:
+            from algomate.models.cards import Card
+            review_card = session.query(Card).filter(Card.id == problem.card_id).first()
+            if review_card:
+                session.delete(review_card)
+
         session.delete(problem)
         session.commit()
         logger.info(f"Deleted problem card: {problem.title} (id={problem.id})")

@@ -1,360 +1,275 @@
 .page {
-    padding: 28px 160px 40px 250px;
-    max-width: 100%;
+  width: 100%;
 }
 
+/* 顶部工具栏：返回 + 筛选 Tab */
 .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .backButton {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: 1px solid var(--border-default);
-    color: var(--text-secondary);
-    padding: 6px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: border-color var(--transition-base), color var(--transition-base);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #c9c9d6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
-
 .backButton:hover {
-    border-color: var(--border-hover);
-    color: var(--text-primary);
-}
-
-.pageTitle {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.count {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .filterTabs {
-    display: flex;
-    gap: 6px;
-    margin-left: 8px;
+  display: flex;
+  gap: 6px;
 }
 
 .filterTab {
-    padding: 5px 12px;
-    border-radius: 14px;
-    border: 1px solid var(--border-default, #2a2a35);
-    background: transparent;
-    color: var(--text-muted, #9898a8);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s ease;
+  background: transparent;
+  color: var(--text-muted, #9898a8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
-
 .filterTab:hover {
-    border-color: var(--accent, #0969da);
-    color: var(--text-secondary, #c9c9d6);
+  color: var(--text-secondary, #c9c9d6);
+  border-color: rgba(255, 255, 255, 0.16);
 }
-
 .filterTabActive {
-    background: var(--accent, #0969da);
-    border-color: var(--accent, #0969da);
-    color: #fff;
-    font-weight: 600;
+  background: var(--accent, #0969da);
+  color: #fff;
+  border-color: var(--accent, #0969da);
 }
 
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    background: var(--border-subtle);
-    border: 1px solid var(--border-subtle);
+/* 状态框（加载/错误） */
+.stateBox {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted, #9898a8);
+}
+.errorTitle {
+  color: #f87171;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.errorMessage {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* 空状态 */
+.emptyState {
+  padding: 56px 24px;
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+.emptyIcon {
+  font-size: 32px;
+  color: #4ade80;
+  margin-bottom: 8px;
+}
+.emptyTitle {
+  font-size: 15px;
+  color: var(--text-primary, #e8e8ef);
+  margin-bottom: 4px;
+}
+.emptyDesc {
+  font-size: 13px;
+  color: var(--text-muted, #9898a8);
+}
+
+/* 卡片网格 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
 }
 
 .taskCard {
-    background: var(--bg-panel);
-    padding: 16px;
-    transition: background var(--transition-base);
-    border-left: 2px solid var(--accent);
+  position: relative;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
 }
-
+.taskCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--text-muted, #9898a8);
+}
 .taskCard:hover {
-    background: var(--bg-panel-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
 }
+.prio_critical::before { background: #f87171; }
+.prio_high::before { background: #fb923c; }
+.prio_medium::before { background: #fbbf24; }
+.prio_low::before { background: #60a5fa; }
 
 .taskCardActive {
-    border-left-color: var(--status-warning);
-    background: var(--bg-elevated);
+  border-color: var(--accent, #0969da);
+  background: rgba(9, 105, 218, 0.08);
 }
-
 .taskCardCompleted {
-    border-left-color: #4caf50;
-    opacity: 0.5;
-    pointer-events: none;
+  opacity: 0.55;
 }
+.taskCardCompleted::before { background: #4ade80; }
 
-.taskCardProblem {
-    border-left-color: var(--accent);
-    background: var(--bg-elevated);
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
-
-.problemTag {
-    color: var(--accent);
-    background: rgba(9, 105, 218, 0.1);
-    border-color: rgba(9, 105, 218, 0.3);
+.cardInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-
-.problemActions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 10px 0 4px;
+.cardName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #e8e8ef);
 }
-
-.redoBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #0969da;
-    border: 1px solid #0969da;
-    color: #fff;
-    padding: 6px 16px;
-    font-size: 13px;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background var(--transition-base), opacity var(--transition-base);
+.tag {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #9898a8);
+  font-family: var(--font-mono, monospace);
 }
-
-.redoBtn:hover {
-    background: #0860ca;
-    opacity: 0.9;
-}
-
-.variantBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: 1px solid var(--border-hover);
-    color: var(--text-secondary);
-    padding: 6px 16px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background var(--transition-base), opacity var(--transition-base);
-}
-
-.variantBtn:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.variantBtn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.taskHeader {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    gap: 8px;
-}
-
-.taskInfo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.taskName {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.algorithmTag {
-    display: inline-block;
-    padding: 1px 6px;
-    font-size: 11px;
-    color: var(--text-muted);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
+.tagProblem {
+  background: rgba(96, 165, 250, 0.15);
+  color: #93c5fd;
 }
 
 .priorityBadge {
-    display: inline-block;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge_critical { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
+.badge_high { background: rgba(251, 146, 60, 0.15); color: #fdba74; }
+.badge_medium { background: rgba(251, 191, 36, 0.15); color: #fde68a; }
+.badge_low { background: rgba(96, 165, 250, 0.15); color: #93c5fd; }
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted, #9898a8);
+  flex-wrap: wrap;
 }
 
-.priorityCritical {
-    background: rgba(244, 67, 54, 0.1);
-    color: #f44336;
+.cardReason {
+  font-size: 12px;
+  color: var(--text-secondary, #c9c9d6);
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 10px;
+  border-radius: 0 4px 4px 0;
+  line-height: 1.5;
 }
 
-.priorityHigh {
-    background: rgba(255, 152, 0, 0.1);
-    color: #ff9800;
+.problemActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-
-.priorityMedium {
-    background: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
+.redoBtn, .variantBtn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
 }
-
-.priorityLow {
-    background: rgba(76, 175, 80, 0.1);
-    color: #4caf50;
+.redoBtn {
+  background: rgba(96, 165, 250, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.3);
 }
-
-.taskMeta {
-    display: flex;
-    gap: 12px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-    flex-wrap: wrap;
+.redoBtn:hover { opacity: 0.8; }
+.variantBtn {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #c9c9d6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
-
-.taskReason {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 10px;
-}
+.variantBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .startBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--accent);
-    border: 1px solid var(--accent);
-    color: #fff;
-    padding: 6px 16px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: opacity var(--transition-base);
+  margin-top: 2px;
+  background: var(--accent, #0969da);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: opacity 0.15s ease;
 }
-
-.startBtn:hover {
-    opacity: 0.85;
-}
-
-.startBtn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
+.startBtn:hover { opacity: 0.85; }
+.startBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .ratingSection {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
 }
-
 .ratingLabel {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-secondary, #c9c9d6);
 }
-
 .ratingBtns {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-
 .ratingBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: 1px solid;
-    padding: 6px 14px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background var(--transition-base), opacity var(--transition-base);
+  background: transparent;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
-
 .ratingBtn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    opacity: 0.85;
+  background: rgba(255, 255, 255, 0.06);
 }
+.ratingBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.ratingBtn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.loadingState {
-    text-align: center;
-    padding: 40px;
-    color: var(--text-muted);
-}
-
-.errorState {
-    text-align: center;
-    padding: 40px;
-    color: var(--status-critical);
-}
-
-.errorTitle {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.errorMessage {
-    font-size: 14px;
-    margin-bottom: 16px;
-    color: var(--text-secondary);
-}
-
-.emptyState {
-    text-align: center;
-    padding: 60px 40px;
-    color: var(--text-muted);
-    background: var(--bg-panel);
-    border: 1px solid var(--border-subtle);
-}
-
-.emptyIcon {
-    font-size: 36px;
-    margin-bottom: 12px;
-    color: #4caf50;
-}
-
-.emptyTitle {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-}
-
-.emptyDesc {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-@media (max-width: 1280px) {
-    .page {
-        padding: 20px 24px 40px 24px;
-    }
-}
-
-@media (max-width: 768px) {
-    .page {
-        padding: 16px;
-    }
+.doneMark {
+  font-size: 12px;
+  color: #4ade80;
+  font-weight: 600;
+  align-self: flex-start;
 }

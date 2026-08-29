@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cardService } from '../services/cardService'
 import VariantPracticeModal from '../components/card/VariantPracticeModal'
+import PanelSection from '../components/workbench/PanelSection'
 import styles from './ReviewPage.module.css'
 
 const PRIORITY_LABELS = {
@@ -10,6 +11,8 @@ const PRIORITY_LABELS = {
   medium: '中',
   low: '低',
 }
+
+const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 }
 
 // 技巧卡：轻量自检（回忆/核对）
 const SELF_RATINGS = [
@@ -30,7 +33,6 @@ export default function ReviewPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = searchParams.get('filter') || 'all' // all | critical | done
   const [tasks, setTasks] = useState([])
-  const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeReview, setActiveReview] = useState(null)
@@ -48,12 +50,6 @@ export default function ReviewPage() {
         if (!cancelled) {
           const data = res?.data || res
           setTasks(data?.tasks || [])
-          setSummary({
-            total_count: data?.total_count || 0,
-            due_count: data?.due_count || 0,
-            endangered_count: data?.endangered_count || 0,
-            has_cards: data?.has_cards ?? true,
-          })
         }
       } catch (err) {
         if (!cancelled) setError(err.message || '加载修炼任务失败')
@@ -96,180 +92,150 @@ export default function ReviewPage() {
     navigate('/')
   }, [navigate])
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.toolbar}>
-          <button className={styles.backButton} onClick={handleBack}>← 返回</button>
-        </div>
-        <div className={styles.loadingState}>加载中...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.toolbar}>
-          <button className={styles.backButton} onClick={handleBack}>← 返回</button>
-        </div>
-        <div className={styles.errorState}>
-          <div className={styles.errorTitle}>加载失败</div>
-          <div className={styles.errorMessage}>{error}</div>
-          <button className={styles.backButton} onClick={handleBack}>返回首页</button>
-        </div>
-      </div>
-    )
-  }
-
-  const allTasks = tasks
-  let visibleTasks = allTasks
+  const pending = tasks.filter((t) => !completedTasks.has(t.card_id))
+  let visibleTasks = pending
   if (filter === 'critical') {
-    visibleTasks = allTasks.filter((t) => t.priority === 'critical' || completedTasks.has(t.card_id) === false && (t.card_durability ?? 100) < 30)
+    visibleTasks = pending.filter((t) => t.priority === 'critical' || (t.card_durability ?? 100) < 30)
   } else if (filter === 'done') {
-    visibleTasks = allTasks.filter((t) => completedTasks.has(t.card_id))
-  } else {
-    visibleTasks = allTasks.filter((t) => !completedTasks.has(t.card_id))
+    visibleTasks = tasks.filter((t) => completedTasks.has(t.card_id))
   }
+  visibleTasks = [...visibleTasks].sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9))
 
   const filterTabs = [
-    { key: 'all', label: `待复习 (${allTasks.filter((t) => !completedTasks.has(t.card_id)).length})` },
-    { key: 'critical', label: `濒危 (${summary?.endangered_count ?? 0})` },
+    { key: 'all', label: `待复习 (${pending.length})` },
+    { key: 'critical', label: `濒危 (${pending.filter((t) => t.priority === 'critical' || (t.card_durability ?? 100) < 30).length})` },
     { key: 'done', label: `已完成 (${completedTasks.size})` },
   ]
 
   return (
     <div className={styles.page}>
-      <div className={styles.toolbar}>
-        <button className={styles.backButton} onClick={handleBack}>← 返回</button>
-        <h2 className={styles.pageTitle}>今日修炼</h2>
-        <div className={styles.filterTabs}>
-          {filterTabs.map((tab) => (
-            <button
-              key={tab.key}
-              className={`${styles.filterTab} ${filter === tab.key ? styles.filterTabActive : ''}`}
-              onClick={() => setFilter(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        {summary && (
-          <span className={styles.count}>
-            {summary.total_count} 个任务
-            {summary.endangered_count > 0 && ` · ${summary.endangered_count} 个濒危`}
-            {summary.due_count > 0 && ` · ${summary.due_count} 个待复习`}
-          </span>
-        )}
-      </div>
-
-      {visibleTasks.length === 0 ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>✓</div>
-          <div className={styles.emptyTitle}>
-            {filter === 'done' ? '暂无已完成任务' : filter === 'critical' ? '暂无濒危任务' : '今日无待复习任务'}
-          </div>
-          <div className={styles.emptyDesc}>所有卡牌都已复习完毕，继续保持！</div>
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {visibleTasks.map((task) => {
-            const isActive = activeReview === task.card_id
-            const isCompleted = completedTasks.has(task.card_id)
-            const isProblem = task.card_type === 'problem'
-
-            return (
-              <div
-                key={task.task_id}
-                className={`${styles.taskCard} ${isActive ? styles.taskCardActive : ''} ${isCompleted ? styles.taskCardCompleted : ''} ${isProblem ? styles.taskCardProblem : ''}`}
+      <PanelSection number="00" title="today.review — 今日修炼" path="/review">
+        <div className={styles.toolbar}>
+          <button className={styles.backButton} onClick={handleBack}>← 返回</button>
+          <div className={styles.filterTabs}>
+            {filterTabs.map((tab) => (
+              <button
+                key={tab.key}
+                className={`${styles.filterTab} ${filter === tab.key ? styles.filterTabActive : ''}`}
+                onClick={() => setFilter(tab.key)}
               >
-                <div className={styles.taskHeader}>
-                  <div className={styles.taskInfo}>
-                    <span className={styles.taskName}>{task.card_name}</span>
-                    {isProblem ? (
-                      <span className={`${styles.algorithmTag} ${styles.problemTag}`}>重做原题</span>
-                    ) : (
-                      task.card_algorithm_type && (
-                        <span className={styles.algorithmTag}>{task.card_algorithm_type}</span>
-                      )
-                    )}
-                  </div>
-                  <span className={`${styles.priorityBadge} ${styles[`priority${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}`]}`}>
-                    {PRIORITY_LABELS[task.priority]}
-                  </span>
-                </div>
-
-                <div className={styles.taskMeta}>
-                  <span>耐久度: {task.card_durability}/{task.max_durability}</span>
-                  {task.next_review_date && (
-                    <span>下次复习: {task.next_review_date}</span>
-                  )}
-                  <span>等级: {task.review_level}</span>
-                </div>
-
-                {task.reason && (
-                  <div className={styles.taskReason}>{task.reason}</div>
-                )}
-
-                {isProblem && (
-                  <div className={styles.problemActions}>
-                    {task.leetcode_link && (
-                      <a
-                        className={styles.redoBtn}
-                        href={task.leetcode_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        去 LeetCode 重做 ↗
-                      </a>
-                    )}
-                    {task.has_variants && (
-                      <button
-                        className={styles.variantBtn}
-                        onClick={() => setVariantModal({ problemId: task.problem_id, problemTitle: task.card_name })}
-                        disabled={isActive}
-                      >
-                        变体练习 ({task.variants?.length || 0})
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {!isActive && !isCompleted && (
-                  <button
-                    className={styles.startBtn}
-                    onClick={() => handleStartReview(task)}
-                    disabled={activeReview !== null}
-                  >
-                    {isProblem ? '开始重做' : '开始修炼'}
-                  </button>
-                )}
-
-                {isActive && (
-                  <div className={styles.ratingSection}>
-                    <div className={styles.ratingLabel}>
-                      {isProblem ? '重做原题后自评：' : '自评本次修炼效果：'}
-                    </div>
-                    <div className={styles.ratingBtns}>
-                      {(isProblem ? REDONE_RATINGS : SELF_RATINGS).map((rating) => (
-                        <button
-                          key={rating.value}
-                          className={styles.ratingBtn}
-                          style={{ borderColor: rating.color, color: rating.color }}
-                          onClick={() => handleCompleteReview(task.card_id, rating.value)}
-                          disabled={submitting}
-                        >
-                          {rating.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        {loading ? (
+          <div className={styles.stateBox}>加载中...</div>
+        ) : error ? (
+          <div className={styles.stateBox}>
+            <div className={styles.errorTitle}>加载失败</div>
+            <div className={styles.errorMessage}>{error}</div>
+            <button className={styles.backButton} onClick={handleBack}>返回首页</button>
+          </div>
+        ) : visibleTasks.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>✓</div>
+            <div className={styles.emptyTitle}>
+              {filter === 'done' ? '暂无已完成任务' : filter === 'critical' ? '暂无濒危任务' : '今日无待复习任务'}
+            </div>
+            <div className={styles.emptyDesc}>所有卡牌都已复习完毕，继续保持！</div>
+          </div>
+        ) : (
+          <div className={styles.grid}>
+            {visibleTasks.map((task) => {
+              const isActive = activeReview === task.card_id
+              const isCompleted = completedTasks.has(task.card_id)
+              const isProblem = task.card_type === 'problem'
+
+              return (
+                <div
+                  key={task.task_id}
+                  className={`${styles.taskCard} ${styles[`prio_${task.priority}`]} ${isActive ? styles.taskCardActive : ''} ${isCompleted ? styles.taskCardCompleted : ''}`}
+                >
+                  <div className={styles.cardTop}>
+                    <div className={styles.cardInfo}>
+                      <span className={styles.cardName}>{task.card_name}</span>
+                      {isProblem ? (
+                        <span className={`${styles.tag} ${styles.tagProblem}`}>重做原题</span>
+                      ) : (
+                        task.card_algorithm_type && (
+                          <span className={styles.tag}>{task.card_algorithm_type}</span>
+                        )
+                      )}
+                    </div>
+                    <span className={`${styles.priorityBadge} ${styles[`badge_${task.priority}`]}`}>
+                      {PRIORITY_LABELS[task.priority]}
+                    </span>
+                  </div>
+
+                  <div className={styles.cardMeta}>
+                    <span>耐久度 {task.card_durability}/{task.max_durability}</span>
+                    <span>·</span>
+                    <span>等级 {task.review_level}</span>
+                    {task.next_review_date && (
+                      <>
+                        <span>·</span>
+                        <span>下次 {task.next_review_date}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {task.reason && <div className={styles.cardReason}>{task.reason}</div>}
+
+                  {isProblem && (
+                    <div className={styles.problemActions}>
+                      {task.leetcode_link && (
+                        <a className={styles.redoBtn} href={task.leetcode_link} target="_blank" rel="noopener noreferrer">
+                          去 LeetCode 重做 ↗
+                        </a>
+                      )}
+                      {task.has_variants && (
+                        <button
+                          className={styles.variantBtn}
+                          onClick={() => setVariantModal({ problemId: task.problem_id, problemTitle: task.card_name })}
+                          disabled={isActive}
+                        >
+                          变体练习 ({task.variants?.length || 0})
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {!isActive && !isCompleted && (
+                    <button className={styles.startBtn} onClick={() => handleStartReview(task)} disabled={activeReview !== null}>
+                      {isProblem ? '开始重做' : '开始修炼'}
+                    </button>
+                  )}
+
+                  {isActive && (
+                    <div className={styles.ratingSection}>
+                      <div className={styles.ratingLabel}>
+                        {isProblem ? '重做原题后自评：' : '自评本次修炼效果：'}
+                      </div>
+                      <div className={styles.ratingBtns}>
+                        {(isProblem ? REDONE_RATINGS : SELF_RATINGS).map((rating) => (
+                          <button
+                            key={rating.value}
+                            className={styles.ratingBtn}
+                            style={{ borderColor: rating.color, color: rating.color }}
+                            onClick={() => handleCompleteReview(task.card_id, rating.value)}
+                            disabled={submitting}
+                          >
+                            {rating.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {isCompleted && <div className={styles.doneMark}>✓ 已完成</div>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </PanelSection>
 
       {variantModal && (
         <VariantPracticeModal
@@ -278,7 +244,6 @@ export default function ReviewPage() {
           problemTitle={variantModal.problemTitle}
           onClose={() => setVariantModal(null)}
           onSaved={() => {
-            setCompletedTasks((prev) => new Set([...prev, `variant-${variantModal.problemId}`]))
             setVariantModal(null)
           }}
         />
