@@ -181,6 +181,7 @@ def import_from_leetcode(data: ImportRequest):
                     difficulty=3,
                     durability=80,
                     review_level=0,
+                    next_review_date=datetime.now(),  # 导入即今天到期, 立即可在今日修炼重做
                     content=json.dumps({"slug": problem.leetcode_slug, "leetcode_link": problem.leetcode_link}, ensure_ascii=False),
                 )
                 session.add(review_card)
@@ -206,6 +207,7 @@ def import_from_leetcode(data: ImportRequest):
                 difficulty=3,
                 durability=80,
                 review_level=0,
+                next_review_date=datetime.now(),  # 导入即今天到期, 立即可在今日修炼重做
                 content=json.dumps({"slug": data.slug, "leetcode_link": data.leetcode_link}, ensure_ascii=False),
             )
             session.add(review_card)

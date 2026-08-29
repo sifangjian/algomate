@@ -234,14 +234,12 @@ class ReviewScheduler:
                     task_counter += 1
 
             daily_task_count = self.difficulty_manager.get_daily_task_count()
-
-            tasks.sort(key=lambda t: (
-                PRIORITY_ORDER.get(t.priority, 3),
-                t.card_durability,
-            ))
+            if not isinstance(daily_task_count, int) or daily_task_count < 1:
+                daily_task_count = 8
 
             # 题卡修炼扩展: 为 card_type=problem 的任务补 leetcode_link/variants,
             # 并区分复习动作(题卡=重做原题+变体练习, 技巧卡=轻量自检)
+            # 必须在排序前补 card_type, 以便排序时题卡优先(题卡是主修炼单元)
             for t in tasks:
                 card = session.query(Card).filter(Card.id == t.card_id).first()
                 if not card:
@@ -261,6 +259,15 @@ class ReviewScheduler:
                         t.variants = vs
                         t.problem_id = pc.id
                         t.review_types = ["redone", "variant"] if vs else ["redone"]
+                        # 题卡为主修炼单元: 重做题优先级高于轻量自检
+                        if t.priority in ("medium", "low"):
+                            t.priority = "high"
+
+            tasks.sort(key=lambda t: (
+                0 if t.card_type == "problem" else 1,  # 题卡优先
+                PRIORITY_ORDER.get(t.priority, 3),
+                t.card_durability,
+            ))
 
             return tasks[:daily_task_count]
         finally:
