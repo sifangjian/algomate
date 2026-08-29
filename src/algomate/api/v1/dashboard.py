@@ -45,8 +45,9 @@ async def start_review(card_id: int):
 @router.post("/review/complete/{card_id}")
 async def complete_review(card_id: int, review_data: dict):
     review_service = get_review_service()
-    action = review_data.get("action", "success")
-    result = review_service.complete_review(card_id, action)
+    action = review_data.get("action", "passed")
+    note = review_data.get("note")
+    result = review_service.complete_review(card_id, action=action, note=note)
     if result is None:
         raise HTTPException(status_code=404, detail="卡牌不存在")
     return result

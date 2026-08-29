@@ -5,7 +5,7 @@
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
 from algomate.data.database import Base
@@ -37,5 +37,6 @@ class ReviewRecord(Base):
     durability_after = Column(Integer, nullable=True)
     review_level_before = Column(Integer, nullable=True)
     review_level_after = Column(Integer, nullable=True)
+    note = Column(Text, nullable=True, comment="重做/复习时的反思笔记：为什么卡住/通过/要注意什么")
 
     card = relationship("Card", back_populates="review_records")

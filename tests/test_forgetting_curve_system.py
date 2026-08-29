@@ -224,11 +224,11 @@ class TestCompleteReviewFlow:
         before_durability = card.durability
         before_review_count = card.review_count
 
-        result = review_service.complete_review(card.id, review_type="content_review")
+        result = review_service.complete_review(card.id, action="passed")
 
         assert result is not None
         assert result["review_level_after"] == before_level + 1
-        assert result["durability_after"] == before_durability + 20
+        assert result["durability_after"] == min(before_durability + 15, 100)
         assert result["review_count"] == before_review_count + 1
         assert "next_review_date" in result
 
@@ -236,7 +236,7 @@ class TestCompleteReviewFlow:
         try:
             updated_card = session.query(Card).filter(Card.id == card.id).first()
             assert updated_card.review_level == before_level + 1
-            assert updated_card.durability == before_durability + 20
+            assert updated_card.durability == min(before_durability + 15, 100)
             assert updated_card.review_count == before_review_count + 1
             assert updated_card.last_reviewed is not None
             assert updated_card.next_review_date is not None
@@ -252,7 +252,7 @@ class TestCompleteReviewFlow:
             last_reviewed=datetime.now() - timedelta(days=5),
         )
 
-        result = review_service.complete_review(card.id, review_type="content_review")
+        result = review_service.complete_review(card.id, action="passed")
 
         assert result is not None
         assert result["review_level_after"] == 6
@@ -266,7 +266,7 @@ class TestCompleteReviewFlow:
             last_reviewed=datetime.now() - timedelta(days=5),
         )
 
-        result = review_service.complete_review(card.id, review_type="content_review")
+        result = review_service.complete_review(card.id, action="passed")
 
         assert result is not None
         assert result["durability_after"] <= 100
@@ -279,5 +279,55 @@ class TestCompleteReviewFlow:
             session.close()
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+class TestReviewActionEffects:
+    """模块0: 6档 action 对 durability/review_level 的差异化影响"""
+
+    def test_forgot_lowers_durability_and_level(self, db_session, review_service):
+        card = _create_card(db_session, review_level=2, durability=80)
+        r = review_service.complete_review(card.id, action="forgot")
+        assert r["durability_after"] == 55  # 80 - 25
+        assert r["review_level_after"] == 1  # 2 - 1
+
+    def test_struggled_lowers_durability_keeps_level(self, db_session, review_service):
+        card = _create_card(db_session, review_level=2, durability=80)
+        r = review_service.complete_review(card.id, action="struggled")
+        assert r["durability_after"] == 70  # 80 - 10
+        assert r["review_level_after"] == 2  # 持平
+
+    def test_passed_raises_durability_and_level(self, db_session, review_service):
+        card = _create_card(db_session, review_level=2, durability=80)
+        r = review_service.complete_review(card.id, action="passed")
+        assert r["durability_after"] == 95  # 80 + 15
+        assert r["review_level_after"] == 3  # 2 + 1
+
+    def test_mastered_raises_more(self, db_session, review_service):
+        card = _create_card(db_session, review_level=2, durability=80)
+        r = review_service.complete_review(card.id, action="mastered")
+        assert r["durability_after"] == 100  # 80 + 25 封顶
+        assert r["review_level_after"] == 3
+
+    def test_redone_ac_highest_gain(self, db_session, review_service):
+        card = _create_card(db_session, review_level=2, durability=80)
+        r = review_service.complete_review(card.id, action="redone_ac")
+        assert r["durability_after"] == 100  # 80 + 30 封顶
+        assert r["review_level_after"] == 3
+
+    def test_redone_stuck_lowers_both(self, db_session, review_service):
+        card = _create_card(db_session, review_level=2, durability=80)
+        r = review_service.complete_review(card.id, action="redone_stuck")
+        assert r["durability_after"] == 50  # 80 - 30
+        assert r["review_level_after"] == 1  # 2 - 1
+
+    def test_durability_floor_at_zero(self, db_session, review_service):
+        card = _create_card(db_session, review_level=0, durability=0)
+        r = review_service.complete_review(card.id, action="forgot")
+        assert r["durability_after"] == 0
+        assert r["review_level_after"] == 0
+
+    def test_invalid_action_falls_back_to_passed(self, db_session, review_service):
+        card = _create_card(db_session, review_level=2, durability=80)
+        r = review_service.complete_review(card.id, action="not_a_real_action")
+        assert r["durability_after"] == 95  # 回退到 passed (+15)
+        assert r["review_level_after"] == 3
+
+

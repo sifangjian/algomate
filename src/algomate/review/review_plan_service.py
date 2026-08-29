@@ -205,9 +205,24 @@ class ReviewPlanService:
     def complete_review(
         self,
         card_id: int,
-        review_type: str = "content_review"
+        action: str = "passed",
+        review_type: Optional[str] = None,
+        note: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         from ..core.memory.forgetting_curve import ReviewAction
+
+        # action 字符串 -> ReviewAction 枚举 (非法值回退到 passed)
+        try:
+            review_action = ReviewAction(action)
+        except ValueError:
+            review_action = ReviewAction.PASSED
+
+        # review_type 若未显式给, 按 action 推断用于记录
+        if review_type is None:
+            if action in ("redone_ac", "redone_stuck"):
+                review_type = "leetcode_redo"
+            else:
+                review_type = "content_review"
 
         session = self.db.get_session()
         try:
@@ -222,7 +237,7 @@ class ReviewPlanService:
                 session.query(ReviewRecord)
                 .filter(
                     ReviewRecord.card_id == card_id,
-                    ReviewRecord.status.in_(["pending", "in_progress"])
+                    ReviewRecord.status.in_(["pending", "in_progress"]),
                 )
                 .all()
             )
@@ -230,7 +245,7 @@ class ReviewPlanService:
                 record.status = "completed"
 
             self.forgetting_curve.complete_review_for_card(
-                card, ReviewAction.SUCCESS
+                card, review_action
             )
 
             now = datetime.now()
@@ -239,6 +254,7 @@ class ReviewPlanService:
                 review_date=now,
                 status="completed",
                 review_type=review_type,
+                note=note,
                 completed_at=now,
                 durability_before=durability_before,
                 durability_after=card.durability,

@@ -66,10 +66,9 @@ export default function ReviewPage() {
   const handleCompleteReview = useCallback(async (cardId, rating) => {
     setSubmitting(true)
     try {
-      // Use the first available review_type from the task or default to "content_review"
-      const task = tasks.find((t) => t.card_id === cardId)
-      const reviewType = task?.review_types?.[0] || 'content_review'
-      await cardService.completeReviewV1(cardId, reviewType)
+      // rating (forgot/struggled/passed/mastered) 作为 action 传给后端,
+      // 驱动遗忘曲线真实升降 (修复: 之前 rating 未传, 后端硬编码 success)
+      await cardService.completeReview(cardId, rating)
       setCompletedTasks((prev) => new Set([...prev, cardId]))
       setActiveReview(null)
     } catch (err) {
@@ -77,7 +76,7 @@ export default function ReviewPage() {
     } finally {
       setSubmitting(false)
     }
-  }, [tasks])
+  }, [])
 
   const handleBack = useCallback(() => {
     navigate('/')

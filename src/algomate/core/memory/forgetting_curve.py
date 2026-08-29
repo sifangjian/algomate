@@ -20,9 +20,17 @@ from algomate.config.settings import AppConfig
 
 
 class ReviewAction(str, Enum):
-    """修炼动作枚举"""
-    SUCCESS = "success"
-    FAIL = "fail"
+    """修炼动作枚举
+
+    看卡片自评: forgot(忘了) / struggled(困难) / passed(通过) / mastered(熟练)
+    去 LeetCode 重做: redone_ac(重做 AC) / redone_stuck(重做卡住)
+    """
+    FORGOT = "forgot"
+    STRUGGLED = "struggled"
+    PASSED = "passed"
+    MASTERED = "mastered"
+    REDONE_AC = "redone_ac"
+    REDONE_STUCK = "redone_stuck"
 
 
 @dataclass
@@ -101,7 +109,7 @@ class ForgettingCurveEngine:
         self,
         last_reviewed: datetime,
         review_level: int,
-        action: ReviewAction = ReviewAction.SUCCESS
+        action: ReviewAction = ReviewAction.PASSED
     ) -> Tuple[datetime, int]:
         """计算下次修炼时间和新的修炼等级
 
@@ -116,16 +124,21 @@ class ForgettingCurveEngine:
         Example:
             >>> engine = ForgettingCurveEngine()
             >>> last = datetime(2024, 1, 1, 10, 0)
-            >>> next_review, new_level = engine.calculate_next_review(last, 1, ReviewAction.SUCCESS)
+            >>> next_review, new_level = engine.calculate_next_review(last, 1, ReviewAction.PASSED)
             >>> next_review.date()
             datetime.date(2024, 1, 4)  # 1级成功后推进到2级，间隔3天
             >>> new_level
             2
         """
-        if action == ReviewAction.SUCCESS:
-            new_level = min(review_level + 1, self.max_level)
-        else:
+        # 升级动作: 掌握度提升, 修炼等级 +1 (不超过 max_level)
+        # 降级动作: 遗忘/卡住, 修炼等级 -1 (不低于 0)
+        # 持平动作: 困难, 等级不变
+        if action in (ReviewAction.FORGOT, ReviewAction.REDONE_STUCK):
             new_level = max(review_level - 1, 0)
+        elif action == ReviewAction.STRUGGLED:
+            new_level = review_level
+        else:  # PASSED / MASTERED / REDONE_AC
+            new_level = min(review_level + 1, self.max_level)
 
         interval_days = self.get_review_interval(new_level)
         next_review = last_reviewed + timedelta(days=interval_days)
@@ -272,7 +285,7 @@ class ForgettingCurveEngine:
 
         Args:
             card: Card 对象，需包含 last_reviewed, review_level, durability 属性
-            action: 修炼动作（SUCCESS / FAIL）
+            action: 修炼动作（PASSED / MASTERED / REDONE_AC 升级；FORGOT / REDONE_STUCK 降级；STRUGGLED 持平）
 
         Returns:
             (new_review_level, next_review_date) 元组
@@ -286,10 +299,19 @@ class ForgettingCurveEngine:
             action=action
         )
 
-        if action == ReviewAction.SUCCESS:
-            card.durability = min(card.durability + 20, 100)
-        else:
-            card.durability = max(card.durability - 5, 0)
+        # durability 按动作差异化更新 (权重: 重做 > 看卡片自评)
+        if action == ReviewAction.REDONE_AC:
+            card.durability = min(card.durability + 30, 100)
+        elif action == ReviewAction.MASTERED:
+            card.durability = min(card.durability + 25, 100)
+        elif action == ReviewAction.PASSED:
+            card.durability = min(card.durability + 15, 100)
+        elif action == ReviewAction.FORGOT:
+            card.durability = max(card.durability - 25, 0)
+        elif action == ReviewAction.STRUGGLED:
+            card.durability = max(card.durability - 10, 0)
+        elif action == ReviewAction.REDONE_STUCK:
+            card.durability = max(card.durability - 30, 0)
 
         card.review_level = new_level
         card.next_review_date = next_review_dt
@@ -341,7 +363,7 @@ class ForgettingCurveEngine:
 def calculate_next_review(
     last_reviewed: datetime,
     review_level: int,
-    action: ReviewAction = ReviewAction.SUCCESS
+    action: ReviewAction = ReviewAction.PASSED
 ) -> Tuple[datetime, int]:
     """计算下次修炼时间（便捷函数）
 

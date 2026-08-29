@@ -56,10 +56,15 @@ async def complete_review_v1(card_id: int, review_data: dict):
     from algomate.models.cards import Card
     from algomate.data.database import Database
 
+    # 新用法: 传 action (forgot/struggled/passed/mastered/redone_ac/redone_stuck)
+    # 兼容旧用法: 传 review_type (content_review/quick_quiz/leetcode_challenge)
+    action = review_data.get("action")
     review_type = review_data.get("review_type", "content_review")
-    valid_types = ["content_review", "quick_quiz"]
-    if review_type not in valid_types:
-        raise HTTPException(status_code=400, detail="修炼形式参数不合法")
+    note = review_data.get("note")
+
+    if not action:
+        # 旧调用兼容: 用 review_type 推断一个默认 action
+        action = "passed" if review_type != "quick_quiz" else "struggled"
 
     db = Database.get_instance()
     session = db.get_session()
@@ -73,7 +78,7 @@ async def complete_review_v1(card_id: int, review_data: dict):
         session.close()
 
     review_service = ReviewPlanService()
-    result = review_service.complete_review(card_id, review_type)
+    result = review_service.complete_review(card_id, action=action, review_type=review_type, note=note)
     if result is None:
         raise HTTPException(status_code=404, detail="卡牌不存在")
 
