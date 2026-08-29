@@ -71,11 +71,90 @@ async function collect() {
     if (result && result.result) {
       renderPreview(result.result);
       window.__collected = result.result;
+      // [模块D] LeetCode 页内复习浮窗: 检测当前题目是否已导入, 提供重做标记回传
+      checkReviewCard(result.result.slug);
     } else {
       setStatus('抓取返回为空，请刷新题目页后重试。', 'err');
     }
   } catch (e) {
     setStatus('抓取异常: ' + e.message + '（刷新题目页后重试）', 'err');
+  }
+}
+
+// [模块D] LeetCode 页内复习浮窗: 根据 slug 查找系统内题卡, 提供重做标记(AC/卡住)+边界遗漏笔记回传
+async function checkReviewCard(slug) {
+  if (!slug) return;
+  const REVIEW_API = 'http://localhost:8000/api/v1';
+  try {
+    const r = await fetch(`${REVIEW_API}/cards/by-slug/${encodeURIComponent(slug)}`);
+    const j = await r.json();
+    const data = j && j.data;
+    if (!data || !data.card_id) return; // 系统内无此题卡, 不需显示复习区
+    renderReviewBox(data);
+  } catch (e) {
+    // 查询失败不影响导入功能
+    console.warn('[AlgoMate] 查询复习卡失败', e);
+  }
+}
+
+function renderReviewBox(data) {
+  // 避免重复渲染
+  if (document.getElementById('review-box')) return;
+  const box = document.createElement('div');
+  box.id = 'review-box';
+  box.className = 'conflict-box';
+  box.style.marginTop = '10px';
+  box.style.borderColor = '#0969da';
+  box.innerHTML = `
+    <div class="hint" style="color:#0969da;font-weight:600;margin-bottom:6px;">🔁 系统内已导入该题，可在此标记重做结果</div>
+    <div class="hint">题目：${data.title || ''}</div>
+    <div class="field" style="margin-top:6px;">
+      <label>边界遗漏 / 为什么卡住 / 注意点（可选，记录到本次复习笔记）</label>
+      <textarea id="f-review-note" placeholder="重做时漏掉的边界条件 / 卡住的原因 / 下次要注意的点…"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button type="button" class="btn btn-primary" id="btn-redone-ac" style="background:#1f883d;">已 AC ✓</button>
+      <button type="button" class="btn btn-primary" id="btn-redone-stuck" style="background:#cf222e;">卡住了</button>
+    </div>
+    <div class="status" id="review-status"></div>
+  `;
+  // 插入到导入按钮之前
+  const importBtn = $('btn-import');
+  importBtn.parentNode.insertBefore(box, importBtn);
+
+  const note = () => $('f-review-note').value.trim();
+  const setRS = (msg, type) => {
+    const el = $('review-status');
+    el.textContent = msg;
+    el.className = 'status' + (type ? ' ' + type : '');
+  };
+  $('btn-redone-ac').addEventListener('click', async () => {
+    await markReview(data.card_id, 'redone_ac', note(), setRS);
+  });
+  $('btn-redone-stuck').addEventListener('click', async () => {
+    await markReview(data.card_id, 'redone_stuck', note(), setRS);
+  });
+}
+
+async function markReview(cardId, action, note, setRS) {
+  const REVIEW_API = 'http://localhost:8000/api/v1';
+  try {
+    setRS('正在记录…');
+    const r = await fetch(`${REVIEW_API}/reviews/${cardId}/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, note }),
+    });
+    if (r.ok) {
+      setRS(action === 'redone_ac' ? '已记录：重做 AC ✓' : '已记录：重做卡住，已存入复习队列', 'ok');
+      $('btn-redone-ac').disabled = true;
+      $('btn-redone-stuck').disabled = true;
+    } else {
+      const j = await r.json().catch(() => ({}));
+      setRS('记录失败: ' + JSON.stringify(j), 'err');
+    }
+  } catch (e) {
+    setRS('请求失败: ' + e.message + '（确认后端 http://localhost:8000 已启动）', 'err');
   }
 }
 

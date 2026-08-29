@@ -58,7 +58,7 @@ async def complete_review_v1(card_id: int, review_data: dict):
     # 新用法: 传 action (forgot/struggled/passed/mastered/redone_ac/redone_stuck)
     # 兼容旧用法: 传 review_type (content_review/quick_quiz/leetcode_challenge)
     action = review_data.get("action")
-    review_type = review_data.get("review_type", "content_review")
+    review_type = review_data.get("review_type")  # 不默认 content_review, 让 service 按 action 推断
     note = review_data.get("note")
 
     if not action:

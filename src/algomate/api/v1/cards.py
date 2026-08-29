@@ -337,8 +337,36 @@ async def retake_card(card_id: int):
         session.close()
 
 
-@router.post("")
-async def create_card(card_data: CardCreate):
+@router.get("/by-slug/{slug}")
+async def get_card_by_slug(slug: str):
+    """轻量查询：根据 LeetCode slug 找系统内题卡及其复习卡。
+
+    用于 LeetCode 页内复习浮窗(popup)检测当前题目是否已导入，
+    以便回传重做标记(AC/卡住)与边界遗漏笔记。
+    """
+    from algomate.models.problem_card import ProblemCard
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        slug = (slug or "").strip()
+        if not slug:
+            return success_response(data=None)
+        pc = session.query(ProblemCard).filter(ProblemCard.leetcode_slug == slug).first()
+        if not pc:
+            return success_response(data=None)
+        return success_response(data={
+            "problem_id": pc.id,
+            "title": pc.title,
+            "leetcode_slug": pc.leetcode_slug,
+            "leetcode_link": pc.leetcode_link,
+            "card_id": pc.card_id,
+            "has_variants": bool(pc.variants and pc.variants not in ("[]", "")),
+        })
+    except Exception as e:
+        logger.error("get_card_by_slug failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"查询题卡失败: {str(e)}")
+    finally:
+        session.close()
     db = Database.get_instance()
     session = db.get_session()
     try:
