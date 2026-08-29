@@ -16,6 +16,7 @@ function setStatus(msg, type) {
 function init() {
   $('btn-add-tech').addEventListener('click', () => addTechniqueRow());
   $('btn-import').addEventListener('click', () => doImport());
+  $('btn-recrawl').addEventListener('click', () => collect());
   setupComplexityToggle('f-time-select', 'f-time');
   setupComplexityToggle('f-space-select', 'f-space');
   collect();
