@@ -52,6 +52,7 @@ class ProblemResponse(BaseModel):
     variants: List[str] = []
     video_demo_link: str = ""
     related_problem_ids: List[int] = []
+    card_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     solution_count: int = 0
@@ -98,6 +99,7 @@ def _problem_to_response(p: ProblemCard) -> ProblemResponse:
         variants=_parse_tags(p.variants),
         video_demo_link=p.video_demo_link or "",
         related_problem_ids=_parse_related_ids(p.related_problem_ids),
+        card_id=p.card_id,
         created_at=p.created_at,
         updated_at=p.updated_at,
         solution_count=len(p.solutions) if hasattr(p, 'solutions') and p.solutions else 0,
@@ -249,6 +251,7 @@ def get_problem(problem_id: int):
             variants=_parse_tags(problem.variants),
             video_demo_link=problem.video_demo_link or "",
             related_problem_ids=_parse_related_ids(problem.related_problem_ids),
+            card_id=problem.card_id,
             created_at=problem.created_at,
             updated_at=problem.updated_at,
             solution_count=len(problem.solutions) if problem.solutions else 0,

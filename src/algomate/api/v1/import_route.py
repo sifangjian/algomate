@@ -172,6 +172,20 @@ def import_from_leetcode(data: ImportRequest):
                 problem.variants = json.dumps(data.variants, ensure_ascii=False)
             # 标签作为算法分类属性，重复导入时同步刷新
             problem.tags = json.dumps(data.tags, ensure_ascii=False)
+            # 题卡作为修炼主单元: 若历史题卡无复习卡则补建
+            if problem.card_id is None:
+                review_card = Card(
+                    name=problem.title,
+                    card_type="problem",
+                    algorithm_type=(data.tags[0] if data.tags else ""),
+                    difficulty=3,
+                    durability=80,
+                    review_level=0,
+                    content=json.dumps({"slug": problem.leetcode_slug, "leetcode_link": problem.leetcode_link}, ensure_ascii=False),
+                )
+                session.add(review_card)
+                session.flush()
+                problem.card_id = review_card.id
         else:
             problem = ProblemCard(
                 title=data.title,
@@ -184,6 +198,19 @@ def import_from_leetcode(data: ImportRequest):
             )
             session.add(problem)
             session.flush()
+            # 题卡作为修炼主单元: 同步建复习卡(Card)并关联
+            review_card = Card(
+                name=problem.title,
+                card_type="problem",
+                algorithm_type=(data.tags[0] if data.tags else ""),
+                difficulty=3,
+                durability=80,
+                review_level=0,
+                content=json.dumps({"slug": data.slug, "leetcode_link": data.leetcode_link}, ensure_ascii=False),
+            )
+            session.add(review_card)
+            session.flush()
+            problem.card_id = review_card.id
 
             log_entry = ActivityLog(
                 type="auto_create",

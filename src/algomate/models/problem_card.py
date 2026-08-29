@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from algomate.data.database import Base
@@ -26,6 +26,7 @@ class ProblemCard(Base):
     variants = Column(Text, nullable=True, default="[]", comment="同考点变体题 slug 列表 JSON 数组（用于变体题复习法，如 ['two-sum','3sum']）")
     video_demo_link = Column(String(500), nullable=True, default="", comment="视频演示链接")
     related_problem_ids = Column(Text, nullable=True, default="[]", comment="关联题目ID列表 JSON数组")
+    card_id = Column(Integer, ForeignKey("cards.id"), nullable=True, default=None, comment="关联的复习卡(Card) ID，题卡作为修炼主单元时挂接遗忘曲线复习状态")
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
