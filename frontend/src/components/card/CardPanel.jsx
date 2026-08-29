@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { cardService } from '../../services/cardService'
 import CreateCardModal from './CreateCardModal'
 import VariantPracticeModal from './VariantPracticeModal'
+import Modal from '../ui/Modal/Modal'
 import { showToast } from '../ui/Toast/index'
 import CodeBlock from '../ui/CodeBlock'
 import MarkdownRenderer from '../ui/MarkdownRenderer'
@@ -20,7 +21,33 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
   const [deleteSolutionId, setDeleteSolutionId] = useState(null)
   const [deleteSolutionName, setDeleteSolutionName] = useState('')
   const [practiceOpen, setPracticeOpen] = useState(false)
+  const [variantEditOpen, setVariantEditOpen] = useState(false)
+  const [variantText, setVariantText] = useState('')
+  const [variantSaving, setVariantSaving] = useState(false)
   const [reviewNotes, setReviewNotes] = useState([])
+
+  const openVariantEdit = useCallback(() => {
+    setVariantText((data?.variants || []).join('\n'))
+    setVariantEditOpen(true)
+  }, [data?.variants])
+
+  const handleSaveVariants = useCallback(async () => {
+    const slugs = variantText
+      .split(/[\n,，]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    setVariantSaving(true)
+    try {
+      await cardService.updateVariants(data.id, slugs)
+      showToast('变体题已更新', 'success')
+      setVariantEditOpen(false)
+      onRefresh?.()
+    } catch (err) {
+      showToast(`保存失败: ${err.message}`, 'error')
+    } finally {
+      setVariantSaving(false)
+    }
+  }, [data?.id, variantText, onRefresh])
 
   const loadReviewNotes = useCallback(async () => {
     if (!data?.id) return
@@ -128,9 +155,14 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
         <div className={styles.section}>
           <div className={styles.sectionHead}>
             <h3 className={styles.sectionTitle}>同考点变体题</h3>
-            <button className={styles.practiceBtn} onClick={() => setPracticeOpen(true)}>
-              开始变体练习
-            </button>
+            <div className={styles.practiceBtnGroup}>
+              <button className={styles.practiceBtn} onClick={() => setPracticeOpen(true)}>
+                开始变体练习
+              </button>
+              <button className={styles.practiceBtn} onClick={openVariantEdit}>
+                管理
+              </button>
+            </div>
           </div>
           <div className={styles.variantRow}>
             {data.variants.map((v) => (
@@ -147,6 +179,29 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
           </div>
         </div>
       )}
+
+      <Modal
+        open={variantEditOpen}
+        onClose={() => setVariantEditOpen(false)}
+        title="管理变体题"
+        footer={
+          <>
+            <button className={styles.cancelBtn} onClick={() => setVariantEditOpen(false)}>取消</button>
+            <button className={styles.saveBtn} onClick={handleSaveVariants} disabled={variantSaving}>
+              {variantSaving ? '保存中…' : '保存'}
+            </button>
+          </>
+        }
+      >
+        <p className={styles.hintText}>同考点变体题（每行一个 slug 或英文逗号分隔）。变体题需你自行判断同考点题目后填写，系统不自动抓取。</p>
+        <textarea
+          className={styles.variantEditText}
+          value={variantText}
+          onChange={(e) => setVariantText(e.target.value)}
+          placeholder={'如：\n3sum\n4sum\nletter-combinations-of-a-phone-number'}
+          rows={8}
+        />
+      </Modal>
 
       <VariantPracticeModal
         open={practiceOpen}

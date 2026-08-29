@@ -197,16 +197,6 @@ def get_technique(technique_id: int):
                     "leetcode_link": s.problem.leetcode_link if s.problem and s.problem.leetcode_link else "",
                 })
 
-        log_entry = ActivityLog(
-            type="auto_view",
-            card_type="technique",
-            card_name=technique.name,
-            card_id=technique.id,
-            content=f"查看技巧卡片: {technique.name}",
-        )
-        session.add(log_entry)
-        session.commit()
-
         return TechniqueDetailResponse(
             id=technique.id,
             card_id=technique.card_id,

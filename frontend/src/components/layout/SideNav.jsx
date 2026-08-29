@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { navItems } from './navConfig'
 import { Icon } from '../ui/Icons'
 import { cardService } from '../../services/cardService'
@@ -14,6 +14,7 @@ const typeColors = {
 }
 
 export default function SideNav({ onCreateCard, stats, collapsed }) {
+    const navigate = useNavigate()
     const [recentActivities, setRecentActivities] = useState([])
 
     useEffect(() => {
@@ -48,9 +49,10 @@ export default function SideNav({ onCreateCard, stats, collapsed }) {
                 <span>新建卡片</span>
             </button>
 
-            <div className={styles.statsPanel}>
+            <div className={styles.statsPanel} onClick={() => navigate('/review')} role="button" title="查看今日修炼">
                 <div className={styles.statsHeader}>
                     <span className={styles.statsTitle}>今日修炼</span>
+                    <span className={styles.statsArrow}>→</span>
                 </div>
                 <div className={styles.statsRow}>
                     <div className={styles.statItem}>
@@ -103,10 +105,6 @@ export default function SideNav({ onCreateCard, stats, collapsed }) {
             </div>
 
             <div className={styles.bottomInfo}>
-                <div className={styles.bottomRow}>
-                    <span className={styles.bottomLabel}>会话</span>
-                    <span className={styles.bottomValue}>session-001</span>
-                </div>
                 <div className={styles.bottomRow}>
                     <span className={styles.bottomLabel}>学习</span>
                     <span className={styles.bottomValue}>{todayStats.learningDays} 天</span>

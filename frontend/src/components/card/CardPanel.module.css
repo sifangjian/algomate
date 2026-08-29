@@ -98,10 +98,52 @@
     background: var(--accent-subtle, rgba(37, 99, 235, 0.1));
 }
 
-.variantRow {
+.practiceBtnGroup {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
+}
+
+.cancelBtn {
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #d0d7de);
+    background: transparent;
+    color: var(--text-secondary, #57606a);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.saveBtn {
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.saveBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.hintText {
+    font-size: 0.8rem;
+    color: var(--text-muted, #57606a);
+    line-height: 1.5;
+    margin: 0 0 10px;
+}
+
+.variantEditText {
+    width: 100%;
+    border: 1px solid var(--border-color, #d0d7de);
+    border-radius: 6px;
+    padding: 8px;
+    font: inherit;
+    resize: vertical;
+    box-sizing: border-box;
 }
 
 .variantLink {

@@ -179,16 +179,6 @@ def get_solution(solution_id: int):
                     "review_status": review_status,
                 })
 
-        log_entry = ActivityLog(
-            type="auto_view",
-            card_type="solution",
-            card_name=solution.name,
-            card_id=solution.id,
-            content=f"查看解法卡片: {solution.name}",
-        )
-        session.add(log_entry)
-        session.commit()
-
         return SolutionDetailResponse(
             id=solution.id,
             problem_id=solution.problem_id,

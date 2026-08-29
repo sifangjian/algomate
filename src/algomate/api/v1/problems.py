@@ -230,16 +230,6 @@ def get_problem(problem_id: int):
                     "techniques": techniques_list,
                 })
 
-        log_entry = ActivityLog(
-            type="auto_view",
-            card_type="problem",
-            card_name=problem.title,
-            card_id=problem.id,
-            content=f"查看题目卡片: {problem.title}",
-        )
-        session.add(log_entry)
-        session.commit()
-
         return ProblemDetailResponse(
             id=problem.id,
             title=problem.title,
@@ -410,6 +400,37 @@ def record_variant_practice(problem_id: int, data: VariantPracticeRequest):
             "content": log_entry.content,
             "details": log_entry.details,
             "created_at": log_entry.created_at.isoformat() if log_entry.created_at else None,
+        }
+    finally:
+        session.close()
+
+
+class VariantUpdateRequest(BaseModel):
+    variants: List[str] = Field(default_factory=list, description="同考点变体题 slug 列表（手动维护，逗号分隔输入请以数组传入）")
+
+
+@router.put("/{problem_id}/variants")
+def update_variants(problem_id: int, data: VariantUpdateRequest):
+    """更新题卡的变体题列表（在题卡详情页手动维护，不依赖导入时填写）"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        problem = session.query(ProblemCard).filter(ProblemCard.id == problem_id).first()
+        if not problem:
+            raise HTTPException(status_code=404, detail="题目卡片不存在")
+        # 去重保序
+        seen = set()
+        cleaned = []
+        for v in data.variants:
+            v = (v or "").strip()
+            if v and v not in seen:
+                seen.add(v)
+                cleaned.append(v)
+        problem.variants = json.dumps(cleaned, ensure_ascii=False)
+        session.commit()
+        return {
+            "problem_id": problem.id,
+            "variants": cleaned,
         }
     finally:
         session.close()

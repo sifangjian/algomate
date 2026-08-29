@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cardService } from '../services/cardService'
 import VariantPracticeModal from '../components/card/VariantPracticeModal'
 import styles from './ReviewPage.module.css'
@@ -27,6 +27,8 @@ const REDONE_RATINGS = [
 
 export default function ReviewPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = searchParams.get('filter') || 'all' // all | critical | done
   const [tasks, setTasks] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -63,6 +65,11 @@ export default function ReviewPage() {
     return () => { cancelled = true }
   }, [])
 
+  const setFilter = useCallback((f) => {
+    if (f === 'all') setSearchParams({})
+    else setSearchParams({ filter: f })
+  }, [setSearchParams])
+
   const handleStartReview = useCallback(async (task) => {
     setActiveReview(task.card_id)
     try {
@@ -75,8 +82,6 @@ export default function ReviewPage() {
   const handleCompleteReview = useCallback(async (cardId, rating) => {
     setSubmitting(true)
     try {
-      // 技巧卡: rating ∈ {forgot,struggled,passed,mastered} 轻量自检
-      // 题卡:   rating ∈ {redone_ac,redone_stuck} 重做原题标记, 驱动遗忘曲线真实升降
       await cardService.completeReview(cardId, rating)
       setCompletedTasks((prev) => new Set([...prev, cardId]))
       setActiveReview(null)
@@ -117,13 +122,38 @@ export default function ReviewPage() {
     )
   }
 
-  const remainingTasks = tasks.filter((t) => !completedTasks.has(t.card_id))
+  const allTasks = tasks
+  let visibleTasks = allTasks
+  if (filter === 'critical') {
+    visibleTasks = allTasks.filter((t) => t.priority === 'critical' || completedTasks.has(t.card_id) === false && (t.card_durability ?? 100) < 30)
+  } else if (filter === 'done') {
+    visibleTasks = allTasks.filter((t) => completedTasks.has(t.card_id))
+  } else {
+    visibleTasks = allTasks.filter((t) => !completedTasks.has(t.card_id))
+  }
+
+  const filterTabs = [
+    { key: 'all', label: `待复习 (${allTasks.filter((t) => !completedTasks.has(t.card_id)).length})` },
+    { key: 'critical', label: `濒危 (${summary?.endangered_count ?? 0})` },
+    { key: 'done', label: `已完成 (${completedTasks.size})` },
+  ]
 
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
         <button className={styles.backButton} onClick={handleBack}>← 返回</button>
         <h2 className={styles.pageTitle}>今日修炼</h2>
+        <div className={styles.filterTabs}>
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`${styles.filterTab} ${filter === tab.key ? styles.filterTabActive : ''}`}
+              onClick={() => setFilter(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         {summary && (
           <span className={styles.count}>
             {summary.total_count} 个任务
@@ -133,15 +163,17 @@ export default function ReviewPage() {
         )}
       </div>
 
-      {remainingTasks.length === 0 ? (
+      {visibleTasks.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>✓</div>
-          <div className={styles.emptyTitle}>今日无待复习任务</div>
+          <div className={styles.emptyTitle}>
+            {filter === 'done' ? '暂无已完成任务' : filter === 'critical' ? '暂无濒危任务' : '今日无待复习任务'}
+          </div>
           <div className={styles.emptyDesc}>所有卡牌都已复习完毕，继续保持！</div>
         </div>
       ) : (
         <div className={styles.list}>
-          {remainingTasks.map((task) => {
+          {visibleTasks.map((task) => {
             const isActive = activeReview === task.card_id
             const isCompleted = completedTasks.has(task.card_id)
             const isProblem = task.card_type === 'problem'

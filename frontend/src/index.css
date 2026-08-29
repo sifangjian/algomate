@@ -149,6 +149,7 @@ button {
     flex: 1;
     margin-left: var(--sidebar-width);
     padding: 0;
+    padding-bottom: 36px;
     display: block;
     position: relative;
     transition: margin-left var(--transition-base);

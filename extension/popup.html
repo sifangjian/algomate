@@ -7,10 +7,14 @@
     * { box-sizing: border-box; }
     body { width: 380px; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; margin: 0; padding: 12px; color: #1f2328; }
     h1 { font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+    .pop-header { display: flex; align-items: center; justify-content: space-between; }
+    .pop-toolbar { display: flex; gap: 4px; }
+    .pop-toolbar button { border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 5px; cursor: pointer; font-size: 12px; padding: 2px 7px; }
+    .pop-toolbar button.pinned { background: #0969da; color: #fff; border-color: #0969da; }
     .field { margin-bottom: 8px; }
     .field label { font-weight: 600; display: block; margin-bottom: 3px; color: #57606a; }
     .val { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 6px 8px; max-height: 90px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
-    input[type="text"], textarea { width: 100%; border: 1px solid #d0d7de; border-radius: 6px; padding: 6px 8px; font: inherit; }
+    input[type="text"], textarea, select { width: 100%; border: 1px solid #d0d7de; border-radius: 6px; padding: 6px 8px; font: inherit; }
     textarea { min-height: 60px; resize: vertical; }
     .tags span { display: inline-block; background: #ddf4ff; color: #0969da; border-radius: 10px; padding: 1px 8px; margin: 2px 3px 0 0; font-size: 12px; }
     .btn { width: 100%; border: none; border-radius: 6px; padding: 9px; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -28,6 +32,8 @@
     .status.warn { color: #9a6700; }
     .field-row { display: flex; gap: 8px; }
     .field-row .field { flex: 1; }
+    .complexity-manual { margin-top: 4px; display: none; }
+    .complexity-manual.show { display: block; }
     .conflict-box { border: 1px solid #d0d7de; border-radius: 6px; padding: 8px; margin-top: 8px; background: #fff; }
     .conflict-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; }
     .conflict-row .btn-add { width: auto; margin: 0; }
@@ -35,10 +41,16 @@
     .hint { color: #57606a; font-size: 11px; }
     .tech-item { border: 1px solid #d0d7de; border-radius: 6px; padding: 6px; margin-bottom: 6px; background: #fff; }
     .tech-item input { margin-bottom: 4px; }
+    .dragging { opacity: 0.85; cursor: move; }
   </style>
 </head>
 <body>
-  <h1>📥 导入到 AlgoMate</h1>
+  <div class="pop-header">
+    <h1>📥 导入到 AlgoMate</h1>
+    <div class="pop-toolbar">
+      <button id="btn-pin" title="固定窗口（固定后点击外部不关闭）">📌 固定</button>
+    </div>
+  </div>
 
   <div class="field">
     <label>题目</label>
@@ -69,11 +81,29 @@
   <div class="field-row">
     <div class="field">
       <label>时间复杂度</label>
-      <input type="text" id="f-time" placeholder="O(n)" />
+      <select id="f-time-select">
+        <option value="">— 选择 —</option>
+        <option value="O(1)">O(1)</option>
+        <option value="O(log n)">O(log n)</option>
+        <option value="O(n)">O(n)</option>
+        <option value="O(n log n)">O(n log n)</option>
+        <option value="O(n^2)">O(n^2)</option>
+        <option value="O(2^n)">O(2^n)</option>
+        <option value="__manual__">其他（手动填写）</option>
+      </select>
+      <input type="text" id="f-time" class="complexity-manual" placeholder="如：O(n + m)" />
     </div>
     <div class="field">
       <label>空间复杂度</label>
-      <input type="text" id="f-space" placeholder="O(1)" />
+      <select id="f-space-select">
+        <option value="">— 选择 —</option>
+        <option value="O(1)">O(1)</option>
+        <option value="O(log n)">O(log n)</option>
+        <option value="O(n)">O(n)</option>
+        <option value="O(n^2)">O(n^2)</option>
+        <option value="__manual__">其他（手动填写）</option>
+      </select>
+      <input type="text" id="f-space" class="complexity-manual" placeholder="如：O(n)" />
     </div>
   </div>
 
@@ -82,15 +112,10 @@
     <textarea id="f-pitfalls" placeholder="如：注意返回下标而非值&#10;注意 left&lt;right 边界"></textarea>
   </div>
 
-  <div class="field">
-    <label>变体题 slug（同考点，逗号分隔，手动填）</label>
-    <input type="text" id="f-variants" placeholder="如：3sum,4sum" />
-  </div>
-
   <hr />
 
   <div class="field">
-    <label>破题思路（你自己填，不搬运；不写心得体会）</label>
+    <label>破题思路</label>
     <textarea id="f-notes" placeholder="例如：双指针的核心是缩小搜索空间；注意 left/right 移动条件…"></textarea>
   </div>
 

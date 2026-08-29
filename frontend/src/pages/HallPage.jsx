@@ -5,19 +5,7 @@ import { useHallStore } from '../stores/hallStore'
 import GreetingSection from '../components/workbench/GreetingSection'
 import PanelSection from '../components/workbench/PanelSection'
 import ActivityLog from '../components/workbench/ActivityLog'
-import StatusMonitor from '../components/workbench/StatusMonitor'
-import TodayTasks from '../components/workbench/TodayTasks'
 import styles from './HallPage.module.css'
-
-function mapTaskStatus(s) {
-    const map = { pending: 'PENDING', in_progress: 'IN_PROGRESS', done: 'DONE' }
-    return map[s] || 'PENDING'
-}
-
-function mapTaskType(t) {
-    const map = { problem: 'problem', solution: 'solution', technique: 'technique' }
-    return map[t] || 'technique'
-}
 
 export default function HallPage() {
     const navigate = useNavigate()
@@ -25,7 +13,7 @@ export default function HallPage() {
 
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState(null)
-    const [tasks, setTasks] = useState(null)
+    const [todayStats, setTodayStats] = useState({ due: 0, endangered: 0, completed: 0, totalCards: 0, totalPractice: 0 })
 
     useEffect(() => {
         fetchAlgorithmInfo()
@@ -36,52 +24,24 @@ export default function HallPage() {
         async function fetchData() {
             setLoading(true)
             try {
-                const [todayTasks, dashboardStats, progressStats, overview, upcoming, todayStats, hallStats] = await Promise.allSettled([
-                    cardService.getTodayTasks?.(),
-                    cardService.getDashboardStats?.(),
+                const [progressRes, todayRes] = await Promise.allSettled([
                     cardService.getProgressStats?.(),
-                    cardService.getOverview?.(),
-                    cardService.getUpcomingTasks?.(),
-                    cardService.getTodayStats?.(),
-                    cardService.getHallStats?.(),
+                    cardService.getTodayReviewTasks?.(),
                 ])
-
                 if (cancelled) return
-
-                const taskData = todayTasks.status === 'fulfilled' ? todayTasks.value : null
-                const dashData = dashboardStats.status === 'fulfilled' ? dashboardStats.value : null
-                const progData = progressStats.status === 'fulfilled' ? progressStats.value : null
-                const overviewData = overview.status === 'fulfilled' ? overview.value : null
-                const upcomingData = upcoming.status === 'fulfilled' ? upcoming.value : null
-                const todayStatsData = todayStats.status === 'fulfilled' ? todayStats.value : null
-                const hallStatsData = hallStats.status === 'fulfilled' ? hallStats.value : null
-
-                const totalCards = (overviewData?.total_problems ?? 0) + (overviewData?.total_solutions ?? 0) + (overviewData?.total_techniques ?? 0)
-                const nextReviewDays = upcomingData?.upcoming?.length > 0
-                    ? Math.max(0, Math.ceil((new Date(upcomingData.upcoming[0].review_date) - new Date()) / (1000 * 60 * 60 * 24)))
-                    : null
-
-                setStats({
-                    dueCount: dashData?.due_today_count ?? 0,
-                    completedCount: dashData?.completed_today ?? 0,
-                    totalCards: totalCards,
-                    dueToday: dashData?.due_today_count ?? 0,
-                    endangered: hallStatsData?.data?.endangered_cards ?? 0,
-                    streakDays: todayStatsData?.data?.streak_days ?? 0,
-                    weeklyProgress: `${dashData?.weekly_review_days ?? 0}/7`,
-                    accuracy: progData?.accuracy_rate ?? 0,
-                    totalReviews: dashData?.total_review_count ?? 0,
-                    newToday: todayStatsData?.data?.total_new ?? 0,
-                    nextReviewDays: nextReviewDays,
+                const p = progressRes.status === 'fulfilled' ? progressRes.value : null
+                const t = todayRes.status === 'fulfilled' ? todayRes.value?.data : null
+                setTodayStats({
+                    due: t?.due_count ?? 0,
+                    endangered: t?.endangered_count ?? 0,
+                    completed: t?.completed_count ?? 0,
+                    totalCards: p?.total_cards ?? 0,
+                    totalPractice: p?.total_practice ?? 0,
                 })
-
-                const taskList = taskData?.tasks || taskData?.data?.tasks || []
-                setTasks(taskList.map(t => ({
-                    id: t.id,
-                    name: t.name || t.title || '未命名任务',
-                    type: mapTaskType(t.type || t.card_type),
-                    status: mapTaskStatus(t.status),
-                })))
+                setStats({
+                    weeklyProgress: `${p?.weekly_review_days ?? 0}/7`,
+                    accuracy: p?.accuracy_rate ?? 0,
+                })
             } catch (err) {
                 console.error('Failed to fetch hall data:', err)
             } finally {
@@ -90,12 +50,15 @@ export default function HallPage() {
         }
 
         fetchData()
-        return () => { cancelled = true }
+        const interval = setInterval(fetchData, 60000)
+        return () => { cancelled = true; clearInterval(interval) }
     }, [fetchAlgorithmInfo, fetchTopicOverview])
 
-    const handleTaskClick = useCallback((task) => {
-        navigate(`/card/${task.type}/${task.id}`)
-    }, [navigate])
+    const overviewCards = [
+        { key: 'due', label: '待复习', value: todayStats.due, cls: 'warning', filter: '' },
+        { key: 'endangered', label: '濒危', value: todayStats.endangered, cls: 'critical', filter: 'critical' },
+        { key: 'completed', label: '已完成', value: todayStats.completed, cls: 'normal', filter: 'done' },
+    ]
 
     return (
         <div className={styles.hallPage}>
@@ -106,12 +69,24 @@ export default function HallPage() {
                     <ActivityLog />
                 </PanelSection>
 
-                <PanelSection number="02" title="system.status — 9 项指标 · 系统状态" path="/status">
-                    <StatusMonitor loading={loading} stats={stats} />
-                </PanelSection>
-
-                <PanelSection number="03" title={`today.tasks — ${tasks?.length ?? 0} 项 · 今日任务列表`} path="/tasks">
-                    <TodayTasks loading={loading} tasks={tasks} />
+                <PanelSection number="02" title="today.review — 今日修炼概览" path="/review">
+                    <div className={styles.overviewGrid}>
+                        {overviewCards.map((c) => (
+                            <button
+                                key={c.key}
+                                className={`${styles.overviewCard} ${styles[c.cls]}`}
+                                onClick={() => navigate(`/review${c.filter ? `?filter=${c.filter}` : ''}`)}
+                            >
+                                <span className={styles.overviewNum}>{loading ? '—' : c.value}</span>
+                                <span className={styles.overviewLabel}>{c.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div className={styles.overviewFooter}>
+                        <span>卡牌总数 {loading ? '—' : todayStats.totalCards} 张</span>
+                        <span>累计练习 {loading ? '—' : todayStats.totalPractice} 次</span>
+                        <button className={styles.reviewLink} onClick={() => navigate('/review')}>进入今日修炼 →</button>
+                    </div>
                 </PanelSection>
             </div>
         </div>

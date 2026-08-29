@@ -1,5 +1,6 @@
 // popup.js — 预览抓取内容、填写心得与技巧、提交导入
 const BACKEND = 'http://localhost:8000/api/v1/import';
+const REVIEW_API = 'http://localhost:8000/api/v1';
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
@@ -7,6 +8,27 @@ const statusEl = $('status');
 function setStatus(msg, type) {
   statusEl.textContent = msg;
   statusEl.className = 'status' + (type ? ' ' + type : '');
+}
+
+// ===== 可拖拽 + 固定(pin) + 点击外部不关闭 =====
+let isPinned = false;
+function setupDraggable() {
+  const win = chrome.windows ? null : null; // popup 无 window API, 用 DOM 拖拽不可行, 改用固定 pin 逻辑
+  const pinBtn = $('btn-pin');
+  if (pinBtn) {
+    pinBtn.addEventListener('click', () => {
+      isPinned = !isPinned;
+      pinBtn.classList.toggle('pinned', isPinned);
+      pinBtn.textContent = isPinned ? '📌 已固定' : '📌 固定';
+      setStatus(isPinned ? '已固定：点击外部不会关闭窗口，内容保留。' : '已取消固定。', 'ok');
+    });
+  }
+  // 固定状态下拦截外部 mousedown 关闭: 使用 'mousedown' 阻止默认失焦关闭
+  if (typeof document !== 'undefined') {
+    document.addEventListener('mousedown', (e) => {
+      if (isPinned) e.stopPropagation();
+    }, true);
+  }
 }
 
 function renderPreview(data) {
@@ -30,7 +52,6 @@ function renderPreview(data) {
   }
 }
 
-// 动态添加一条技巧输入框
 function addTechniqueRow(name = '', summary = '', code_template = '') {
   const wrap = document.createElement('div');
   wrap.className = 'tech-item';
@@ -44,7 +65,6 @@ function addTechniqueRow(name = '', summary = '', code_template = '') {
   $('f-techniques').appendChild(wrap);
 }
 
-// 收集技巧列表
 function collectTechniques() {
   const items = [];
   document.querySelectorAll('#f-techniques .tech-item').forEach((row) => {
@@ -56,7 +76,25 @@ function collectTechniques() {
   return items;
 }
 
-// 通过 chrome.scripting 注入 collect.js 到当前题目页并取返回值
+// 复杂度: 下拉选择或手动填写, 二选一
+function getComplexity(selectId, manualId) {
+  const sel = $(selectId);
+  const val = sel.value;
+  if (val === '__manual__' || val === '') {
+    return $(manualId).value.trim();
+  }
+  return val;
+}
+
+function setupComplexityToggle(selectId, manualId) {
+  const sel = $(selectId);
+  const manual = $(manualId);
+  if (!sel || !manual) return;
+  sel.addEventListener('change', () => {
+    manual.classList.toggle('show', sel.value === '__manual__');
+  });
+}
+
 async function collect() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !/leetcode\.(cn|com)/.test(tab.url || '')) {
@@ -71,7 +109,6 @@ async function collect() {
     if (result && result.result) {
       renderPreview(result.result);
       window.__collected = result.result;
-      // [模块D] LeetCode 页内复习浮窗: 检测当前题目是否已导入, 提供重做标记回传
       checkReviewCard(result.result.slug);
     } else {
       setStatus('抓取返回为空，请刷新题目页后重试。', 'err');
@@ -84,21 +121,18 @@ async function collect() {
 // [模块D] LeetCode 页内复习浮窗: 根据 slug 查找系统内题卡, 提供重做标记(AC/卡住)+边界遗漏笔记回传
 async function checkReviewCard(slug) {
   if (!slug) return;
-  const REVIEW_API = 'http://localhost:8000/api/v1';
   try {
     const r = await fetch(`${REVIEW_API}/cards/by-slug/${encodeURIComponent(slug)}`);
     const j = await r.json();
     const data = j && j.data;
-    if (!data || !data.card_id) return; // 系统内无此题卡, 不需显示复习区
+    if (!data || !data.card_id) return;
     renderReviewBox(data);
   } catch (e) {
-    // 查询失败不影响导入功能
     console.warn('[AlgoMate] 查询复习卡失败', e);
   }
 }
 
 function renderReviewBox(data) {
-  // 避免重复渲染
   if (document.getElementById('review-box')) return;
   const box = document.createElement('div');
   box.id = 'review-box';
@@ -118,7 +152,6 @@ function renderReviewBox(data) {
     </div>
     <div class="status" id="review-status"></div>
   `;
-  // 插入到导入按钮之前
   const importBtn = $('btn-import');
   importBtn.parentNode.insertBefore(box, importBtn);
 
@@ -137,7 +170,6 @@ function renderReviewBox(data) {
 }
 
 async function markReview(cardId, action, note, setRS) {
-  const REVIEW_API = 'http://localhost:8000/api/v1';
   try {
     setRS('正在记录…');
     const r = await fetch(`${REVIEW_API}/reviews/${cardId}/complete`, {
@@ -158,7 +190,7 @@ async function markReview(cardId, action, note, setRS) {
   }
 }
 
-// 提交导入
+// 提交导入 (updateSolutionId 仅在冲突时显式传入; 首次导入不传)
 async function doImport(updateSolutionId) {
   const d = window.__collected;
   if (!d) return;
@@ -168,8 +200,6 @@ async function doImport(updateSolutionId) {
 
   const pitfalls = $('f-pitfalls').value
     .split('\n').map((s) => s.trim()).filter(Boolean);
-  const variants = $('f-variants').value
-    .split(',').map((s) => s.trim()).filter(Boolean);
 
   const payload = {
     slug: d.slug,
@@ -182,10 +212,9 @@ async function doImport(updateSolutionId) {
     language: d.language || '',
     notes: $('f-notes').value,
     breakthrough: $('f-breakthrough').value,
-    time_complexity: $('f-time').value,
-    space_complexity: $('f-space').value,
+    time_complexity: getComplexity('f-time-select', 'f-time'),
+    space_complexity: getComplexity('f-space-select', 'f-space'),
     pitfalls,
-    variants,
     techniques: collectTechniques(),
   };
   if (updateSolutionId != null) payload.update_solution_id = updateSolutionId;
@@ -204,7 +233,6 @@ async function doImport(updateSolutionId) {
         return;
       }
       if (j.conflict) {
-        // 让用户选择：更新某条已有解法 / 新增一条
         showConflictChoice(j);
         return;
       }
@@ -223,7 +251,6 @@ async function doImport(updateSolutionId) {
       tip.innerHTML = '可在系统中为解法补充「突破口 / 思路 / 易错点」，让卡片更完整。';
       statusEl.parentNode.insertBefore(tip, statusEl.nextSibling);
 
-      // [3.1] 导入后引导去系统内补写：提供跳转刚建题卡的入口
       const viewBtn = document.createElement('a');
       viewBtn.className = 'btn btn-view';
       viewBtn.textContent = '在 AlgoMate 中查看 →';
@@ -243,7 +270,6 @@ async function doImport(updateSolutionId) {
   }
 }
 
-// 冲突时展示选择 UI
 function showConflictChoice(j) {
   const box = document.createElement('div');
   box.className = 'conflict-box';
@@ -267,7 +293,7 @@ function showConflictChoice(j) {
   addNew.textContent = '仍要新增一条解法';
   addNew.addEventListener('click', () => {
     box.remove();
-    doImport(null); // 不带 update_solution_id => 新建
+    doImport(null);
   });
   box.appendChild(addNew);
 
@@ -277,5 +303,8 @@ function showConflictChoice(j) {
 }
 
 $('btn-add-tech').addEventListener('click', () => addTechniqueRow());
-$('btn-import').addEventListener('click', doImport);
+$('btn-import').addEventListener('click', () => doImport());
+setupComplexityToggle('f-time-select', 'f-time');
+setupComplexityToggle('f-space-select', 'f-space');
+setupDraggable();
 collect();

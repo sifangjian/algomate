@@ -58,6 +58,11 @@ export const cardService = {
     return await api.get(`/v1/problems/${id}/variant-set`)
   },
 
+  // 更新题卡变体题列表（题卡详情页手动维护）
+  updateVariants: async (id, variants) => {
+    return await api.put(`/v1/problems/${id}/variants`, { variants })
+  },
+
   // 记录一次变体题练习
   recordVariantPractice: async (id, payload) => {
     return await api.post(`/v1/problems/${id}/variant-practice`, payload)
