@@ -1,5 +1,12 @@
 # Algomate Docker Compose 配置
-# 用于生产环境一键部署
+# 单机部署：前后端各一个容器，数据(SQLite)挂载到宿主机 ./data 持久化。
+# 外部访问经服务器自带反向代理(nginx/caddy)按路径分流：
+#   www.fjsi.top/     -> frontend:3000
+#   www.fjsi.top/api  -> backend:8000
+# HTTPS / SSL 由外层反代处理，本 compose 不暴露 443。
+#
+# 代码更新：git pull 后在宿主机执行 `docker compose restart` 即可生效
+# （源码以 volume 挂载进容器，无需重新 build；仅依赖变更才需 rebuild）。
 
 services:
   # 后端服务
@@ -9,24 +16,29 @@ services:
       dockerfile: Dockerfile
     container_name: algomate-backend
     restart: unless-stopped
-    # 后端端口映射（本地开发调试时开启，可直接访问 API 文档）
+    # 仅映射给宿主机反向代理使用（不要直接暴露公网）
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
-      # 挂载代码目录，修改代码后重启容器即可生效
+      # 挂载代码目录：git pull 后 restart 即生效
       - .:/app
-      # 数据库持久化：绑定挂载到宿主项目 data/ 目录，与本地 uv 启动路径一致
-      # （容器内 /app/data/algomate.db <-> 宿主 ./data/algomate.db），
-      # 便于数据备份与跨机器分发（直接拷贝 data/ 目录即可迁移）
+      # 数据库持久化：宿主 ./data <-> 容器 /app/data
       - ./data:/app/data
     environment:
       - TZ=Asia/Shanghai
       - APP_ENV=production
-      - DATABASE_URL=sqlite:///app/data/algomate.db
+      # 显式指定数据库路径，避免默认 DATA_DIR 解析歧义
+      - ALGOMATE_DB_PATH=/app/data/algomate.db
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/v1/progress/stats', timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
-  # 前端服务（Vite 开发服务器）
+  # 前端服务（Vite 开发服务器，源码挂载，restart 生效）
   frontend:
     build:
       context: ./frontend
@@ -36,13 +48,13 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     volumes:
-      # 挂载前端源代码，修改代码自动热更新
+      # 挂载前端源代码：修改后自动热更新 / restart 生效
       - ./frontend:/app
       # 排除 node_modules，使用容器内的依赖
       - /app/node_modules
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       - TZ=Asia/Shanghai
-      # 使用Docker服务名称（backend）作为主机名
-      - VITE_API_URL=http://backend:8000
+      # 前端走相对路径 /api，由外层反向代理分流到 backend，无需写死地址

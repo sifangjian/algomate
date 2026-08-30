@@ -26,7 +26,7 @@ RUN mkdir -p /app/data
 
 ENV PYTHONUNBUFFERED=1 \
     APP_ENV=production \
-    DATABASE_URL=sqlite:///app/data/algomate.db \
+    ALGOMATE_DB_PATH=/app/data/algomate.db \
     PYTHONPATH=/app/src
 
 EXPOSE 8000
