@@ -1,6 +1,20 @@
 // popup.js — 预览抓取内容、填写心得与技巧、提交导入
-const BACKEND = 'http://localhost:8000/api/v1/import';
-const REVIEW_API = 'http://localhost:8000/api/v1';
+// 后端地址可配置（设置面板），默认指向服务器，本地开发可改 localhost
+const DEFAULT_BASE = 'https://www.fjsi.top:8025';
+
+// 从 storage 读取已保存的后端地址，未设置则用默认
+async function getBase() {
+  try {
+    const r = await chrome.storage.local.get('algomate_base');
+    return (r.algomate_base || DEFAULT_BASE).replace(/\/$/, '');
+  } catch {
+    return DEFAULT_BASE;
+  }
+}
+// 拼接：base + /api/v1...
+async function apiUrl(path) {
+  return (await getBase()) + '/api/v1' + path;
+}
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
@@ -10,15 +24,36 @@ function setStatus(msg, type) {
   statusEl.className = 'status' + (type ? ' ' + type : '');
 }
 
+// ===== 设置面板（独立，不干扰抓取内容）=====
+function initSettings() {
+  const panel = $('settings-panel');
+  const openBtn = $('btn-settings');
+  const saveBtn = $('btn-save-base');
+  const input = $('input-base');
+  const closeBtn = $('btn-settings-close');
+
+  openBtn.addEventListener('click', async () => {
+    input.value = await getBase();
+    panel.classList.add('open');
+  });
+  closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+  saveBtn.addEventListener('click', async () => {
+    const v = input.value.trim();
+    if (!v) return;
+    await chrome.storage.local.set({ algomate_base: v.replace(/\/$/, '') });
+    panel.classList.remove('open');
+    setStatus('后端地址已保存：' + v, 'ok');
+  });
+}
+
 // ===== 初始化 =====
-// 说明: 本扩展以 sidePanel(侧边栏) 形态运行。sidePanel 本身常驻、点击外部不关闭,
-// 因此无需"固定"按钮。点击工具栏图标即打开侧边栏(见 background.js)。
 function init() {
   $('btn-add-tech').addEventListener('click', () => addTechniqueRow());
   $('btn-import').addEventListener('click', () => doImport());
   $('btn-recrawl').addEventListener('click', () => collect());
   setupComplexityToggle('f-time-select', 'f-time');
   setupComplexityToggle('f-space-select', 'f-space');
+  initSettings();
   collect();
 }
 init();
@@ -114,7 +149,7 @@ async function collect() {
 async function checkReviewCard(slug) {
   if (!slug) return;
   try {
-    const r = await fetch(`${REVIEW_API}/cards/by-slug/${encodeURIComponent(slug)}`);
+    const r = await fetch(await apiUrl(`/cards/by-slug/${encodeURIComponent(slug)}`));
     const j = await r.json();
     const data = j && j.data;
     if (!data || !data.card_id) return;
@@ -164,7 +199,7 @@ function renderReviewBox(data) {
 async function markReview(cardId, action, note, setRS) {
   try {
     setRS('正在记录…');
-    const r = await fetch(`${REVIEW_API}/reviews/${cardId}/complete`, {
+    const r = await fetch(await apiUrl(`/reviews/${cardId}/complete`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, note }),
@@ -178,7 +213,7 @@ async function markReview(cardId, action, note, setRS) {
       setRS('记录失败: ' + JSON.stringify(j), 'err');
     }
   } catch (e) {
-    setRS('请求失败: ' + e.message + '（确认后端 http://localhost:8000 已启动）', 'err');
+    setRS('请求失败: ' + e.message + '（确认后端地址已配置且服务可用）', 'err');
   }
 }
 
@@ -212,7 +247,7 @@ async function doImport(updateSolutionId) {
   if (updateSolutionId != null) payload.update_solution_id = updateSolutionId;
 
   try {
-    const r = await fetch(BACKEND, {
+    const r = await fetch(await apiUrl('/import'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -243,10 +278,11 @@ async function doImport(updateSolutionId) {
       tip.innerHTML = '可在系统中为解法补充「突破口 / 思路 / 易错点」，让卡片更完整。';
       statusEl.parentNode.insertBefore(tip, statusEl.nextSibling);
 
+      const base = await getBase();
       const viewBtn = document.createElement('a');
       viewBtn.className = 'btn btn-view';
       viewBtn.textContent = '在 AlgoMate 中查看 →';
-      viewBtn.href = `http://localhost:3000/card/problem/${j.problem_id}`;
+      viewBtn.href = `${base}/card/problem/${j.problem_id}`;
       viewBtn.target = '_blank';
       viewBtn.rel = 'noopener noreferrer';
       viewBtn.style.marginTop = '8px';
@@ -257,7 +293,7 @@ async function doImport(updateSolutionId) {
       btn.disabled = false;
     }
   } catch (e) {
-    setStatus('请求失败: ' + e.message + '（确认后端 http://localhost:8000 已启动）', 'err');
+    setStatus('请求失败: ' + e.message + '（确认后端地址已配置且服务可用）', 'err');
     btn.disabled = false;
   }
 }

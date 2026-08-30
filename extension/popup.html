@@ -10,6 +10,10 @@
     h1 { font-size: 14px; margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
     .rebtn { margin-left: auto; font-size: 11px; font-weight: 500; padding: 3px 8px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 5px; cursor: pointer; color: #57606a; }
     .rebtn:hover { background: #eaeef2; color: #1f2328; }
+    .settings-panel { display: none; border: 1px solid #d0d7de; border-radius: 6px; padding: 10px; margin-bottom: 10px; background: #fff; }
+    .settings-panel.open { display: block; }
+    .settings-head { display: flex; align-items: center; justify-content: space-between; font-weight: 600; margin-bottom: 8px; }
+
     .field { margin-bottom: 8px; }
     .field label { font-weight: 600; display: block; margin-bottom: 3px; color: #57606a; }
     .val { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 6px 8px; max-height: 90px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
@@ -44,8 +48,23 @@
 </head>
 <body>
   <h1>📥 导入到 AlgoMate
+    <button type="button" id="btn-settings" class="rebtn" title="设置后端地址">⚙</button>
     <button type="button" id="btn-recrawl" class="rebtn" title="重新抓取当前 LeetCode 题目页">↻ 重新抓取</button>
   </h1>
+
+  <!-- 设置面板（独立浮层，不干扰抓取内容）-->
+  <div id="settings-panel" class="settings-panel">
+    <div class="settings-head">
+      <span>后端地址设置</span>
+      <button type="button" id="btn-settings-close" class="rebtn">✕</button>
+    </div>
+    <div class="field">
+      <label>AlgoMate 访问地址</label>
+      <input type="text" id="input-base" placeholder="https://www.fjsi.top:8025" />
+      <div class="hint">服务器部署填 https://你的域名:端口；本地开发填 http://localhost:8000</div>
+    </div>
+    <button type="button" class="btn btn-primary" id="btn-save-base">保存</button>
+  </div>
 
   <div class="field">
     <label>题目</label>
