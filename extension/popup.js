@@ -1,15 +1,29 @@
 // popup.js — 预览抓取内容、填写心得与技巧、提交导入
 // 后端地址可配置（设置面板），默认指向服务器，本地开发可改 localhost
-const DEFAULT_BASE = 'https://www.fjsi.top:8025';
+// 默认用 http（8025 Vite dev server 无 SSL）。服务器部署如改 HTTPS(反代)则改这里。
+const DEFAULT_BASE = 'http://www.fjsi.top:8025';
 
 // 从 storage 读取已保存的后端地址，未设置则用默认
+// 防御性清洗: 去除 @url:/反引号/首尾空白, 确保 http(s):// 开头
 async function getBase() {
+  let stored = DEFAULT_BASE;
   try {
     const r = await chrome.storage.local.get('algomate_base');
-    return (r.algomate_base || DEFAULT_BASE).replace(/\/$/, '');
+    if (r.algomate_base) stored = r.algomate_base;
   } catch {
-    return DEFAULT_BASE;
+    stored = DEFAULT_BASE;
   }
+  // 去掉 @url:`...` 这种 markdown 占位包装, 以及反引号
+  stored = stored
+    .replace(/@url:/gi, '')
+    .replace(/`/g, '')
+    .trim()
+    .replace(/\/$/, '');
+  // 若不是 http(s) 开头, 补 http:// (避免 https:// 到裸 http 端口报 SSL 错)
+  if (!/^https?:\/\//i.test(stored)) {
+    stored = 'http://' + stored;
+  }
+  return stored;
 }
 // 拼接：base + /api/v1...
 async function apiUrl(path) {
@@ -38,9 +52,9 @@ function initSettings() {
   });
   closeBtn.addEventListener('click', () => panel.classList.remove('open'));
   saveBtn.addEventListener('click', async () => {
-    const v = input.value.trim();
+    const v = input.value.trim().replace(/`/g, '').replace(/@url:/gi, '').replace(/\/$/, '');
     if (!v) return;
-    await chrome.storage.local.set({ algomate_base: v.replace(/\/$/, '') });
+    await chrome.storage.local.set({ algomate_base: v });
     panel.classList.remove('open');
     setStatus('后端地址已保存：' + v, 'ok');
   });
