@@ -1,11 +1,10 @@
 import axios from 'axios'
 
-// 部署时由 VITE_API_URL 注入（如 http://backend:8000，容器内直连后端）。
-// 本地开发 / 外层反代按路径分流时留空，回退到相对路径 /api。
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
-
+// 前端统一走相对路径 /api，由 Vite dev server 的 proxy 转发到后端。
+// 部署时 Vite 容器内通过环境变量 VITE_API_URL 指定代理目标（http://backend:8000），
+// 浏览器只与前端端口通信，后端不暴露。
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api',
   timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 })
