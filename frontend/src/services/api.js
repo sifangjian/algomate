@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+// 部署时由 VITE_API_URL 注入（如 http://backend:8000，容器内直连后端）。
+// 本地开发 / 外层反代按路径分流时留空，回退到相对路径 /api。
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 })

@@ -1,12 +1,15 @@
 # Algomate Docker Compose 配置
-# 单机部署：前后端各一个容器，数据(SQLite)挂载到宿主机 ./data 持久化。
-# 外部访问经服务器自带反向代理(nginx/caddy)按路径分流：
-#   www.fjsi.top/     -> frontend:3000
-#   www.fjsi.top/api  -> backend:8000
-# HTTPS / SSL 由外层反代处理，本 compose 不暴露 443。
+# 单机部署：前后端各一个容器。
 #
-# 代码更新：git pull 后在宿主机执行 `docker compose restart` 即可生效
+# 访问架构（本部署采用）：
+#   前端独立暴露端口（默认 8025，由 .env 的 FRONTEND_PORT 控制），
+#     通过 www.fjsi.top:FRONTEND_PORT 直接访问，无需外层反代。
+#   后端不对外暴露，仅在 compose 网络内被前端容器通过
+#     http://backend:8000 访问（前端由 VITE_API_URL 注入该地址）。
+#
+# 代码更新：git pull 后在宿主机执行 `docker compose up -d` 即可生效
 # （源码以 volume 挂载进容器，无需重新 build；仅依赖变更才需 rebuild）。
+# 注意：修改了 .env 后必须 `up -d`（restart 不会重读环境变量）。
 
 services:
   # 后端服务
@@ -16,7 +19,7 @@ services:
       dockerfile: Dockerfile
     container_name: algomate-backend
     restart: unless-stopped
-    # 仅映射给宿主机反向代理使用（不要直接暴露公网）
+    # 仅容器间通信使用；如需宿主机调试可保留映射，生产可注释掉下面两行
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
@@ -57,4 +60,5 @@ services:
         condition: service_healthy
     environment:
       - TZ=Asia/Shanghai
-      # 前端走相对路径 /api，由外层反向代理分流到 backend，无需写死地址
+      # 容器内前端直连后端服务名 backend:8000（compose 网络 DNS 解析）
+      - VITE_API_URL=http://backend:8000
