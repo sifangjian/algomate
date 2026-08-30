@@ -31,12 +31,23 @@
     return null;
   }
 
+  function cleanTitle(raw) {
+    if (!raw) return raw;
+    return raw
+      // 去掉末尾站点后缀: " - 力扣（LeetCode）" / " - 力扣(LeetCode)" / " - LeetCode"
+      .replace(/\s*[-–—|]\s*力扣\s*[（(]?\s*LeetCode\s*[）)]?\s*$/i, '')
+      .replace(/\s*[-–—|]\s*LeetCode\s*$/i, '')
+      // 去掉开头的序号 "1. "
+      .replace(/^\s*\d+\.\s*/, '')
+      .trim();
+  }
+
   function parseFromNextData(nd) {
     const out = { ok: false, title: '', slug: '', difficulty: '', tags: [], description: '', code: '', language: '' };
     try {
       const q = findQuestion(nd);
       if (!q) { dbg('__NEXT_DATA__ 未找到题目对象'); return out; }
-      out.title = q.title || '';
+      out.title = cleanTitle(q.title || '');
       out.slug = q.titleSlug || '';
       out.difficulty = (q.difficulty || '').toLowerCase();
       out.tags = (q.topicTags || []).map((t) => (t.name || '').trim()).filter(Boolean);
@@ -62,11 +73,8 @@
       out.title = titleEl.textContent.trim();
     }
     if (!out.title && document.title) {
-      // 兜底: 从 <title> 提取, 形如 "两数之和 - 力扣 (LeetCode)" / "Two Sum - LeetCode"
-      out.title = document.title
-        .replace(/\s*[-|–]\s*(力扣\s*\(LeetCode\)|LeetCode).*$/i, '')
-        .replace(/^\d+\.\s*/, '')
-        .trim();
+      // 兜底: 从 <title> 提取, 形如 "两数之和 - 力扣（LeetCode）" / "Two Sum - LeetCode"
+      out.title = cleanTitle(document.title);
     }
 
     const diffEl = document.querySelector('[data-cy="difficulty"]')
