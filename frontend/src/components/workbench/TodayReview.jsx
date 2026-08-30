@@ -7,7 +7,6 @@ import styles from './TodayReview.module.css'
 const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 }
 
 export default function TodayReview() {
-  const [filter, setFilter] = useState('all') // all | critical
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [variantModal, setVariantModal] = useState(null)
@@ -32,54 +31,35 @@ export default function TodayReview() {
     return () => { cancelled = true }
   }, [])
 
-  const pending = tasks
-  let visibleTasks = pending
-  if (filter === 'critical') {
-    visibleTasks = pending.filter((t) => t.priority === 'critical' || (t.card_durability ?? 100) < 30)
-  }
-  visibleTasks = [...visibleTasks].sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9))
-
-  const filterTabs = [
-    { key: 'all', label: `待复习 (${pending.length})` },
-    { key: 'critical', label: `濒危 (${pending.filter((t) => t.priority === 'critical' || (t.card_durability ?? 100) < 30).length})` },
-  ]
+  const visibleTasks = [...tasks].sort(
+    (a, b) => (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9)
+  )
 
   return (
     <PanelSection number="02" title="today.review — 今日修炼">
-      <div className={styles.toolbar}>
-        <div className={styles.filterTabs}>
-          {filterTabs.map((tab) => (
-            <button
-              key={tab.key}
-              className={`${styles.filterTab} ${filter === tab.key ? styles.filterTabActive : ''}`}
-              onClick={() => setFilter(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {loading ? (
         <div className={styles.stateBox}>加载中...</div>
       ) : visibleTasks.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>✓</div>
-          <div className={styles.emptyTitle}>
-            {filter === 'critical' ? '暂无濒危任务' : '今日无待复习任务'}
-          </div>
+          <div className={styles.emptyTitle}>今日无待复习任务</div>
           <div className={styles.emptyDesc}>所有卡牌都已复习完毕，继续保持！</div>
         </div>
       ) : (
         <div className={styles.grid}>
           {visibleTasks.map((task) => {
             const isProblem = task.card_type === 'problem'
+            const isCritical =
+              task.priority === 'critical' || (task.card_durability ?? 100) < 30
 
             return (
               <div
                 key={task.task_id}
-                className={`${styles.taskCard} ${styles[`prio_${task.priority}`]}`}
+                className={`${styles.taskCard} ${styles[`prio_${task.priority}`]}${
+                  isCritical ? ` ${styles.endangered}` : ''
+                }`}
               >
+                {isCritical && <div className={styles.endangeredBadge}>濒危</div>}
                 <div className={styles.cardTop}>
                   <div className={styles.cardInfo}>
                     <span className={styles.cardName}>{task.card_name}</span>

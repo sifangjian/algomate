@@ -1,36 +1,3 @@
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.filterTabs {
-  display: flex;
-  gap: 6px;
-}
-
-.filterTab {
-  background: transparent;
-  color: var(--text-muted, #9898a8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0;
-  padding: 5px 14px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.filterTab:hover {
-  color: var(--text-secondary, #c9c9d6);
-  border-color: rgba(255, 255, 255, 0.16);
-}
-.filterTabActive {
-  background: var(--accent, #0969da);
-  color: #fff;
-  border-color: var(--accent, #0969da);
-}
-
 .stateBox {
   padding: 40px;
   text-align: center;
@@ -93,6 +60,28 @@
 .prio_high::before { background: #fb923c; }
 .prio_medium::before { background: #818cf8; }
 .prio_low::before { background: #38bdf8; }
+
+/* 濒危卡片：红色细描边 + 角标，不抢眼但可辨 */
+.endangered {
+  border-color: rgba(244, 63, 94, 0.45);
+}
+.endangered:hover {
+  border-color: rgba(244, 63, 94, 0.7);
+}
+.endangeredBadge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(244, 63, 94, 0.14);
+  color: #fb7185;
+  border-left: 1px solid rgba(244, 63, 94, 0.35);
+  border-bottom: 1px solid rgba(244, 63, 94, 0.35);
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 7px;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono, monospace);
+}
 
 .cardTop {
   display: flex;
