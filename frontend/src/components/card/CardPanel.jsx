@@ -488,38 +488,9 @@ function SolutionCard({ data, onNavigate }) {
 }
 
 function TechniqueCard({ data, onNavigate }) {
-  const [reviewLoading, setReviewLoading] = useState(false)
-  const [reviewResult, setReviewResult] = useState(null)
-
-  const handleSelfReview = useCallback(async (rating) => {
-    setReviewLoading(true)
-    setReviewResult(null)
-    try {
-      const result = await cardService.selfReviewTechnique(data.id, rating)
-      setReviewResult(result)
-      showToast('自评成功', 'success')
-    } catch (err) {
-      showToast(`自评失败: ${err.message}`, 'error')
-    } finally {
-      setReviewLoading(false)
-    }
-  }, [data.id])
-
   return (
     <>
       <h1 className={styles.cardTitle}>{data.name}</h1>
-
-      <div className={styles.cardMeta}>
-        {data.next_review_date ? (
-          <span className={`${styles.badge} ${REVIEW_STATUS_CLASSES[data.review_status] || ''}`}>
-            下次复习: {new Date(data.next_review_date).toLocaleDateString()}
-          </span>
-        ) : (
-          <span className={styles.badge} style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--color-text-muted)', border: '1px solid var(--border-color)' }}>
-            尚未复习
-          </span>
-        )}
-      </div>
 
       {data.use_cases && (
         <div className={styles.section}>
@@ -593,53 +564,6 @@ function TechniqueCard({ data, onNavigate }) {
           </div>
         )
       })()}
-
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>自评</h3>
-        {!reviewResult ? (
-          <div className={styles.selfRatingOptions}>
-            <button
-              className={styles.ratingBtn}
-              onClick={() => handleSelfReview('forgot')}
-              disabled={reviewLoading}
-            >
-              😵 完全忘了 (forgot)
-            </button>
-            <button
-              className={styles.ratingBtn}
-              onClick={() => handleSelfReview('struggled')}
-              disabled={reviewLoading}
-            >
-              🤔 有思路但写不出 (struggled)
-            </button>
-            <button
-              className={styles.ratingBtn}
-              onClick={() => handleSelfReview('passed')}
-              disabled={reviewLoading}
-            >
-              👍 写出来了但不是最优 (passed)
-            </button>
-            <button
-              className={styles.ratingBtn}
-              onClick={() => handleSelfReview('mastered')}
-              disabled={reviewLoading}
-            >
-              🎉 最优解 (mastered)
-            </button>
-            {reviewLoading && <div className={styles.loadingState}>提交中...</div>}
-          </div>
-        ) : (
-          <div className={styles.reviewResult}>
-            <div>自评完成！</div>
-            {reviewResult.new_durability != null && (
-              <div>新耐久度: {reviewResult.new_durability}</div>
-            )}
-            {reviewResult.next_review && (
-              <div>下次复习: {new Date(reviewResult.next_review).toLocaleDateString()}</div>
-            )}
-          </div>
-        )}
-      </div>
     </>
   )
 }
