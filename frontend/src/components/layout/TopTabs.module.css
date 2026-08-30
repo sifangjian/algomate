@@ -208,25 +208,6 @@
     color: var(--text-muted);
 }
 
-.settingsBtn {
-    width: 28px;
-    height: 28px;
-    background: var(--bg-elevated);
-    border: 1px solid transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: border-color var(--transition-base), color var(--transition-base);
-}
-
-.settingsBtn:hover {
-    border-color: rgba(255, 255, 255, 0.6);
-    color: var(--text-primary);
-}
-
 @media (max-width: 768px) {
     .searchBox {
         width: 180px;

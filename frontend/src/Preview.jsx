@@ -78,7 +78,7 @@ const PreviewFrame = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
             {[
               { icon: '🗺️', label: '图鉴', path: '/hall', active: true },
-              { icon: '⚔️', label: '修炼', path: '/review' },
+              { icon: '⚔️', label: '今日修炼', path: '/hall' },
               { icon: '📝', label: '题目', path: '/problems' },
               { icon: '💡', label: '解法', path: '/solutions' },
               { icon: '⭐', label: '技巧', path: '/techniques' },

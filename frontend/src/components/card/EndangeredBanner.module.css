@@ -45,7 +45,7 @@
     padding: 2px 10px;
     background: rgba(239, 68, 68, 0.12);
     border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 10px;
+    border-radius: 0;
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--status-critical);
@@ -65,7 +65,7 @@
     padding: 6px 12px;
     background: rgba(239, 68, 68, 0.08);
     border: 1px solid rgba(239, 68, 68, 0.25);
-    border-radius: 16px;
+    border-radius: 0;
     color: var(--text-primary);
     font-size: 0.8rem;
     cursor: pointer;

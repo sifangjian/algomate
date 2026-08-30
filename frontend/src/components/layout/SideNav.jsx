@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { navItems } from './navConfig'
 import { Icon } from '../ui/Icons'
 import { cardService } from '../../services/cardService'
@@ -14,7 +14,6 @@ const typeColors = {
 }
 
 export default function SideNav({ onCreateCard, stats, collapsed }) {
-    const navigate = useNavigate()
     const [recentActivities, setRecentActivities] = useState([])
 
     useEffect(() => {
@@ -49,7 +48,7 @@ export default function SideNav({ onCreateCard, stats, collapsed }) {
                 <span>新建卡片</span>
             </button>
 
-            <div className={styles.statsPanel} onClick={() => navigate('/review')} role="button" title="查看今日修炼">
+            <div className={styles.statsPanel} title="今日修炼概览">
                 <div className={styles.statsHeader}>
                     <span className={styles.statsTitle}>今日修炼</span>
                 </div>

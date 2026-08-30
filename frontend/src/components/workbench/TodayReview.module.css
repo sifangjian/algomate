@@ -1,0 +1,158 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 6px;
+}
+
+.filterTab {
+  background: transparent;
+  color: var(--text-muted, #9898a8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  padding: 5px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.filterTab:hover {
+  color: var(--text-secondary, #c9c9d6);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.filterTabActive {
+  background: var(--accent, #0969da);
+  color: #fff;
+  border-color: var(--accent, #0969da);
+}
+
+.stateBox {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted, #9898a8);
+}
+
+.emptyState {
+  padding: 56px 24px;
+  text-align: center;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+}
+.emptyIcon {
+  font-size: 32px;
+  color: #4ade80;
+  margin-bottom: 8px;
+}
+.emptyTitle {
+  font-size: 15px;
+  color: var(--text-primary, #e8e8ef);
+  margin-bottom: 4px;
+}
+.emptyDesc {
+  font-size: 13px;
+  color: var(--text-muted, #9898a8);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.taskCard {
+  position: relative;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0;
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+.taskCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--text-muted, #9898a8);
+}
+.taskCard:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+.prio_critical::before { background: #f43f5e; }
+.prio_high::before { background: #fb923c; }
+.prio_medium::before { background: #818cf8; }
+.prio_low::before { background: #38bdf8; }
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cardInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cardName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #e8e8ef);
+}
+.cardTypeTag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 0;
+  background: rgba(129, 140, 248, 0.12);
+  color: #a5b4fc;
+  border: 1px solid rgba(129, 140, 248, 0.28);
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted, #9898a8);
+  flex-wrap: wrap;
+}
+
+.problemActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.redoBtn, .variantBtn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+.redoBtn {
+  background: rgba(96, 165, 250, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+.redoBtn:hover { opacity: 0.8; }
+.variantBtn {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #c9c9d6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.variantBtn:disabled { opacity: 0.4; cursor: not-allowed; }

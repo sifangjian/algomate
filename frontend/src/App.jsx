@@ -13,7 +13,6 @@ const HallPage = lazy(() => import('./pages/HallPage'))
 const ProblemListPage = lazy(() => import('./pages/ProblemListPage'))
 const SolutionListPage = lazy(() => import('./pages/SolutionListPage'))
 const TechniqueListPage = lazy(() => import('./pages/TechniqueListPage'))
-const ReviewPage = lazy(() => import('./pages/ReviewPage'))
 const TopicDetailPage = lazy(() => import('./pages/TopicDetailPage'))
 const CardDetailView = lazy(() => import('./components/card/CardDetailView'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -101,7 +100,6 @@ function AppContent() {
                             <Route path="/techniques" element={<TechniqueListPage />} />
                             <Route path="/topic/:algorithmType" element={<TopicDetailPage />} />
                             <Route path="/workshop" element={<Navigate to="/" replace />} />
-                            <Route path="/review" element={<ReviewPage />} />
                             <Route path="/card/:type/:id" element={<CardDetailView />} />
                             <Route path="/study/:cardId" element={<StudyRedirect />} />
                             <Route path="*" element={<NotFound />} />

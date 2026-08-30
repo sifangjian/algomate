@@ -7,7 +7,6 @@ import styles from './TopTabs.module.css'
 
 const tabs = [
     { id: 'workbench', label: '工作台', icon: 'grid', path: '/hall' },
-    { id: 'review', label: '修炼', icon: 'menu', path: '/review' },
 ]
 
 export default function TopTabs() {
@@ -185,9 +184,6 @@ export default function TopTabs() {
                         </div>
                     )}
                 </div>
-                <button className={styles.settingsBtn} title="设置">
-                    <Icon name="gear" size={14} />
-                </button>
             </div>
         </div>
     )
