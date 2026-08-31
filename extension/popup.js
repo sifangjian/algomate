@@ -315,6 +315,7 @@ function renderSystemEdit(p) {
       const sol = sols.find((s) => String(s.id) === sel.value);
       window.__editSolutionId = sol ? sol.id : null;
       if (!sol) return;
+      $('f-name').value = sol.name || '';
       $('f-notes').value = sol.notes || '';
       fillComplexity('f-time-select', 'f-time', sol.time_complexity || '');
       fillComplexity('f-space-select', 'f-space', sol.space_complexity || '');
@@ -358,6 +359,7 @@ async function doImport(updateSolutionId) {
     tags: d.tags || [],
     code: $('f-code').value,
     language: d.language || '',
+    name: $('f-name').value,
     notes: $('f-notes').value,
     breakthrough: $('f-breakthrough').value,
     time_complexity: getComplexity('f-time-select', 'f-time'),

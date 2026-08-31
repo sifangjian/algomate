@@ -61,6 +61,7 @@ class ImportRequest(BaseModel):
     )
     code: str = Field("", description="用户提交的代码（系统搬运）")
     language: str = Field("", description="编程语言，如 python/javascript/cpp")
+    name: str = Field("", description="解法名称（用户自定义，如 '哈希表法'；空则默认 '我的解法（语言）'）")
     breakthrough: str = Field("", description="突破口：本题要解决的核心问题（归属题目，用户手动写）")
     # 解法维度（用户做完题后填写，理解最清晰）
     notes: str = Field("", description="破题思路：此解法针对突破口具体怎么解决（归属解法，用户手动写）")
@@ -141,10 +142,10 @@ def _norm_code(code: str) -> str:
     return "\n".join((code or "").split()).strip()
 
 
-def _build_solution_fields(data: ImportRequest) -> dict:
+def _build_solution_fields(data: ImportRequest, current_name: str = "") -> dict:
     """从请求构造解法卡的字段字典（新建与更新共用）。"""
     return dict(
-        name=f"我的解法（{data.language or '代码'}）",
+        name=data.name.strip() or current_name or f"我的解法（{data.language or '代码'}）",
         language=data.language,
         code=data.code,
         approach=data.description,  # 系统搬运题面/思路描述，用户可改写
@@ -248,7 +249,7 @@ def import_from_leetcode(data: ImportRequest):
             target = next((s for s in existing_solutions if s.id == data.update_solution_id), None)
             if not target:
                 raise HTTPException(status_code=404, detail=f"未找到要更新的解法 ID={data.update_solution_id}")
-            for k, v in _build_solution_fields(data).items():
+            for k, v in _build_solution_fields(data, current_name=target.name or "").items():
                 setattr(target, k, v)
             # 编辑模式同步更新题卡字段（突破口/标签/变体题，重做补充场景）
             if data.breakthrough:

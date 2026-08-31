@@ -333,7 +333,6 @@ def search_cards(
                 "id": t.id,
                 "name": t.name,
                 "card_type": "technique",
-                "category": t.category,
             })
 
         return {

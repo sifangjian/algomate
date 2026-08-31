@@ -477,7 +477,6 @@ function SolutionCard({ data, onNavigate }) {
                 onClick={() => onNavigate('technique', tech.id)}
               >
                 {tech.name}
-                {tech.category && <span style={{ opacity: 0.7, fontSize: '0.75rem' }}>({tech.category})</span>}
               </button>
             ))}
           </div>

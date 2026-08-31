@@ -95,7 +95,7 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
 
     const addTechnique = useCallback((tech) => {
         if (currentTechniqueIds.has(tech.id)) return
-        const updated = [...currentTechniques, { id: tech.id, name: tech.name, category: tech.category }]
+        const updated = [...currentTechniques, { id: tech.id, name: tech.name }]
         onChange('techniques', updated)
         onChange('technique_ids', updated.map(t => t.id))
         setSearchText('')
@@ -228,7 +228,6 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
                                         onClick={() => addTechnique(tech)}
                                     >
                                         {tech.name}
-                                        {tech.category && <span className={styles.techniqueDropdownCat}>({tech.category})</span>}
                                     </button>
                                 ))}
                             </div>

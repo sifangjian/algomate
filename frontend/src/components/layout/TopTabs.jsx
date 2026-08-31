@@ -169,9 +169,6 @@ export default function TopTabs() {
                                             onClick={() => handleResultClick('technique', t.id)}
                                         >
                                             <span className={styles.dropdownItemName}>{t.name}</span>
-                                            {t.category && (
-                                                <span className={styles.dropdownItemMeta}>{t.category}</span>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
