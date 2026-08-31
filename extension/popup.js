@@ -278,13 +278,12 @@ function resetEditState() {
   const oldBox = document.getElementById('system-info');
   if (oldBox) oldBox.remove();
   document.querySelectorAll('#f-techniques .tech-item').forEach((r) => r.remove());
-  window.__editSolutionId = null;
-  window.__systemTechniqueIds = null;
 }
 
 async function loadSystemProblem(slug) {
   if (!slug) return;
   try {
+    window.__base = await getBase();
     const r = await fetch(await apiUrl(`/problems/by-slug/${encodeURIComponent(slug)}`));
     if (r.status === 404 || !r.ok) return; // 系统无此题，正常走新建
     const p = await r.json();
@@ -296,6 +295,15 @@ async function loadSystemProblem(slug) {
     renderSystemEdit(p);
   } catch (e) {
     console.warn('[AlgoMate] 加载系统题目信息失败', e);
+  }
+}
+
+// 在系统前端中打开卡片页（MV3 新标签页）
+function openInSystem(url) {
+  if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+    chrome.tabs.create({ url });
+  } else {
+    window.open(url, '_blank');
   }
 }
 
@@ -316,7 +324,7 @@ function renderSystemEdit(p) {
   const oldBox = document.getElementById('system-info');
   if (oldBox) oldBox.remove();
 
-  // 预填题卡突破口（用户尚未填写时）
+  // 预填题卡突破口（用户尚未填写时，辅助新增解法时填写）
   if (!$('f-breakthrough').value) $('f-breakthrough').value = p.breakthrough || '';
 
   const sols = p.solutions || [];
@@ -325,115 +333,27 @@ function renderSystemEdit(p) {
   box.className = 'conflict-box';
   box.style.marginTop = '10px';
   box.style.borderColor = '#0969da';
+  const base = window.__base || '';
   const rows = sols
-    .map((s) => `<div class="sol-row" data-id="${s.id}" style="padding:4px 8px;margin:2px 0;border:1px solid #d0d7de;border-radius:4px;cursor:pointer;font-size:12px;">📄 ${s.name}（${s.language || '未知语言'}）</div>`)
+    .map((s) => `<div class="sol-row" data-id="${s.id}" style="padding:4px 8px;margin:2px 0;border:1px solid #d0d7de;border-radius:4px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;align-items:center;" title="在系统中查看/编辑该解法">
+      <span>📄 ${s.name}（${s.language || '未知语言'}）</span>
+      <span style="opacity:0.6;font-size:11px;">在系统中编辑 ↗</span>
+    </div>`)
     .join('');
   box.innerHTML = `
-    <div class="hint" style="color:#0969da;font-weight:600;margin-bottom:6px;">📋 系统中已有该题「${p.title}」，突破口已预填</div>
-    <div class="hint" style="margin-bottom:6px;">默认新增一条解法；点击下方已有解法可在展开区编辑（改完点导入即更新该解法）。删除已有技巧条目会同步删除系统技巧卡。</div>
-    ${sols.length > 0
-      ? `<div class="hint" style="margin-bottom:4px;">系统已有 ${sols.length} 条解法（点击展开编辑）：</div><div id="sol-list">${rows}</div>`
-      : '<div class="hint">系统暂无解法，本次将新建第一条解法</div>'}
-    <div id="sol-edit" style="display:none;border:1px solid #d0d7de;border-radius:4px;padding:8px;margin-top:6px;">
-      <div class="hint" style="font-weight:600;color:#0969da;margin-bottom:6px;">✏️ 展开编辑解法：<span id="sol-edit-title"></span></div>
-      <div class="field">
-        <label>解法名称</label>
-        <input type="text" id="edit-name" placeholder="如：哈希表法" />
-      </div>
-      <div class="field">
-        <label>破题思路</label>
-        <textarea id="edit-notes" style="min-height:40px;" placeholder="此解法针对突破口具体怎么解决"></textarea>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>时间复杂度</label>
-          <select id="edit-time-select">
-            <option value="">— 选择 —</option>
-            <option value="O(1)">O(1)</option>
-            <option value="O(log n)">O(log n)</option>
-            <option value="O(n)">O(n)</option>
-            <option value="O(n log n)">O(n log n)</option>
-            <option value="O(n^2)">O(n^2)</option>
-            <option value="O(2^n)">O(2^n)</option>
-            <option value="__manual__">其他（手动填写）</option>
-          </select>
-          <input type="text" id="edit-time" class="complexity-manual" placeholder="如：O(n + m)" />
-        </div>
-        <div class="field">
-          <label>空间复杂度</label>
-          <select id="edit-space-select">
-            <option value="">— 选择 —</option>
-            <option value="O(1)">O(1)</option>
-            <option value="O(log n)">O(log n)</option>
-            <option value="O(n)">O(n)</option>
-            <option value="O(n^2)">O(n^2)</option>
-            <option value="__manual__">其他（手动填写）</option>
-          </select>
-          <input type="text" id="edit-space" class="complexity-manual" placeholder="如：O(n)" />
-        </div>
-      </div>
-      <div class="field">
-        <label>易错点（每行一条）</label>
-        <textarea id="edit-pitfalls" style="min-height:40px;" placeholder="如：注意返回下标而非值"></textarea>
-      </div>
-      <div class="hint">代码使用本次抓取的新代码；不填则保留系统原代码</div>
-    </div>
+    <div class="hint" style="color:#0969da;font-weight:600;margin-bottom:6px;">📋 系统中已有该题「${p.title}」，已有 ${sols.length} 条解法</div>
+    <div class="hint" style="margin-bottom:6px;">插件仅用于新增解法与标记重做；已有解法点击名称跳转系统查看 / 编辑。</div>
+    ${sols.length > 0 ? `<div id="sol-list">${rows}</div>` : '<div class="hint">系统暂无解法，本次将新建第一条解法</div>'}
   `;
   insertBelowCode(box);
 
-  // 展开面板复杂度手动切换
-  setupComplexityToggle('edit-time-select', 'edit-time');
-  setupComplexityToggle('edit-space-select', 'edit-space');
-
-  // 系统已有技巧卡渲染为可编辑条目（去重，带 technique_id 供更新）
-  const seen = new Set();
-  const sysTechIds = [];
-  sols.forEach((s) => (s.techniques || []).forEach((t) => {
-    if (seen.has(t.id)) return;
-    seen.add(t.id);
-    sysTechIds.push(t.id);
-    addTechniqueRow(t.name, t.use_cases || '', t.notes || '', t.code_template || '', t.id);
-  }));
-  window.__systemTechniqueIds = sysTechIds;
-
-  window.__editSolutionId = null;
-  // 解法名称列表：点击在下方展开区编辑（不覆盖新增表单）；再点同一行取消
+  // 点击解法名称 → 打开系统中该解法卡片页
   document.querySelectorAll('#sol-list .sol-row').forEach((row) => {
     row.addEventListener('click', () => {
       const id = parseInt(row.dataset.id, 10);
-      const panel = $('sol-edit');
-      const isActive = window.__editSolutionId === id;
-      document.querySelectorAll('#sol-list .sol-row').forEach((r) => { r.style.outline = 'none'; });
-      window.__editSolutionId = null;
-      panel.style.display = 'none';
-      if (isActive) return; // 再点同一行 = 取消编辑，回到新增
-      const sol = sols.find((s) => s.id === id);
-      if (!sol) return;
-      window.__editSolutionId = id;
-      row.style.outline = '2px solid #0969da';
-      $('sol-edit-title').textContent = `${sol.name}（${sol.language || '未知语言'}）`;
-      $('edit-name').value = sol.name || '';
-      $('edit-notes').value = sol.notes || '';
-      fillComplexity('edit-time-select', 'edit-time', sol.time_complexity || '');
-      fillComplexity('edit-space-select', 'edit-space', sol.space_complexity || '');
-      $('edit-pitfalls').value = (sol.pitfalls || []).join('\n');
-      panel.style.display = 'block';
+      openInSystem(`${base}/card/solution/${id}`);
     });
   });
-}
-
-function fillComplexity(selectId, manualId, value) {
-  if (!value) return;
-  const sel = $(selectId);
-  const manual = $(manualId);
-  const matched = Array.from(sel.options).some((o) => o.value === value);
-  if (matched) {
-    sel.value = value;
-  } else {
-    sel.value = '__manual__';
-    manual.value = value;
-  }
-  manual.classList.toggle('show', sel.value === '__manual__');
 }
 
 // 提交导入 (updateSolutionId 仅在冲突时显式传入; 首次导入不传)
@@ -444,20 +364,12 @@ async function doImport(updateSolutionId) {
   btn.disabled = true;
   setStatus('正在导入…');
 
-  // 展开面板选中（用户点击解法行展开编辑）→ 从 edit-* 控件取值
-  const useEditPanel = window.__editSolutionId != null;
-  // 编辑目标：冲突弹窗显式传入 > 展开面板选中
-  const editingId = updateSolutionId != null
-    ? updateSolutionId
-    : (useEditPanel ? window.__editSolutionId : null);
+  // 编辑目标：冲突弹窗显式传入（用主表单值覆盖该解法）
+  const editingId = updateSolutionId != null ? updateSolutionId : null;
 
-  const pitfalls = (useEditPanel ? $('edit-pitfalls') : $('f-pitfalls')).value
+  const pitfalls = $('f-pitfalls').value
     .split('\n').map((s) => s.trim()).filter(Boolean);
   const techItems = collectTechniques();
-  // 编辑模式：系统已有技巧中不在本次列表里的 → 提交删除
-  const sysTechIds = window.__systemTechniqueIds || [];
-  const keptIds = techItems.filter((i) => i.technique_id).map((i) => i.technique_id);
-  const deletedTechIds = sysTechIds.filter((id) => !keptIds.includes(id));
 
   const payload = {
     slug: d.slug,
@@ -468,16 +380,15 @@ async function doImport(updateSolutionId) {
     tags: d.tags || [],
     code: $('f-code').value,
     language: d.language || '',
-    name: useEditPanel ? $('edit-name').value : $('f-name').value,
-    notes: useEditPanel ? $('edit-notes').value : $('f-notes').value,
+    name: $('f-name').value,
+    notes: $('f-notes').value,
     breakthrough: $('f-breakthrough').value,
-    time_complexity: useEditPanel ? getComplexity('edit-time-select', 'edit-time') : getComplexity('f-time-select', 'f-time'),
-    space_complexity: useEditPanel ? getComplexity('edit-space-select', 'edit-space') : getComplexity('f-space-select', 'f-space'),
+    time_complexity: getComplexity('f-time-select', 'f-time'),
+    space_complexity: getComplexity('f-space-select', 'f-space'),
     pitfalls,
     techniques: techItems,
   };
   if (editingId != null) payload.update_solution_id = editingId;
-  if (deletedTechIds.length) payload.deleted_technique_ids = deletedTechIds;
 
   try {
     const r = await fetch(await apiUrl('/import'), {
@@ -509,7 +420,7 @@ async function doImport(updateSolutionId) {
       const tip = document.createElement('div');
       tip.className = 'hint';
       tip.style.marginTop = '6px';
-      tip.innerHTML = '下次重做时打开插件即可再次修改补充（题卡突破口 / 解法破题思路 / 技巧卡）。';
+      tip.innerHTML = '下次重做时打开插件即可标记重做结果 / 新增解法；已有解法的补充修改请在系统内完成。';
       statusEl.parentNode.insertBefore(tip, statusEl.nextSibling);
 
       const base = await getBase();
