@@ -228,8 +228,8 @@ function renderReviewBox(data) {
     </div>
     <div class="status" id="review-status"></div>
   `;
-  const importBtn = $('btn-import');
-  importBtn.parentNode.insertBefore(box, importBtn);
+  // 复习标记框放在代码区下方，便于操作
+  $('f-code').parentNode.after(box);
 
   const note = () => $('f-review-note').value.trim();
   const setRS = (msg, type) => {
@@ -267,6 +267,13 @@ async function markReview(cardId, action, note, setRS) {
 }
 
 // ===== 系统已有题目信息加载（重做编辑场景：展示+直接修改补充）=====
+// 插入到代码区下方（复习标记框之后；无复习框则紧跟代码区）
+function insertBelowCode(el) {
+  const reviewBox = document.getElementById('review-box');
+  if (reviewBox) reviewBox.after(el);
+  else $('f-code').parentNode.after(el);
+}
+
 function resetEditState() {
   const oldBox = document.getElementById('system-info');
   if (oldBox) oldBox.remove();
@@ -301,7 +308,7 @@ function showRecrawlHint(title) {
   box.style.marginTop = '10px';
   box.style.borderColor = '#0969da';
   box.innerHTML = `<div class="hint" style="color:#0969da;font-weight:600;">↻ 已重新抓取页面「${title}」，本次将以新解法 / 新技巧导入（不更新系统已有内容）</div>`;
-  $('btn-import').parentNode.insertBefore(box, $('btn-import'));
+  insertBelowCode(box);
 }
 
 function renderSystemEdit(p) {
@@ -323,13 +330,60 @@ function renderSystemEdit(p) {
     .join('');
   box.innerHTML = `
     <div class="hint" style="color:#0969da;font-weight:600;margin-bottom:6px;">📋 系统中已有该题「${p.title}」，突破口已预填</div>
-    <div class="hint" style="margin-bottom:6px;">默认新增一条解法；点击下方已有解法可展开其内容进行编辑（改完点导入即更新该解法）。删除已有技巧条目会同步删除系统技巧卡。</div>
+    <div class="hint" style="margin-bottom:6px;">默认新增一条解法；点击下方已有解法可在展开区编辑（改完点导入即更新该解法）。删除已有技巧条目会同步删除系统技巧卡。</div>
     ${sols.length > 0
       ? `<div class="hint" style="margin-bottom:4px;">系统已有 ${sols.length} 条解法（点击展开编辑）：</div><div id="sol-list">${rows}</div>`
       : '<div class="hint">系统暂无解法，本次将新建第一条解法</div>'}
+    <div id="sol-edit" style="display:none;border:1px solid #d0d7de;border-radius:4px;padding:8px;margin-top:6px;">
+      <div class="hint" style="font-weight:600;color:#0969da;margin-bottom:6px;">✏️ 展开编辑解法：<span id="sol-edit-title"></span></div>
+      <div class="field">
+        <label>解法名称</label>
+        <input type="text" id="edit-name" placeholder="如：哈希表法" />
+      </div>
+      <div class="field">
+        <label>破题思路</label>
+        <textarea id="edit-notes" style="min-height:40px;" placeholder="此解法针对突破口具体怎么解决"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>时间复杂度</label>
+          <select id="edit-time-select">
+            <option value="">— 选择 —</option>
+            <option value="O(1)">O(1)</option>
+            <option value="O(log n)">O(log n)</option>
+            <option value="O(n)">O(n)</option>
+            <option value="O(n log n)">O(n log n)</option>
+            <option value="O(n^2)">O(n^2)</option>
+            <option value="O(2^n)">O(2^n)</option>
+            <option value="__manual__">其他（手动填写）</option>
+          </select>
+          <input type="text" id="edit-time" class="complexity-manual" placeholder="如：O(n + m)" />
+        </div>
+        <div class="field">
+          <label>空间复杂度</label>
+          <select id="edit-space-select">
+            <option value="">— 选择 —</option>
+            <option value="O(1)">O(1)</option>
+            <option value="O(log n)">O(log n)</option>
+            <option value="O(n)">O(n)</option>
+            <option value="O(n^2)">O(n^2)</option>
+            <option value="__manual__">其他（手动填写）</option>
+          </select>
+          <input type="text" id="edit-space" class="complexity-manual" placeholder="如：O(n)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>易错点（每行一条）</label>
+        <textarea id="edit-pitfalls" style="min-height:40px;" placeholder="如：注意返回下标而非值"></textarea>
+      </div>
+      <div class="hint">代码使用本次抓取的新代码；不填则保留系统原代码</div>
+    </div>
   `;
-  const importBtn = $('btn-import');
-  importBtn.parentNode.insertBefore(box, importBtn);
+  insertBelowCode(box);
+
+  // 展开面板复杂度手动切换
+  setupComplexityToggle('edit-time-select', 'edit-time');
+  setupComplexityToggle('edit-space-select', 'edit-space');
 
   // 系统已有技巧卡渲染为可编辑条目（去重，带 technique_id 供更新）
   const seen = new Set();
@@ -343,24 +397,27 @@ function renderSystemEdit(p) {
   window.__systemTechniqueIds = sysTechIds;
 
   window.__editSolutionId = null;
-  // 解法名称列表：点击展开编辑该解法；再点同一行取消（回到新增）
+  // 解法名称列表：点击在下方展开区编辑（不覆盖新增表单）；再点同一行取消
   document.querySelectorAll('#sol-list .sol-row').forEach((row) => {
     row.addEventListener('click', () => {
       const id = parseInt(row.dataset.id, 10);
+      const panel = $('sol-edit');
       const isActive = window.__editSolutionId === id;
       document.querySelectorAll('#sol-list .sol-row').forEach((r) => { r.style.outline = 'none'; });
       window.__editSolutionId = null;
+      panel.style.display = 'none';
       if (isActive) return; // 再点同一行 = 取消编辑，回到新增
       const sol = sols.find((s) => s.id === id);
       if (!sol) return;
       window.__editSolutionId = id;
       row.style.outline = '2px solid #0969da';
-      $('f-name').value = sol.name || '';
-      $('f-notes').value = sol.notes || '';
-      fillComplexity('f-time-select', 'f-time', sol.time_complexity || '');
-      fillComplexity('f-space-select', 'f-space', sol.space_complexity || '');
-      $('f-pitfalls').value = (sol.pitfalls || []).join('\n');
-      // 代码保留本次抓取的新代码，不覆盖
+      $('sol-edit-title').textContent = `${sol.name}（${sol.language || '未知语言'}）`;
+      $('edit-name').value = sol.name || '';
+      $('edit-notes').value = sol.notes || '';
+      fillComplexity('edit-time-select', 'edit-time', sol.time_complexity || '');
+      fillComplexity('edit-space-select', 'edit-space', sol.space_complexity || '');
+      $('edit-pitfalls').value = (sol.pitfalls || []).join('\n');
+      panel.style.display = 'block';
     });
   });
 }
@@ -387,7 +444,14 @@ async function doImport(updateSolutionId) {
   btn.disabled = true;
   setStatus('正在导入…');
 
-  const pitfalls = $('f-pitfalls').value
+  // 展开面板选中（用户点击解法行展开编辑）→ 从 edit-* 控件取值
+  const useEditPanel = window.__editSolutionId != null;
+  // 编辑目标：冲突弹窗显式传入 > 展开面板选中
+  const editingId = updateSolutionId != null
+    ? updateSolutionId
+    : (useEditPanel ? window.__editSolutionId : null);
+
+  const pitfalls = (useEditPanel ? $('edit-pitfalls') : $('f-pitfalls')).value
     .split('\n').map((s) => s.trim()).filter(Boolean);
   const techItems = collectTechniques();
   // 编辑模式：系统已有技巧中不在本次列表里的 → 提交删除
@@ -404,19 +468,15 @@ async function doImport(updateSolutionId) {
     tags: d.tags || [],
     code: $('f-code').value,
     language: d.language || '',
-    name: $('f-name').value,
-    notes: $('f-notes').value,
+    name: useEditPanel ? $('edit-name').value : $('f-name').value,
+    notes: useEditPanel ? $('edit-notes').value : $('f-notes').value,
     breakthrough: $('f-breakthrough').value,
-    time_complexity: getComplexity('f-time-select', 'f-time'),
-    space_complexity: getComplexity('f-space-select', 'f-space'),
+    time_complexity: useEditPanel ? getComplexity('edit-time-select', 'edit-time') : getComplexity('f-time-select', 'f-time'),
+    space_complexity: useEditPanel ? getComplexity('edit-space-select', 'edit-space') : getComplexity('f-space-select', 'f-space'),
     pitfalls,
     techniques: techItems,
   };
-  if (updateSolutionId != null) {
-    payload.update_solution_id = updateSolutionId;
-  } else if (window.__editSolutionId != null) {
-    payload.update_solution_id = window.__editSolutionId;
-  }
+  if (editingId != null) payload.update_solution_id = editingId;
   if (deletedTechIds.length) payload.deleted_technique_ids = deletedTechIds;
 
   try {
