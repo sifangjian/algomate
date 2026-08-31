@@ -21,7 +21,6 @@ class TechniqueCreate(BaseModel):
     use_cases: str = Field("", description="适用场景 / 触发条件")
     code_template: str = Field("", description="标准代码模板")
     memory_anchors: str = Field("", description="记忆锚点/关键词")
-    difficulty: int = Field(3, ge=1, le=5, description="难度 1-5（用于复习调度）")
     notes: str = Field("", description="注意事项")
     video_demo_link: str = Field("", description="视频演示链接")
 
@@ -31,7 +30,6 @@ class TechniqueUpdate(BaseModel):
     use_cases: Optional[str] = None
     code_template: Optional[str] = None
     memory_anchors: Optional[str] = None
-    difficulty: Optional[int] = None
     notes: Optional[str] = None
     video_demo_link: Optional[str] = None
 
@@ -43,7 +41,6 @@ class TechniqueResponse(BaseModel):
     use_cases: str
     code_template: str
     memory_anchors: str
-    difficulty: int = 3
     notes: str = ""
     video_demo_link: str = ""
     created_at: datetime
@@ -86,7 +83,6 @@ def _technique_to_response(t: TechniqueCard, card: Optional[Card] = None) -> Tec
         use_cases=t.use_cases or "",
         code_template=t.code_template or "",
         memory_anchors=t.memory_anchors or "",
-        difficulty=card.difficulty if card else 3,
         notes=t.notes or "",
         video_demo_link=t.video_demo_link or "",
         created_at=t.created_at,
@@ -106,7 +102,7 @@ def create_technique(data: TechniqueCreate):
         # 同步创建 Card 复习记录
         review_card = Card(
             name=data.name,
-            difficulty=data.difficulty,
+            difficulty=3,
             durability=80,
             review_level=0,
             card_type="tip",
@@ -204,7 +200,6 @@ def get_technique(technique_id: int):
             use_cases=technique.use_cases or "",
             code_template=technique.code_template or "",
             memory_anchors=technique.memory_anchors or "",
-            difficulty=card.difficulty if card else 3,
             notes=technique.notes or "",
             video_demo_link=technique.video_demo_link or "",
             created_at=technique.created_at,
@@ -244,8 +239,6 @@ def update_technique(technique_id: int, data: TechniqueUpdate):
         card = session.query(Card).filter(Card.id == technique.card_id).first()
         if card:
             card.name = technique.name
-            if 'difficulty' in update_data:
-                card.difficulty = update_data['difficulty']
             session.commit()
 
         if changed_fields:

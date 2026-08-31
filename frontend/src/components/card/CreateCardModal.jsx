@@ -44,7 +44,6 @@ const INITIAL_FORM_DATA = {
         use_cases: '',
         code_template: '',
         memory_anchors: '',
-        difficulty: 3,
         notes: '',
         video_demo_link: '',
     },
@@ -83,7 +82,6 @@ function mapCardToFormData(cardType, data) {
                 use_cases: data.use_cases || '',
                 code_template: data.code_template || '',
                 memory_anchors: data.memory_anchors || '',
-                difficulty: data.difficulty ?? 3,
                 notes: data.notes || '',
                 video_demo_link: data.video_demo_link || '',
             }

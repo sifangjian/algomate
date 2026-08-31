@@ -56,26 +56,6 @@ export default function TechniqueFormFields({ formData, onChange }) {
             </div>
 
             <div className={styles.formGroup}>
-                <label className={styles.formLabel}>难度</label>
-                <div className={styles.difficultySelector}>
-                    {[1, 2, 3, 4, 5].map((level) => (
-                        <button
-                            key={level}
-                            type="button"
-                            className={`${styles.difficultyBtn} ${(formData.difficulty ?? 3) === level ? styles.difficultyBtnActive : ''}`}
-                            onClick={() => handleChange('difficulty', level)}
-                            title={['极简', '简单', '中等', '困难', '极难'][level - 1]}
-                        >
-                            {level}
-                        </button>
-                    ))}
-                    <span className={styles.difficultyLabel}>
-                        {['极简', '简单', '中等', '困难', '极难'][(formData.difficulty ?? 3) - 1]}
-                    </span>
-                </div>
-            </div>
-
-            <div className={styles.formGroup}>
                 <label className={styles.formLabel}>注意事项</label>
                 <textarea
                     className={styles.formTextarea}
