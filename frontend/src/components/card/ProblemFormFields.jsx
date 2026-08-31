@@ -74,12 +74,12 @@ export default function ProblemFormFields({ formData, onChange }) {
             </div>
 
             <div className={styles.formGroup}>
-                <label className={styles.formLabel}>破题思路（题目整体切入点）</label>
+                <label className={styles.formLabel}>突破口（本题要解决的核心问题）</label>
                 <textarea
                     className={styles.formTextarea}
-                    value={formData.notes || ''}
-                    onChange={(e) => handleChange('notes', e.target.value)}
-                    placeholder="记录破题思路、整体切入点..."
+                    value={formData.breakthrough || ''}
+                    onChange={(e) => handleChange('breakthrough', e.target.value)}
+                    placeholder="如：找出数组中重复出现两次的数与缺失的数"
                     rows={3}
                 />
             </div>

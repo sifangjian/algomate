@@ -83,7 +83,7 @@ function getFieldLabel(fieldKey) {
         difficulty: '难度',
         leetcode_link: 'LeetCode 链接',
         tags: '标签',
-        notes: '备注',
+        notes: '破题思路',
         video_demo_link: '视频链接',
         name: '名称',
         time_complexity: '时间复杂度',

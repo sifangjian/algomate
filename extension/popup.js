@@ -1,7 +1,10 @@
 // popup.js — 预览抓取内容、填写心得与技巧、提交导入
 // 后端地址可配置（设置面板），默认指向服务器，本地开发可改 localhost
 // 默认用 http（8025 Vite dev server 无 SSL）。服务器部署如改 HTTPS(反代)则改这里。
-const DEFAULT_BASE = 'http://www.fjsi.top:8025';
+// ⚠️ HSTS 坑（2026-08-31）：博客 www.fjsi.top 带 Strict-Transport-Security 头，
+// 浏览器会把 http://www.fjsi.top:8025 自动升级为 https:// → 8025 无 TLS 必报
+// ERR_SSL_PROTOCOL_ERROR。故默认必须用裸域 fjsi.top（HSTS 无 includeSubDomains，裸域不受影响）。
+const DEFAULT_BASE = 'http://fjsi.top:8025';
 
 // 从 storage 读取已保存的后端地址，未设置则用默认
 // 防御性清洗: 去除 @url:/反引号/首尾空白, 确保 http(s):// 开头
@@ -52,11 +55,31 @@ function initSettings() {
   });
   closeBtn.addEventListener('click', () => panel.classList.remove('open'));
   saveBtn.addEventListener('click', async () => {
-    const v = input.value.trim().replace(/`/g, '').replace(/@url:/gi, '').replace(/\/$/, '');
+    let v = input.value.trim().replace(/`/g, '').replace(/@url:/gi, '').replace(/\/+$/, '');
     if (!v) return;
+    if (!/^https?:\/\//i.test(v)) v = 'http://' + v;
     await chrome.storage.local.set({ algomate_base: v });
     panel.classList.remove('open');
-    setStatus('后端地址已保存：' + v, 'ok');
+    setStatus('后端地址已保存：' + v + '，正在测试连接…', 'ok');
+    // 连通性探测：GET 健康端点；网络/协议/HSTS 问题都会在此暴露，不用等导入时才报错
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+      const r = await fetch(v + '/api/v1/progress/stats', { signal: ctrl.signal });
+      clearTimeout(timer);
+      setStatus(
+        r.ok
+          ? '✓ 后端连接正常：' + v
+          : '已保存，但后端响应异常（HTTP ' + r.status + '）：' + v,
+        r.ok ? 'ok' : 'err'
+      );
+    } catch (e) {
+      setStatus(
+        '已保存，但连接失败：' + e.message + '。若浏览器把 http 自动升级成 https（HSTS），' +
+        '请把地址改为裸域 http://fjsi.top:8025（www.fjsi.top 的 http 请求会被强制升级为 https 而失败）',
+        'err'
+      );
+    }
   });
 }
 
@@ -93,13 +116,14 @@ function renderPreview(data) {
   }
 }
 
-function addTechniqueRow(name = '', summary = '', code_template = '') {
+function addTechniqueRow(name = '', use_cases = '', notes = '', code_template = '') {
   const wrap = document.createElement('div');
   wrap.className = 'tech-item';
   wrap.innerHTML = `
     <button type="button" class="btn-del" title="删除">✕</button>
     <input type="text" class="tech-name" placeholder="技巧名称（如：哈希表存差值）" value="${name.replace(/"/g, '&quot;')}" />
-    <textarea class="tech-summary" placeholder="一句话总结（可选）" style="min-height:38px;">${summary}</textarea>
+    <textarea class="tech-use-cases" placeholder="使用场景/触发条件（可选）" style="min-height:38px;">${use_cases}</textarea>
+    <textarea class="tech-notes" placeholder="注意事项（可选）" style="min-height:38px;">${notes}</textarea>
     <textarea class="tech-code" placeholder="标准代码模板（可选）" style="min-height:38px;">${code_template}</textarea>
   `;
   wrap.querySelector('.btn-del').addEventListener('click', () => wrap.remove());
@@ -110,9 +134,10 @@ function collectTechniques() {
   const items = [];
   document.querySelectorAll('#f-techniques .tech-item').forEach((row) => {
     const name = row.querySelector('.tech-name').value.trim();
-    const summary = row.querySelector('.tech-summary').value.trim();
+    const use_cases = row.querySelector('.tech-use-cases').value.trim();
+    const notes = row.querySelector('.tech-notes').value.trim();
     const code_template = row.querySelector('.tech-code').value.trim();
-    if (name) items.push({ name, summary, code_template });
+    if (name) items.push({ name, use_cases, notes, code_template });
   });
   return items;
 }

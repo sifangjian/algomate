@@ -7,7 +7,7 @@ from algomate.data.database import Base
 
 
 class ProblemCard(Base):
-    """题目卡片 — 记录 LeetCode 题目的索引与破题思路
+    """题目卡片 — 记录 LeetCode 题目的索引与突破口（本题要解决的核心问题）
 
     前置：用户已在 LeetCode AC 才导入，因此不记录"是否通过"类状态。
     是否最优解属于解法维度（见 SolutionCard.is_optimal），不在题卡。
@@ -21,7 +21,7 @@ class ProblemCard(Base):
     difficulty = Column(String(20), nullable=False, default="medium", comment="难度: easy/medium/hard")
     leetcode_link = Column(String(500), nullable=True, default="", comment="原题链接")
     tags = Column(Text, nullable=True, default="[]", comment="标签 JSON 数组（LeetCode 算法分类属性，用于归类检索）")
-    notes = Column(Text, nullable=True, default="", comment="破题思路（题目整体的切入点，由用户手动写）")
+    breakthrough = Column(Text, nullable=True, default="", comment="突破口：本题要解决的核心问题（由用户手动写）")
     is_optimal = Column(Integer, nullable=False, default=0, comment="是否已有最优解: 0/1（属于解法维度，题卡仅作汇总标记）")
     variants = Column(Text, nullable=True, default="[]", comment="同考点变体题 slug 列表 JSON 数组（用于变体题复习法，如 ['two-sum','3sum']）")
     video_demo_link = Column(String(500), nullable=True, default="", comment="视频演示链接")

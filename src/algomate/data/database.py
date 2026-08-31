@@ -34,6 +34,8 @@ def _auto_migrate(db_path: Union[str, Path]):
     )
     inspector = inspect(engine)
 
+    _rename_legacy_columns(engine)
+
     for table_name in Base.metadata.tables:
         try:
             columns = inspector.get_columns(table_name)
@@ -85,6 +87,35 @@ def _auto_migrate(db_path: Union[str, Path]):
     _fix_orphan_notnull_columns(engine)
 
     engine.dispose()
+
+
+# 2026-08-31 语义调整（用户拍板）：
+# - 突破口（本题要解决的核心问题）归属题目 → problem_cards.breakthrough（旧列 notes 改名）
+# - 破题思路（此解法如何解决突破口）归属解法 → solution_cards.notes（旧列 breakthrough 改名）
+_LEGACY_COLUMN_RENAMES = {
+    "problem_cards": [("notes", "breakthrough")],
+    "solution_cards": [("breakthrough", "notes")],
+}
+
+
+def _rename_legacy_columns(engine):
+    """幂等重命名旧列：旧列存在且新列不存在时执行 RENAME COLUMN（SQLite 3.25+），
+    保留旧数据。新库（无旧列）直接跳过。"""
+    inspector = inspect(engine)
+    with engine.connect() as conn:
+        for table_name, pairs in _LEGACY_COLUMN_RENAMES.items():
+            try:
+                columns = {col["name"] for col in inspector.get_columns(table_name)}
+            except Exception:
+                continue
+            for old_name, new_name in pairs:
+                if old_name in columns and new_name not in columns:
+                    try:
+                        conn.execute(text(f'ALTER TABLE "{table_name}" RENAME COLUMN "{old_name}" TO "{new_name}"'))
+                        conn.commit()
+                        print(f"  [MIGRATION] Renamed column {table_name}.{old_name} -> {new_name}")
+                    except Exception as e:
+                        print(f"  [MIGRATION] Could not rename {table_name}.{old_name} -> {new_name}: {e}")
 
 
 def _fix_orphan_notnull_columns(engine):

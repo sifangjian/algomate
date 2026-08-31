@@ -21,7 +21,7 @@ class ProblemCreate(BaseModel):
     difficulty: str = Field("medium", description="难度: easy/medium/hard")
     leetcode_link: str = Field("", description="原题链接")
     tags: List[str] = Field(default_factory=list, description="标签列表（LeetCode 算法分类属性）")
-    notes: str = Field("", description="破题思路")
+    breakthrough: str = Field("", description="突破口：本题要解决的核心问题")
     is_optimal: int = Field(0, ge=0, le=1, description="是否已有最优解: 0/1")
     variants: List[str] = Field(default_factory=list, description="同考点变体题 slug 列表")
     video_demo_link: str = Field("", description="视频演示链接")
@@ -33,7 +33,7 @@ class ProblemUpdate(BaseModel):
     difficulty: Optional[str] = None
     leetcode_link: Optional[str] = None
     tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    breakthrough: Optional[str] = None
     is_optimal: Optional[int] = None
     variants: Optional[List[str]] = None
     video_demo_link: Optional[str] = None
@@ -47,7 +47,7 @@ class ProblemResponse(BaseModel):
     difficulty: str
     leetcode_link: str = ""
     tags: List[str]
-    notes: str = ""
+    breakthrough: str = ""
     is_optimal: int = 0
     variants: List[str] = []
     video_demo_link: str = ""
@@ -94,7 +94,7 @@ def _problem_to_response(p: ProblemCard) -> ProblemResponse:
         difficulty=p.difficulty,
         leetcode_link=p.leetcode_link or "",
         tags=_parse_tags(p.tags),
-        notes=p.notes or "",
+        breakthrough=p.breakthrough or "",
         is_optimal=p.is_optimal or 0,
         variants=_parse_tags(p.variants),
         video_demo_link=p.video_demo_link or "",
@@ -117,7 +117,7 @@ def create_problem(data: ProblemCreate):
             difficulty=data.difficulty,
             leetcode_link=data.leetcode_link,
             tags=json.dumps(data.tags, ensure_ascii=False),
-            notes=data.notes,
+            breakthrough=data.breakthrough,
             is_optimal=data.is_optimal,
             variants=json.dumps(data.variants, ensure_ascii=False),
             related_problem_ids=json.dumps(data.related_problem_ids, ensure_ascii=False),
@@ -223,7 +223,7 @@ def get_problem(problem_id: int):
                     "name": s.name,
                     "time_complexity": s.time_complexity or "",
                     "space_complexity": s.space_complexity or "",
-                    "breakthrough": s.breakthrough or "",
+                    "notes": s.notes or "",
                     "approach": s.approach or "",
                     "code": s.code or "",
                     "pitfalls": pitfalls_list,
@@ -236,7 +236,7 @@ def get_problem(problem_id: int):
             difficulty=problem.difficulty,
             leetcode_link=problem.leetcode_link or "",
             tags=_parse_tags(problem.tags),
-            notes=problem.notes or "",
+            breakthrough=problem.breakthrough or "",
             is_optimal=problem.is_optimal or 0,
             variants=_parse_tags(problem.variants),
             video_demo_link=problem.video_demo_link or "",

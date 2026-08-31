@@ -114,7 +114,7 @@ def migrate():
                         name=f"解法_{technique.name}",
                         time_complexity="",
                         space_complexity="",
-                        breakthrough="",
+                        notes="",
                         approach="",
                         code="",
                         pitfalls="[]",

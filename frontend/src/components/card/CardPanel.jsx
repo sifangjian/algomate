@@ -135,10 +135,10 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
         )}
       </div>
 
-      {data.notes && (
+      {data.breakthrough && (
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>注意事项</h3>
-          <MarkdownRenderer content={data.notes} className={styles.textContent} />
+          <h3 className={styles.sectionTitle}>突破口</h3>
+          <MarkdownRenderer content={data.breakthrough} className={styles.textContent} />
         </div>
       )}
 
@@ -290,10 +290,10 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
 
                 {!collapsedSolutions.has(sol.id) && (
                   <div className={styles.solutionBody}>
-                    {sol.breakthrough && (
+                    {sol.notes && (
                       <div className={styles.solutionField}>
-                        <span className={styles.solutionFieldLabel}>突破口</span>
-                        <MarkdownRenderer content={sol.breakthrough} className={styles.textContent} />
+                        <span className={styles.solutionFieldLabel}>破题思路</span>
+                        <MarkdownRenderer content={sol.notes} className={styles.textContent} />
                       </div>
                     )}
                     {sol.approach && (
@@ -334,10 +334,10 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
                         </div>
                       </div>
                     )}
-                    {!sol.breakthrough && !sol.approach && !sol.code && (!sol.pitfalls || sol.pitfalls.length === 0) && (!sol.techniques || sol.techniques.length === 0) && (
+                    {!sol.notes && !sol.approach && !sol.code && (!sol.pitfalls || sol.pitfalls.length === 0) && (!sol.techniques || sol.techniques.length === 0) && (
                       <div className={styles.solutionField}>
                         <span className={styles.solutionFieldLabel}>暂无详情</span>
-                        <div className={styles.textContent} style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>可编辑解法卡片添加突破口、思路、代码等内容</div>
+                        <div className={styles.textContent} style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>可编辑解法卡片添加破题思路、思路、代码等内容</div>
                       </div>
                     )}
                   </div>
@@ -360,7 +360,7 @@ function ProblemCard({ data, onNavigate, onRefresh }) {
                   <div className={styles.compareColumnHeader}>{sol.name}</div>
                   {sol.time_complexity && <div className={styles.compareField}><span className={styles.solutionFieldLabel}>时间:</span> {sol.time_complexity}</div>}
                   {sol.space_complexity && <div className={styles.compareField}><span className={styles.solutionFieldLabel}>空间:</span> {sol.space_complexity}</div>}
-                  {sol.breakthrough && <div className={styles.compareField}><span className={styles.solutionFieldLabel}>突破口:</span> <MarkdownRenderer content={sol.breakthrough} className={styles.textContent} /></div>}
+                  {sol.notes && <div className={styles.compareField}><span className={styles.solutionFieldLabel}>破题思路:</span> <MarkdownRenderer content={sol.notes} className={styles.textContent} /></div>}
                   {sol.approach && <div className={styles.compareField}><span className={styles.solutionFieldLabel}>思路:</span> <MarkdownRenderer content={sol.approach} className={styles.textContent} /></div>}
                   {sol.code && <div className={styles.compareField}><span className={styles.solutionFieldLabel}>代码:</span> <CodeBlock code={sol.code} /></div>}
                 </div>
@@ -434,10 +434,10 @@ function SolutionCard({ data, onNavigate }) {
         </div>
       )}
 
-      {data.breakthrough && (
+      {data.notes && (
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>突破口</h3>
-          <MarkdownRenderer content={data.breakthrough} className={styles.textContent} />
+          <h3 className={styles.sectionTitle}>破题思路</h3>
+          <MarkdownRenderer content={data.notes} className={styles.textContent} />
         </div>
       )}
 

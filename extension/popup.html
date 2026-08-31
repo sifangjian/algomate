@@ -60,7 +60,7 @@
     </div>
     <div class="field">
       <label>AlgoMate 访问地址</label>
-      <input type="text" id="input-base" placeholder="http://www.fjsi.top:8025" />
+      <input type="text" id="input-base" placeholder="http://fjsi.top:8025" />
       <div class="hint">服务器填 http://你的域名:端口（http 而非 https，8025 Vite dev server 无 SSL）；本地开发填 http://localhost:8000</div>
     </div>
     <button type="button" class="btn btn-primary" id="btn-save-base">保存</button>
@@ -82,14 +82,19 @@
   </div>
 
   <div class="field">
+    <label>突破口（本题要解决的核心问题，做完题后最清晰，建议此刻填写）</label>
+    <textarea id="f-breakthrough" placeholder="如：找出数组中重复出现两次的数与缺失的数"></textarea>
+  </div>
+
+  <div class="field">
     <label>代码（来自 LeetCode，可编辑）</label>
     <textarea id="f-code" class="val" style="max-height:120px;"></textarea>
     <div class="hint" id="f-lang"></div>
   </div>
 
   <div class="field">
-    <label>突破口（做完题后最清晰，建议此刻填写）</label>
-    <textarea id="f-breakthrough" placeholder="本解法的切入角度，如：哈希表存差值一遍扫描"></textarea>
+    <label>破题思路（此解法针对突破口具体怎么解决）</label>
+    <textarea id="f-notes" placeholder="如：用哈希表记录已出现的数，一次遍历同时检查重复与缺失…"></textarea>
   </div>
 
   <div class="field-row">
@@ -129,15 +134,10 @@
   <hr />
 
   <div class="field">
-    <label>破题思路</label>
-    <textarea id="f-notes" placeholder="例如：双指针的核心是缩小搜索空间；注意 left/right 移动条件…"></textarea>
-  </div>
-
-  <div class="field">
-    <label>技巧总结（可多条，每条生成一张技巧卡）</label>
+    <label>技巧卡（可多条，每条生成一张技巧卡）</label>
     <div id="f-techniques"></div>
     <button type="button" class="btn btn-add" id="btn-add-tech">+ 添加一条技巧</button>
-    <div class="hint">从本题提炼的可迁移经验，如「哈希表存差值一遍扫描」；可附标准代码模板</div>
+    <div class="hint">从本题提炼的可迁移经验：填「技巧名称 + 使用场景 + 注意事项」，可附标准代码模板；一次性填完即生成完整技巧卡</div>
   </div>
 
   <button class="btn btn-primary" id="btn-import" disabled>确认并导入到 AlgoMate</button>

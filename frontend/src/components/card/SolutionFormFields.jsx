@@ -262,12 +262,12 @@ export default function SolutionFormFields({ formData, onChange, problemId }) {
             </div>
 
             <div className={styles.formGroup}>
-                <label className={styles.formLabel}>突破口</label>
+                <label className={styles.formLabel}>破题思路（此解法针对突破口具体怎么解决）</label>
                 <textarea
                     className={styles.formTextarea}
-                    value={formData.breakthrough || ''}
-                    onChange={(e) => handleChange('breakthrough', e.target.value)}
-                    placeholder="突破口"
+                    value={formData.notes || ''}
+                    onChange={(e) => handleChange('notes', e.target.value)}
+                    placeholder="如：利用哈希表 O(1) 查询，一次遍历同时定位重复与缺失"
                     rows={3}
                 />
             </div>

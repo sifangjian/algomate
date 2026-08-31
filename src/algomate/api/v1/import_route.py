@@ -40,7 +40,8 @@ logger = logging.getLogger(__name__)
 class TechniqueItem(BaseModel):
     """用户从一道题里手动提炼的一条技巧（可迁移的原子经验）"""
     name: str = Field(..., min_length=1, max_length=200, description="技巧名称（用户提炼，如 '哈希表存差值'）")
-    summary: str = Field("", description="技巧总结/内容（用户提炼，可空）")
+    use_cases: str = Field("", description="使用场景/触发条件（用户提炼，可空）")
+    notes: str = Field("", description="注意事项（用户提炼，可空）")
     code_template: str = Field("", description="技巧标准代码模板（可选）")
 
 
@@ -57,9 +58,9 @@ class ImportRequest(BaseModel):
     )
     code: str = Field("", description="用户提交的代码（系统搬运）")
     language: str = Field("", description="编程语言，如 python/javascript/cpp")
-    notes: str = Field("", description="破题思路（用户手动写，不搬运）")
+    breakthrough: str = Field("", description="突破口：本题要解决的核心问题（归属题目，用户手动写）")
     # 解法维度（用户做完题后填写，理解最清晰）
-    breakthrough: str = Field("", description="突破口（针对本解法的具体切入）")
+    notes: str = Field("", description="破题思路：此解法针对突破口具体怎么解决（归属解法，用户手动写）")
     time_complexity: str = Field("", description="时间复杂度，如 O(n)")
     space_complexity: str = Field("", description="空间复杂度，如 O(1)")
     pitfalls: List[str] = Field(default_factory=list, description="易错点列表（每行一条）")
@@ -88,7 +89,7 @@ class ImportResponse(BaseModel):
     message: str = ""
 
 
-def _create_user_technique(session, name: str, summary: str, code_template: str = "") -> TechniqueCard:
+def _create_user_technique(session, name: str, use_cases: str, notes: str = "", code_template: str = "") -> TechniqueCard:
     """由用户手动提炼的内容创建一张技巧卡，并同步创建 Card 复习记录。
 
     与 techniques.py 的 create_technique 保持一致的建卡约定，确保遗忘曲线机制正确接入。
@@ -99,7 +100,7 @@ def _create_user_technique(session, name: str, summary: str, code_template: str 
         durability=80,
         review_level=0,
         card_type="tip",
-        content=json.dumps({"summary": summary}, ensure_ascii=False),
+        content=json.dumps({"use_cases": use_cases}, ensure_ascii=False),
     )
     session.add(review_card)
     session.flush()
@@ -107,10 +108,10 @@ def _create_user_technique(session, name: str, summary: str, code_template: str 
     technique = TechniqueCard(
         card_id=review_card.id,
         name=name,
-        use_cases=summary,
+        use_cases=use_cases,
         code_template=code_template or "",
         memory_anchors="",
-        notes=summary,
+        notes=notes,
         video_demo_link="",
     )
     session.add(technique)
@@ -146,7 +147,7 @@ def _build_solution_fields(data: ImportRequest) -> dict:
         approach=data.description,  # 系统搬运题面/思路描述，用户可改写
         time_complexity=data.time_complexity or "",
         space_complexity=data.space_complexity or "",
-        breakthrough=data.breakthrough or "",
+        notes=data.notes or "",
         pitfalls=json.dumps(data.pitfalls or [], ensure_ascii=False),
     )
 
@@ -166,8 +167,8 @@ def import_from_leetcode(data: ImportRequest):
         is_new_problem = existing is None
         if existing:
             problem = existing
-            if data.notes:
-                problem.notes = data.notes
+            if data.breakthrough:
+                problem.breakthrough = data.breakthrough
             if data.variants:
                 problem.variants = json.dumps(data.variants, ensure_ascii=False)
             # 标签作为算法分类属性，重复导入时同步刷新
@@ -194,7 +195,7 @@ def import_from_leetcode(data: ImportRequest):
                 difficulty=data.difficulty,
                 leetcode_link=data.leetcode_link,
                 tags=json.dumps(data.tags, ensure_ascii=False),
-                notes=data.notes,
+                breakthrough=data.breakthrough,
                 variants=json.dumps(data.variants, ensure_ascii=False),
             )
             session.add(problem)
@@ -283,7 +284,7 @@ def import_from_leetcode(data: ImportRequest):
                 existing_solution_count=len(existing_solutions),
                 conflict=True,
                 existing_solutions=[
-                    {"id": s.id, "name": s.name, "language": s.language, "breakthrough": s.breakthrough}
+                    {"id": s.id, "name": s.name, "language": s.language, "notes": s.notes}
                     for s in existing_solutions
                 ],
                 message="该题已有其他解法，请选择更新某条或新增一条",
@@ -325,7 +326,11 @@ def _sync_techniques(session, solution, techniques: List[TechniqueItem]) -> List
             continue
         seen_names.add(name)
         technique = _create_user_technique(
-            session, name=name, summary=item.summary.strip(), code_template=item.code_template.strip()
+            session,
+            name=name,
+            use_cases=item.use_cases.strip(),
+            notes=item.notes.strip(),
+            code_template=item.code_template.strip(),
         )
         session.add(SolutionTechnique(solution_id=solution.id, technique_id=technique.id))
         technique_ids.append(technique.id)

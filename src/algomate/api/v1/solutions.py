@@ -23,7 +23,7 @@ class SolutionCreate(BaseModel):
     is_optimal: int = Field(0, ge=0, le=1, description="是否最优解: 0/1")
     time_complexity: str = Field("", description="时间复杂度")
     space_complexity: str = Field("", description="空间复杂度")
-    breakthrough: str = Field("", description="突破口")
+    notes: str = Field("", description="破题思路：此解法针对题目突破口具体怎么解决")
     approach: str = Field("", description="详细思路 Markdown")
     code: str = Field("", description="代码块")
     pitfalls: List[str] = Field(default_factory=list, description="易错点列表")
@@ -35,7 +35,7 @@ class SolutionUpdate(BaseModel):
     is_optimal: Optional[int] = None
     time_complexity: Optional[str] = None
     space_complexity: Optional[str] = None
-    breakthrough: Optional[str] = None
+    notes: Optional[str] = None
     approach: Optional[str] = None
     code: Optional[str] = None
     pitfalls: Optional[List[str]] = None
@@ -49,7 +49,7 @@ class SolutionResponse(BaseModel):
     is_optimal: int = 0
     time_complexity: str
     space_complexity: str
-    breakthrough: str
+    notes: str
     approach: str
     code: str
     pitfalls: List[str]
@@ -87,7 +87,7 @@ def _solution_to_response(s: SolutionCard) -> SolutionResponse:
         is_optimal=s.is_optimal or 0,
         time_complexity=s.time_complexity or "",
         space_complexity=s.space_complexity or "",
-        breakthrough=s.breakthrough or "",
+        notes=s.notes or "",
         approach=s.approach or "",
         code=s.code or "",
         pitfalls=_parse_pitfalls(s.pitfalls),
@@ -116,7 +116,7 @@ def create_solution(data: SolutionCreate):
             is_optimal=data.is_optimal,
             time_complexity=data.time_complexity,
             space_complexity=data.space_complexity,
-            breakthrough=data.breakthrough,
+            notes=data.notes,
             approach=data.approach,
             code=data.code,
             pitfalls=json.dumps(data.pitfalls, ensure_ascii=False),
@@ -187,7 +187,7 @@ def get_solution(solution_id: int):
             is_optimal=solution.is_optimal or 0,
             time_complexity=solution.time_complexity or "",
             space_complexity=solution.space_complexity or "",
-            breakthrough=solution.breakthrough or "",
+            notes=solution.notes or "",
             approach=solution.approach or "",
             code=solution.code or "",
             pitfalls=_parse_pitfalls(solution.pitfalls),
@@ -310,7 +310,7 @@ def link_technique(solution_id: int, data: LinkTechniqueRequest):
             is_optimal=solution.is_optimal or 0,
             time_complexity=solution.time_complexity or "",
             space_complexity=solution.space_complexity or "",
-            breakthrough=solution.breakthrough or "",
+            notes=solution.notes or "",
             approach=solution.approach or "",
             code=solution.code or "",
             pitfalls=_parse_pitfalls(solution.pitfalls),

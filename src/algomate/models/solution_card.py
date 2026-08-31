@@ -18,7 +18,7 @@ class SolutionCard(Base):
     is_optimal = Column(Integer, nullable=False, default=0, comment="是否最优解: 0/1")
     time_complexity = Column(String(100), nullable=True, default="", comment="时间复杂度")
     space_complexity = Column(String(100), nullable=True, default="", comment="空间复杂度")
-    breakthrough = Column(Text, nullable=True, default="", comment="突破口（针对本解法的具体切入）")
+    notes = Column(Text, nullable=True, default="", comment="破题思路：此解法针对题目突破口具体怎么解决（由用户手动写）")
     approach = Column(Text, nullable=True, default="", comment="详细思路 Markdown")
     code = Column(Text, nullable=True, default="", comment="代码块")
     pitfalls = Column(Text, nullable=True, default="[]", comment="易错点 JSON 数组")
