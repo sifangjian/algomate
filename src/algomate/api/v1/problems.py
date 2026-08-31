@@ -199,56 +199,79 @@ def get_problem(problem_id: int):
         problem = session.query(ProblemCard).filter(ProblemCard.id == problem_id).first()
         if not problem:
             raise HTTPException(status_code=404, detail="题目卡片不存在")
-
-        solutions = []
-        if problem.solutions:
-            for s in problem.solutions:
-                techniques_list = []
-                if s.techniques:
-                    for tech in s.techniques:
-                        techniques_list.append({
-                            "id": tech.id,
-                            "name": tech.name,
-                        })
-
-                pitfalls_list = []
-                if s.pitfalls:
-                    try:
-                        pitfalls_list = json.loads(s.pitfalls) if isinstance(s.pitfalls, str) else s.pitfalls
-                    except (json.JSONDecodeError, TypeError):
-                        pitfalls_list = []
-
-                solutions.append({
-                    "id": s.id,
-                    "name": s.name,
-                    "time_complexity": s.time_complexity or "",
-                    "space_complexity": s.space_complexity or "",
-                    "notes": s.notes or "",
-                    "approach": s.approach or "",
-                    "code": s.code or "",
-                    "pitfalls": pitfalls_list,
-                    "techniques": techniques_list,
-                })
-
-        return ProblemDetailResponse(
-            id=problem.id,
-            title=problem.title,
-            difficulty=problem.difficulty,
-            leetcode_link=problem.leetcode_link or "",
-            tags=_parse_tags(problem.tags),
-            breakthrough=problem.breakthrough or "",
-            is_optimal=problem.is_optimal or 0,
-            variants=_parse_tags(problem.variants),
-            video_demo_link=problem.video_demo_link or "",
-            related_problem_ids=_parse_related_ids(problem.related_problem_ids),
-            card_id=problem.card_id,
-            created_at=problem.created_at,
-            updated_at=problem.updated_at,
-            solution_count=len(problem.solutions) if problem.solutions else 0,
-            solutions=solutions,
-        )
+        return ProblemDetailResponse(**_build_problem_detail(problem))
     finally:
         session.close()
+
+
+@router.get("/by-slug/{slug}", response_model=ProblemDetailResponse)
+def get_problem_by_slug(slug: str):
+    """按 LeetCode slug 查题目详情（插件重做时加载系统已存信息用）"""
+    db = Database.get_instance()
+    session = db.get_session()
+    try:
+        problem = session.query(ProblemCard).filter(ProblemCard.leetcode_slug == slug).first()
+        if not problem:
+            raise HTTPException(status_code=404, detail="系统中暂无该题")
+        return ProblemDetailResponse(**_build_problem_detail(problem))
+    finally:
+        session.close()
+
+
+def _build_problem_detail(problem: ProblemCard) -> dict:
+    """构建题目详情（含解法与技巧卡完整信息），/problems/{id} 与 /problems/by-slug/{slug} 共用"""
+    solutions = []
+    if problem.solutions:
+        for s in problem.solutions:
+            techniques_list = []
+            if s.techniques:
+                for tech in s.techniques:
+                    techniques_list.append({
+                        "id": tech.id,
+                        "name": tech.name,
+                        "use_cases": tech.use_cases or "",
+                        "notes": tech.notes or "",
+                        "code_template": tech.code_template or "",
+                    })
+
+            pitfalls_list = []
+            if s.pitfalls:
+                try:
+                    pitfalls_list = json.loads(s.pitfalls) if isinstance(s.pitfalls, str) else s.pitfalls
+                except (json.JSONDecodeError, TypeError):
+                    pitfalls_list = []
+
+            solutions.append({
+                "id": s.id,
+                "name": s.name,
+                "language": s.language or "",
+                "is_optimal": s.is_optimal or 0,
+                "time_complexity": s.time_complexity or "",
+                "space_complexity": s.space_complexity or "",
+                "notes": s.notes or "",
+                "approach": s.approach or "",
+                "code": s.code or "",
+                "pitfalls": pitfalls_list,
+                "techniques": techniques_list,
+            })
+
+    return {
+        "id": problem.id,
+        "title": problem.title,
+        "difficulty": problem.difficulty,
+        "leetcode_link": problem.leetcode_link or "",
+        "tags": _parse_tags(problem.tags),
+        "breakthrough": problem.breakthrough or "",
+        "is_optimal": problem.is_optimal or 0,
+        "variants": _parse_tags(problem.variants),
+        "video_demo_link": problem.video_demo_link or "",
+        "related_problem_ids": _parse_related_ids(problem.related_problem_ids),
+        "card_id": problem.card_id,
+        "created_at": problem.created_at,
+        "updated_at": problem.updated_at,
+        "solution_count": len(problem.solutions) if problem.solutions else 0,
+        "solutions": solutions,
+    }
 
 
 @router.put("/{problem_id}", response_model=ProblemResponse)

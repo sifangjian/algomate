@@ -116,9 +116,10 @@ function renderPreview(data) {
   }
 }
 
-function addTechniqueRow(name = '', use_cases = '', notes = '', code_template = '') {
+function addTechniqueRow(name = '', use_cases = '', notes = '', code_template = '', id = null) {
   const wrap = document.createElement('div');
   wrap.className = 'tech-item';
+  if (id != null) wrap.dataset.techId = id;
   wrap.innerHTML = `
     <button type="button" class="btn-del" title="删除">✕</button>
     <input type="text" class="tech-name" placeholder="技巧名称（如：哈希表存差值）" value="${name.replace(/"/g, '&quot;')}" />
@@ -137,7 +138,10 @@ function collectTechniques() {
     const use_cases = row.querySelector('.tech-use-cases').value.trim();
     const notes = row.querySelector('.tech-notes').value.trim();
     const code_template = row.querySelector('.tech-code').value.trim();
-    if (name) items.push({ name, use_cases, notes, code_template });
+    if (!name) return;
+    const item = { name, use_cases, notes, code_template };
+    if (row.dataset.techId) item.technique_id = parseInt(row.dataset.techId, 10);
+    items.push(item);
   });
   return items;
 }
@@ -176,6 +180,7 @@ async function collect() {
       renderPreview(result.result);
       window.__collected = result.result;
       checkReviewCard(result.result.slug);
+      loadSystemProblem(result.result.slug);
     } else {
       setStatus('抓取返回为空，请刷新题目页后重试。', 'err');
     }
@@ -256,6 +261,83 @@ async function markReview(cardId, action, note, setRS) {
   }
 }
 
+// ===== 系统已有题目信息加载（重做编辑场景：展示+直接修改补充）=====
+async function loadSystemProblem(slug) {
+  if (!slug) return;
+  try {
+    const r = await fetch(await apiUrl(`/problems/by-slug/${encodeURIComponent(slug)}`));
+    if (r.status === 404 || !r.ok) return; // 系统无此题，正常走新建
+    const p = await r.json();
+    renderSystemEdit(p);
+  } catch (e) {
+    console.warn('[AlgoMate] 加载系统题目信息失败', e);
+  }
+}
+
+function renderSystemEdit(p) {
+  // 预填题卡突破口（用户尚未填写时）
+  if (!$('f-breakthrough').value) $('f-breakthrough').value = p.breakthrough || '';
+
+  const sols = p.solutions || [];
+  const box = document.createElement('div');
+  box.id = 'system-info';
+  box.className = 'conflict-box';
+  box.style.marginTop = '10px';
+  box.style.borderColor = '#0969da';
+  const opts = ['<option value="">＋ 新增一条解法（默认）</option>']
+    .concat(sols.map((s) => `<option value="${s.id}">更新解法：${s.name}（${s.language || '未知语言'}）</option>`));
+  box.innerHTML = `
+    <div class="hint" style="color:#0969da;font-weight:600;margin-bottom:6px;">📋 系统中已有该题「${p.title}」，已预填信息，可直接修改补充</div>
+    <div class="hint" style="margin-bottom:6px;">突破口已预填；选择更新某条解法后，其破题思路/复杂度/易错点会自动载入，改完点导入即更新</div>
+    ${sols.length > 0 ? `
+    <div class="field">
+      <label>本次导入的解法目标</label>
+      <select id="f-sol-select">
+        ${opts.join('')}
+      </select>
+    </div>` : ''}
+  `;
+  const importBtn = $('btn-import');
+  importBtn.parentNode.insertBefore(box, importBtn);
+
+  // 系统已有技巧卡渲染为可编辑条目（去重，带 technique_id 供更新）
+  const seen = new Set();
+  sols.forEach((s) => (s.techniques || []).forEach((t) => {
+    if (seen.has(t.id)) return;
+    seen.add(t.id);
+    addTechniqueRow(t.name, t.use_cases || '', t.notes || '', t.code_template || '', t.id);
+  }));
+
+  window.__editSolutionId = null;
+  const sel = $('f-sol-select');
+  if (sel) {
+    sel.addEventListener('change', () => {
+      const sol = sols.find((s) => String(s.id) === sel.value);
+      window.__editSolutionId = sol ? sol.id : null;
+      if (!sol) return;
+      $('f-notes').value = sol.notes || '';
+      fillComplexity('f-time-select', 'f-time', sol.time_complexity || '');
+      fillComplexity('f-space-select', 'f-space', sol.space_complexity || '');
+      $('f-pitfalls').value = (sol.pitfalls || []).join('\n');
+      // 代码保留本次抓取的新代码，不覆盖（重做场景以新代码为准）
+    });
+  }
+}
+
+function fillComplexity(selectId, manualId, value) {
+  if (!value) return;
+  const sel = $(selectId);
+  const manual = $(manualId);
+  const matched = Array.from(sel.options).some((o) => o.value === value);
+  if (matched) {
+    sel.value = value;
+  } else {
+    sel.value = '__manual__';
+    manual.value = value;
+  }
+  manual.classList.toggle('show', sel.value === '__manual__');
+}
+
 // 提交导入 (updateSolutionId 仅在冲突时显式传入; 首次导入不传)
 async function doImport(updateSolutionId) {
   const d = window.__collected;
@@ -283,7 +365,11 @@ async function doImport(updateSolutionId) {
     pitfalls,
     techniques: collectTechniques(),
   };
-  if (updateSolutionId != null) payload.update_solution_id = updateSolutionId;
+  if (updateSolutionId != null) {
+    payload.update_solution_id = updateSolutionId;
+  } else if (window.__editSolutionId != null) {
+    payload.update_solution_id = window.__editSolutionId;
+  }
 
   try {
     const r = await fetch(await apiUrl('/import'), {
@@ -305,8 +391,9 @@ async function doImport(updateSolutionId) {
       const extra = j.is_new_problem
         ? ''
         : `（已存在该题，本次追加第 ${j.existing_solution_count + 1} 条解法）`;
+      const editing = payload.update_solution_id != null;
       setStatus(
-        (j.is_new_problem ? '导入成功（新建题卡）' : '已存在该题，追加解法') +
+        (editing ? '已更新该解法及题卡信息' : (j.is_new_problem ? '导入成功（新建题卡）' : '已存在该题，追加解法')) +
           ` · 技巧卡 ${j.technique_ids.length} 张` + extra,
         'ok'
       );
@@ -314,7 +401,7 @@ async function doImport(updateSolutionId) {
       const tip = document.createElement('div');
       tip.className = 'hint';
       tip.style.marginTop = '6px';
-      tip.innerHTML = '可在系统中为解法补充「突破口 / 思路 / 易错点」，让卡片更完整。';
+      tip.innerHTML = '下次重做时打开插件即可再次修改补充（题卡突破口 / 解法破题思路 / 技巧卡）。';
       statusEl.parentNode.insertBefore(tip, statusEl.nextSibling);
 
       const base = await getBase();
@@ -344,7 +431,7 @@ function showConflictChoice(j) {
   j.existing_solutions.forEach((sol) => {
     const row = document.createElement('div');
     row.className = 'conflict-row';
-    row.innerHTML = `<span>解法 #${sol.id}（${sol.language || '未知语言'}）${sol.breakthrough ? ' · ' + sol.breakthrough : ''}</span>`;
+    row.innerHTML = `<span>解法 #${sol.id}（${sol.language || '未知语言'}）${sol.notes ? ' · ' + sol.notes : ''}</span>`;
     const upd = document.createElement('button');
     upd.className = 'btn btn-add';
     upd.textContent = '更新此解法';

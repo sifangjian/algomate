@@ -43,6 +43,9 @@ class TechniqueItem(BaseModel):
     use_cases: str = Field("", description="使用场景/触发条件（用户提炼，可空）")
     notes: str = Field("", description="注意事项（用户提炼，可空）")
     code_template: str = Field("", description="技巧标准代码模板（可选）")
+    technique_id: Optional[int] = Field(
+        None, description="编辑模式：已存在技巧卡的 ID；传了则更新该技巧卡（不新建），否则新建"
+    )
 
 
 class ImportRequest(BaseModel):
@@ -247,6 +250,13 @@ def import_from_leetcode(data: ImportRequest):
                 raise HTTPException(status_code=404, detail=f"未找到要更新的解法 ID={data.update_solution_id}")
             for k, v in _build_solution_fields(data).items():
                 setattr(target, k, v)
+            # 编辑模式同步更新题卡字段（突破口/标签/变体题，重做补充场景）
+            if data.breakthrough:
+                problem.breakthrough = data.breakthrough
+            if data.variants:
+                problem.variants = json.dumps(data.variants, ensure_ascii=False)
+            if data.tags:
+                problem.tags = json.dumps(data.tags, ensure_ascii=False)
             session.flush()
             solution = target
             technique_ids = _sync_techniques(session, solution, data.techniques)
@@ -325,6 +335,17 @@ def _sync_techniques(session, solution, techniques: List[TechniqueItem]) -> List
         if not name or name in seen_names:
             continue
         seen_names.add(name)
+        # 编辑模式：更新已有技巧卡（不改关联、不新建）
+        if item.technique_id is not None:
+            tech = session.query(TechniqueCard).filter(TechniqueCard.id == item.technique_id).first()
+            if tech:
+                tech.name = name
+                tech.use_cases = item.use_cases.strip()
+                tech.notes = item.notes.strip()
+                tech.code_template = item.code_template.strip()
+                session.flush()
+                technique_ids.append(tech.id)
+                continue
         technique = _create_user_technique(
             session,
             name=name,
