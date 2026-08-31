@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Query
@@ -30,9 +30,10 @@ def list_activity_logs(
         if date_str:
             try:
                 target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                start = datetime(target_date.year, target_date.month, target_date.day)
                 query = query.filter(
-                    ActivityLog.created_at >= datetime(target_date.year, target_date.month, target_date.day),
-                    ActivityLog.created_at < datetime(target_date.year, target_date.month, target_date.day + 1),
+                    ActivityLog.created_at >= start,
+                    ActivityLog.created_at < start + timedelta(days=1),
                 )
             except ValueError:
                 raise HTTPException(status_code=400, detail="日期格式无效，请使用 YYYY-MM-DD")
@@ -42,7 +43,7 @@ def list_activity_logs(
                 ed = datetime.strptime(end_date, "%Y-%m-%d").date()
                 query = query.filter(
                     ActivityLog.created_at >= datetime(sd.year, sd.month, sd.day),
-                    ActivityLog.created_at < datetime(ed.year, ed.month, ed.day + 1),
+                    ActivityLog.created_at < datetime(ed.year, ed.month, ed.day) + timedelta(days=1),
                 )
             except ValueError:
                 raise HTTPException(status_code=400, detail="日期格式无效，请使用 YYYY-MM-DD")
@@ -55,15 +56,16 @@ def list_activity_logs(
         elif end_date:
             try:
                 ed = datetime.strptime(end_date, "%Y-%m-%d").date()
-                query = query.filter(ActivityLog.created_at < datetime(ed.year, ed.month, ed.day + 1))
+                query = query.filter(ActivityLog.created_at < datetime(ed.year, ed.month, ed.day) + timedelta(days=1))
             except ValueError:
                 raise HTTPException(status_code=400, detail="日期格式无效，请使用 YYYY-MM-DD")
         else:
             # 默认今天
             today = date.today()
+            start = datetime(today.year, today.month, today.day)
             query = query.filter(
-                ActivityLog.created_at >= datetime(today.year, today.month, today.day),
-                ActivityLog.created_at < datetime(today.year, today.month, today.day + 1),
+                ActivityLog.created_at >= start,
+                ActivityLog.created_at < start + timedelta(days=1),
             )
 
         # 按类型筛选
