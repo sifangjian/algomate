@@ -87,7 +87,12 @@ function initSettings() {
 function init() {
   $('btn-add-tech').addEventListener('click', () => addTechniqueRow());
   $('btn-import').addEventListener('click', () => doImport());
-  $('btn-recrawl').addEventListener('click', () => collect());
+  $('btn-recrawl').addEventListener('click', () => {
+    // 情况3：重新抓取 = 退出编辑模式，以新解法/新技巧导入
+    window.__recrawl = true;
+    resetEditState();
+    collect();
+  });
   setupComplexityToggle('f-time-select', 'f-time');
   setupComplexityToggle('f-space-select', 'f-space');
   initSettings();
@@ -262,19 +267,48 @@ async function markReview(cardId, action, note, setRS) {
 }
 
 // ===== 系统已有题目信息加载（重做编辑场景：展示+直接修改补充）=====
+function resetEditState() {
+  const oldBox = document.getElementById('system-info');
+  if (oldBox) oldBox.remove();
+  document.querySelectorAll('#f-techniques .tech-item').forEach((r) => r.remove());
+  window.__editSolutionId = null;
+  window.__systemTechniqueIds = null;
+}
+
 async function loadSystemProblem(slug) {
   if (!slug) return;
   try {
     const r = await fetch(await apiUrl(`/problems/by-slug/${encodeURIComponent(slug)}`));
     if (r.status === 404 || !r.ok) return; // 系统无此题，正常走新建
     const p = await r.json();
+    if (window.__recrawl) {
+      // 重新抓取后：只提示一行，不预填、不进入编辑模式
+      showRecrawlHint(p.title);
+      return;
+    }
     renderSystemEdit(p);
   } catch (e) {
     console.warn('[AlgoMate] 加载系统题目信息失败', e);
   }
 }
 
+function showRecrawlHint(title) {
+  const oldBox = document.getElementById('system-info');
+  if (oldBox) oldBox.remove();
+  const box = document.createElement('div');
+  box.id = 'system-info';
+  box.className = 'conflict-box';
+  box.style.marginTop = '10px';
+  box.style.borderColor = '#0969da';
+  box.innerHTML = `<div class="hint" style="color:#0969da;font-weight:600;">↻ 已重新抓取页面「${title}」，本次将以新解法 / 新技巧导入（不更新系统已有内容）</div>`;
+  $('btn-import').parentNode.insertBefore(box, $('btn-import'));
+}
+
 function renderSystemEdit(p) {
+  // 幂等：移除旧框
+  const oldBox = document.getElementById('system-info');
+  if (oldBox) oldBox.remove();
+
   // 预填题卡突破口（用户尚未填写时）
   if (!$('f-breakthrough').value) $('f-breakthrough').value = p.breakthrough || '';
 
@@ -284,45 +318,51 @@ function renderSystemEdit(p) {
   box.className = 'conflict-box';
   box.style.marginTop = '10px';
   box.style.borderColor = '#0969da';
-  const opts = ['<option value="">＋ 新增一条解法（默认）</option>']
-    .concat(sols.map((s) => `<option value="${s.id}">更新解法：${s.name}（${s.language || '未知语言'}）</option>`));
+  const rows = sols
+    .map((s) => `<div class="sol-row" data-id="${s.id}" style="padding:4px 8px;margin:2px 0;border:1px solid #d0d7de;border-radius:4px;cursor:pointer;font-size:12px;">📄 ${s.name}（${s.language || '未知语言'}）</div>`)
+    .join('');
   box.innerHTML = `
-    <div class="hint" style="color:#0969da;font-weight:600;margin-bottom:6px;">📋 系统中已有该题「${p.title}」，已预填信息，可直接修改补充</div>
-    <div class="hint" style="margin-bottom:6px;">突破口已预填；选择更新某条解法后，其破题思路/复杂度/易错点会自动载入，改完点导入即更新</div>
-    ${sols.length > 0 ? `
-    <div class="field">
-      <label>本次导入的解法目标</label>
-      <select id="f-sol-select">
-        ${opts.join('')}
-      </select>
-    </div>` : ''}
+    <div class="hint" style="color:#0969da;font-weight:600;margin-bottom:6px;">📋 系统中已有该题「${p.title}」，突破口已预填</div>
+    <div class="hint" style="margin-bottom:6px;">默认新增一条解法；点击下方已有解法可展开其内容进行编辑（改完点导入即更新该解法）。删除已有技巧条目会同步删除系统技巧卡。</div>
+    ${sols.length > 0
+      ? `<div class="hint" style="margin-bottom:4px;">系统已有 ${sols.length} 条解法（点击展开编辑）：</div><div id="sol-list">${rows}</div>`
+      : '<div class="hint">系统暂无解法，本次将新建第一条解法</div>'}
   `;
   const importBtn = $('btn-import');
   importBtn.parentNode.insertBefore(box, importBtn);
 
   // 系统已有技巧卡渲染为可编辑条目（去重，带 technique_id 供更新）
   const seen = new Set();
+  const sysTechIds = [];
   sols.forEach((s) => (s.techniques || []).forEach((t) => {
     if (seen.has(t.id)) return;
     seen.add(t.id);
+    sysTechIds.push(t.id);
     addTechniqueRow(t.name, t.use_cases || '', t.notes || '', t.code_template || '', t.id);
   }));
+  window.__systemTechniqueIds = sysTechIds;
 
   window.__editSolutionId = null;
-  const sel = $('f-sol-select');
-  if (sel) {
-    sel.addEventListener('change', () => {
-      const sol = sols.find((s) => String(s.id) === sel.value);
-      window.__editSolutionId = sol ? sol.id : null;
+  // 解法名称列表：点击展开编辑该解法；再点同一行取消（回到新增）
+  document.querySelectorAll('#sol-list .sol-row').forEach((row) => {
+    row.addEventListener('click', () => {
+      const id = parseInt(row.dataset.id, 10);
+      const isActive = window.__editSolutionId === id;
+      document.querySelectorAll('#sol-list .sol-row').forEach((r) => { r.style.outline = 'none'; });
+      window.__editSolutionId = null;
+      if (isActive) return; // 再点同一行 = 取消编辑，回到新增
+      const sol = sols.find((s) => s.id === id);
       if (!sol) return;
+      window.__editSolutionId = id;
+      row.style.outline = '2px solid #0969da';
       $('f-name').value = sol.name || '';
       $('f-notes').value = sol.notes || '';
       fillComplexity('f-time-select', 'f-time', sol.time_complexity || '');
       fillComplexity('f-space-select', 'f-space', sol.space_complexity || '');
       $('f-pitfalls').value = (sol.pitfalls || []).join('\n');
-      // 代码保留本次抓取的新代码，不覆盖（重做场景以新代码为准）
+      // 代码保留本次抓取的新代码，不覆盖
     });
-  }
+  });
 }
 
 function fillComplexity(selectId, manualId, value) {
@@ -349,6 +389,11 @@ async function doImport(updateSolutionId) {
 
   const pitfalls = $('f-pitfalls').value
     .split('\n').map((s) => s.trim()).filter(Boolean);
+  const techItems = collectTechniques();
+  // 编辑模式：系统已有技巧中不在本次列表里的 → 提交删除
+  const sysTechIds = window.__systemTechniqueIds || [];
+  const keptIds = techItems.filter((i) => i.technique_id).map((i) => i.technique_id);
+  const deletedTechIds = sysTechIds.filter((id) => !keptIds.includes(id));
 
   const payload = {
     slug: d.slug,
@@ -365,13 +410,14 @@ async function doImport(updateSolutionId) {
     time_complexity: getComplexity('f-time-select', 'f-time'),
     space_complexity: getComplexity('f-space-select', 'f-space'),
     pitfalls,
-    techniques: collectTechniques(),
+    techniques: techItems,
   };
   if (updateSolutionId != null) {
     payload.update_solution_id = updateSolutionId;
   } else if (window.__editSolutionId != null) {
     payload.update_solution_id = window.__editSolutionId;
   }
+  if (deletedTechIds.length) payload.deleted_technique_ids = deletedTechIds;
 
   try {
     const r = await fetch(await apiUrl('/import'), {

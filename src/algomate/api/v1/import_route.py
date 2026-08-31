@@ -75,6 +75,11 @@ class ImportRequest(BaseModel):
         default_factory=list,
         description="用户手动提炼的技巧卡（每条→一张技巧卡并关联本解法），系统不自动生成",
     )
+    # 编辑模式：从本题移除的已有技巧卡 ID 列表（删除卡片及关联与复习记录）
+    deleted_technique_ids: List[int] = Field(
+        default_factory=list,
+        description="编辑模式：用户在插件上删除的已有技巧卡 ID 列表",
+    )
     # 冲突处理：显式指定要更新的已有解法 ID（覆盖式更新）
     update_solution_id: Optional[int] = Field(
         None, description="若与已有解法冲突且用户选择更新，则传此 ID 覆盖该解法"
@@ -142,12 +147,13 @@ def _norm_code(code: str) -> str:
     return "\n".join((code or "").split()).strip()
 
 
-def _build_solution_fields(data: ImportRequest, current_name: str = "") -> dict:
+def _build_solution_fields(data: ImportRequest, current_name: str = "", current_code: str = "") -> dict:
     """从请求构造解法卡的字段字典（新建与更新共用）。"""
     return dict(
         name=data.name.strip() or current_name or f"我的解法（{data.language or '代码'}）",
         language=data.language,
-        code=data.code,
+        # 编辑模式：code 为空时保留原代码（防重做时页面无代码清空系统已有代码）
+        code=data.code or current_code,
         approach=data.description,  # 系统搬运题面/思路描述，用户可改写
         time_complexity=data.time_complexity or "",
         space_complexity=data.space_complexity or "",
@@ -249,7 +255,7 @@ def import_from_leetcode(data: ImportRequest):
             target = next((s for s in existing_solutions if s.id == data.update_solution_id), None)
             if not target:
                 raise HTTPException(status_code=404, detail=f"未找到要更新的解法 ID={data.update_solution_id}")
-            for k, v in _build_solution_fields(data, current_name=target.name or "").items():
+            for k, v in _build_solution_fields(data, current_name=target.name or "", current_code=target.code or "").items():
                 setattr(target, k, v)
             # 编辑模式同步更新题卡字段（突破口/标签/变体题，重做补充场景）
             if data.breakthrough:
@@ -261,6 +267,7 @@ def import_from_leetcode(data: ImportRequest):
             session.flush()
             solution = target
             technique_ids = _sync_techniques(session, solution, data.techniques)
+            _delete_removed_techniques(session, data.deleted_technique_ids)
             session.commit()
             session.refresh(problem)
             session.refresh(solution)
@@ -307,6 +314,7 @@ def import_from_leetcode(data: ImportRequest):
         session.flush()
 
         technique_ids = _sync_techniques(session, solution, data.techniques)
+        _delete_removed_techniques(session, data.deleted_technique_ids)
 
         session.commit()
         session.refresh(problem)
@@ -364,3 +372,24 @@ def _sync_techniques(session, solution, techniques: List[TechniqueItem]) -> List
             content=f"用户导入时手动提炼技巧卡: {technique.name}",
         ))
     return technique_ids
+
+
+def _delete_removed_techniques(session, deleted_ids: List[int]):
+    """编辑模式：删除用户在插件上移除的已有技巧卡（含关联与复习记录）。"""
+    for tid in deleted_ids:
+        tech = session.query(TechniqueCard).filter(TechniqueCard.id == tid).first()
+        if not tech:
+            continue
+        name = tech.name
+        card_id = tech.card_id
+        session.delete(tech)  # 多对多关联行(solution_techniques)由 SQLAlchemy 级联清理
+        card = session.query(Card).filter(Card.id == card_id).first()
+        if card:
+            session.delete(card)
+        session.add(ActivityLog(
+            type="auto_delete",
+            card_type="technique",
+            card_name=name,
+            card_id=tid,
+            content=f"插件编辑时移除技巧卡: {name}",
+        ))
